@@ -15,7 +15,8 @@
 - `gh --version` passed.
 - `gh auth status` passed for GitHub account `AFR0011`.
 - `git rev-parse --is-inside-work-tree` passed after initialization.
-- `git remote -v` shows `origin` pointing at `git@github.com:AFR0011/ContextOS.git`.
+- `git remote -v` shows `origin` pointing at `https://github.com/AFR0011/ContextOS.git`.
+- `git push -u origin main` passed after switching `origin` from SSH to HTTPS.
 - Repository inspection initially confirmed no application scaffold existed; the scaffold now exists.
 
 ## Not Yet Runnable

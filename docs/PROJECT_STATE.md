@@ -9,7 +9,7 @@
 
 ## Current Snapshot
 - Local Git repository initialized on `main`.
-- Private GitHub repository linked at `git@github.com:AFR0011/ContextOS.git`.
+- Private GitHub repository linked at `https://github.com/AFR0011/ContextOS.git`.
 - Product blueprint exists and is the active implementation contract.
 - App scaffold exists with Next.js App Router, TypeScript, and Tailwind CSS.
 - Detected manifests: `package.json`, `package-lock.json`.

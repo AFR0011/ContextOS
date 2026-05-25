@@ -1,6 +1,8 @@
 # VERSION_LOG
 
 ## 2026-05-25
+- Added PostgreSQL/Drizzle foundation with initial schema and migration.
+- Added local PostgreSQL Docker Compose service and database scripts.
 - Completed first dev-loop cycle.
 - Added minimal Next.js App Router + TypeScript + Tailwind scaffold.
 - Added npm verification scripts and confirmed lint/typecheck/build/runtime smoke pass.

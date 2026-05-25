@@ -15,8 +15,10 @@ Use the first applicable checks for the current repo state.
 
 3. After database setup exists:
    - Validate environment variable documentation.
-   - Run migration generation/check commands when present.
+   - Run `npm run db:generate`.
+   - Run `npx drizzle-kit check`.
    - Run migrations against a clean local database when available.
+   - For local PostgreSQL, copy `.env.example` to `.env`, start Docker Desktop, then run `docker compose up -d postgres` and `npm run db:migrate`.
 
 4. After UI routes exist:
    - Start the dev server.

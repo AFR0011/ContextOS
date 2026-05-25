@@ -1,5 +1,15 @@
 # DEV_LOG
 
+## 2026-05-25 - Sprint 0 Drizzle/PostgreSQL foundation dev-loop cycle
+- Goal: add the smallest database foundation for Sprint 0 without auth/API/UI expansion.
+- Files changed: package dependencies/scripts, Drizzle config, database schema/client, generated migration, `.env.example`, Docker Compose PostgreSQL service, docs, and shared dev-loop logs.
+- Verification: `npm run db:generate`, `npx drizzle-kit check`, `npm run lint`, `npm run typecheck`, and `npm run build` passed.
+- Blocked verification: `npm run db:migrate` against a clean Docker PostgreSQL database could not run because Docker Desktop's Linux engine was not running.
+- Audit: `npm audit --omit=dev` reports a moderate Next/PostCSS advisory with only a breaking force fix available; full `npm audit fix` also reports Drizzle Kit dev-tree advisories that require breaking force changes.
+- Result: database schema and migration baseline are ready for a real PostgreSQL migration run.
+- Follow-up: run migrations once PostgreSQL is available, then proceed toward auth/workspace seeding in a later cycle.
+- Tool note: the configured `architect-planner` subagent failed because its model was unavailable, so planning was completed locally.
+
 ## 2026-05-25 - Sprint 0 scaffold dev-loop cycle
 - Goal: create the smallest usable Next.js foundation for ContextOS.
 - Files changed: app scaffold, npm package/config files, repo operating docs, and shared dev-loop logs.

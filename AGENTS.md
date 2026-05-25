@@ -5,7 +5,7 @@ This repository is the early foundation for ContextOS, a planned Next.js App Rou
 
 Primary evidence:
 - `BLUEPRINT.md` defines the product, architecture, data model, API surface, and sprint order.
-- No app scaffold exists yet; implementation should begin with Sprint 0.
+- A minimal Next.js App Router scaffold and Drizzle/PostgreSQL foundation exist; Sprint 0 is still in progress.
 
 ## Primary Source Of Truth
 - `BLUEPRINT.md` for product scope, architecture, MVP boundaries, and sprint acceptance criteria
@@ -44,6 +44,7 @@ Primary evidence:
 - Use `docs/RUN_PROTOCOL.md` as the verification ladder when it exists.
 - Before the app scaffold exists, verification is limited to repository inspection and document consistency.
 - After the app scaffold exists, prefer `npm run lint`, `npm run typecheck`, `npm test`, and build/migration checks when those scripts are present.
+- For database changes, run `npm run db:generate`, `npx drizzle-kit check`, and `npm run db:migrate` against a clean PostgreSQL database when Docker or another local database is available.
 - If full runtime validation was not run, explicitly say what was not run, why, and what remains unverified.
 
 ## Documentation Sync Rules

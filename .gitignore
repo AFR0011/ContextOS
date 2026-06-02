@@ -1,37 +1,7 @@
-.codex-observer/
-
-# Dependencies
 node_modules/
-.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# Next.js
-.next/
-out/
-
-# Build and coverage output
 dist/
-build/
-coverage/
-*.tsbuildinfo
-
-# Environment and local state
 .env
 .env.*
-!.env.example
-
-# Logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# OS/editor noise
 .DS_Store
 Thumbs.db

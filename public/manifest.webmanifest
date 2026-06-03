@@ -1,0 +1,10 @@
+{
+  "name": "ContextOS",
+  "short_name": "ContextOS",
+  "description": "Execution-first context recovery system",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f7f8fb",
+  "theme_color": "#4f46e5",
+  "icons": []
+}

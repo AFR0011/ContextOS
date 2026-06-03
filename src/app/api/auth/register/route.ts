@@ -1,0 +1,34 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { createSession, hashPassword, publicUser } from "@/lib/auth";
+import { createStarterWorkspace } from "@/lib/starter";
+
+const registerSchema = z.object({
+  email: z.string().email().transform((v) => v.toLowerCase()),
+  password: z.string().min(8)
+});
+
+export async function POST(request: Request) {
+  const parsed = registerSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Use a valid email and a password of at least 8 characters." }, { status: 400 });
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  if (existing) {
+    return NextResponse.json({ error: "An account already exists for this email." }, { status: 409 });
+  }
+
+  const passwordHash = await hashPassword(parsed.data.password);
+  const user = await prisma.user.create({
+    data: {
+      email: parsed.data.email,
+      passwordHash
+    }
+  });
+  await createStarterWorkspace(prisma, user.id, false);
+  await createSession(user.id);
+
+  return NextResponse.json({ user: publicUser(user) });
+}

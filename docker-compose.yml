@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: contextos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: contextos
+      POSTGRES_PASSWORD: contextos
+      POSTGRES_DB: contextos
+    ports:
+      - "5432:5432"
+    volumes:
+      - contextos-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  contextos-postgres-data:

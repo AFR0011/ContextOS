@@ -18,6 +18,7 @@ import {
   Inbox,
   MoreHorizontal,
   Plus,
+  RefreshCw,
   RotateCcw,
   Search,
   Send,
@@ -544,6 +545,7 @@ function EditableField({
   inputClassName?: string;
   onSave: (value: string) => void;
 }) {
+  const { sync } = useWorkspace();
   const [draft, setDraft] = useState(value);
   const [savedFlash, setSavedFlash] = useState(false);
   const dirty = draft !== value;
@@ -598,8 +600,9 @@ function EditableField({
         />
       )}
       {(dirty || savedFlash) ? (
-        <div className="mt-1 flex items-center justify-end gap-2 text-[11px]">
+        <div className="mt-1 flex flex-wrap items-center justify-end gap-2 text-[11px]">
           <span className={dirty ? "text-amber-600" : "text-emerald-600"}>{dirty ? "Unsaved changes" : "Saved"}</span>
+          {dirty && !sync.online ? <span data-testid="offline-edit-warning" className="rounded bg-amber-50 px-1.5 py-0.5 font-medium text-amber-700">Offline: save will queue</span> : null}
           {dirty ? (
             <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={commit} className="rounded px-2 py-0.5 font-semibold text-indigo-600 hover:bg-indigo-50">
               Save
@@ -905,20 +908,43 @@ export function ArchiveView() {
 }
 
 export function SettingsView() {
-  const { data, sync, syncNow, addDomain, updateDomain, resetDemoData } = useWorkspace();
+  const { data, sync, syncNow, forceRefreshFromServer, addDomain, updateDomain, resetDemoData } = useWorkspace();
   const [newDomain, setNewDomain] = useState("");
 
   return (
     <Page title="Settings" subtitle="Domains, sync state, and demo reset.">
       <section className="rounded-xl border border-slate-200 bg-white p-4">
         <SectionTitle title="Sync" />
-        <div className="mt-3 grid gap-3 sm:grid-cols-4">
-          <SyncMetric label="Status" value={sync.online ? "Online" : "Offline"} />
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <SyncMetric label="Status" value={sync.syncing ? "Syncing" : sync.online ? "Online" : "Offline"} testId="sync-status" />
           <SyncMetric label="Pending" value={String(sync.pendingCount)} />
-          <SyncMetric label="Last synced" value={sync.lastSyncedAt ? new Date(sync.lastSyncedAt).toLocaleTimeString() : "Never"} />
-          <button onClick={() => void syncNow()} disabled={!sync.online || sync.syncing} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{sync.syncing ? "Syncing..." : "Sync now"}</button>
+          <SyncMetric label="Last synced" value={formatSyncTimestamp(sync.lastSyncedAt)} />
+          <SyncMetric label="Last refresh" value={formatSyncTimestamp(sync.lastRefreshAt)} />
+          <SyncMetric label="Stale warnings" value={String(sync.staleMutationCount)} />
         </div>
-        {sync.error ? <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{sync.error}</p> : null}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button onClick={() => void syncNow()} disabled={!sync.online || sync.syncing} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+            <RefreshCw className={`h-4 w-4 ${sync.syncing ? "animate-spin" : ""}`} />
+            {sync.syncing ? "Syncing..." : "Sync now"}
+          </button>
+          <button onClick={() => void forceRefreshFromServer()} disabled={!sync.online || sync.refreshing || sync.syncing} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+            <Download className="h-4 w-4" />
+            {sync.refreshing ? "Refreshing..." : "Refresh from server"}
+          </button>
+        </div>
+        {!sync.online ? <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">Offline. Edits are saved locally and will sync when the connection returns.</p> : null}
+        {sync.error ? (
+          <p data-testid="sync-error" className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{sync.error}{sync.lastErrorAt ? ` Last error: ${formatSyncTimestamp(sync.lastErrorAt)}.` : ""}</span>
+          </p>
+        ) : null}
+        {sync.lastWarning ? (
+          <p data-testid="sync-warning" className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{sync.lastWarning}{sync.lastWarningAt ? ` Last warning: ${formatSyncTimestamp(sync.lastWarningAt)}.` : ""}</span>
+          </p>
+        ) : null}
       </section>
 
       <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
@@ -946,6 +972,15 @@ export function SettingsView() {
   );
 }
 
-function SyncMetric({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-lg bg-slate-50 p-3"><p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p><p data-testid={label === "Pending" ? "pending-count" : undefined} className="mt-1 text-sm font-semibold text-slate-800">{value}</p></div>;
+function formatSyncTimestamp(value: string | null) {
+  return value ? new Date(value).toLocaleString() : "Never";
+}
+
+function SyncMetric({ label, value, testId }: { label: string; value: string; testId?: string }) {
+  return (
+    <div className="rounded-lg bg-slate-50 p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+      <p data-testid={testId ?? (label === "Pending" ? "pending-count" : undefined)} className="mt-1 text-sm font-semibold text-slate-800">{value}</p>
+    </div>
+  );
 }

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   Archive,
   BookOpen,
   CalendarDays,
@@ -12,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  RefreshCw,
   Search,
   Settings,
   Sun,
@@ -35,6 +37,54 @@ const navItems = [
   { href: "/reviews", label: "Reviews", icon: BookOpen },
   { href: "/settings", label: "Settings", icon: Settings }
 ];
+
+type SyncSnapshot = ReturnType<typeof useWorkspace>["sync"];
+
+function syncStatusLabel(sync: SyncSnapshot) {
+  if (sync.syncing) return "Syncing";
+  if (!sync.online) return "Offline";
+  if (sync.pendingCount > 0) return `${sync.pendingCount} pending`;
+  return "Online";
+}
+
+function SyncIndicator({ sync, compact = false }: { sync: SyncSnapshot; compact?: boolean }) {
+  const Icon = sync.syncing ? RefreshCw : sync.online ? Wifi : WifiOff;
+  const tone = sync.error
+    ? "border-red-100 bg-red-50 text-red-700"
+    : sync.lastWarning || !sync.online || sync.pendingCount > 0
+      ? "border-amber-100 bg-amber-50 text-amber-700"
+      : "border-emerald-100 bg-emerald-50 text-emerald-700";
+
+  if (compact) {
+    return (
+      <div data-testid="global-sync-indicator" className={`ml-auto flex min-w-0 items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-semibold ${tone}`}>
+        <Icon className={`h-3.5 w-3.5 shrink-0 ${sync.syncing ? "animate-spin" : ""}`} />
+        <span className="truncate">{syncStatusLabel(sync)}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div data-testid="global-sync-indicator" className={`mb-3 rounded-lg border px-3 py-2 text-xs ${tone}`}>
+      <div className="flex items-center gap-2 font-semibold">
+        <Icon className={`h-3.5 w-3.5 shrink-0 ${sync.syncing ? "animate-spin" : ""}`} />
+        <span>{syncStatusLabel(sync)}</span>
+        {sync.pendingCount > 0 ? <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5">{sync.pendingCount} pending</span> : null}
+      </div>
+      {sync.error ? (
+        <p className="mt-1 flex items-start gap-1.5 font-medium">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>{sync.error}</span>
+        </p>
+      ) : sync.lastWarning ? (
+        <p className="mt-1 flex items-start gap-1.5 font-medium">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>{sync.lastWarning}</span>
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 export default function WorkspaceShell({ user, children }: { user: PublicUser; children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -98,11 +148,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
         </nav>
 
         <div className="border-t border-slate-100 px-5 py-4">
-          <div className="mb-3 flex items-center gap-2 text-xs text-slate-500">
-            {sync.online ? <Wifi className="h-3.5 w-3.5 text-emerald-500" /> : <WifiOff className="h-3.5 w-3.5 text-amber-500" />}
-            <span>{sync.online ? "Online" : "Offline"}</span>
-            {sync.pendingCount > 0 ? <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">{sync.pendingCount} pending</span> : null}
-          </div>
+          <SyncIndicator sync={sync} />
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium text-slate-700">{user.email}</p>
@@ -124,7 +170,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             <Zap className="h-4 w-4 text-indigo-600" />
             ContextOS
           </div>
-          {sync.pendingCount > 0 ? <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">{sync.pendingCount} pending</span> : null}
+          <SyncIndicator sync={sync} compact />
         </div>
         {children}
       </main>

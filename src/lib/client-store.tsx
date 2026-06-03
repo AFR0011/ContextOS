@@ -14,6 +14,7 @@ import type {
   QueuedMutation,
   Review,
   ReviewType,
+  SyncWarning,
   Task,
   TaskStatus,
   WorkspaceData
@@ -80,8 +81,18 @@ async function idbGet<T>(key: string): Promise<T | null> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction("kv", "readonly");
     const request = tx.objectStore("kv").get(key);
-    request.onsuccess = () => resolve((request.result as T | undefined) ?? null);
-    request.onerror = () => reject(request.error);
+    let result: T | null = null;
+    request.onsuccess = () => {
+      result = (request.result as T | undefined) ?? null;
+    };
+    tx.oncomplete = () => {
+      db.close();
+      resolve(result);
+    };
+    tx.onerror = () => {
+      db.close();
+      reject(tx.error ?? request.error);
+    };
   });
 }
 
@@ -90,8 +101,14 @@ async function idbSet<T>(key: string, value: T) {
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction("kv", "readwrite");
     tx.objectStore("kv").put(value, key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+    tx.onerror = () => {
+      db.close();
+      reject(tx.error);
+    };
   });
 }
 
@@ -100,8 +117,14 @@ async function idbDelete(key: string) {
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction("kv", "readwrite");
     tx.objectStore("kv").delete(key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+    tx.onerror = () => {
+      db.close();
+      reject(tx.error);
+    };
   });
 }
 
@@ -114,12 +137,23 @@ function byId<T extends { id: string }>(items: T[], id: string) {
   return items.find((item) => item.id === id);
 }
 
+function warningSummary(warnings: SyncWarning[]) {
+  if (warnings.length === 1) return warnings[0].message;
+  return `${warnings.length} older offline changes were skipped because the server had newer updates.`;
+}
+
 interface SyncState {
   online: boolean;
   pendingCount: number;
   syncing: boolean;
+  refreshing: boolean;
   lastSyncedAt: string | null;
+  lastRefreshAt: string | null;
   error: string | null;
+  lastErrorAt: string | null;
+  lastWarning: string | null;
+  lastWarningAt: string | null;
+  staleMutationCount: number;
 }
 
 interface StoreApi {
@@ -127,6 +161,7 @@ interface StoreApi {
   loading: boolean;
   sync: SyncState;
   syncNow: () => Promise<void>;
+  forceRefreshFromServer: () => Promise<void>;
   resetDemoData: () => Promise<void>;
   addCapture: (text: string) => void;
   updateCapture: (id: string, updates: Partial<Capture>) => void;
@@ -156,8 +191,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [online, setOnline] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [lastRefreshAt, setLastRefreshAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastErrorAt, setLastErrorAt] = useState<string | null>(null);
+  const [lastWarning, setLastWarning] = useState<string | null>(null);
+  const [lastWarningAt, setLastWarningAt] = useState<string | null>(null);
+  const [staleMutationCount, setStaleMutationCount] = useState(0);
   const syncInFlight = useRef(false);
 
   useEffect(() => {
@@ -176,7 +217,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const syncNow = useCallback(async () => {
-    if (syncInFlight.current || typeof window === "undefined" || !navigator.onLine) return;
+    if (syncInFlight.current || typeof window === "undefined") return;
+    if (!navigator.onLine) {
+      setOnline(false);
+      setError("Offline. Changes are queued until you reconnect.");
+      setLastErrorAt(now());
+      return;
+    }
+    setOnline(true);
     syncInFlight.current = true;
     setSyncing(true);
     setError(null);
@@ -187,7 +235,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mutations: outbox })
       });
-      const result = await readJsonResponse<{ data: WorkspaceData; appliedMutationIds: string[] }>(response);
+      const result = await readJsonResponse<{ data: WorkspaceData; appliedMutationIds: string[]; warnings?: SyncWarning[] }>(response);
       if (!response.ok || !result?.data) {
         throw new Error(response.status === 401 ? "Sign in again to sync." : responseErrorMessage(response, result, "Sync failed"));
       }
@@ -197,11 +245,54 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       await saveWorkspace(result.data);
       setPendingCount(remaining.length);
       setLastSyncedAt(result.data.serverSyncedAt);
+      const warnings = result.warnings ?? [];
+      if (warnings.length) {
+        setLastWarning(warningSummary(warnings));
+        setLastWarningAt(now());
+        setStaleMutationCount((count) => count + warnings.length);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sync failed.");
+      setLastErrorAt(now());
     } finally {
       setSyncing(false);
       syncInFlight.current = false;
+    }
+  }, [saveWorkspace]);
+
+  const forceRefreshFromServer = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    if (!navigator.onLine) {
+      setOnline(false);
+      setError("Cannot refresh from server while offline.");
+      setLastErrorAt(now());
+      return;
+    }
+    setOnline(true);
+
+    const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+    if (outbox.length > 0) {
+      setError("Sync pending changes before refreshing from server.");
+      setLastErrorAt(now());
+      return;
+    }
+
+    setRefreshing(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/bootstrap", { cache: "no-store" });
+      const result = await readJsonResponse<{ data: WorkspaceData }>(response);
+      if (!response.ok || !result?.data) {
+        throw new Error(response.status === 401 ? "Sign in again to refresh." : responseErrorMessage(response, result, "Refresh failed"));
+      }
+      await saveWorkspace(result.data);
+      setLastSyncedAt(result.data.serverSyncedAt);
+      setLastRefreshAt(now());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Refresh failed.");
+      setLastErrorAt(now());
+    } finally {
+      setRefreshing(false);
     }
   }, [saveWorkspace]);
 
@@ -227,13 +318,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         ...dataRef.current,
         [collection]: replaceIn(dataRef.current[collection] as any[], touched)
       } as WorkspaceData;
-      void saveWorkspace(next);
-      void queueMutation({
-        entityType: collection,
-        entityId: touched.id,
-        operation: "upsert",
-        payload: touched as any
-      });
+      void (async () => {
+        await saveWorkspace(next);
+        await queueMutation({
+          entityType: collection,
+          entityId: touched.id,
+          operation: "upsert",
+          payload: touched as any
+        });
+      })();
     },
     [queueMutation, saveWorkspace]
   );
@@ -247,6 +340,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         setData(cached);
         dataRef.current = cached;
         setLastSyncedAt(cached.serverSyncedAt || null);
+        setLoading(false);
       }
       const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
       setPendingCount(outbox.length);
@@ -267,6 +361,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           }
         } catch {
           setError("Loaded cached data. Server refresh is unavailable.");
+          setLastErrorAt(now());
         }
       }
       setLoading(false);
@@ -278,7 +373,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setOnline(true);
       void syncNow();
     };
-    const handleOffline = () => setOnline(false);
+    const handleOffline = () => {
+      setOnline(false);
+      setError("Offline. Changes are queued until you reconnect.");
+      setLastErrorAt(now());
+    };
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
@@ -299,8 +398,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     return {
       data,
       loading,
-      sync: { online, pendingCount, syncing, lastSyncedAt, error },
+      sync: {
+        online,
+        pendingCount,
+        syncing,
+        refreshing,
+        lastSyncedAt,
+        lastRefreshAt,
+        error,
+        lastErrorAt,
+        lastWarning,
+        lastWarningAt,
+        staleMutationCount
+      },
       syncNow,
+      forceRefreshFromServer,
       resetDemoData: async () => {
         const response = await fetch("/api/reset-demo", { method: "POST" });
         if (response.ok) {
@@ -308,9 +420,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           if (result?.data) {
             await saveWorkspace(result.data);
             setLastSyncedAt(result.data.serverSyncedAt);
+            setLastRefreshAt(now());
+            setError(null);
+            setLastWarning(null);
+            setLastWarningAt(null);
+            setStaleMutationCount(0);
           }
         } else {
           setError("Could not reset demo data while offline.");
+          setLastErrorAt(now());
         }
         await idbSet(OUTBOX_KEY, []);
         await refreshPendingCount();
@@ -524,13 +642,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           ...dataRef.current,
           priorities: dataRef.current.priorities.filter((priority) => priority.id !== id)
         };
-        void saveWorkspace(next);
-        void queueMutation({
-          entityType: "priorities",
-          entityId: id,
-          operation: "delete",
-          payload: null
-        });
+        void (async () => {
+          await saveWorkspace(next);
+          await queueMutation({
+            entityType: "priorities",
+            entityId: id,
+            operation: "delete",
+            payload: null
+          });
+        })();
       },
       addDomain: (name) => {
         const ts = now();
@@ -547,7 +667,26 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         if (domain) mutate("domains", { ...domain, ...updates });
       }
     };
-  }, [data, error, lastSyncedAt, loading, mutate, online, pendingCount, queueMutation, saveWorkspace, syncNow, syncing]);
+  }, [
+    data,
+    error,
+    forceRefreshFromServer,
+    lastErrorAt,
+    lastRefreshAt,
+    lastSyncedAt,
+    lastWarning,
+    lastWarningAt,
+    loading,
+    mutate,
+    online,
+    pendingCount,
+    queueMutation,
+    refreshing,
+    saveWorkspace,
+    staleMutationCount,
+    syncNow,
+    syncing
+  ]);
 
   return <StoreContext.Provider value={api}>{children}</StoreContext.Provider>;
 }

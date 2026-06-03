@@ -125,6 +125,16 @@ export interface WorkspaceData {
 
 export type CollectionName = keyof Omit<WorkspaceData, "serverSyncedAt">;
 
+export interface SyncWarning {
+  mutationId: string;
+  entityType: CollectionName;
+  entityId: string;
+  reason: "stale";
+  message: string;
+  serverUpdatedAt: string | null;
+  incomingUpdatedAt: string | null;
+}
+
 export interface QueuedMutation {
   mutationId: string;
   entityType: CollectionName;

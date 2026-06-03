@@ -19,6 +19,37 @@ async function expectInputValue(page: Page, selector: string, value: string) {
     .toBe(true);
 }
 
+async function offlineCacheState(page: Page, text: string) {
+  return page.evaluate(async (expectedText) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("contextos-offline-v1", 1);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains("kv")) database.createObjectStore("kv");
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    function get<T>(key: string) {
+      return new Promise<T | null>((resolve, reject) => {
+        const tx = db.transaction("kv", "readonly");
+        const request = tx.objectStore("kv").get(key);
+        request.onsuccess = () => resolve((request.result as T | undefined) ?? null);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    const workspace = await get<{ captures?: { text: string }[] }>("workspace");
+    const outbox = await get<{ payload?: { text?: string } }[]>("outbox");
+    db.close();
+    return {
+      hasCapture: Boolean(workspace?.captures?.some((capture) => capture.text === expectedText)),
+      pendingCount: outbox?.length ?? 0
+    };
+  }, text);
+}
+
 test("date utilities keep date-only values on the local calendar day", async () => {
   const originalTimeZone = process.env.TZ;
   process.env.TZ = "Europe/Bucharest";
@@ -82,7 +113,12 @@ test("offline capture is stored locally and sync state shows pending work", asyn
   await page.getByPlaceholder(/Quick capture/).press("Enter");
   await expect(page.getByText(text)).toBeVisible();
   await expect(page.getByText(/pending/i).first()).toBeVisible();
+  await expect.poll(() => offlineCacheState(page, text)).toEqual({ hasCapture: true, pendingCount: 1 });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect.poll(() => offlineCacheState(page, text)).toEqual({ hasCapture: true, pendingCount: 1 });
   await context.setOffline(false);
+  await page.reload();
+  await expect(page.getByText(text)).toBeVisible();
   await page.getByRole("button", { name: "Settings" }).click();
   await page.getByRole("button", { name: /sync now/i }).click();
   await expect(page.getByTestId("pending-count")).toHaveText("0");
@@ -97,12 +133,63 @@ test("draft-saved domain edit queues one offline mutation", async ({ page, conte
   const domainInput = page.locator("section").filter({ hasText: "Domains" }).locator("input").first();
   const longName = `Research draft save ${Date.now()}`;
   await domainInput.fill(longName);
+  await expect(page.getByTestId("offline-edit-warning").first()).toBeVisible();
   await domainInput.blur();
 
   await expect(page.getByText("1 pending").first()).toBeVisible();
   await context.setOffline(false);
   await page.getByRole("button", { name: /sync now/i }).click();
   await expect(page.getByTestId("pending-count")).toHaveText("0");
+});
+
+test("settings exposes sync visibility and server refresh controls", async ({ page }) => {
+  await login(page);
+  await page.goto("/settings");
+  await expect(page.getByTestId("sync-status")).toHaveText("Online");
+  await expect(page.getByTestId("pending-count")).toHaveText("0");
+  await expect(page.getByRole("button", { name: /sync now/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /refresh from server/i })).toBeVisible();
+});
+
+test("stale sync mutations return conflict warnings", async ({ page }) => {
+  await login(page);
+  const bootstrap = await page.request.get("/api/bootstrap");
+  expect(bootstrap.ok()).toBeTruthy();
+  const workspace = await bootstrap.json();
+  const project = workspace.data.projects[0];
+  const mutationId = `stale-${Date.now()}`;
+
+  const response = await page.request.post("/api/sync", {
+    data: {
+      mutations: [
+        {
+          mutationId,
+          entityType: "projects",
+          entityId: project.id,
+          operation: "upsert",
+          payload: {
+            ...project,
+            latestStatus: "This stale update should not overwrite server state.",
+            updatedAt: "2000-01-01T00:00:00.000Z"
+          },
+          createdAt: new Date().toISOString()
+        }
+      ]
+    }
+  });
+  expect(response.ok()).toBeTruthy();
+  const result = await response.json();
+  expect(result.appliedMutationIds).toContain(mutationId);
+  expect(result.warnings).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        mutationId,
+        entityType: "projects",
+        entityId: project.id,
+        reason: "stale"
+      })
+    ])
+  );
 });
 
 test("long note edits save intentionally and persist", async ({ page }) => {

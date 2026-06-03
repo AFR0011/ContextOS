@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
-import type { QueuedMutation } from "./types";
+import type { QueuedMutation, SyncWarning } from "./types";
 import { dateKeyToUtcDate, localDateKey } from "./dates";
 
 const toDate = (value: string | null | undefined) => (value ? new Date(value) : null);
@@ -14,8 +14,28 @@ function shouldApply(existingUpdatedAt: Date | null | undefined, incomingUpdated
   return new Date(incomingUpdatedAt).getTime() >= existingUpdatedAt.getTime();
 }
 
+function shouldApplyOrWarn(
+  existingUpdatedAt: Date | null | undefined,
+  incomingUpdatedAt: string | undefined,
+  mutation: QueuedMutation,
+  warnings: SyncWarning[]
+) {
+  if (shouldApply(existingUpdatedAt, incomingUpdatedAt)) return true;
+  warnings.push({
+    mutationId: mutation.mutationId,
+    entityType: mutation.entityType,
+    entityId: mutation.entityId,
+    reason: "stale",
+    message: `Skipped older offline change for ${mutation.entityType} because the server has a newer update.`,
+    serverUpdatedAt: existingUpdatedAt ? existingUpdatedAt.toISOString() : null,
+    incomingUpdatedAt: incomingUpdatedAt ?? null
+  });
+  return false;
+}
+
 export async function applySyncMutations(userId: string, mutations: QueuedMutation[]) {
   const applied: string[] = [];
+  const warnings: SyncWarning[] = [];
 
   for (const mutation of mutations) {
     await prisma.$transaction(async (tx) => {
@@ -53,7 +73,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
       switch (mutation.entityType) {
         case "domains": {
           const existing = await tx.domain.findFirst({ where: { id: payload.id, userId } });
-          if (shouldApply(existing?.updatedAt, updatedAt)) {
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
             await tx.domain.upsert({
               where: { id: payload.id },
               update: {
@@ -75,7 +95,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
         }
         case "projects": {
           const existing = await tx.project.findFirst({ where: { id: payload.id, userId } });
-          if (shouldApply(existing?.updatedAt, updatedAt)) {
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
             await tx.project.upsert({
               where: { id: payload.id },
               update: {
@@ -111,7 +131,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
         }
         case "tasks": {
           const existing = await tx.task.findFirst({ where: { id: payload.id, userId } });
-          if (shouldApply(existing?.updatedAt, updatedAt)) {
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
             await tx.task.upsert({
               where: { id: payload.id },
               update: {
@@ -145,7 +165,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
         }
         case "captures": {
           const existing = await tx.capture.findFirst({ where: { id: payload.id, userId } });
-          if (shouldApply(existing?.updatedAt, updatedAt)) {
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
             await tx.capture.upsert({
               where: { id: payload.id },
               update: {
@@ -173,7 +193,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
         }
         case "notes": {
           const existing = await tx.note.findFirst({ where: { id: payload.id, userId } });
-          if (shouldApply(existing?.updatedAt, updatedAt)) {
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
             await tx.note.upsert({
               where: { id: payload.id },
               update: {
@@ -203,7 +223,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
         }
         case "deadlines": {
           const existing = await tx.deadline.findFirst({ where: { id: payload.id, userId } });
-          if (shouldApply(existing?.updatedAt, updatedAt)) {
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
             await tx.deadline.upsert({
               where: { id: payload.id },
               update: {
@@ -235,7 +255,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
         }
         case "reviews": {
           const existing = await tx.review.findFirst({ where: { id: payload.id, userId } });
-          if (shouldApply(existing?.updatedAt, updatedAt)) {
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
             await tx.review.upsert({
               where: { id: payload.id },
               update: {
@@ -259,7 +279,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
         }
         case "priorities": {
           const existing = await tx.priority.findFirst({ where: { id: payload.id, userId } });
-          if (shouldApply(existing?.updatedAt, updatedAt)) {
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
             await tx.priority.upsert({
               where: { id: payload.id },
               update: {
@@ -303,5 +323,5 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
     });
   }
 
-  return applied;
+  return { appliedMutationIds: applied, warnings };
 }

@@ -1,5 +1,46 @@
 # ContextOS Version Log
 
+## v0.1.4 Sprint 4 - Offline Sync Visibility + Conflict Warnings
+
+Goal:
+Make offline sync state visible and trustworthy: pending work, retry, refresh, errors, and stale overwrite warnings should be obvious to the user.
+
+Changed files:
+- `src/lib/types.ts`
+- `src/lib/sync-server.ts`
+- `src/app/api/sync/route.ts`
+- `src/lib/client-store.tsx`
+- `src/components/workspace/WorkspaceShell.tsx`
+- `src/components/workspace/Views.tsx`
+- `tests/e2e/contextos.spec.ts`
+- `docs/PROJECT_STATE.md`
+- `docs/VERSION_LOG.md`
+
+Schema changes:
+None.
+
+Manual/e2e behavior covered:
+- Settings shows sync status, pending count, last sync, last refresh, stale warning count, retry sync, and refresh-from-server controls.
+- The global shell shows online/offline, syncing, pending, error, and stale-warning state.
+- Draft-save fields show an offline queue warning while editing offline.
+- The sync API returns stale warnings for older offline mutations while acknowledging them so the outbox can clear.
+- Offline capture data is verified durable in IndexedDB across a browser reload, then visible and synced after reconnect.
+
+Verification:
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npm run db:migrate` - passed earlier in the sprint against local Postgres; no schema changes.
+- `npm run db:seed` - passed against local Postgres.
+- `npm run test:e2e` - passed, 11 tests.
+- `git diff --check` - passed with CRLF warnings only.
+
+Known issues:
+- Stale conflict handling is warning-only; there is no merge/diff UI yet.
+- In the dev server e2e environment, offline route reloads prove durable cache state directly before reconnecting; production offline hydration still depends on the app shell and chunks being cached by the service worker.
+
+Next sprint recommendation:
+Sprint 5 - real usage trial and friction audit.
+
 ## v0.1.3 Sprint 3 - Mutation Hygiene + Draft-Save Behavior
 
 Goal:

@@ -18,6 +18,7 @@ import type {
   TaskStatus,
   WorkspaceData
 } from "./types";
+import { readJsonResponse, responseErrorMessage } from "./http-client";
 
 const DB_NAME = "contextos-offline-v1";
 const DB_VERSION = 1;
@@ -189,8 +190,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mutations: outbox })
       });
-      if (!response.ok) throw new Error(response.status === 401 ? "Sign in again to sync." : "Sync failed.");
-      const result = (await response.json()) as { data: WorkspaceData; appliedMutationIds: string[] };
+      const result = await readJsonResponse<{ data: WorkspaceData; appliedMutationIds: string[] }>(response);
+      if (!response.ok || !result?.data) {
+        throw new Error(response.status === 401 ? "Sign in again to sync." : responseErrorMessage(response, result, "Sync failed"));
+      }
       const applied = new Set(result.appliedMutationIds);
       const remaining = outbox.filter((mutation) => !applied.has(mutation.mutationId));
       await idbSet(OUTBOX_KEY, remaining);
@@ -258,9 +261,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           } else {
             const response = await fetch("/api/bootstrap");
             if (response.ok) {
-              const result = (await response.json()) as { data: WorkspaceData };
-              await saveWorkspace(result.data);
-              setLastSyncedAt(result.data.serverSyncedAt);
+              const result = await readJsonResponse<{ data: WorkspaceData }>(response);
+              if (result?.data) {
+                await saveWorkspace(result.data);
+                setLastSyncedAt(result.data.serverSyncedAt);
+              }
             }
           }
         } catch {
@@ -302,9 +307,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       resetDemoData: async () => {
         const response = await fetch("/api/reset-demo", { method: "POST" });
         if (response.ok) {
-          const result = (await response.json()) as { data: WorkspaceData };
-          await saveWorkspace(result.data);
-          setLastSyncedAt(result.data.serverSyncedAt);
+          const result = await readJsonResponse<{ data: WorkspaceData }>(response);
+          if (result?.data) {
+            await saveWorkspace(result.data);
+            setLastSyncedAt(result.data.serverSyncedAt);
+          }
         } else {
           setError("Could not reset demo data while offline.");
         }

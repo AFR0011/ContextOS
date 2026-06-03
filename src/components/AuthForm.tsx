@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Zap } from "lucide-react";
+import { readJsonResponse, responseErrorMessage } from "@/lib/http-client";
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
@@ -21,8 +22,8 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Authentication failed.");
+      const result = await readJsonResponse<{ error?: string; user?: unknown }>(response);
+      if (!response.ok) throw new Error(responseErrorMessage(response, result, "Authentication failed"));
       router.push("/dashboard");
       router.refresh();
     } catch (err) {

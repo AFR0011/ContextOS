@@ -9,16 +9,24 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const parsed = loginSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Enter your email and password." }, { status: 400 });
-  }
+  try {
+    const parsed = loginSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Enter your email and password." }, { status: 400 });
+    }
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
-    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
-  }
+    const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+    if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
+      return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+    }
 
-  await createSession(user.id);
-  return NextResponse.json({ user: publicUser(user) });
+    await createSession(user.id);
+    return NextResponse.json({ user: publicUser(user) });
+  } catch (error) {
+    console.error("Login failed", error);
+    return NextResponse.json(
+      { error: "Login server error. Check the deployment database connection and migrations." },
+      { status: 500 }
+    );
+  }
 }

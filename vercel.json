@@ -1,4 +1,4 @@
 {
   "installCommand": "npm install",
-  "buildCommand": "npm run build"
+  "buildCommand": "npx prisma migrate deploy && npm run db:seed && npm run build"
 }

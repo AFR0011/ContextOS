@@ -1,0 +1,992 @@
+# ContextOS Product Specification v1
+
+## Status
+
+**Version:** v1.0  
+**Product Type:** Execution-first context recovery system  
+**Primary User:** Single-user MVP  
+**Platform:** Online-first PWA, offline capture later  
+**Architecture Direction:** Next.js + PostgreSQL  
+**Purpose:** Replace Notion, task apps, and phone notes for daily execution, project recovery, open-loop tracking, and lightweight context management.
+
+---
+
+## 1. Product Definition
+
+ContextOS is an execution-first context recovery system for managing tasks, open loops, projects, deadlines, lightweight notes, and review-based recovery.
+
+Its core promise is:
+
+> Capture fast. Know what matters today. Recover project context after breaks. Track half-finished work. Replace Notion, task apps, and phone notes.
+
+ContextOS should help the user answer, within roughly 30 seconds:
+
+- What matters today?
+- What is overdue?
+- What did I capture?
+- What was I recently working on?
+- What needs recovery?
+- What is blocked, waiting, or half-finished?
+
+---
+
+## 2. Non-Goals
+
+ContextOS is **not**:
+
+- A journal.
+- A finance tracker.
+- A health tracker.
+- A social or relationship analysis system.
+- A book note system.
+- A general life archive.
+- A full autonomous agent platform.
+- A Notion clone.
+- A task-manager clone with excessive metadata.
+- A maintenance-heavy productivity system.
+
+The MVP should optimize for execution and recovery, not broad life capture.
+
+---
+
+## 3. Core Product Principles
+
+### 3.1 Execution First
+
+The system is organized around what needs action, what is open, what is blocked, and what should be resumed.
+
+### 3.2 Fast Capture
+
+Capture must be possible without choosing a destination, project, tag, or type.
+
+Default behavior:
+
+```text
+Raw sentence -> Inbox
+```
+
+### 3.3 Project Recovery
+
+Every active project should make it easy to resume after a break.
+
+A project page should answer:
+
+> I have not touched this in a day or two. What was happening, and what do I do next?
+
+### 3.4 Minimal Required Metadata
+
+Required fields should be minimal. Optional structure should exist, but should not block capture or creation.
+
+### 3.5 Human Applies AI Suggestions
+
+Agents may suggest next actions, triage, summaries, and status updates, but they cannot directly write, edit, delete, archive, or modify records in MVP.
+
+### 3.6 Actionable Surfacing Only
+
+The app should surface items the user can act on. It should avoid guilt pings, abstract reminders, or vague productivity noise.
+
+---
+
+## 4. MVP Scope
+
+### 4.1 Included in MVP
+
+- Authentication with email/password.
+- Online-first PWA.
+- Responsive mobile UI.
+- Dashboard.
+- Inbox.
+- Today view.
+- This Week view.
+- Projects.
+- Project detail pages.
+- Deadlines.
+- Archive.
+- Search.
+- Settings.
+- Rich text editor with Markdown shortcuts.
+- Slash-command capture.
+- Daily startup review.
+- Daily shutdown review.
+- Weekly review.
+- Markdown export.
+- Soft delete / trash.
+- Read-only/manual AI suggestions.
+
+### 4.2 Later
+
+- Offline capture.
+- Sync-when-online.
+- Full Agents page.
+- Agent runs/logs/profiles.
+- Agent write permissions.
+- Calendar integration.
+- Meeting objects.
+- Semantic search.
+- More advanced automation.
+- More advanced mobile-native features.
+
+---
+
+## 5. Top-Level Navigation
+
+MVP navigation:
+
+```text
+Dashboard
+Inbox
+Today
+This Week
+Projects
+Deadlines
+Archive
+Search
+Settings
+```
+
+There is no top-level `Workspaces` page in MVP.
+
+There is no top-level `Agents` page in MVP.
+
+Agent suggestions appear only inside project pages and a collapsed dashboard section.
+
+---
+
+## 6. Domains
+
+Domains are default organizational groupings. They are not top-level navigation items.
+
+Default domains:
+
+```text
+Research
+Dev / Freelance
+University
+Career / PhD
+Long-Term Goals
+AI Agent Context
+Piano / Content
+Notes
+```
+
+### 6.1 Domain Behavior
+
+- Domains are used for filtering and grouping projects, notes, tasks, and related objects.
+- Defaults are provided.
+- User can rename domains.
+- User can add domains.
+- User can archive domains.
+- Domains should not become mandatory friction during quick capture.
+
+---
+
+## 7. Main Data Objects
+
+MVP objects:
+
+```text
+Domain
+Project
+Task
+Capture
+Note
+Deadline
+Review
+```
+
+Lightweight or generated object:
+
+```text
+Agent Suggestion
+```
+
+Agent suggestions should not be a full workflow object in MVP. They are generated suggestions that the user may apply manually.
+
+---
+
+## 8. Project Model
+
+### 8.1 Definition
+
+A project is a larger container with an outcome.
+
+Examples:
+
+```text
+MSc Thesis
+ContextOS
+KPMG Application
+Orbit Wars Week 4
+```
+
+Smaller work items belong as tasks, not separate projects.
+
+### 8.2 Required Fields
+
+```text
+Project name
+Domain
+Current objective
+```
+
+### 8.3 Optional Fields
+
+```text
+Status
+Deadline
+Next action
+Notes
+```
+
+### 8.4 Project Statuses
+
+```text
+Active
+Paused
+Done
+Archived
+```
+
+### 8.5 Project Detail Layout
+
+Project pages should prioritize recovery and execution.
+
+Recommended order:
+
+```text
+Header
+Status
+Current Objective
+Next Action
+Open Loops / Blockers
+Deadlines
+Latest Status
+Active Tasks, collapsed by default
+Notes / Decisions
+Agent Handoff
+Agent Suggestions
+```
+
+### 8.6 Special Project Fields
+
+#### Next Action
+
+- Always visible.
+- Separate from the task list.
+- Used as the primary recovery handle.
+
+#### Latest Status
+
+- Special field, separate from notes.
+- Should be near the top of the project page.
+- Used to resume after breaks or half-finished work.
+
+Example:
+
+```text
+Protocol B support audit is complete. RF baseline still needs rerun with corrected threshold logic.
+```
+
+### 8.7 Open Loops / Blockers
+
+Open loops and blockers should be visible near the top of the project page. They should not be buried inside notes.
+
+---
+
+## 9. Task Model
+
+### 9.1 Required Fields
+
+```text
+Title
+```
+
+### 9.2 Optional Fields
+
+```text
+Planned date
+Due date
+Project/context
+```
+
+### 9.3 Statuses
+
+```text
+Todo
+In Progress
+Blocked
+Waiting
+Done
+Dropped
+```
+
+### 9.4 Planned Date vs Due Date
+
+The UI must distinguish between planned date and due date.
+
+```text
+Planned date = when the user intends to work on the task.
+Due date = when the task must be completed.
+```
+
+A task can be planned today without being due today. A task can be due today without being manually planned.
+
+### 9.5 Priority
+
+There is no global task priority field in MVP.
+
+Priority is handled through:
+
+```text
+Daily Top 1-3 Priorities
+Weekly pinned priorities
+```
+
+This avoids priority inflation and unnecessary metadata.
+
+---
+
+## 10. Deadline Model
+
+### 10.1 Required Fields
+
+```text
+Title
+Date
+```
+
+### 10.2 Optional Fields
+
+```text
+Related project
+Related tasks
+Notes
+```
+
+### 10.3 Deadline Behavior
+
+Deadlines are separate objects from task due dates.
+
+A deadline can govern multiple related tasks.
+
+Example:
+
+```text
+Deadline: Submit thesis proposal
+Date: June 10
+Related project: MSc Thesis
+Related tasks:
+- Finish methodology
+- Proofread
+- Send to advisor
+```
+
+---
+
+## 11. Capture and Inbox
+
+### 11.1 Default Capture Behavior
+
+Default capture should require no destination.
+
+```text
+Raw sentence -> Inbox
+```
+
+The smallest useful captured item is a sentence.
+
+### 11.2 Slash Commands
+
+MVP slash commands:
+
+```text
+/task
+/note
+/project
+/deadline
+/status
+```
+
+Examples:
+
+```text
+/task finish RF baseline rerun
+/note dashboard should show overdue before inbox
+/project ContextOS
+/deadline submit thesis draft June 10
+/status MSc Thesis: RF rerun done, next action is compare calibration tables
+```
+
+### 11.3 Capture Parsing
+
+MVP supports basic date parsing only.
+
+Example:
+
+```text
+/deadline submit report June 10
+```
+
+Should create:
+
+```text
+Title: submit report
+Date: June 10
+```
+
+MVP should not attempt heavy natural-language parsing, project inference, or domain inference.
+
+### 11.4 Inbox Item Lifecycle
+
+Inbox items are either unprocessed or acted upon.
+
+```text
+Unprocessed -> converted / attached / archived / deleted
+```
+
+No deferred inbox state in MVP.
+
+### 11.5 Inbox Triage Actions
+
+```text
+Convert to Task
+Convert to Project
+Convert to Note
+Attach to Existing Project
+Set Deadline
+Archive
+Delete
+```
+
+### 11.6 Inbox Cadence
+
+Inbox should be cleared daily, but the prompt must be skippable.
+
+The app should encourage daily triage without enforcing it.
+
+---
+
+## 12. Dashboard
+
+### 12.1 Dashboard Purpose
+
+The dashboard is the daily command center.
+
+It should answer:
+
+```text
+What matters today?
+What is overdue?
+What did I capture?
+What was I working on recently?
+What needs recovery?
+```
+
+### 12.2 Visible by Default
+
+```text
+Quick Capture
+Today’s Top 1-3 Priorities
+Today
+Overdue
+Inbox
+Recent Contexts
+```
+
+### 12.3 Collapsed by Default
+
+```text
+This Week
+Deadlines
+Agent Suggestions
+```
+
+### 12.4 First-Load Behavior
+
+When opening the dashboard:
+
+- Today’s priorities should be shown first.
+- Quick capture should always be visible at the top.
+
+The dashboard should orient the user before asking for more input.
+
+---
+
+## 13. Today View
+
+### 13.1 Today Includes
+
+```text
+Tasks due today
+Tasks manually planned for today
+Overdue tasks
+In-progress tasks
+Tasks from active projects
+Daily priority list
+Deadlines
+```
+
+### 13.2 Deduplication
+
+The Today view should avoid repeating the same task across multiple sections.
+
+Recommended UI:
+
+```text
+Deduplicated task list with labels.
+```
+
+Example:
+
+```text
+Finish Protocol B table
+Labels: Planned Today, Due Today, MSc Thesis
+```
+
+---
+
+## 14. This Week View
+
+This Week uses a hybrid model:
+
+```text
+Automatic rollup + manually pinned weekly priorities
+```
+
+### 14.1 This Week Includes
+
+```text
+Pinned weekly priorities
+Tasks due this week
+Deadlines this week
+Active projects
+Overdue tasks
+Tasks planned for the week
+```
+
+Manual pinning should remain available because the system should support, not replace, user judgment.
+
+---
+
+## 15. Reviews
+
+Reviews are stored and searchable. They support context recovery.
+
+### 15.1 Daily Startup
+
+Daily startup asks only:
+
+```text
+What are today’s top 1-3 priorities?
+```
+
+### 15.2 Daily Shutdown
+
+Daily shutdown asks:
+
+```text
+What changed today?
+What is still open?
+What should be resumed tomorrow?
+Any inbox items to triage?
+```
+
+### 15.3 Weekly Review
+
+Weekly review asks:
+
+```text
+What are this week’s top outcomes?
+Which projects are active?
+Which projects are stale?
+What deadlines are coming?
+What should be dropped, deferred, or blocked?
+What should be planned for this week?
+```
+
+### 15.4 Review Storage
+
+All reviews should be:
+
+```text
+Stored
+Searchable
+Usable for project recovery
+```
+
+### 15.5 Review-to-Project Suggestions
+
+When a review mentions a project, the system may suggest attaching the entry to that project or updating the project’s Latest Status.
+
+The user must apply this manually.
+
+Example:
+
+```text
+Shutdown note:
+Worked on ContextOS. Finished MVP screen decisions. Need to update blueprint tomorrow.
+
+Suggested project update:
+Project: ContextOS
+Latest Status: MVP screen decisions finalized. Next action is to update blueprint/spec.
+```
+
+---
+
+## 16. Notes
+
+### 16.1 Notes Behavior
+
+Notes are mostly attached to projects, but standalone notes are allowed.
+
+Rules:
+
+```text
+Project notes are default when inside a project.
+Standalone notes live under the Notes domain.
+Notes are searchable.
+Notes support execution and recovery, but should not dominate the system.
+```
+
+### 16.2 Notes Editor
+
+Use a rich text editor with Markdown shortcuts.
+
+Supported shortcuts should include:
+
+```text
+# headings
+## subheadings
+- lists
+[] checkboxes
+> quotes
+``` code blocks ```
+```
+
+### 16.3 Checkboxes in Notes
+
+Checkboxes inside notes stay local unless explicitly converted into structured tasks.
+
+---
+
+## 17. Search
+
+### 17.1 MVP Search
+
+Basic text search across:
+
+```text
+Projects
+Tasks
+Captures
+Notes
+Deadlines
+Reviews
+```
+
+### 17.2 MVP Filters
+
+Light filters:
+
+```text
+Type
+Domain
+Project
+Status
+Date
+```
+
+### 17.3 Later Search
+
+Later versions may add semantic search.
+
+---
+
+## 18. Archive and Trash
+
+### 18.1 Archive Behavior
+
+Archived items are:
+
+```text
+Moved to Archive page
+Hidden from active views
+Still searchable
+Restorable
+```
+
+### 18.2 Delete Behavior
+
+Use soft delete / trash.
+
+```text
+Delete -> Trash
+Trash retained for 30 days
+Restore available
+Permanent delete after 30 days
+```
+
+---
+
+## 19. Agent Behavior
+
+### 19.1 Agent Access
+
+Agents can read allowed domains.
+
+Default readable domains:
+
+```text
+Research
+Dev / Freelance
+University
+Career / PhD
+Long-Term Goals
+AI Agent Context
+Piano / Content
+Notes, except private notes
+```
+
+Excluded by default:
+
+```text
+Archived items
+Deleted items
+Private notes
+```
+
+### 19.2 Agent Writes
+
+Agents cannot directly write in MVP.
+
+Agents cannot directly:
+
+```text
+Create records
+Edit records
+Delete records
+Archive records
+Modify fields
+```
+
+Agents can only suggest actions. The user applies suggestions manually.
+
+### 19.3 Allowed Agent Suggestions
+
+```text
+Suggested tasks
+Suggested next actions
+Suggested project status updates
+Suggested inbox triage
+Suggested deadline extraction
+Suggested handoff summaries
+Suggested stale project review
+```
+
+### 19.4 Agent Suggestions UI
+
+Agent suggestions may appear in:
+
+```text
+Project detail pages
+Dashboard collapsed section
+```
+
+There is no full Agents page in MVP.
+
+---
+
+## 20. Markdown Export
+
+Markdown export should support:
+
+```text
+Project summaries
+Notes
+Tasks
+Deadlines
+Daily reviews
+Weekly reviews
+Agent handoff summaries
+```
+
+Export is required to preserve durability and prevent lock-in.
+
+---
+
+## 21. Mobile and PWA
+
+### 21.1 MVP Mobile Behavior
+
+```text
+Installable PWA
+Responsive mobile layout
+Mobile-friendly quick capture
+Online-first
+```
+
+### 21.2 Later Mobile Behavior
+
+```text
+Offline capture
+Sync when online
+```
+
+MVP mobile goal:
+
+```text
+Open phone -> capture sentence -> done
+```
+
+---
+
+## 22. Authentication
+
+MVP authentication:
+
+```text
+Email/password
+```
+
+Later authentication options may include:
+
+```text
+Google
+GitHub
+Other OAuth providers
+```
+
+---
+
+## 23. Review and Surfacing Rules
+
+### 23.1 Useful Surfacing
+
+The app should surface:
+
+```text
+Overdue tasks
+Recent contexts
+Upcoming deadlines
+Daily planning prompts
+Weekly planning/review prompts
+Agent-suggested actions
+```
+
+### 23.2 Maybe Surfacing
+
+These may be useful but should be handled carefully:
+
+```text
+Stale projects
+Abandoned captures
+Unresolved decisions
+```
+
+### 23.3 Avoid Surfacing
+
+Do not proactively nag about:
+
+```text
+“You mentioned this before” reminders
+Contexts missing summaries
+Non-actionable notifications
+Things the user cannot act on
+```
+
+---
+
+## 24. Existing Tool Replacement Strategy
+
+ContextOS should replace:
+
+```text
+Notion
+Todo/task apps
+Phone notes
+```
+
+ContextOS should sit beside:
+
+```text
+GitHub
+AI chats
+```
+
+ContextOS should ignore or not attempt to replace:
+
+```text
+Local folders
+Paper notebook/journals
+Google Docs
+Google Sheets
+Obsidian
+```
+
+---
+
+## 25. 7-Day Validation Test
+
+ContextOS succeeds if, after one week:
+
+```text
+1. User opens Dashboard at least once per workday.
+2. User captures ideas/tasks in ContextOS instead of phone notes.
+3. User uses Today view for daily work selection.
+4. User resumes at least one paused or half-finished project using Latest Status + Next Action.
+5. Notion/task app usage drops sharply.
+```
+
+If these do not happen, the product has failed its primary purpose.
+
+---
+
+## 26. Implementation Priority
+
+Recommended implementation order:
+
+```text
+1. Auth + core layout
+2. Domains
+3. Projects
+4. Tasks
+5. Dashboard
+6. Inbox + quick capture
+7. Today view
+8. Deadlines
+9. Reviews
+10. Notes editor
+11. Search
+12. Archive/trash
+13. Agent suggestions as read-only/manual suggestions
+14. Markdown export
+15. PWA polish
+```
+
+---
+
+## 27. Final MVP Decision Rule
+
+Use this rule for scope decisions:
+
+> If it helps capture fast, choose today’s work, recover project context, or prevent forgotten open loops, it belongs in MVP.
+>
+> If it mainly helps organize, customize, decorate, automate, or archive, it waits.
+
+---
+
+## 28. Open Questions for Later Versions
+
+These are intentionally not MVP blockers:
+
+- Should meetings/calendar be added later?
+- Should offline capture be implemented as service-worker local queue or local-first storage?
+- Should semantic search use local embeddings or external service?
+- Should agent suggestions become persistent objects with apply/dismiss history?
+- Should agents eventually create tasks or project updates with approval?
+- Should domains have access-control presets?
+- Should project templates exist?
+- Should recurring tasks exist?
+- Should weekly review generate a weekly plan automatically?
+
+These should not be solved before the MVP validates the execution-first workflow.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { useWorkspace } from "@/lib/client-store";
+import { isDateKeyInLocalWeek, localDateKey, localWeekStartKey } from "@/lib/dates";
 import type { Capture, Deadline, Domain, Note, Priority, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
 
 const taskStatus: Record<TaskStatus, { label: string; color: string }> = {
@@ -58,32 +59,12 @@ const domainColors = [
   "bg-slate-100 text-slate-800"
 ];
 
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function weekKey() {
-  const d = new Date();
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(d);
-  monday.setDate(diff);
-  monday.setHours(0, 0, 0, 0);
-  return monday.toISOString().slice(0, 10);
-}
-
 function isOverdue(task: Task) {
-  return Boolean(task.dueDate && task.dueDate < todayKey() && task.status !== "done" && task.status !== "dropped");
+  return Boolean(task.dueDate && task.dueDate < localDateKey() && task.status !== "done" && task.status !== "dropped");
 }
 
 function isThisWeek(dateKeyValue: string | null) {
-  if (!dateKeyValue) return false;
-  const date = new Date(`${dateKeyValue}T00:00:00`);
-  const start = new Date(`${weekKey()}T00:00:00`);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
-  return date >= start && date <= end;
+  return isDateKeyInLocalWeek(dateKeyValue);
 }
 
 function domainName(domains: Domain[], id: string | null | undefined) {
@@ -268,7 +249,7 @@ function TaskList({ rows }: { rows: { task: Task; labels: string[] }[] }) {
 export function DashboardView() {
   const router = useRouter();
   const { data, loading } = useWorkspace();
-  const today = todayKey();
+  const today = localDateKey();
   const tasks = activeTasks(data.tasks);
   const overdue = tasks.filter(isOverdue);
   const overdueIds = new Set(overdue.map((task) => task.id));
@@ -425,7 +406,7 @@ function CaptureCard({ capture, onConvert, onArchive, onDelete }: { capture: Cap
 
 export function TodayView() {
   const { data } = useWorkspace();
-  const today = todayKey();
+  const today = localDateKey();
   const tasks = activeTasks(data.tasks);
   const seen = new Set<string>();
   const rows: { task: Task; labels: string[] }[] = [];
@@ -464,7 +445,7 @@ export function TodayView() {
 export function ThisWeekView() {
   const router = useRouter();
   const { data } = useWorkspace();
-  const wk = weekKey();
+  const wk = localWeekStartKey();
   const tasks = activeTasks(data.tasks);
   const overdue = tasks.filter(isOverdue);
   const weekTasks = tasks
@@ -546,18 +527,87 @@ export function ProjectsView() {
   );
 }
 
-function EditableField({ value, placeholder, multiline, onSave }: { value: string; placeholder: string; multiline?: boolean; onSave: (value: string) => void }) {
+function EditableField({
+  value,
+  placeholder,
+  multiline,
+  rows = 3,
+  className = "",
+  inputClassName = "",
+  onSave
+}: {
+  value: string;
+  placeholder: string;
+  multiline?: boolean;
+  rows?: number;
+  className?: string;
+  inputClassName?: string;
+  onSave: (value: string) => void;
+}) {
   const [draft, setDraft] = useState(value);
-  const Tag = multiline ? "textarea" : "input";
+  const [savedFlash, setSavedFlash] = useState(false);
+  const dirty = draft !== value;
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  function commit() {
+    if (!dirty) return;
+    onSave(draft);
+    setSavedFlash(true);
+    window.setTimeout(() => setSavedFlash(false), 1200);
+  }
+
+  function reset() {
+    setDraft(value);
+    setSavedFlash(false);
+  }
+
+  const baseClass = `w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-sm outline-none placeholder:text-slate-400 hover:bg-slate-50 focus:border-indigo-200 focus:bg-white focus:ring-2 focus:ring-indigo-100 ${inputClassName}`;
+
   return (
-    <Tag
-      value={draft}
-      onChange={(event: any) => setDraft(event.target.value)}
-      onBlur={() => draft !== value && onSave(draft)}
-      rows={multiline ? 3 : undefined}
-      placeholder={placeholder}
-      className="w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-sm outline-none placeholder:text-slate-400 hover:bg-slate-50 focus:border-indigo-200 focus:bg-white focus:ring-2 focus:ring-indigo-100"
-    />
+    <div className={`min-w-0 ${className}`}>
+      {multiline ? (
+        <textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === "Enter") commit();
+            if (event.key === "Escape") reset();
+          }}
+          rows={rows}
+          placeholder={placeholder}
+          className={`${baseClass} min-h-24 resize-y`}
+        />
+      ) : (
+        <input
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              commit();
+              event.currentTarget.blur();
+            }
+            if (event.key === "Escape") reset();
+          }}
+          placeholder={placeholder}
+          className={baseClass}
+        />
+      )}
+      {(dirty || savedFlash) ? (
+        <div className="mt-1 flex items-center justify-end gap-2 text-[11px]">
+          <span className={dirty ? "text-amber-600" : "text-emerald-600"}>{dirty ? "Unsaved changes" : "Saved"}</span>
+          {dirty ? (
+            <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={commit} className="rounded px-2 py-0.5 font-semibold text-indigo-600 hover:bg-indigo-50">
+              Save
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -568,7 +618,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const [newLoop, setNewLoop] = useState("");
   const [newTask, setNewTask] = useState("");
   const [newDeadline, setNewDeadline] = useState("");
-  const [newDeadlineDate, setNewDeadlineDate] = useState(todayKey());
+  const [newDeadlineDate, setNewDeadlineDate] = useState(localDateKey());
   const [newNote, setNewNote] = useState("");
   const [editingNote, setEditingNote] = useState<string | null>(null);
 
@@ -630,7 +680,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   return (
     <Page title={project.name} subtitle="Recovery-first project detail." action={<button onClick={() => router.push("/projects")} className="text-sm font-semibold text-indigo-600">Back</button>}>
       <div className="rounded-xl border border-slate-200 bg-white p-5">
-        <EditableField value={project.name} placeholder="Project name" onSave={(value) => updateProject(project.id, { name: value })} />
+        <EditableField value={project.name} placeholder="Project name" onSave={(value) => updateProject(project.id, { name: value })} inputClassName="text-base font-semibold" />
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <select value={project.status} onChange={(event) => updateProject(project.id, { status: event.target.value as any, archivedAt: event.target.value === "archived" ? new Date().toISOString() : null })} className={`rounded-full border-0 px-3 py-1 text-xs font-medium ${projectStatus[project.status].color}`}>
             {Object.entries(projectStatus).map(([value, config]) => <option key={value} value={value}>{config.label}</option>)}
@@ -724,9 +774,11 @@ function NoteCard({ note, editing, onEdit, onDone, onUpdate }: { note: Note; edi
   if (editing) {
     return (
       <div className="rounded-lg border border-slate-100 p-3">
-        <input value={note.title} onChange={(event) => onUpdate({ title: event.target.value })} className="mb-2 w-full border-b border-slate-200 pb-1 text-sm font-semibold outline-none" />
-        <textarea value={note.content} onChange={(event) => onUpdate({ content: event.target.value })} rows={5} placeholder="Markdown supported: #, ##, -, [], >" className="min-h-24 w-full resize-y text-sm outline-none" />
-        <button onClick={onDone} className="mt-2 text-xs font-semibold text-indigo-600">Done</button>
+        <EditableField value={note.title} placeholder="Note title" onSave={(title) => onUpdate({ title })} inputClassName="font-semibold" />
+        <div className="mt-2">
+          <EditableField value={note.content} multiline rows={5} placeholder="Markdown supported: #, ##, -, [], >" onSave={(content) => onUpdate({ content })} />
+        </div>
+        <button onClick={onDone} className="mt-3 text-xs font-semibold text-indigo-600">Done</button>
       </div>
     );
   }
@@ -756,7 +808,7 @@ export function DeadlinesView() {
   const { data, addDeadline, updateDeadline } = useWorkspace();
   const [showAdd, setShowAdd] = useState(false);
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState(todayKey());
+  const [date, setDate] = useState(localDateKey());
   const [projectId, setProjectId] = useState("");
   const activeProjects = data.projects.filter((project) => !project.trashedAt && project.status !== "archived");
   const deadlines = data.deadlines.filter((deadline) => !deadline.trashedAt).sort((a, b) => a.date.localeCompare(b.date));
@@ -774,8 +826,23 @@ export function DeadlinesView() {
       {showAdd ? <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4"><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Deadline title..." className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" /><div className="mt-3 flex flex-wrap gap-3"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" /><select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm"><option value="">No project</option>{activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select><button onClick={create} className="text-sm font-semibold text-indigo-600">Add</button></div></div> : null}
       <div className="space-y-2">
         {deadlines.map((deadline) => {
-          const overdue = deadline.date < todayKey();
-          return <div key={deadline.id} className={`flex items-center gap-3 rounded-xl border bg-white p-3 ${overdue ? "border-red-200" : "border-slate-200"}`}><Calendar className={`h-4 w-4 ${overdue ? "text-red-500" : "text-slate-400"}`} /><div className="min-w-0 flex-1"><input value={deadline.title} onChange={(event) => updateDeadline(deadline.id, { title: event.target.value })} className={`w-full bg-transparent text-sm font-medium outline-none ${overdue ? "text-red-700" : "text-slate-900"}`} /><p className="text-xs text-slate-400">{projectName(data.projects, deadline.projectId)}</p></div><input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="rounded border border-slate-200 px-2 py-1 text-xs" /><button onClick={() => updateDeadline(deadline.id, { trashedAt: new Date().toISOString() })} className="text-slate-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button></div>;
+          const overdue = deadline.date < localDateKey();
+          return (
+            <div key={deadline.id} className={`rounded-xl border bg-white p-3 ${overdue ? "border-red-200" : "border-slate-200"}`}>
+              <div className="flex items-start gap-3">
+                <Calendar className={`mt-2 h-4 w-4 ${overdue ? "text-red-500" : "text-slate-400"}`} />
+                <div className="min-w-0 flex-1">
+                  <EditableField value={deadline.title} placeholder="Deadline title" onSave={(title) => updateDeadline(deadline.id, { title })} inputClassName={`font-medium ${overdue ? "text-red-700" : "text-slate-900"}`} />
+                  <p className="px-3 text-xs text-slate-400">{projectName(data.projects, deadline.projectId)}</p>
+                </div>
+                <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="mt-2 rounded border border-slate-200 px-2 py-1 text-xs" />
+                <button onClick={() => updateDeadline(deadline.id, { trashedAt: new Date().toISOString() })} className="mt-2 text-slate-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+              </div>
+              <div className="mt-2 pl-7">
+                <EditableField value={deadline.notes} multiline rows={2} placeholder="Deadline notes..." onSave={(notes) => updateDeadline(deadline.id, { notes })} />
+              </div>
+            </div>
+          );
         })}
         {!deadlines.length ? <EmptyState icon={Calendar} title="No deadlines" /> : null}
       </div>
@@ -859,7 +926,7 @@ export function SettingsView() {
         <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-100">
           {data.domains.map((domain) => (
             <div key={domain.id} className="flex items-center gap-3 px-4 py-3">
-              <input value={domain.name} onChange={(event) => updateDomain(domain.id, { name: event.target.value })} className="flex-1 bg-transparent text-sm text-slate-800 outline-none" />
+              <EditableField value={domain.name} placeholder="Domain name" onSave={(name) => updateDomain(domain.id, { name })} className="flex-1" inputClassName="py-1 text-slate-800" />
               <button onClick={() => updateDomain(domain.id, { archived: !domain.archived })} className="text-xs font-medium text-slate-500 hover:text-indigo-600">{domain.archived ? "Restore" : "Archive"}</button>
             </div>
           ))}

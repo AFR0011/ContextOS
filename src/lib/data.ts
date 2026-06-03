@@ -12,9 +12,9 @@ import type {
   WorkspaceData
 } from "./types";
 import { prisma } from "./prisma";
+import { utcDateToDateKey } from "./dates";
 
 const iso = (date: Date | null | undefined) => (date ? date.toISOString() : null);
-const dateKey = (date: Date | null | undefined) => (date ? date.toISOString().slice(0, 10) : null);
 
 export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
   const [domains, projects, tasks, captures, notes, deadlines, reviews, priorities] = await Promise.all([
@@ -53,8 +53,8 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
     tasks: tasks.map((t): Task => ({
       id: t.id,
       title: t.title,
-      plannedDate: dateKey(t.plannedDate),
-      dueDate: dateKey(t.dueDate),
+      plannedDate: utcDateToDateKey(t.plannedDate),
+      dueDate: utcDateToDateKey(t.dueDate),
       projectId: t.projectId,
       domainId: t.domainId,
       status: t.status as Task["status"],
@@ -87,7 +87,7 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
     deadlines: deadlines.map((d): Deadline => ({
       id: d.id,
       title: d.title,
-      date: d.date.toISOString().slice(0, 10),
+      date: utcDateToDateKey(d.date) ?? "",
       projectId: d.projectId,
       taskIds: d.taskIds,
       notes: d.notes,

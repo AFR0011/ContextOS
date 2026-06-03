@@ -3,9 +3,11 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import type { QueuedMutation } from "./types";
+import { dateKeyToUtcDate, localDateKey } from "./dates";
 
 const toDate = (value: string | null | undefined) => (value ? new Date(value) : null);
-const toDateOnly = (value: string | null | undefined) => (value ? new Date(`${value}T00:00:00.000Z`) : null);
+const toDateOnly = (value: string | null | undefined) => (value ? dateKeyToUtcDate(value) : null);
+const defaultDateOnly = () => dateKeyToUtcDate(localDateKey()) ?? new Date();
 
 function shouldApply(existingUpdatedAt: Date | null | undefined, incomingUpdatedAt: string | undefined) {
   if (!existingUpdatedAt || !incomingUpdatedAt) return true;
@@ -206,7 +208,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               where: { id: payload.id },
               update: {
                 title: payload.title,
-                date: toDateOnly(payload.date) ?? new Date(),
+                date: toDateOnly(payload.date) ?? defaultDateOnly(),
                 projectId: payload.projectId,
                 taskIds: payload.taskIds ?? [],
                 notes: payload.notes ?? "",
@@ -218,7 +220,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
                 id: payload.id,
                 userId,
                 title: payload.title,
-                date: toDateOnly(payload.date) ?? new Date(),
+                date: toDateOnly(payload.date) ?? defaultDateOnly(),
                 projectId: payload.projectId,
                 taskIds: payload.taskIds ?? [],
                 notes: payload.notes ?? "",

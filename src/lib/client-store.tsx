@@ -18,6 +18,7 @@ import type {
   TaskStatus,
   WorkspaceData
 } from "./types";
+import { localDateKey } from "./dates";
 import { readJsonResponse, responseErrorMessage } from "./http-client";
 
 const DB_NAME = "contextos-offline-v1";
@@ -39,10 +40,6 @@ export const emptyWorkspace = (): WorkspaceData => ({
 
 function now() {
   return new Date().toISOString();
-}
-
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function newId(prefix: string) {
@@ -396,7 +393,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           mutate("deadlines", {
             id: convertedToId,
             title,
-            date: todayKey(),
+            date: localDateKey(),
             projectId: null,
             taskIds: [],
             notes: "",

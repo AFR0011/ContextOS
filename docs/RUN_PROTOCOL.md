@@ -26,7 +26,7 @@
 
 ## Demo Login
 - Email: `demo@contextos.local`
-- Password: `contextos-demo`
+- Password: `contextos-demo-v011`
 
 ## Verification Ladder
 1. Typecheck:
@@ -55,4 +55,7 @@
 
 ## Notes
 - `.env` is ignored and may contain local-only demo values.
+- `.env.example` is the only env file intended to be committed.
+- `npm run db:seed` resets the seeded demo workspace. Do not run it during normal production deploys.
+- `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is explicitly set.
 - Do not use `npm audit fix --force` blindly; review major dependency changes first.

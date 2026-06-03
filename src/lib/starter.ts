@@ -1,24 +1,11 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { addDaysToDateKey, dateKeyToUtcDate, localDateKey, localWeekStartKey } from "./dates";
 
 type Tx = PrismaClient | Prisma.TransactionClient;
 
-const nowIso = () => new Date().toISOString();
-
 function dateOnly(offsetDays = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function weekKey() {
-  const d = new Date();
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(d);
-  monday.setDate(diff);
-  monday.setHours(0, 0, 0, 0);
-  return monday.toISOString().slice(0, 10);
+  const dateKey = addDaysToDateKey(localDateKey(), offsetDays);
+  return (dateKey && dateKeyToUtcDate(dateKey)) || new Date();
 }
 
 function idFor(userId: string, key: string) {
@@ -253,7 +240,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         id: idFor(userId, "priority-today-1"),
         userId,
         scope: "daily",
-        dateKey: nowIso().slice(0, 10),
+        dateKey: localDateKey(),
         text: "Use ContextOS for today's real captures",
         done: false
       },
@@ -261,7 +248,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         id: idFor(userId, "priority-week-1"),
         userId,
         scope: "weekly",
-        dateKey: weekKey(),
+        dateKey: localWeekStartKey(),
         text: "Validate whether the demo replaces phone notes for one week",
         done: false
       }

@@ -4,7 +4,7 @@ import { createStarterWorkspace } from "../src/lib/starter";
 
 async function main() {
   const email = process.env.SEED_DEMO_EMAIL || "demo@contextos.local";
-  const password = process.env.SEED_DEMO_PASSWORD || "contextos-demo";
+  const password = process.env.SEED_DEMO_PASSWORD || "contextos-demo-v011";
   const passwordHash = await bcrypt.hash(password, 12);
 
   const user = await prisma.user.upsert({

@@ -26,7 +26,7 @@ Open `http://localhost:3000`.
 Demo login:
 
 - Email: `demo@contextos.local`
-- Password: `contextos-demo`
+- Password: `contextos-demo-v011`
 
 ## Commands
 
@@ -50,6 +50,15 @@ Required variables:
 - `AUTH_SECRET`
 - `SEED_DEMO_EMAIL`
 - `SEED_DEMO_PASSWORD`
+- `ALLOW_DEMO_RESET`
+
+Generate a fresh `AUTH_SECRET` for every deployed environment. Never reuse a secret from a shared archive, chat transcript, or local demo file.
+
+## Seeding And Deploy Safety
+
+`npm run db:seed` resets the seeded demo workspace. Use it for local demo setup or an intentional one-off demo reset only. It should not run during normal production deploys.
+
+The Vercel build command runs migrations and builds the app; it does not seed data. `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is explicitly set.
 
 ## Offline Sync
 
@@ -61,3 +70,4 @@ Core workspace data is cached in IndexedDB. Edits are written locally first, que
 - `docs/PROJECT_STATE.md`: current implementation state
 - `docs/REPO_MAP.md`: repo structure
 - `docs/RUN_PROTOCOL.md`: setup and verification ladder
+- `docs/DEPLOYMENT.md`: local and Vercel deployment notes

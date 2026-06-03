@@ -8,7 +8,7 @@ import { readJsonResponse, responseErrorMessage } from "@/lib/http-client";
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const [email, setEmail] = useState(mode === "login" ? "demo@contextos.local" : "");
-  const [password, setPassword] = useState(mode === "login" ? "contextos-demo" : "");
+  const [password, setPassword] = useState(mode === "login" ? "contextos-demo-v011" : "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 

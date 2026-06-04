@@ -1,5 +1,30 @@
 # ContextOS Dev Log
 
+## 2026-06-04 - v0.1.9 Dashboard Deadlines, Areas Project Controls, Recovery Notes
+
+Planner scope: implement `modificaitons.txt` follow-up changes for dashboard deadline creation, optional deadline metadata, project hierarchy display, in-app review prompts, Areas project creation/deletion, and a more usable project recovery canvas.
+
+Implementation:
+
+- Added `Project.recoveryNotes`, `Deadline.time`, `Deadline.location`, and `DashboardPreference.reviewPromptDismissals` with Prisma migration, serialization, sync replay, IndexedDB normalization, seed defaults, and shared types.
+- Added dashboard deadline creation with date, optional time, location, and project assignment; dashboard task creation can also assign an optional project.
+- Updated Projects to show root projects as the main index with expand/collapse for nested subcontexts.
+- Added project creation and soft-delete controls inside expanded Areas.
+- Added dismissible in-app review prompts on Dashboard for due daily/weekly reviews.
+- Replaced the brittle project recovery markdown parser with fixed recovery fields plus a freeform markdown recovery-notes editor.
+- Updated deadline editing surfaces to expose optional time, location, and project metadata without high-churn text sync.
+- Expanded Playwright coverage for dashboard deadline metadata, recovery notes, Areas create/delete, and updated project selectors.
+
+Verification:
+
+- `npx prisma generate` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npm run db:migrate` - passed; applied `20260604160000_add_recovery_deadline_review_fields`.
+- `npm run db:seed` - passed.
+- `npm run test:e2e` - passed, 19 tests.
+- Note: the first e2e run reused a stale dev server on port 3000; stopping that server and rerunning produced the expected fresh app behavior.
+
 ## 2026-06-04 - DESIGN.md Visual Design-System Alignment
 
 Planner scope: apply `DESIGN.md` visual direction across the existing app without changing functionality, data flow, routes, API behavior, auth, offline sync semantics, Prisma models, or migrations.

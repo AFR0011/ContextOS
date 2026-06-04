@@ -1,5 +1,26 @@
 # ContextOS QA Report
 
+## 2026-06-04 - v0.1.9 Dashboard Deadlines, Areas Project Controls, Recovery Notes
+
+Status: Complete.
+
+Checks run:
+
+- `npx prisma generate` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npm run db:migrate` - passed.
+- `npm run db:seed` - passed.
+- `npm run test:e2e` - passed, 19 tests.
+
+Notes:
+
+- Initial full e2e run failed because Playwright reused a stale existing dev server on `localhost:3000`; stopping the port-3000 node process allowed Playwright to start the current app.
+- Initial e2e selectors were tightened where new dashboard/area controls introduced duplicate visible labels.
+- Database migration and seed both passed against local Postgres after the new schema fields were added.
+
+Verdict: PASS.
+
 ## 2026-06-04 - DESIGN.md Visual Design-System Alignment
 
 Status: Complete.

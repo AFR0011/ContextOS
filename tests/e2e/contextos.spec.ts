@@ -236,7 +236,7 @@ test("areas and resources expose PARA navigation", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Areas" })).toBeVisible();
   await expect(page.getByText("Dev / Freelance")).toBeVisible();
   await page.getByRole("button", { name: "Open Dev / Freelance" }).click();
-  await expect(page.getByRole("button", { name: /Dashboard 2.0 Foundation/ })).toBeVisible();
+  await expect(page.getByText("Next: Use the dashboard canvas during the next real work session.")).toBeVisible();
   const areaProject = `Area project ${Date.now()}`;
   await page.getByPlaceholder("New project in Dev / Freelance...").fill(areaProject);
   await page.getByRole("button", { name: "Add", exact: true }).click();

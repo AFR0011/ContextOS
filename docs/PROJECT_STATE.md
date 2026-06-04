@@ -27,6 +27,14 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 - Production credential rotation is partly external: any previously shared Neon/Postgres credential must be rotated in the provider, then copied into deployment environment variables.
 
 ## Latest Verified State
+- v0.1.9 dashboard deadlines and recovery-note changes are implemented locally.
+- Dashboard Dates can create project-linked deadlines with optional local time and location; dashboard tasks can optionally select a project.
+- Deadlines now store optional `time` and `location` fields and expose them across creation/edit surfaces.
+- Projects now show top-level root projects first with expandable subcontexts.
+- Expanded Areas can create root projects and soft-delete projects into Archive/Trash.
+- Dashboard shows dismissible in-app review prompts for due daily/weekly reviews.
+- Project recovery pages now keep fixed fields structured while adding freeform markdown `recoveryNotes`.
+- Verification on 2026-06-04: `npx prisma generate`, `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed; e2e now has 19 passing tests.
 - DESIGN.md visual design-system alignment is implemented locally as a visual-only pass.
 - Shared ContextOS tokens now define app backgrounds, text, borders, primary accent, status colors, focus rings, radii, shadows, and light/dark aliases.
 - Auth, shell/navigation, Dashboard, Inbox, Today, This Week, Projects, Project Detail, Deadlines, Reviews, Search, Archive, Settings, markdown editor surfaces, cards, rows, badges, buttons, inputs, and empty states now use the calmer operational styling direction from `DESIGN.md`.

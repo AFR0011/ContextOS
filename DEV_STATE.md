@@ -4,65 +4,69 @@
 
 - Status: QA complete
 - Date: 2026-06-04
-- Active batch: DESIGN.md visual design-system alignment pass
-- Source request: user request to apply `DESIGN.md` without changing functionality
+- Active batch: v0.1.9 dashboard deadlines, Areas controls, recovery notes
+- Source request: `modificaitons.txt`
 - Canonical product source: `BLUEPRINT.md`
-- Design source: `DESIGN.md`
 - Baseline docs: `docs/PROJECT_STATE.md`, `docs/REPO_MAP.md`, `docs/RUN_PROTOCOL.md`
 
 ## Selected Batch
 
-Apply the visual direction from `DESIGN.md` across the existing app with the smallest coherent set of visual-only changes:
+Implement one independently testable batch from the follow-up modifications list:
 
-1. Refine global ContextOS design tokens for background, text, borders, accent, status colors, focus rings, radius, and shadows.
-2. Update shared component styling for buttons, inputs, textareas, badges, cards, panels, list rows, empty states, and markdown/editor surfaces.
-3. Align app shell, navigation, auth pages, dashboard command sheet, and existing route surfaces to the same calm operational visual system.
-4. Keep all routes, data flow, persistence, auth, API logic, sync semantics, Prisma models, migrations, and feature behavior unchanged.
-5. Update e2e selectors/harness only where the visual pass exposed duplicated visible text or the documented local-dev offline reload boundary.
+1. Add dashboard deadline creation with optional project, local time, and location metadata.
+2. Allow dashboard-created tasks to optionally select a project.
+3. Add deadline `time` and `location`, project `recoveryNotes`, and review-prompt dismissal persistence through schema, sync, seed, and client cache.
+4. Keep Projects focused on top-level projects, with expandable/collapsible subcontexts that show latest status and next action.
+5. Add project create and soft-delete controls inside expanded Areas.
+6. Add dismissible in-app daily/weekly review prompts.
+7. Replace fragile project recovery heading parsing with structured fixed fields plus a freeform markdown recovery-notes editor.
 
 ## Intended Files
 
-- `src/app/globals.css`
-- `src/app/layout.tsx`
-- `src/components/AuthForm.tsx`
-- `src/components/workspace/WorkspaceShell.tsx`
+- `prisma/schema.prisma`
+- `prisma/migrations/20260604160000_add_recovery_deadline_review_fields/migration.sql`
+- `src/lib/types.ts`
+- `src/lib/data.ts`
+- `src/lib/sync-server.ts`
+- `src/lib/client-store.tsx`
+- `src/lib/starter.ts`
 - `src/components/workspace/Dashboard2.tsx`
-- `src/components/workspace/MarkdownEditor.tsx`
 - `src/components/workspace/Views.tsx`
 - `tests/e2e/contextos.spec.ts`
+- `docs/PROJECT_STATE.md`
+- `docs/VERSION_LOG.md`
 - `DEV_LOG.md`
 - `QA_REPORT.md`
 - `RISK_REGISTER.md`
-- `docs/PROJECT_STATE.md`
-- `docs/VERSION_LOG.md`
-- `shared/errors.md`
 
 ## Acceptance Criteria
 
-- The app visually reflects `DESIGN.md`: Linear-inspired precision and density, Notion-like workspace calm, Cal.com-like date clarity, Raycast-like search sharpness, and Claude-like warmth where review/reflection surfaces already exist.
-- Shared tokens/components carry the update across Dashboard, Inbox, Today, This Week, Projects, Project Detail, Tasks/Deadlines, Reviews, Search, Archive, Settings, and Auth pages.
-- Mobile views remain readable, navigable, and free from horizontal overflow.
-- Card/panel radius stays sharp at 8px or less; pills may remain rounded.
-- No functionality, data model, routing, API, auth, offline sync, or business semantics are intentionally changed.
-- `npm run typecheck`, `npm run build`, and `npm run test:e2e` pass.
+- Dashboard can create a project-linked deadline with optional local time and location.
+- Dashboard can create a task with optional project assignment.
+- Deadline time/location/project metadata persists through reload and sync.
+- Projects page shows root projects first and can expand nested subcontexts.
+- Expanded Areas can create and soft-delete projects.
+- Dashboard review prompts can be dismissed and do not require browser notification permission.
+- Project recovery fixed fields and freeform recovery notes persist after reload.
+- Existing offline/local persistence behavior remains intact.
+- `npm run typecheck`, `npm run build`, and full Playwright coverage pass.
 
 ## Verification Plan
 
-1. `npx prisma generate` if generated Prisma client types are stale.
+1. `npx prisma generate`
 2. `npm run db:migrate`
 3. `npm run db:seed`
 4. `npm run typecheck`
 5. `npm run build`
 6. `npm run test:e2e`
-7. Manual/browser smoke on desktop and mobile, including login/dashboard rendering, route navigation, mobile drawer navigation, and overflow checks.
 
 ## Risk And Mitigation
 
-- Risk: Broad visual changes could accidentally alter product behavior. Mitigation: limited edits to CSS, class names, presentation copy, visual metadata, and test selector/harness stability.
-- Risk: Dense operational styling could become too rounded or decorative. Mitigation: final radius audit capped shared card/panel radii at 8px and removed `rounded-xl`/`rounded-2xl` card remnants.
-- Risk: Duplicate visible text in denser dashboard rows could break broad e2e text locators. Mitigation: scoped affected assertions to their intended sections/controls.
-- Risk: Local dev offline reload can fail to hydrate even when IndexedDB/outbox are durable. Mitigation: warmed the service-worker shell before the offline reload e2e assertion, matching the repo's documented offline verification boundary.
+- Risk: Schema additions could desync server/client/offline paths. Mitigation: propagated fields through schema, migration, types, serialization, sync replay, seed, and client normalization.
+- Risk: Recovery notes could regress fixed fields. Mitigation: kept fixed fields structured and stored freeform notes separately.
+- Risk: Review reminders could become noisy. Mitigation: used dismissible in-app prompts only.
+- Risk: Stale dev server could invalidate e2e evidence. Mitigation: stopped stale port-3000 server and reran the full suite.
 
 ## Next Action
 
-Stop after this supervised cycle and report the completed visual alignment pass. Next product action remains the v0.1.x real usage trial with friction logging.
+Stop after this supervised cycle and report the completed batch. Next useful product action is a real usage pass focused on whether the new dashboard deadline and recovery-note flows remove the observed friction.

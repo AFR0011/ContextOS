@@ -1,5 +1,57 @@
 # ContextOS Version Log
 
+## v0.1.9 Dashboard Deadlines, Areas Project Controls, Recovery Notes
+
+Status:
+Implemented locally and verified on 2026-06-04.
+
+Goal:
+Apply the next `modificaitons.txt` batch: dashboard deadline creation, optional deadline metadata, cleaner project hierarchy, in-app review prompts, Areas project create/delete, and a usable recovery notes canvas.
+
+Changed files:
+- `DEV_LOG.md`
+- `DEV_STATE.md`
+- `QA_REPORT.md`
+- `RISK_REGISTER.md`
+- `docs/PROJECT_STATE.md`
+- `docs/VERSION_LOG.md`
+- `prisma/schema.prisma`
+- `prisma/migrations/20260604160000_add_recovery_deadline_review_fields/migration.sql`
+- `src/components/workspace/Dashboard2.tsx`
+- `src/components/workspace/Views.tsx`
+- `src/lib/client-store.tsx`
+- `src/lib/data.ts`
+- `src/lib/starter.ts`
+- `src/lib/sync-server.ts`
+- `src/lib/types.ts`
+- `tests/e2e/contextos.spec.ts`
+
+Schema changes:
+- Added `Project.recoveryNotes`.
+- Added `Deadline.time` and `Deadline.location`.
+- Added `DashboardPreference.reviewPromptDismissals`.
+
+Implemented behavior:
+- Dashboard Dates can create deadlines with date, optional time, optional location, and optional project.
+- Dashboard task creation can optionally assign a project.
+- Deadlines expose editable time/location/project metadata on deadline surfaces.
+- Projects page is a root-project index with expand/collapse for nested subcontexts.
+- Expanded Areas can create root projects and soft-delete projects into trash.
+- Dashboard shows dismissible in-app daily/weekly review prompts.
+- Project detail recovery canvas now preserves structured fields and adds freeform markdown recovery notes without heading-parser fragility.
+
+Verification:
+- `npx prisma generate` - passed.
+- `npm run db:migrate` - passed.
+- `npm run db:seed` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npm run test:e2e` - passed, 19 tests.
+
+Known issues:
+- Review reminders are in-app only and appear when the app is open; no browser/OS notifications are implemented.
+- Deadline time is stored as local `HH:mm` text and intentionally does not introduce timezone conversion.
+
 ## v0.1.8 Visual Design-System Alignment
 
 Status:

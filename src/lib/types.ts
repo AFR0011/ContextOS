@@ -5,6 +5,8 @@ export type ViewType =
   | "this-week"
   | "projects"
   | "project-detail"
+  | "areas"
+  | "resources"
   | "deadlines"
   | "archive"
   | "search"
@@ -30,6 +32,7 @@ export interface Project {
   id: string;
   name: string;
   domainId: string;
+  parentProjectId: string | null;
   status: ProjectStatus;
   currentObjective: string;
   nextAction: string;

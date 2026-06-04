@@ -101,6 +101,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               update: {
                 name: payload.name,
                 domainId: payload.domainId,
+                parentProjectId: payload.parentProjectId ?? null,
                 status: payload.status,
                 currentObjective: payload.currentObjective ?? "",
                 nextAction: payload.nextAction ?? "",
@@ -115,6 +116,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
                 userId,
                 name: payload.name,
                 domainId: payload.domainId,
+                parentProjectId: payload.parentProjectId ?? null,
                 status: payload.status ?? "active",
                 currentObjective: payload.currentObjective ?? "",
                 nextAction: payload.nextAction ?? "",

@@ -58,6 +58,8 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
   });
 
   const contextProjectId = idFor(userId, "proj-contextos");
+  const contextDashboardProjectId = idFor(userId, "proj-contextos-dashboard");
+  const contextOfflineProjectId = idFor(userId, "proj-contextos-offline");
   const thesisProjectId = idFor(userId, "proj-thesis");
   const careerProjectId = idFor(userId, "proj-career");
 
@@ -68,6 +70,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         userId,
         name: "ContextOS Demo",
         domainId: domains.dev,
+        parentProjectId: null,
         status: "active",
         currentObjective: "Turn the blueprint into a daily-use system for capture, execution, and recovery.",
         nextAction: "Run one real workday through Dashboard, Inbox, Today, and project recovery.",
@@ -75,10 +78,35 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         openLoops: ["Verify offline sync after reconnect", "Replace demo notes with real project context"]
       },
       {
+        id: contextDashboardProjectId,
+        userId,
+        name: "Dashboard 2.0 Foundation",
+        domainId: domains.dev,
+        parentProjectId: contextProjectId,
+        status: "active",
+        currentObjective: "Make the dashboard feel like a daily command page with a markdown canvas plus fixed widgets.",
+        nextAction: "Use the dashboard canvas during the next real work session.",
+        latestStatus: "Dashboard canvas is being validated as the Notion-style layer for v0.1.x.",
+        openLoops: ["Confirm canvas is useful without replacing Today widgets"]
+      },
+      {
+        id: contextOfflineProjectId,
+        userId,
+        name: "Offline Sync Trust",
+        domainId: domains.dev,
+        parentProjectId: contextProjectId,
+        status: "active",
+        currentObjective: "Keep offline edits durable, visible, and recoverable.",
+        nextAction: "Run an offline edit and confirm pending sync clears.",
+        latestStatus: "Draft-save warnings and stale mutation warnings are visible in v0.1.4.",
+        openLoops: ["Production offline hydration still needs a production-build smoke"]
+      },
+      {
         id: thesisProjectId,
         userId,
         name: "MSc Thesis",
         domainId: domains.research,
+        parentProjectId: null,
         status: "active",
         currentObjective: "Keep experiments and handoffs recoverable after breaks.",
         nextAction: "Write the next verifiable experiment packet.",
@@ -90,6 +118,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         userId,
         name: "Career / PhD Applications",
         domainId: domains.career,
+        parentProjectId: null,
         status: "paused",
         currentObjective: "Keep application materials ready without letting them invade daily execution.",
         nextAction: "Review one application deadline and update the checklist.",
@@ -118,7 +147,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         title: "Write one clean latest-status note",
         plannedDate: dateOnly(0),
         dueDate: dateOnly(1),
-        projectId: contextProjectId,
+        projectId: contextDashboardProjectId,
         domainId: domains.dev,
         status: "in-progress"
       },
@@ -153,7 +182,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         userId,
         title: "ContextOS v0.1 verification pass",
         date: dateOnly(4),
-        projectId: contextProjectId,
+        projectId: contextOfflineProjectId,
         taskIds: [],
         notes: "Run the full capture -> triage -> today -> recovery loop."
       },
@@ -194,6 +223,14 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
 
   await tx.note.createMany({
     data: [
+      {
+        id: idFor(userId, "note-dashboard-canvas"),
+        userId,
+        title: "Dashboard Canvas",
+        content: "## Notepad\n- Try using this as the Dashboard 2.0 scratch layer.\n- Keep widgets for execution; keep loose thoughts here.\n\n## Dates\n- [ ] Add one real deadline or checkpoint\n\n## Goals\n- [ ] Decide whether this canvas reduces Notion dashboard use",
+        projectId: null,
+        domainId: domains.notes
+      },
       {
         id: idFor(userId, "note-contextos"),
         userId,

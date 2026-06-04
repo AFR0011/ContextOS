@@ -5,9 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Archive,
+  Boxes,
   BookOpen,
   CalendarDays,
   CheckCircle2,
+  FileText,
   FolderKanban,
   Inbox,
   LayoutDashboard,
@@ -25,17 +27,34 @@ import {
 import type { PublicUser } from "@/lib/auth";
 import { useWorkspace } from "@/lib/client-store";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/today", label: "Today", icon: Sun },
-  { href: "/this-week", label: "This Week", icon: CalendarDays },
-  { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/deadlines", label: "Deadlines", icon: CheckCircle2 },
-  { href: "/archive", label: "Archive", icon: Archive },
-  { href: "/search", label: "Search", icon: Search },
-  { href: "/reviews", label: "Reviews", icon: BookOpen },
-  { href: "/settings", label: "Settings", icon: Settings }
+const navSections = [
+  {
+    label: "Execution",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/inbox", label: "Inbox", icon: Inbox },
+      { href: "/today", label: "Today", icon: Sun },
+      { href: "/this-week", label: "This Week", icon: CalendarDays }
+    ]
+  },
+  {
+    label: "PARA",
+    items: [
+      { href: "/projects", label: "Projects", icon: FolderKanban },
+      { href: "/areas", label: "Areas", icon: Boxes },
+      { href: "/resources", label: "Resources", icon: FileText },
+      { href: "/archive", label: "Archive", icon: Archive }
+    ]
+  },
+  {
+    label: "Review",
+    items: [
+      { href: "/deadlines", label: "Deadlines", icon: CheckCircle2 },
+      { href: "/reviews", label: "Reviews", icon: BookOpen },
+      { href: "/search", label: "Search", icon: Search },
+      { href: "/settings", label: "Settings", icon: Settings }
+    ]
+  }
 ];
 
 type SyncSnapshot = ReturnType<typeof useWorkspace>["sync"];
@@ -121,30 +140,35 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-3">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = currentPath === item.href || (item.href === "/projects" && currentPath.startsWith("/projects"));
-            return (
-              <button
-                key={item.href}
-                onClick={() => {
-                  router.push(item.href);
-                  setOpen(false);
-                }}
-                className={`mb-0.5 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
-                  active ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
-                }`}
-              >
-                <Icon className="h-[18px] w-[18px]" />
-                <span>{item.label}</span>
-                {item.href === "/inbox" && inboxCount > 0 ? (
-                  <span className="ml-auto min-w-5 rounded-full bg-indigo-600 px-1.5 py-0.5 text-center text-[11px] font-semibold text-white">
-                    {inboxCount}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
+          {navSections.map((section) => (
+            <div key={section.label} className="mb-3">
+              <p className="px-3 pb-1.5 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{section.label}</p>
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const active = currentPath === item.href || (item.href === "/projects" && currentPath.startsWith("/projects"));
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => {
+                      router.push(item.href);
+                      setOpen(false);
+                    }}
+                    className={`mb-0.5 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                      active ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                    }`}
+                  >
+                    <Icon className="h-[18px] w-[18px]" />
+                    <span>{item.label}</span>
+                    {item.href === "/inbox" && inboxCount > 0 ? (
+                      <span className="ml-auto min-w-5 rounded-full bg-indigo-600 px-1.5 py-0.5 text-center text-[11px] font-semibold text-white">
+                        {inboxCount}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="border-t border-slate-100 px-5 py-4">

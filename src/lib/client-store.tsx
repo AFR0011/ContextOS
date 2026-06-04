@@ -168,7 +168,7 @@ interface StoreApi {
   convertCapture: (id: string, target: "task" | "project" | "note" | "deadline") => void;
   addTask: (data: Partial<Task> & { title: string }) => string;
   updateTask: (id: string, updates: Partial<Task>) => void;
-  addProject: (data: { name: string; domainId: string; currentObjective?: string; nextAction?: string }) => string;
+  addProject: (data: { name: string; domainId: string; parentProjectId?: string | null; currentObjective?: string; nextAction?: string }) => string;
   updateProject: (id: string, updates: Partial<Project>) => void;
   addDeadline: (data: { title: string; date: string; projectId?: string | null; notes?: string }) => string;
   updateDeadline: (id: string, updates: Partial<Deadline>) => void;
@@ -481,6 +481,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             id: convertedToId,
             name: title,
             domainId: notesDomainId(),
+            parentProjectId: null,
             status: "active",
             currentObjective: "",
             nextAction: "",
@@ -551,6 +552,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           id: newId("proj"),
           name: input.name,
           domainId: input.domainId,
+          parentProjectId: input.parentProjectId ?? null,
           status: "active",
           currentObjective: input.currentObjective ?? "",
           nextAction: input.nextAction ?? "",

@@ -51,7 +51,32 @@
    - Add a quick capture.
    - Convert an inbox capture to a task.
    - Edit a project next action and latest status.
+   - Create a project subcontext and confirm the parent rolls up child tasks/deadlines.
+   - Edit the Dashboard Canvas and confirm it appears in Resources.
+   - Open Areas and Resources from the PARA nav group.
    - Go offline, add a capture, reload a visited route, return online, and confirm pending sync clears.
+
+## v0.1.x Usage Trial
+Use [FRICTION_LOG.md](FRICTION_LOG.md) during the one-day trial.
+
+1. Start the app locally and log in with the demo account.
+2. Record the trial start time in `docs/FRICTION_LOG.md`.
+3. Use ContextOS as the only capture and execution surface for one real workday.
+4. Capture every open loop.
+5. Process the inbox at least twice.
+6. Use Today for execution.
+7. Update at least two project pages.
+8. Use at least one subcontext for a large project, course, assignment, or duty.
+9. Edit the Dashboard Canvas at least once.
+10. Add or inspect at least one Resource note.
+11. Complete at least one daily startup or shutdown review.
+12. Fill the ranked friction list only after the trial window ends.
+13. Fix only obvious small bugs found during use.
+
+## Offline Verification Notes
+- In local dev, an offline route reload can prove that IndexedDB data and the outbox are durable even when Next dev chunks do not fully hydrate offline.
+- For dev verification, assert cached workspace/outbox durability first, then reconnect and confirm the queued records render and pending sync clears.
+- For full offline reload hydration, use a production build smoke because service worker app-shell and chunk caching are the relevant boundary.
 
 ## Notes
 - `.env` is ignored and may contain local-only demo values.

@@ -1,5 +1,102 @@
 # ContextOS Version Log
 
+## v0.1.6 Sprint 6 - PARA Foundation
+
+Status:
+Implemented locally and verified on 2026-06-04.
+
+Goal:
+Set up ContextOS around PARA while keeping v0.1.x execution-first: nested projects/subcontexts, Dashboard Canvas, Areas, and Resources.
+
+Changed files:
+- `BLUEPRINT.md`
+- `prisma/schema.prisma`
+- `prisma/migrations/20260603170000_add_project_parent/migration.sql`
+- `src/app/(workspace)/areas/page.tsx`
+- `src/app/(workspace)/resources/page.tsx`
+- `src/components/workspace/Views.tsx`
+- `src/components/workspace/WorkspaceShell.tsx`
+- `src/lib/client-store.tsx`
+- `src/lib/data.ts`
+- `src/lib/starter.ts`
+- `src/lib/sync-server.ts`
+- `src/lib/types.ts`
+- `tests/e2e/contextos.spec.ts`
+- `docs/PROJECT_STATE.md`
+- `docs/RUN_PROTOCOL.md`
+- `docs/REPO_MAP.md`
+- `docs/VERSION_LOG.md`
+
+Schema changes:
+- Added nullable `Project.parentProjectId`.
+- Added index on `(userId, parentProjectId)`.
+- Kept hierarchy lightweight without a strict self-referential foreign key for v0.1.x offline sync simplicity.
+
+Implemented behavior:
+- Projects can be nested as subcontexts.
+- Parent project pages roll up descendant tasks and deadlines with child project labels.
+- Projects page shows root projects with subcontext previews and rollup counts.
+- Dashboard includes a persisted markdown Dashboard Canvas stored as a standalone Resource note.
+- Added Areas route using Domains as ongoing areas.
+- Added Resources route using standalone Notes as resources.
+- Sidebar navigation is grouped into Execution, PARA, and Review.
+- Demo seed now includes nested ContextOS Demo subcontexts and a Dashboard Canvas resource.
+
+Verification:
+- `npm run db:migrate` - passed after starting the local Postgres container.
+- `npm run db:seed` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npm run test:e2e` - passed, 14 tests.
+- Browser smoke - passed; demo login reached Dashboard, Projects showed seeded subcontexts, Areas rendered, and Resources showed Dashboard Canvas.
+
+Known issues:
+- Areas are still Domains in v0.1.x; there is no separate Area table yet.
+- Resources are standalone Notes; there is no rich collection/database, formula, routine, or spaced-repetition engine yet.
+- Archiving/trashing a parent project does not cascade to children.
+
+Next sprint recommendation:
+Run the one-day real usage trial with special attention to assistantship/course nesting, Dashboard Canvas usefulness, and whether piano/vocabulary should remain Resources or become richer v0.2 personal-system features.
+
+## v0.1.5 Sprint 5 - Real Usage Trial Prepared
+
+Status:
+In progress. The one-day real usage trial still needs to be performed by the user before v0.1.5 can be considered complete.
+
+Goal:
+Prepare the trial artifacts and protocol so the app can be used for one real workday without inventing new features first.
+
+Changed files:
+- `docs/FRICTION_LOG.md`
+- `docs/RUN_PROTOCOL.md`
+- `docs/PROJECT_STATE.md`
+- `docs/VERSION_LOG.md`
+
+Schema changes:
+None.
+
+Prepared trial artifacts:
+- Trial rules and acceptance tracker.
+- Capture/inbox checkpoint table.
+- Friction entry templates.
+- Ranked friction list template.
+- Trial closeout prompts.
+- Local-dev offline reload verification guidance.
+
+Verification:
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npm run test:e2e` - passed, 11 tests.
+- `git diff --check` - passed with CRLF warnings only.
+- Browser smoke at `http://localhost:3000/login` - passed; demo login reached Dashboard and Quick Capture was visible.
+
+Known issues:
+- The real usage trial is intentionally not simulated. It requires actual daily use.
+- No v0.2.0 feature work should start until the friction log has been filled and ranked.
+
+Next sprint recommendation:
+Complete the v0.1.5 real usage trial, then fix only obvious small bugs found during use.
+
 ## v0.1.4 Sprint 4 - Offline Sync Visibility + Conflict Warnings
 
 Goal:

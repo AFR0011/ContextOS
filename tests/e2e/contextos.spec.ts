@@ -8,7 +8,7 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/dashboard/);
   await page.request.post("/api/reset-demo");
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
 }
 
 async function expectInputValue(page: Page, selector: string, value: string) {
@@ -87,7 +87,7 @@ test("quick capture appears in inbox and can convert to a task", async ({ page }
   await page.getByRole("button", { name: "Capture actions" }).first().click();
   await page.getByRole("button", { name: "Convert to task" }).click();
   await expect(page.getByText("converted")).toBeVisible();
-  await page.getByRole("button", { name: "Search" }).click();
+  await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.getByPlaceholder("Search workspace...").fill(text);
   await expect(page.getByText(text).first()).toBeVisible();
 });
@@ -101,6 +101,68 @@ test("project recovery fields persist after reload", async ({ page }) => {
   await page.getByPlaceholder("What is the next concrete action?").blur();
   await page.reload();
   await expect(page.getByPlaceholder("What is the next concrete action?")).toHaveValue(nextAction);
+});
+
+test("project subcontexts roll child tasks and deadlines into parent recovery", async ({ page }) => {
+  await login(page);
+  await page.getByRole("button", { name: "Projects" }).click();
+  await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
+
+  const subcontext = `Trial Subcontext ${Date.now()}`;
+  await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").fill(subcontext);
+  await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").press("Enter");
+  await expect(page.getByRole("button", { name: new RegExp(subcontext) })).toBeVisible();
+
+  await page.getByRole("button", { name: new RegExp(subcontext) }).click();
+  await expect(page.getByText("Parent: ContextOS Demo")).toBeVisible();
+
+  const childTask = `Rolled child task ${Date.now()}`;
+  await page.getByText(/Active Tasks/).click();
+  await page.getByPlaceholder("Add task...").fill(childTask);
+  await page.getByPlaceholder("Add task...").press("Enter");
+
+  const childDeadline = `Rolled child deadline ${Date.now()}`;
+  const deadlineSection = page.locator("section").filter({ hasText: "Deadlines" });
+  await deadlineSection.getByPlaceholder("Deadline title...").fill(childDeadline);
+  await deadlineSection.locator("button").last().click();
+
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
+  await page.getByText(/Active Tasks/).click();
+  await expect(page.getByText(childTask)).toBeVisible();
+  await expect(page.getByText(subcontext).first()).toBeVisible();
+  await expect(page.getByText(childDeadline)).toBeVisible();
+});
+
+test("dashboard canvas saves as a standalone resource note", async ({ page }) => {
+  await login(page);
+  const content = `## Canvas check ${Date.now()}\n- [ ] Keep dashboard widgets and scratch notes together`;
+  const canvas = page.locator("section").filter({ hasText: "Dashboard Canvas" }).locator("textarea");
+  await canvas.fill(content);
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.reload();
+  await expect(page.locator("section").filter({ hasText: "Dashboard Canvas" }).locator("textarea")).toHaveValue(content);
+
+  await page.getByRole("button", { name: "Resources" }).click();
+  await expect(page.getByText("Dashboard Canvas").first()).toBeVisible();
+});
+
+test("areas and resources expose PARA navigation", async ({ page }) => {
+  await login(page);
+  await page.getByRole("button", { name: "Areas" }).click();
+  await expect(page.getByRole("heading", { name: "Areas" })).toBeVisible();
+  await expect(page.getByText("Dev / Freelance")).toBeVisible();
+
+  await page.getByRole("button", { name: "Resources" }).click();
+  await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();
+  const title = `Vocabulary resource ${Date.now()}`;
+  await page.getByPlaceholder("Resource title...").fill(title);
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expectInputValue(page, "input", title);
+
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByPlaceholder("Search workspace...").fill(title);
+  await expect(page.getByText(title).first()).toBeVisible();
 });
 
 test("offline capture is stored locally and sync state shows pending work", async ({ page, context }) => {
@@ -130,7 +192,7 @@ test("draft-saved domain edit queues one offline mutation", async ({ page, conte
   await expect(page.getByTestId("pending-count")).toHaveText("0");
   await context.setOffline(true);
 
-  const domainInput = page.locator("section").filter({ hasText: "Domains" }).locator("input").first();
+  const domainInput = page.getByPlaceholder("Domain name").first();
   const longName = `Research draft save ${Date.now()}`;
   await domainInput.fill(longName);
   await expect(page.getByTestId("offline-edit-warning").first()).toBeVisible();

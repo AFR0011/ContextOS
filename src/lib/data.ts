@@ -40,6 +40,7 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       id: p.id,
       name: p.name,
       domainId: p.domainId,
+      parentProjectId: p.parentProjectId,
       status: p.status as Project["status"],
       currentObjective: p.currentObjective,
       nextAction: p.nextAction,

@@ -1,7 +1,7 @@
 # ContextOS Project State
 
 ## Current Objective
-Harden the v0.1.0 demo into a safe v0.1.x base before daily-use feature work.
+Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, and Resources.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
@@ -13,17 +13,33 @@ Harden the v0.1.0 demo into a safe v0.1.x base before daily-use feature work.
 ## Implemented Surfaces
 - Auth: login, register, logout, current user endpoint.
 - Data APIs: bootstrap, sync, reset demo data.
-- Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Deadlines, Reviews, Search, Archive, Settings.
-- Demo seed: default domains, projects, tasks, captures, deadlines, notes, review, daily and weekly priorities.
+- Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Areas, Resources, Deadlines, Reviews, Search, Archive, Settings.
+- PARA foundation: Domains act as Areas, standalone Notes act as Resources, and Projects can be nested with `parentProjectId`.
+- Demo seed: default domains, nested ContextOS Demo subcontexts, dashboard canvas resource, projects, tasks, captures, deadlines, notes, review, daily and weekly priorities.
 
 ## Known Boundaries
 - Offline support covers cached core views and queued CRUD-style mutations, not full collaborative conflict resolution or merge UI.
 - Conflict policy is server-canonical, last-write-wins by `updatedAt`, with visible stale-mutation warnings when older offline changes are skipped.
+- Project hierarchy is intentionally lightweight: `parentProjectId` is nullable and user-scoped in app logic, without a strict database foreign key in v0.1.x.
+- Resources are markdown notes, not rich Notion-style databases; formula-heavy resources, routines, rotations, and spaced repetition are deferred.
 - Email verification, password reset, OAuth, semantic search, calendar integration, and external AI suggestions are deferred.
 - PWA icons are not yet added; manifest and service worker are functional placeholders.
 - Production credential rotation is partly external: any previously shared Neon/Postgres credential must be rotated in the provider, then copied into deployment environment variables.
 
 ## Latest Verified State
+- v0.1.x PARA foundation is implemented locally.
+- `BLUEPRINT.md` now defines ContextOS as an execution-first PARA system: Projects/subcontexts, Areas, Resources, Archives, Dashboard Canvas, and deferred personal-system engines.
+- Project schema now includes nullable `parentProjectId`; sync, serialization, local IndexedDB/outbox mutation payloads, and seed data carry it.
+- Projects page now shows root projects with subcontext previews and rollup counts.
+- Project detail pages now show subcontexts and roll up descendant tasks/deadlines with child labels.
+- Dashboard now has a persisted markdown Dashboard Canvas backed by a standalone Resource note.
+- Sidebar now groups navigation into Execution, PARA, and Review sections, with new Areas and Resources routes.
+- Verification on 2026-06-04: `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` all passed; e2e now has 14 passing tests.
+- Browser smoke on 2026-06-04: demo login reached Dashboard, and Dashboard Canvas, Projects/subcontexts, Areas, and Resources rendered at `http://localhost:3000`.
+- v0.1.5 trial preparation is implemented locally, but the real usage trial is not complete.
+- `docs/FRICTION_LOG.md` now provides the trial rules, acceptance tracker, checkpoint table, friction entry template, ranked friction list, and closeout fields.
+- `docs/RUN_PROTOCOL.md` now includes the v0.1.5 trial procedure and clarifies local-dev offline reload verification boundaries.
+- Trial-readiness verification on 2026-06-03: `npm run typecheck`, `npm run build`, `npm run test:e2e`, and a login-to-Dashboard browser smoke all passed.
 - v0.1.4 offline sync visibility and conflict warnings are implemented locally.
 - The global shell now shows online/offline, syncing, pending, error, and stale-warning sync state.
 - Settings now exposes pending count, last successful sync, last server refresh, stale warning count, retry sync, and guarded refresh-from-server controls.
@@ -49,5 +65,6 @@ Harden the v0.1.0 demo into a safe v0.1.x base before daily-use feature work.
 - Manual draft-save smoke on 2026-06-03: local browser edit of Latest Status while offline showed unsaved state, queued one pending mutation after save, then synced back to zero.
 
 ## Next Useful Work
-- Sprint 5 from `CONTEXTOS_VERSION_PLAN.md`: real usage trial and friction audit.
-- Run the one-day usage trial after the v0.1.x hardening sprints.
+- Use the v0.1.x PARA foundation for one real workday and record friction in `docs/FRICTION_LOG.md`.
+- Pay special attention to whether subcontexts solve course/assistantship nesting and whether Dashboard Canvas reduces Notion dashboard use.
+- After the trial, sort friction into bug, UX friction, missing feature, and user discipline problem, then fix only obvious small bugs before v0.2.0 planning.

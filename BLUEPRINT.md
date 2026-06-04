@@ -41,11 +41,11 @@ ContextOS is **not**:
 - A book note system.
 - A general life archive.
 - A full autonomous agent platform.
-- A Notion clone.
+- A general Notion clone or arbitrary database builder.
 - A task-manager clone with excessive metadata.
 - A maintenance-heavy productivity system.
 
-The MVP should optimize for execution and recovery, not broad life capture.
+The MVP should optimize for execution and recovery, not broad life capture. It may replace Notion pages that support execution, recovery, PARA organization, or searchable resources; it should not recreate Notion's fully customizable database/platform surface.
 
 ---
 
@@ -85,6 +85,19 @@ Agents may suggest next actions, triage, summaries, and status updates, but they
 
 The app should surface items the user can act on. It should avoid guilt pings, abstract reminders, or vague productivity noise.
 
+### 3.7 PARA Foundation
+
+ContextOS should use PARA as its organizational foundation:
+
+```text
+Projects = outcomes and nested subcontexts
+Areas = ongoing responsibilities and systems
+Resources = reusable notes, lists, and reference material
+Archives = inactive records hidden from active work
+```
+
+PARA is used to make execution context recoverable. It should not add capture friction or require the user to classify every thought before saving it.
+
 ---
 
 ## 4. MVP Scope
@@ -93,6 +106,8 @@ The app should surface items the user can act on. It should avoid guilt pings, a
 
 - Authentication with email/password.
 - Online-first PWA.
+- Offline capture/edit queue for core CRUD-style mutations.
+- Sync-when-online.
 - Responsive mobile UI.
 - Dashboard.
 - Inbox.
@@ -100,10 +115,14 @@ The app should surface items the user can act on. It should avoid guilt pings, a
 - This Week view.
 - Projects.
 - Project detail pages.
+- Project subcontexts / nested projects.
+- Areas.
+- Resources.
 - Deadlines.
 - Archive.
 - Search.
 - Settings.
+- Dashboard markdown canvas.
 - Rich text editor with Markdown shortcuts.
 - Slash-command capture.
 - Daily startup review.
@@ -115,8 +134,8 @@ The app should surface items the user can act on. It should avoid guilt pings, a
 
 ### 4.2 Later
 
-- Offline capture.
-- Sync-when-online.
+- Full offline conflict merge UI.
+- Production-grade offline app-shell/chunk hydration validation.
 - Full Agents page.
 - Agent runs/logs/profiles.
 - Agent write permissions.
@@ -138,8 +157,11 @@ Inbox
 Today
 This Week
 Projects
-Deadlines
+Areas
+Resources
 Archive
+Deadlines
+Reviews
 Search
 Settings
 ```
@@ -152,9 +174,11 @@ Agent suggestions appear only inside project pages and a collapsed dashboard sec
 
 ---
 
-## 6. Domains
+## 6. PARA, Areas, and Domains
 
-Domains are default organizational groupings. They are not top-level navigation items.
+Areas are ongoing responsibilities, skills, and systems. In v0.1.x, the existing `Domain` object acts as the lightweight Area model.
+
+Domains/Areas are default organizational groupings. They are visible through the Areas page and are also used for filtering and grouping projects, notes, tasks, deadlines, and resources.
 
 Default domains:
 
@@ -169,14 +193,37 @@ Piano / Content
 Notes
 ```
 
-### 6.1 Domain Behavior
+### 6.1 Area / Domain Behavior
 
-- Domains are used for filtering and grouping projects, notes, tasks, and related objects.
+- Domains are used for filtering and grouping projects, notes, tasks, deadlines, and resources.
 - Defaults are provided.
 - User can rename domains.
 - User can add domains.
 - User can archive domains.
 - Domains should not become mandatory friction during quick capture.
+- The Areas page should summarize each domain's projects, open tasks, resources, and deadlines.
+
+### 6.2 Resources
+
+Resources are standalone notes and reference lists that do not belong to a single active project.
+
+Examples:
+
+```text
+Piano song repertoire
+Vocabulary list
+Useful tools / links
+Practice theory notes
+```
+
+Rules:
+
+```text
+Resources are searchable.
+Resources can contain Markdown and checklists.
+Resources do not surface in Today unless converted into tasks, deadlines, or project context.
+Resources live under an Area/Domain.
+```
 
 ---
 
@@ -192,6 +239,14 @@ Capture
 Note
 Deadline
 Review
+```
+
+Derived/lightweight concepts:
+
+```text
+Area = Domain
+Resource = standalone Note
+Subcontext = Project with parentProjectId
 ```
 
 Lightweight or generated object:
@@ -217,9 +272,19 @@ MSc Thesis
 ContextOS
 KPMG Application
 Orbit Wars Week 4
+Semester 12-3 Assistantship
 ```
 
-Smaller work items belong as tasks, not separate projects.
+Smaller work items belong as tasks, not separate projects. However, large projects may contain subcontexts when the child has its own recovery context, next action, notes, deadlines, or open loops.
+
+Examples of valid subcontexts:
+
+```text
+Assistantship -> CMPE211
+University Course -> Assignment 2
+ContextOS -> Dashboard 2.0 Foundation
+Research -> Medical XAI Paper
+```
 
 ### 8.2 Required Fields
 
@@ -236,6 +301,7 @@ Status
 Deadline
 Next action
 Notes
+Parent project
 ```
 
 ### 8.4 Project Statuses
@@ -267,7 +333,26 @@ Agent Handoff
 Agent Suggestions
 ```
 
-### 8.6 Special Project Fields
+### 8.6 Subcontexts / Nested Projects
+
+Projects can be nested through `parentProjectId`.
+
+Rules:
+
+```text
+Root projects appear on the Projects page.
+Child projects appear as subcontexts under their parent.
+Child projects use the same recovery fields as root projects.
+Parent project pages roll up non-archived, non-trashed descendant tasks and deadlines.
+Rolled-up child tasks/deadlines must be labeled with their subcontext.
+Adding a task or deadline from a parent page creates it directly on the parent unless the user navigates into a child.
+Archiving/trashing a parent does not automatically archive/trash children.
+If a parent is hidden or missing, visible children should be promoted to root visibility.
+```
+
+This model supports massive projects without introducing a separate subproject object too early.
+
+### 8.7 Special Project Fields
 
 #### Next Action
 
@@ -287,7 +372,7 @@ Example:
 Protocol B support audit is complete. RF baseline still needs rerun with corrected threshold logic.
 ```
 
-### 8.7 Open Loops / Blockers
+### 8.8 Open Loops / Blockers
 
 Open loops and blockers should be visible near the top of the project page. They should not be buried inside notes.
 
@@ -486,6 +571,7 @@ What needs recovery?
 
 ```text
 Quick Capture
+Dashboard Canvas
 Today’s Top 1-3 Priorities
 Today
 Overdue
@@ -509,6 +595,32 @@ When opening the dashboard:
 - Quick capture should always be visible at the top.
 
 The dashboard should orient the user before asking for more input.
+
+### 12.5 Dashboard Canvas
+
+The Dashboard should include a persistent Markdown canvas inspired by the user's Notion Dashboard 2.0.
+
+Purpose:
+
+```text
+Loose daily notepad
+Ad hoc dates/checklists
+Short goal reminders
+Scratch planning that is not yet structured
+```
+
+Rules:
+
+```text
+Quick Capture remains above the canvas.
+The canvas is stored as a standalone Resource note titled "Dashboard Canvas".
+The canvas supports Markdown/checklist text.
+Checkboxes inside the canvas stay local unless explicitly converted into structured tasks.
+The canvas should sit beside or near Today's Priorities on desktop and stack below Quick Capture on mobile.
+Fixed widgets remain responsible for execution surfacing.
+```
+
+The Dashboard should feel markdown-friendly without becoming a full Notion page builder.
 
 ---
 
@@ -643,7 +755,8 @@ Rules:
 
 ```text
 Project notes are default when inside a project.
-Standalone notes live under the Notes domain.
+Standalone notes are Resources.
+Standalone notes live under an Area/Domain, often Notes.
 Notes are searchable.
 Notes support execution and recovery, but should not dominate the system.
 ```
@@ -680,6 +793,7 @@ Projects
 Tasks
 Captures
 Notes
+Resources
 Deadlines
 Reviews
 ```
@@ -901,7 +1015,8 @@ Things the user cannot act on
 ContextOS should replace:
 
 ```text
-Notion
+Notion execution dashboards
+Notion project/area/resource recovery pages
 Todo/task apps
 Phone notes
 ```
@@ -921,7 +1036,11 @@ Paper notebook/journals
 Google Docs
 Google Sheets
 Obsidian
+Formula-heavy Notion databases
+Specialized spaced-repetition or practice engines
 ```
+
+Piano repertoire, vocabulary lists, and similar personal systems should start as Areas plus Resources. If they need dynamic scheduling, rotations, formulas, or review algorithms, those capabilities belong in v0.2+ after the execution-first loop is validated.
 
 ---
 
@@ -934,7 +1053,9 @@ ContextOS succeeds if, after one week:
 2. User captures ideas/tasks in ContextOS instead of phone notes.
 3. User uses Today view for daily work selection.
 4. User resumes at least one paused or half-finished project using Latest Status + Next Action.
-5. Notion/task app usage drops sharply.
+5. User uses at least one subcontext for a large project.
+6. User writes or edits the Dashboard Canvas at least once.
+7. Notion/task app usage drops sharply.
 ```
 
 If these do not happen, the product has failed its primary purpose.
@@ -948,19 +1069,21 @@ Recommended implementation order:
 ```text
 1. Auth + core layout
 2. Domains
-3. Projects
-4. Tasks
-5. Dashboard
-6. Inbox + quick capture
-7. Today view
-8. Deadlines
-9. Reviews
-10. Notes editor
-11. Search
-12. Archive/trash
-13. Agent suggestions as read-only/manual suggestions
-14. Markdown export
-15. PWA polish
+3. PARA navigation: Projects, Areas, Resources, Archive
+4. Projects
+5. Project subcontexts and parent rollups
+6. Tasks
+7. Dashboard + Dashboard Canvas
+8. Inbox + quick capture
+9. Today view
+10. Deadlines
+11. Reviews
+12. Notes / Resources editor
+13. Search
+14. Archive/trash
+15. Agent suggestions as read-only/manual suggestions
+16. Markdown export
+17. PWA polish
 ```
 
 ---
@@ -987,6 +1110,10 @@ These are intentionally not MVP blockers:
 - Should domains have access-control presets?
 - Should project templates exist?
 - Should recurring tasks exist?
+- Should Areas become a separate model from Domains?
+- Should Resources become a separate model from standalone Notes?
+- Should personal systems such as piano practice have routines/rotations?
+- Should vocabulary resources gain flashcard or spaced-repetition behavior?
 - Should weekly review generate a weekly plan automatically?
 
 These should not be solved before the MVP validates the execution-first workflow.

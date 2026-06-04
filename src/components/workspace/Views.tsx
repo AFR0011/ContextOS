@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Archive,
+  Boxes,
   BookOpen,
   Calendar,
   CalendarCheck,
@@ -15,6 +16,7 @@ import {
   Download,
   FileText,
   FolderKanban,
+  Layers,
   Inbox,
   MoreHorizontal,
   Plus,
@@ -60,6 +62,8 @@ const domainColors = [
   "bg-slate-100 text-slate-800"
 ];
 
+const DASHBOARD_CANVAS_TITLE = "Dashboard Canvas";
+
 function isOverdue(task: Task) {
   return Boolean(task.dueDate && task.dueDate < localDateKey() && task.status !== "done" && task.status !== "dropped");
 }
@@ -81,6 +85,31 @@ function domainColor(domains: Domain[], id: string | null | undefined) {
 function projectName(projects: Project[], id: string | null | undefined) {
   if (!id) return "";
   return projects.find((project) => project.id === id)?.name || "";
+}
+
+function visibleProjects(projects: Project[]) {
+  return projects.filter((project) => !project.trashedAt && project.status !== "archived");
+}
+
+function rootProjects(projects: Project[]) {
+  const visibleIds = new Set(visibleProjects(projects).map((project) => project.id));
+  return visibleProjects(projects).filter((project) => !project.parentProjectId || !visibleIds.has(project.parentProjectId));
+}
+
+function childProjects(projects: Project[], parentId: string) {
+  return visibleProjects(projects).filter((project) => project.parentProjectId === parentId);
+}
+
+function descendantProjectIds(projects: Project[], projectId: string) {
+  const ids = new Set<string>();
+  const queue = childProjects(projects, projectId).map((project) => project.id);
+  while (queue.length) {
+    const id = queue.shift();
+    if (!id || ids.has(id) || id === projectId) continue;
+    ids.add(id);
+    queue.push(...childProjects(projects, id).map((project) => project.id));
+  }
+  return ids;
 }
 
 function activeTasks(tasks: Task[]) {
@@ -249,7 +278,7 @@ function TaskList({ rows }: { rows: { task: Task; labels: string[] }[] }) {
 
 export function DashboardView() {
   const router = useRouter();
-  const { data, loading } = useWorkspace();
+  const { data, loading, addNote, updateNote } = useWorkspace();
   const today = localDateKey();
   const tasks = activeTasks(data.tasks);
   const overdue = tasks.filter(isOverdue);
@@ -263,17 +292,34 @@ export function DashboardView() {
   const inbox = data.captures.filter((capture) => capture.status === "unprocessed").slice(0, 5);
   const recentProjects = data.projects.filter((project) => !project.trashedAt && project.status === "active").slice(0, 6);
   const weekDeadlines = data.deadlines.filter((deadline) => !deadline.trashedAt && isThisWeek(deadline.date));
+  const dashboardCanvas = data.notes.find((note) => !note.trashedAt && !note.projectId && note.title === DASHBOARD_CANVAS_TITLE);
+  const notesDomainId = data.domains.find((domain) => domain.name === "Notes")?.id || data.domains.find((domain) => !domain.archived)?.id || "";
 
   return (
     <Page title="Dashboard" subtitle={loading ? "Loading cached workspace..." : "Capture first. Choose today's work. Recover context fast."}>
       <QuickCapture />
 
-      <section className="mt-6">
-        <SectionTitle icon={Star} title="Today's Priorities" tone="amber" />
-        <div className="mt-3">
-          <PriorityEditor scope="daily" dateKeyValue={today} limit={3} />
-        </div>
-      </section>
+      <div className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+        <DashboardCanvas
+          loading={loading}
+          note={dashboardCanvas}
+          canCreate={Boolean(notesDomainId)}
+          onSave={(content) => {
+            if (dashboardCanvas) {
+              updateNote(dashboardCanvas.id, { content });
+              return;
+            }
+            if (content.trim() && notesDomainId) addNote({ title: DASHBOARD_CANVAS_TITLE, content, projectId: null, domainId: notesDomainId });
+          }}
+        />
+
+        <section>
+          <SectionTitle icon={Star} title="Today's Priorities" tone="amber" />
+          <div className="mt-3">
+            <PriorityEditor scope="daily" dateKeyValue={today} limit={3} />
+          </div>
+        </section>
+      </div>
 
       <section className="mt-6">
         <SectionTitle icon={Clock} title="Today" tone="indigo" count={todayRows.length} />
@@ -350,6 +396,30 @@ export function DashboardView() {
         </div>
       </details>
     </Page>
+  );
+}
+
+function DashboardCanvas({ note, canCreate, loading, onSave }: { note?: Note; canCreate: boolean; loading: boolean; onSave: (content: string) => void }) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-4">
+      <SectionTitle icon={FileText} title="Dashboard Canvas" tone="indigo" />
+      {loading ? (
+        <p className="mt-3 rounded-lg bg-slate-50 px-3 py-6 text-sm text-slate-400">Loading dashboard canvas...</p>
+      ) : (
+        <>
+          <div className="mt-3">
+            <EditableField
+              value={note?.content ?? ""}
+              placeholder={canCreate ? "Loose dashboard notes, dates, goals, or checklists..." : "Create a domain before saving dashboard notes."}
+              multiline
+              rows={7}
+              onSave={onSave}
+            />
+          </div>
+          <p className="mt-2 text-xs text-slate-400">Markdown/checklists stay local to the canvas unless you turn them into tasks.</p>
+        </>
+      )}
+    </section>
   );
 }
 
@@ -482,7 +552,7 @@ export function ProjectsView() {
   const [name, setName] = useState("");
   const [domainId, setDomainId] = useState("");
   const activeDomains = data.domains.filter((domain) => !domain.archived);
-  const projects = data.projects.filter((project) => !project.trashedAt);
+  const projects = rootProjects(data.projects);
 
   function create() {
     const chosenDomain = domainId || activeDomains[0]?.id;
@@ -509,7 +579,11 @@ export function ProjectsView() {
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => {
-          const count = data.tasks.filter((task) => task.projectId === project.id && !task.trashedAt && task.status !== "done" && task.status !== "dropped").length;
+          const descendantIds = descendantProjectIds(data.projects, project.id);
+          const projectIds = new Set([project.id, ...descendantIds]);
+          const count = activeTasks(data.tasks).filter((task) => task.projectId && projectIds.has(task.projectId)).length;
+          const deadlineCount = data.deadlines.filter((deadline) => !deadline.trashedAt && deadline.projectId && projectIds.has(deadline.projectId)).length;
+          const children = childProjects(data.projects, project.id);
           return (
             <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-indigo-200 hover:shadow-md">
               <div className="flex items-start justify-between gap-2">
@@ -519,11 +593,138 @@ export function ProjectsView() {
               <span className={`mt-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, project.domainId)}`}>{domainName(data.domains, project.domainId)}</span>
               {project.currentObjective ? <p className="mt-2 line-clamp-2 text-xs text-slate-600">{project.currentObjective}</p> : null}
               {project.nextAction ? <p className="mt-2 truncate text-xs font-medium text-indigo-600">Next: {project.nextAction}</p> : null}
-              {count ? <p className="mt-2 text-[11px] text-slate-400">{count} open task{count > 1 ? "s" : ""}</p> : null}
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-400">
+                {children.length ? <span>{children.length} subcontext{children.length > 1 ? "s" : ""}</span> : null}
+                {count ? <span>{count} open task{count > 1 ? "s" : ""}</span> : null}
+                {deadlineCount ? <span>{deadlineCount} deadline{deadlineCount > 1 ? "s" : ""}</span> : null}
+              </div>
+              {children.length ? (
+                <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+                  {children.slice(0, 3).map((child) => (
+                    <div key={child.id} className="flex items-center gap-2 text-xs text-slate-600">
+                      <Layers className="h-3.5 w-3.5 text-slate-300" />
+                      <span className="min-w-0 flex-1 truncate">{child.name}</span>
+                      {child.nextAction ? <span className="max-w-24 truncate text-indigo-500">{child.nextAction}</span> : null}
+                    </div>
+                  ))}
+                  {children.length > 3 ? <p className="pl-5 text-[11px] text-slate-400">+{children.length - 3} more</p> : null}
+                </div>
+              ) : null}
             </button>
           );
         })}
       </div>
+      {!projects.length ? <EmptyState icon={FolderKanban} title="No projects yet" description="Create an outcome or subcontext to start." /> : null}
+    </Page>
+  );
+}
+
+export function AreasView() {
+  const router = useRouter();
+  const { data, loading } = useWorkspace();
+  const activeDomains = data.domains.filter((domain) => !domain.archived);
+
+  return (
+    <Page title="Areas" subtitle="Ongoing responsibilities, systems, and domains that hold projects and resources.">
+      {loading ? <EmptyState icon={Boxes} title="Loading areas" description="Workspace data is hydrating from cache or server." /> : null}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {activeDomains.map((domain) => {
+          const domainProjects = data.projects.filter((project) => project.domainId === domain.id && !project.trashedAt && project.status !== "archived");
+          const projectIds = new Set(domainProjects.map((project) => project.id));
+          const openTaskCount = activeTasks(data.tasks).filter((task) => task.domainId === domain.id || (task.projectId && projectIds.has(task.projectId))).length;
+          const resourceCount = data.notes.filter((note) => note.domainId === domain.id && !note.projectId && !note.trashedAt).length;
+          const deadlineCount = data.deadlines.filter((deadline) => !deadline.trashedAt && deadline.projectId && projectIds.has(deadline.projectId)).length;
+          const roots = domainProjects.filter((project) => !project.parentProjectId || !projectIds.has(project.parentProjectId));
+          return (
+            <section key={domain.id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, domain.id)}`}>Area</span>
+                  <h2 className="mt-2 text-base font-semibold text-slate-950">{domain.name}</h2>
+                </div>
+                <Boxes className="h-5 w-5 text-slate-300" />
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-lg bg-slate-50 p-2"><p className="text-sm font-semibold text-slate-900">{domainProjects.length}</p><p className="text-[10px] uppercase tracking-wider text-slate-400">Projects</p></div>
+                <div className="rounded-lg bg-slate-50 p-2"><p className="text-sm font-semibold text-slate-900">{openTaskCount}</p><p className="text-[10px] uppercase tracking-wider text-slate-400">Tasks</p></div>
+                <div className="rounded-lg bg-slate-50 p-2"><p className="text-sm font-semibold text-slate-900">{resourceCount}</p><p className="text-[10px] uppercase tracking-wider text-slate-400">Resources</p></div>
+              </div>
+              <div className="mt-4 space-y-2">
+                {roots.slice(0, 3).map((project) => (
+                  <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-slate-50">
+                    <FolderKanban className="h-3.5 w-3.5 text-slate-300" />
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700">{project.name}</span>
+                    {childProjects(data.projects, project.id).length ? <span className="text-[10px] text-slate-400">{childProjects(data.projects, project.id).length} sub</span> : null}
+                  </button>
+                ))}
+                {!roots.length ? <p className="text-xs italic text-slate-400">No active projects in this area.</p> : null}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-slate-400">
+                {deadlineCount ? <span>{deadlineCount} deadline{deadlineCount > 1 ? "s" : ""}</span> : null}
+                {domain.archived ? <span>Archived</span> : null}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+      {!loading && !activeDomains.length ? <EmptyState icon={Boxes} title="No active areas" description="Add domains in Settings to create areas." /> : null}
+    </Page>
+  );
+}
+
+export function ResourcesView() {
+  const { data, loading, addNote, updateNote } = useWorkspace();
+  const activeDomains = data.domains.filter((domain) => !domain.archived);
+  const [domainId, setDomainId] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [newDomainId, setNewDomainId] = useState("");
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const selectedDomain = domainId || "all";
+  const resources = data.notes.filter((note) => !note.trashedAt && !note.projectId && (selectedDomain === "all" || note.domainId === selectedDomain));
+
+  function createResource() {
+    const title = newTitle.trim();
+    const chosenDomain = newDomainId || activeDomains[0]?.id;
+    if (!title || !chosenDomain) return;
+    const id = addNote({ title, content: "", projectId: null, domainId: chosenDomain });
+    setNewTitle("");
+    setNewDomainId("");
+    setEditingNote(id);
+  }
+
+  return (
+    <Page title="Resources" subtitle="Standalone markdown notes, reference lists, and knowledge you may want searchable later.">
+      <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
+        <SectionTitle icon={FileText} title="New Resource" tone="indigo" />
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <input value={newTitle} disabled={loading || !activeDomains.length} onChange={(event) => setNewTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && createResource()} placeholder={loading ? "Loading resources..." : "Resource title..."} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-300 disabled:bg-slate-50 disabled:text-slate-400" />
+          <select value={newDomainId} disabled={loading || !activeDomains.length} onChange={(event) => setNewDomainId(event.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400">
+            {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
+          </select>
+          <button onClick={createResource} disabled={loading || !activeDomains.length || !newTitle.trim()} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40">Add</button>
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button onClick={() => setDomainId("")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${selectedDomain === "all" ? "bg-slate-900 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}>All</button>
+        {activeDomains.map((domain) => (
+          <button key={domain.id} onClick={() => setDomainId(domain.id)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${selectedDomain === domain.id ? "bg-slate-900 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}>{domain.name}</button>
+        ))}
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        {resources.map((note) => (
+          <div key={note.id} className="rounded-xl border border-slate-200 bg-white p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, note.domainId)}`}>{domainName(data.domains, note.domainId)}</span>
+              {note.title === DASHBOARD_CANVAS_TITLE ? <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">Dashboard</span> : null}
+            </div>
+            <NoteCard note={note} editing={editingNote === note.id} onEdit={() => setEditingNote(note.id)} onDone={() => setEditingNote(null)} onUpdate={(updates) => updateNote(note.id, updates)} />
+          </div>
+        ))}
+      </div>
+      {loading ? <EmptyState icon={FileText} title="Loading resources" description="Workspace data is hydrating from cache or server." /> : null}
+      {!loading && !resources.length ? <EmptyState icon={FileText} title="No resources here" description="Add a standalone note or switch area filters." /> : null}
     </Page>
   );
 }
@@ -616,8 +817,9 @@ function EditableField({
 
 export function ProjectDetailView({ projectId }: { projectId: string }) {
   const router = useRouter();
-  const { data, updateProject, addTask, addDeadline, updateDeadline, addNote, updateNote } = useWorkspace();
+  const { data, updateProject, addProject, addTask, addDeadline, updateDeadline, addNote, updateNote } = useWorkspace();
   const project = data.projects.find((item) => item.id === projectId);
+  const [newSubcontext, setNewSubcontext] = useState("");
   const [newLoop, setNewLoop] = useState("");
   const [newTask, setNewTask] = useState("");
   const [newDeadline, setNewDeadline] = useState("");
@@ -630,8 +832,11 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   }
 
   const currentProject = project;
-  const tasks = data.tasks.filter((task) => task.projectId === project.id && !task.trashedAt);
-  const deadlines = data.deadlines.filter((deadline) => deadline.projectId === project.id && !deadline.trashedAt);
+  const subcontexts = childProjects(data.projects, project.id);
+  const descendantIds = descendantProjectIds(data.projects, project.id);
+  const rollupProjectIds = new Set([project.id, ...descendantIds]);
+  const tasks = data.tasks.filter((task) => task.projectId && rollupProjectIds.has(task.projectId) && !task.trashedAt);
+  const deadlines = data.deadlines.filter((deadline) => deadline.projectId && rollupProjectIds.has(deadline.projectId) && !deadline.trashedAt);
   const notes = data.notes.filter((note) => note.projectId === project.id && !note.trashedAt);
   const activeTaskCount = tasks.filter((task) => task.status !== "done" && task.status !== "dropped").length;
   const activeDomains = data.domains.filter((domain) => !domain.archived);
@@ -648,11 +853,25 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
     setNewLoop("");
   }
 
+  function addSubcontext() {
+    const name = newSubcontext.trim();
+    if (!name) return;
+    addProject({
+      name,
+      domainId: currentProject.domainId,
+      parentProjectId: currentProject.id,
+      currentObjective: "",
+      nextAction: ""
+    });
+    setNewSubcontext("");
+  }
+
   function exportMarkdown() {
     const md = [
       `# ${currentProject.name}`,
       `**Status:** ${currentProject.status}`,
       `**Domain:** ${domainName(data.domains, currentProject.domainId)}`,
+      currentProject.parentProjectId ? `**Parent:** ${projectName(data.projects, currentProject.parentProjectId)}` : "",
       "",
       "## Current Objective",
       currentProject.currentObjective,
@@ -666,12 +885,15 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       "## Open Loops",
       ...currentProject.openLoops.map((loop) => `- ${loop}`),
       "",
+      "## Subcontexts",
+      ...subcontexts.map((child) => `- ${child.name}${child.nextAction ? ` — Next: ${child.nextAction}` : ""}`),
+      "",
       "## Tasks",
-      ...tasks.map((task) => `- [${task.status === "done" ? "x" : " "}] ${task.title}`),
+      ...tasks.map((task) => `- [${task.status === "done" ? "x" : " "}] ${task.title}${task.projectId !== currentProject.id ? ` (${projectName(data.projects, task.projectId)})` : ""}`),
       "",
       "## Notes",
       ...notes.flatMap((note) => [`### ${note.title}`, note.content, ""])
-    ].join("\n");
+    ].filter(Boolean).join("\n");
     const url = URL.createObjectURL(new Blob([md], { type: "text/markdown" }));
     const link = document.createElement("a");
     link.href = url;
@@ -691,6 +913,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           <select value={project.domainId} onChange={(event) => updateProject(project.id, { domainId: event.target.value })} className={`rounded border-0 px-2 py-1 text-[11px] font-medium ${domainColor(data.domains, project.domainId)}`}>
             {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
           </select>
+          {project.parentProjectId ? <span className="rounded bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-500">Parent: {projectName(data.projects, project.parentProjectId)}</span> : null}
           <span className="text-[11px] text-slate-400">Updated {formatDistanceToNow(parseISO(project.updatedAt), { addSuffix: true })}</span>
         </div>
       </div>
@@ -700,6 +923,39 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         <InfoBlock title="Next Action" accent><EditableField value={project.nextAction} placeholder="What is the next concrete action?" onSave={(value) => updateProject(project.id, { nextAction: value })} /></InfoBlock>
         <InfoBlock title="Latest Status"><EditableField value={project.latestStatus} placeholder="Where did you leave off?" multiline onSave={(value) => updateProject(project.id, { latestStatus: value })} /></InfoBlock>
       </div>
+
+      <InfoBlock title="Subcontexts" className="mt-4">
+        <div className="space-y-2">
+          {subcontexts.map((child) => {
+            const childDescendants = descendantProjectIds(data.projects, child.id);
+            const childIds = new Set([child.id, ...childDescendants]);
+            const childTaskCount = activeTasks(data.tasks).filter((task) => task.projectId && childIds.has(task.projectId)).length;
+            const childDeadlineCount = data.deadlines.filter((deadline) => !deadline.trashedAt && deadline.projectId && childIds.has(deadline.projectId)).length;
+            return (
+              <button key={child.id} onClick={() => router.push(`/projects/${child.id}`)} className="flex w-full items-start gap-3 rounded-lg border border-slate-100 p-3 text-left hover:bg-slate-50">
+                <Layers className="mt-0.5 h-4 w-4 text-indigo-400" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="truncate text-sm font-semibold text-slate-900">{child.name}</h3>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${projectStatus[child.status].color}`}>{projectStatus[child.status].label}</span>
+                  </div>
+                  {child.nextAction ? <p className="mt-1 truncate text-xs font-medium text-indigo-600">Next: {child.nextAction}</p> : null}
+                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-400">
+                    {childTaskCount ? <span>{childTaskCount} open task{childTaskCount > 1 ? "s" : ""}</span> : null}
+                    {childDeadlineCount ? <span>{childDeadlineCount} deadline{childDeadlineCount > 1 ? "s" : ""}</span> : null}
+                    {childDescendants.size ? <span>{childDescendants.size} nested</span> : null}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+          {!subcontexts.length ? <p className="text-sm italic text-slate-400">No subcontexts yet.</p> : null}
+          <div className="flex items-center gap-2 pt-2">
+            <input value={newSubcontext} onChange={(event) => setNewSubcontext(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addSubcontext()} placeholder="Add subcontext, course, assignment, or duty..." className="flex-1 border-b border-slate-200 bg-transparent py-1 text-sm outline-none focus:border-indigo-300" />
+            <button onClick={addSubcontext} className="text-indigo-600"><Plus className="h-4 w-4" /></button>
+          </div>
+        </div>
+      </InfoBlock>
 
       <InfoBlock title="Open Loops / Blockers" className="mt-4">
         <div className="space-y-1">
@@ -722,6 +978,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           {deadlines.map((deadline) => (
             <div key={deadline.id} className="group flex items-center gap-2 text-sm">
               <span className="flex-1 text-slate-700">{deadline.title}</span>
+              {deadline.projectId !== project.id ? <span className="max-w-32 truncate rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">{projectName(data.projects, deadline.projectId)}</span> : null}
               <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="rounded border border-slate-200 px-2 py-1 text-xs" />
             </div>
           ))}
@@ -738,7 +995,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           <ChevronRight className="h-4 w-4" /> Active Tasks ({activeTaskCount})
         </summary>
         <div className="border-t border-slate-100 p-4">
-          <TaskList rows={tasks.map((task) => ({ task, labels: [taskStatus[task.status].label] }))} />
+          <TaskList rows={tasks.map((task) => ({ task, labels: [taskStatus[task.status].label, task.projectId !== project.id ? projectName(data.projects, task.projectId) : ""].filter(Boolean) }))} />
           <div className="mt-3 flex items-center gap-2">
             <input value={newTask} onChange={(event) => setNewTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && newTask.trim()) { addTask({ title: newTask.trim(), projectId: project.id, domainId: project.domainId }); setNewTask(""); } }} placeholder="Add task..." className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-300" />
             <button onClick={() => { if (newTask.trim()) { addTask({ title: newTask.trim(), projectId: project.id, domainId: project.domainId }); setNewTask(""); } }} className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white">Add</button>

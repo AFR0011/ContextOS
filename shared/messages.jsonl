@@ -1,1 +1,3 @@
 {"ts":"2026-06-04T00:00:00.000Z","from":"architect-planner","to":"executor","type":"handoff","subject":"v0.1.7 active batch","body":"Implement only the workspace markdown canvas batch described in DEV_STATE.md."}
+{"ts":"2026-06-04T00:00:00.000Z","from":"tester","to":"docs-qa","type":"feedback","subject":"v0.1.7 verification","body":"PASS_WITH_RISKS: typecheck, build, targeted Playwright, and full e2e passed. Residual risk is visual/theme completeness beyond smoked dashboard."}
+{"ts":"2026-06-04T00:00:00.000Z","from":"docs-qa","to":"architect-planner","type":"feedback","subject":"v0.1.7 closeout","body":"Batch complete. Next useful work is real usage trial with friction logging for markdown canvas and slash capture ergonomics."}

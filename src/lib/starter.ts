@@ -25,6 +25,8 @@ export const defaultDomainTemplates = [
 
 export async function clearWorkspace(tx: Tx, userId: string) {
   await tx.syncMutation.deleteMany({ where: { userId } });
+  await tx.dashboardPreference.deleteMany({ where: { userId } });
+  await tx.dashboardScratchpad.deleteMany({ where: { userId } });
   await tx.priority.deleteMany({ where: { userId } });
   await tx.review.deleteMany({ where: { userId } });
   await tx.deadline.deleteMany({ where: { userId } });
@@ -268,6 +270,30 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
       responses: {
         priorities: "1. Verify the ContextOS core loop\n2. Process stale captures\n3. Update one project status"
       }
+    }
+  });
+
+
+  await tx.dashboardScratchpad.upsert({
+    where: { userId },
+    update: {},
+    create: {
+      id: idFor(userId, "dashboard-scratchpad"),
+      userId,
+      content: ""
+    }
+  });
+
+  await tx.dashboardPreference.upsert({
+    where: { userId },
+    update: {},
+    create: {
+      id: idFor(userId, "dashboard-preferences"),
+      userId,
+      sectionOrder: ["notepad", "dates", "tasks", "projects"],
+      collapsedSections: [],
+      dateWindowDays: 14,
+      showCompleted: false
     }
   });
 

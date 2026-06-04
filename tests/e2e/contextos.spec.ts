@@ -40,11 +40,12 @@ async function offlineCacheState(page: Page, text: string) {
       });
     }
 
-    const workspace = await get<{ captures?: { text: string }[] }>("workspace");
-    const outbox = await get<{ payload?: { text?: string } }[]>("outbox");
+    const workspace = await get<{ captures?: { text: string }[]; dashboardScratchpads?: { content: string }[] }>("workspace");
+    const outbox = await get<{ payload?: { text?: string; content?: string } }[]>("outbox");
     db.close();
     return {
       hasCapture: Boolean(workspace?.captures?.some((capture) => capture.text === expectedText)),
+      hasScratchpad: Boolean(workspace?.dashboardScratchpads?.some((scratchpad) => scratchpad.content === expectedText)),
       pendingCount: outbox?.length ?? 0
     };
   }, text);
@@ -72,18 +73,20 @@ test("date utilities keep date-only values on the local calendar day", async () 
 
 test("seeded demo account can log in and render dashboard", async ({ page }) => {
   await login(page);
-  await expect(page.getByText("Use ContextOS for today's real captures")).toBeVisible();
+  await expect(page.getByText("Mobile Command Sheet")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Notepad/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Dates/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Tasks/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Projects/ })).toBeVisible();
   await expect(page.getByText("ContextOS Demo").first()).toBeVisible();
 });
 
 test("quick capture appears in inbox and can convert to a task", async ({ page }) => {
   await login(page);
   const text = `offline-ready capture ${Date.now()}`;
-  const editor = page.getByTestId("dashboard-canvas-editor");
-  await editor.getByTestId("dashboard-canvas-editor-line-3").fill(`/task ${text}`);
-  await editor.getByTestId("dashboard-canvas-editor-line-3").press("Enter");
-  await expect(editor.getByTestId("dashboard-canvas-editor-line-3")).toHaveValue(text);
   await page.goto("/inbox");
+  await page.getByPlaceholder(/Quick capture/i).fill(`/task ${text}`);
+  await page.getByPlaceholder(/Quick capture/i).press("Enter");
   await expect(page.getByText(`/task ${text}`)).toBeVisible();
   await page.getByRole("button", { name: "Capture actions" }).first().click();
   await page.getByRole("button", { name: "Convert to task" }).click();
@@ -136,28 +139,46 @@ test("project subcontexts roll child tasks and deadlines into parent recovery", 
   await expect(page.getByText(childDeadline)).toBeVisible();
 });
 
-test("dashboard canvas saves as a standalone resource note", async ({ page }) => {
+test("dashboard notepad autosaves and persists after reload", async ({ page }) => {
   await login(page);
-  const content = `Canvas check ${Date.now()}`;
-  const editor = page.getByTestId("dashboard-canvas-editor");
-  await editor.getByTestId("dashboard-canvas-editor-line-0").fill(content);
-  await editor.getByRole("button", { name: "Save", exact: true }).click();
+  const content = `Scratchpad check ${Date.now()}`;
+  await page.getByTestId("dashboard-scratchpad").fill(content);
+  await expect(page.getByText(/Saved locally|Updated/i)).toBeVisible({ timeout: 3000 });
   await page.reload();
-  await expect(page.getByTestId("dashboard-canvas-editor-line-0")).toHaveValue(content);
+  await expect(page.getByTestId("dashboard-scratchpad")).toHaveValue(content);
+});
 
-  await page.getByRole("button", { name: "Resources" }).click();
-  await expect(page.getByText("Dashboard Canvas").first()).toBeVisible();
+test("dashboard sections collapse and persist after refresh", async ({ page }) => {
+  await login(page);
+  const datesHeader = page.getByRole("button", { name: /Dates/ });
+  await datesHeader.click();
+  await expect(page.getByTestId("dashboard-section-dates").getByText(/Task due|Deadline|No dated items/)).not.toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId("dashboard-section-dates").getByText(/Task due|Deadline|No dated items/)).not.toBeVisible();
+  await page.getByRole("button", { name: /Dates/ }).click();
+  await expect(page.getByTestId("dashboard-section-dates")).toContainText(/Task due|Deadline|No dated items/);
+});
+
+test("dashboard can add and complete a real task", async ({ page }) => {
+  await login(page);
+  const title = `Dashboard real task ${Date.now()}`;
+  await page.getByTestId("dashboard-add-task-input").fill(title);
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByText(title)).toBeVisible();
+  await page.getByRole("button", { name: `Mark ${title} done` }).click();
+  await expect(page.getByText(title)).not.toBeVisible();
 });
 
 test("today tasks stay visible and interactable after completion", async ({ page }) => {
   await login(page);
+  await page.getByRole("button", { name: "Today", exact: true }).click();
   const taskTitle = "Process inbox captures";
   await expect(page.getByText(taskTitle)).toBeVisible();
   await page.getByRole("button", { name: `Mark ${taskTitle} done` }).click();
   await expect(page.getByText(taskTitle)).toBeVisible();
   await expect(page.getByRole("button", { name: `Mark ${taskTitle} todo` })).toBeVisible();
 
-  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await page.reload();
   await expect(page.getByText(taskTitle)).toBeVisible();
   await expect(page.getByRole("button", { name: `Mark ${taskTitle} todo` })).toBeVisible();
 });
@@ -192,23 +213,19 @@ test("workspace dark mode toggles and persists", async ({ page }) => {
   await expect(page.locator("html")).not.toHaveClass(/dark/);
 });
 
-test("offline capture is stored locally and sync state shows pending work", async ({ page, context }) => {
+test("offline notepad edit is stored locally and sync state shows pending work", async ({ page, context }) => {
   await login(page);
-  await page.goto("/inbox");
-  await page.goto("/dashboard");
   await context.setOffline(true);
-  const text = `offline capture ${Date.now()}`;
-  const editor = page.getByTestId("dashboard-canvas-editor");
-  await editor.getByTestId("dashboard-canvas-editor-line-3").fill(`/note ${text}`);
-  await editor.getByTestId("dashboard-canvas-editor-line-3").press("Enter");
-  await expect(editor.getByTestId("dashboard-canvas-editor-line-3")).toHaveValue(text);
-  await expect(page.getByText(/pending/i).first()).toBeVisible();
-  await expect.poll(() => offlineCacheState(page, `/note ${text}`)).toEqual({ hasCapture: true, pendingCount: 1 });
+  const text = `offline scratchpad ${Date.now()}`;
+  await page.getByTestId("dashboard-scratchpad").fill(text);
+  await expect(page.getByText(/pending/i).first()).toBeVisible({ timeout: 4000 });
+  await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect.poll(() => offlineCacheState(page, `/note ${text}`)).toEqual({ hasCapture: true, pendingCount: 1 });
+  await expect(page.getByTestId("dashboard-scratchpad")).toHaveValue(text);
+  await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
   await context.setOffline(false);
   await page.reload();
-  await expect(page.getByText(text)).toBeVisible();
+  await expect(page.getByTestId("dashboard-scratchpad")).toHaveValue(text);
   await page.getByRole("button", { name: "Settings" }).click();
   await page.getByRole("button", { name: /sync now/i }).click();
   await expect(page.getByTestId("pending-count")).toHaveText("0");

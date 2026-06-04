@@ -19,6 +19,7 @@ export type CaptureStatus = "unprocessed" | "converted" | "attached" | "archived
 export type CaptureType = "task" | "note" | "project" | "deadline" | "status" | null;
 export type ReviewType = "daily-startup" | "daily-shutdown" | "weekly";
 export type PriorityScope = "daily" | "weekly";
+export type DashboardSectionId = "notepad" | "dates" | "tasks" | "projects";
 
 export interface Domain {
   id: string;
@@ -103,6 +104,23 @@ export interface Review {
   updatedAt: string;
 }
 
+export interface DashboardScratchpad {
+  id: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DashboardPreference {
+  id: string;
+  sectionOrder: DashboardSectionId[];
+  collapsedSections: DashboardSectionId[];
+  dateWindowDays: number;
+  showCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Priority {
   id: string;
   scope: PriorityScope;
@@ -123,6 +141,8 @@ export interface WorkspaceData {
   deadlines: Deadline[];
   reviews: Review[];
   priorities: Priority[];
+  dashboardScratchpads: DashboardScratchpad[];
+  dashboardPreferences: DashboardPreference[];
   serverSyncedAt: string;
 }
 
@@ -143,6 +163,6 @@ export interface QueuedMutation {
   entityType: CollectionName;
   entityId: string;
   operation: "upsert" | "delete";
-  payload: Domain | Project | Task | Capture | Note | Deadline | Review | Priority | null;
+  payload: Domain | Project | Task | Capture | Note | Deadline | Review | Priority | DashboardScratchpad | DashboardPreference | null;
   createdAt: string;
 }

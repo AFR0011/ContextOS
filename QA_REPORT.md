@@ -2,13 +2,20 @@
 
 ## 2026-06-04 - v0.1.7 Workspace Markdown Canvas
 
-Status: Pending implementation.
+Status: Complete.
 
-Planned checks:
+Checks run:
 
-- `npm run typecheck`
-- `npm run build`
-- Targeted Playwright checks for markdown editor, dashboard slash capture, visible completed Today tasks, Areas expansion, project recovery editor, and dark mode
-- Full `npm run test:e2e` when local dependencies are available
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npx playwright test -g "dashboard canvas|today tasks|offline capture"` - passed, 3 tests.
+- `npm run test:e2e` - passed, 16 tests.
+- Browser DOM smoke at `http://localhost:3000/dashboard` - passed; dashboard editor count was 1 and dark mode class was active.
+- Local Playwright screenshot smoke - passed; artifact saved at `test-results/dashboard-dark-smoke.png`.
 
-Verdict: Pending.
+Notes:
+
+- An initial parallel `npm run typecheck` and `npm run build` invocation produced a transient `.next/types` race. Sequential `npm run build` and `npm run typecheck` both passed.
+- The in-app browser screenshot API timed out, but DOM smoke passed and a local Playwright screenshot was created and inspected.
+
+Verdict: PASS_WITH_RISKS.

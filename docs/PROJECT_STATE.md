@@ -27,6 +27,14 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 - Production credential rotation is partly external: any previously shared Neon/Postgres credential must be rotated in the provider, then copied into deployment environment variables.
 
 ## Latest Verified State
+- v0.1.7 workspace markdown canvas changes are implemented locally.
+- Dashboard quick capture is now integrated into the Dashboard Canvas markdown editor; slash captures such as `/task`, `/note`, `/project`, `/deadline`, and `/status` still enter the existing capture/inbox flow.
+- The shared markdown editor renders editable headings, subheadings, bullets, checkboxes, quotes, and code fences while preserving markdown storage.
+- Dashboard and Today keep completed scheduled tasks visible as crossed-off, interactable rows.
+- Areas can be opened in place to reveal project and subcontext trees.
+- Project detail pages now use one recovery markdown editor for current objective, next action, latest status, and open loops.
+- Workspace dark mode is available from the shell and persists locally.
+- Verification on 2026-06-04: `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed; e2e now has 16 passing tests. Manual visual smoke captured the dark dashboard at `test-results/dashboard-dark-smoke.png`.
 - v0.1.x PARA foundation is implemented locally.
 - `BLUEPRINT.md` now defines ContextOS as an execution-first PARA system: Projects/subcontexts, Areas, Resources, Archives, Dashboard Canvas, and deferred personal-system engines.
 - Project schema now includes nullable `parentProjectId`; sync, serialization, local IndexedDB/outbox mutation payloads, and seed data carry it.
@@ -66,5 +74,6 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 
 ## Next Useful Work
 - Use the v0.1.x PARA foundation for one real workday and record friction in `docs/FRICTION_LOG.md`.
+- During the trial, pay special attention to whether the markdown canvas reduces context-switching and whether slash capture inside the editor feels faster than the old separate capture field.
 - Pay special attention to whether subcontexts solve course/assistantship nesting and whether Dashboard Canvas reduces Notion dashboard use.
 - After the trial, sort friction into bug, UX friction, missing feature, and user discipline problem, then fix only obvious small bugs before v0.2.0 planning.

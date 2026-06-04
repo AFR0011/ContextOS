@@ -1,5 +1,55 @@
 # ContextOS Version Log
 
+## v0.1.7 Sprint 7 - Workspace Markdown Canvas
+
+Status:
+Implemented locally and verified on 2026-06-04.
+
+Goal:
+Turn the dashboard and project recovery surfaces into markdown-first workspaces while keeping ContextOS execution-first.
+
+Changed files:
+- `DEV_STATE.md`
+- `DEV_LOG.md`
+- `QA_REPORT.md`
+- `RISK_REGISTER.md`
+- `shared/**`
+- `docs/PROJECT_STATE.md`
+- `docs/RUN_PROTOCOL.md`
+- `docs/VERSION_LOG.md`
+- `src/app/globals.css`
+- `src/components/workspace/MarkdownEditor.tsx`
+- `src/components/workspace/Views.tsx`
+- `src/components/workspace/WorkspaceShell.tsx`
+- `tests/e2e/contextos.spec.ts`
+
+Schema changes:
+None.
+
+Implemented behavior:
+- Added a reusable markdown block editor that visually renders editable headings, subheadings, bullets, checkboxes, quotes, and code fences while saving plain markdown.
+- Dashboard Canvas now absorbs quick capture: `/task`, `/note`, `/project`, `/deadline`, and `/status` lines create existing capture records from the editor.
+- Dashboard integrates Today's priorities and Today tasks beside the canvas.
+- Today tasks remain visible and crossed off after completion when they still belong to today's due/planned/in-progress set.
+- Areas open in place to show projects and nested subcontexts.
+- Project detail pages now use one recovery markdown editor for current objective, next action, latest status, and open loops.
+- Workspace dark mode is toggleable from the shell and persists in local storage.
+
+Verification:
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npx playwright test -g "dashboard canvas|today tasks|offline capture"` - passed, 3 tests.
+- `npm run test:e2e` - passed, 16 tests.
+- Browser/visual smoke - passed by DOM and local screenshot; dashboard editor rendered in dark mode at `test-results/dashboard-dark-smoke.png`.
+
+Known issues:
+- Markdown editing is line/block based, not a full collaborative rich-text engine.
+- Slash captures preserve the slash-command capture text in Inbox and visually replace the editor line locally; saving the canvas remains explicit.
+- Dark mode uses global utility overrides rather than a full tokenized component theme.
+
+Next sprint recommendation:
+Use v0.1.7 during the real workday trial and record whether editor-integrated slash capture and project recovery canvas reduce field-hopping.
+
 ## v0.1.6 Sprint 6 - PARA Foundation
 
 Status:

@@ -5,6 +5,8 @@ import type {
   Capture,
   CaptureType,
   CollectionName,
+  DashboardPreference,
+  DashboardScratchpad,
   Deadline,
   Domain,
   Note,
@@ -36,11 +38,31 @@ export const emptyWorkspace = (): WorkspaceData => ({
   deadlines: [],
   reviews: [],
   priorities: [],
+  dashboardScratchpads: [],
+  dashboardPreferences: [],
   serverSyncedAt: ""
 });
 
 function now() {
   return new Date().toISOString();
+}
+
+function normalizeWorkspace(value: Partial<WorkspaceData> | null | undefined): WorkspaceData {
+  return {
+    ...emptyWorkspace(),
+    ...(value ?? {}),
+    domains: value?.domains ?? [],
+    projects: value?.projects ?? [],
+    tasks: value?.tasks ?? [],
+    captures: value?.captures ?? [],
+    notes: value?.notes ?? [],
+    deadlines: value?.deadlines ?? [],
+    reviews: value?.reviews ?? [],
+    priorities: value?.priorities ?? [],
+    dashboardScratchpads: value?.dashboardScratchpads ?? [],
+    dashboardPreferences: value?.dashboardPreferences ?? [],
+    serverSyncedAt: value?.serverSyncedAt ?? ""
+  };
 }
 
 function newId(prefix: string) {
@@ -180,6 +202,8 @@ interface StoreApi {
   removePriority: (id: string) => void;
   addDomain: (name: string) => void;
   updateDomain: (id: string, updates: Partial<Domain>) => void;
+  updateDashboardScratchpad: (content: string) => void;
+  updateDashboardPreferences: (updates: Partial<DashboardPreference>) => void;
 }
 
 const StoreContext = createContext<StoreApi | null>(null);
@@ -206,9 +230,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [data]);
 
   const saveWorkspace = useCallback(async (next: WorkspaceData) => {
-    dataRef.current = next;
-    setData(next);
-    await idbSet(WORKSPACE_KEY, next);
+    const normalized = normalizeWorkspace(next);
+    dataRef.current = normalized;
+    setData(normalized);
+    await idbSet(WORKSPACE_KEY, normalized);
   }, []);
 
   const refreshPendingCount = useCallback(async () => {
@@ -337,9 +362,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     async function boot() {
       const cached = await idbGet<WorkspaceData>(WORKSPACE_KEY);
       if (cached) {
-        setData(cached);
-        dataRef.current = cached;
-        setLastSyncedAt(cached.serverSyncedAt || null);
+        const normalized = normalizeWorkspace(cached);
+        setData(normalized);
+        dataRef.current = normalized;
+        setLastSyncedAt(normalized.serverSyncedAt || null);
         setLoading(false);
       }
       const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
@@ -667,7 +693,37 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       updateDomain: (id, updates) => {
         const domain = byId(dataRef.current.domains, id);
         if (domain) mutate("domains", { ...domain, ...updates });
-      }
+      },
+      updateDashboardScratchpad: (content) => {
+        const ts = now();
+        const existing = dataRef.current.dashboardScratchpads[0];
+        const scratchpad: DashboardScratchpad = existing
+          ? { ...existing, content }
+          : {
+              id: newId("dash-scratch"),
+              content,
+              createdAt: ts,
+              updatedAt: ts
+            };
+        mutate("dashboardScratchpads", scratchpad);
+      },
+      updateDashboardPreferences: (updates) => {
+        const ts = now();
+        const existing = dataRef.current.dashboardPreferences[0];
+        const preferences: DashboardPreference = existing
+          ? { ...existing, ...updates }
+          : {
+              id: newId("dash-prefs"),
+              sectionOrder: [],
+              collapsedSections: [],
+              dateWindowDays: 14,
+              showCompleted: false,
+              createdAt: ts,
+              updatedAt: ts,
+              ...updates
+            };
+        mutate("dashboardPreferences", preferences);
+      },
     };
   }, [
     data,

@@ -7,7 +7,7 @@ import type { QueuedMutation } from "@/lib/types";
 
 const mutationSchema = z.object({
   mutationId: z.string().min(1),
-  entityType: z.enum(["domains", "projects", "tasks", "captures", "notes", "deadlines", "reviews", "priorities"]),
+  entityType: z.enum(["domains", "projects", "tasks", "captures", "notes", "deadlines", "reviews", "priorities", "dashboardScratchpads", "dashboardPreferences"]),
   entityId: z.string().min(1),
   operation: z.enum(["upsert", "delete"]),
   payload: z.record(z.string(), z.any()).nullable(),

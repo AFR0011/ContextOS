@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
+import { Dashboard2View } from "@/components/workspace/Dashboard2";
 import { useWorkspace } from "@/lib/client-store";
 import { isDateKeyInLocalWeek, localDateKey, localWeekStartKey } from "@/lib/dates";
 import type { Capture, Deadline, Domain, Note, Priority, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
@@ -289,113 +290,7 @@ function TaskList({ rows }: { rows: { task: Task; labels: string[] }[] }) {
 }
 
 export function DashboardView() {
-  const router = useRouter();
-  const { data, loading, addCapture, addNote, updateNote } = useWorkspace();
-  const today = localDateKey();
-  const tasks = activeTasks(data.tasks);
-  const todayTasks = executionTasks(data.tasks);
-  const overdue = tasks.filter(isOverdue);
-  const overdueIds = new Set(overdue.map((task) => task.id));
-  const todayRows = todayTasks
-    .filter((task) => !overdueIds.has(task.id) && (task.dueDate === today || task.plannedDate === today || task.status === "in-progress"))
-    .sort(sortDoneLast)
-    .map((task) => ({
-      task,
-      labels: [task.status === "done" ? "Done" : "", task.dueDate === today ? "Due Today" : "", task.plannedDate === today ? "Planned" : "", task.status === "in-progress" ? "In Progress" : "", domainName(data.domains, task.domainId)].filter(Boolean)
-    }));
-  const inbox = data.captures.filter((capture) => capture.status === "unprocessed").slice(0, 5);
-  const recentProjects = data.projects.filter((project) => !project.trashedAt && project.status === "active").slice(0, 6);
-  const weekDeadlines = data.deadlines.filter((deadline) => !deadline.trashedAt && isThisWeek(deadline.date));
-  const dashboardCanvas = data.notes.find((note) => !note.trashedAt && !note.projectId && note.title === DASHBOARD_CANVAS_TITLE);
-  const notesDomainId = data.domains.find((domain) => domain.name === "Notes")?.id || data.domains.find((domain) => !domain.archived)?.id || "";
-
-  return (
-    <Page title="Dashboard" subtitle={loading ? "Loading cached workspace..." : "Capture first. Choose today's work. Recover context fast."}>
-      <DashboardCanvas
-        loading={loading}
-        note={dashboardCanvas}
-        canCreate={Boolean(notesDomainId)}
-        today={today}
-        todayRows={todayRows}
-        onCapture={addCapture}
-        onSave={(content) => {
-          if (dashboardCanvas) {
-            updateNote(dashboardCanvas.id, { content });
-            return;
-          }
-          if (content.trim() && notesDomainId) addNote({ title: DASHBOARD_CANVAS_TITLE, content, projectId: null, domainId: notesDomainId });
-        }}
-      />
-
-      {overdue.length ? (
-        <section className="mt-6">
-          <SectionTitle icon={AlertTriangle} title="Overdue" tone="red" count={overdue.length} />
-          <div className="mt-2">
-            <TaskList rows={overdue.map((task) => ({ task, labels: ["Overdue", domainName(data.domains, task.domainId)].filter(Boolean) }))} />
-          </div>
-        </section>
-      ) : null}
-
-      <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1.1fr]">
-        <section>
-          <div className="flex items-center justify-between">
-            <SectionTitle icon={Inbox} title="Inbox" count={data.captures.filter((capture) => capture.status === "unprocessed").length} />
-            <button onClick={() => router.push("/inbox")} className="text-xs font-medium text-indigo-600 hover:text-indigo-700">View all</button>
-          </div>
-          <div className="mt-2 space-y-1">
-            {inbox.map((capture) => (
-              <div key={capture.id} className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-white">
-                <span className="min-w-0 flex-1 truncate text-sm text-slate-700">{capture.text}</span>
-                {capture.type ? <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">{capture.type}</span> : null}
-              </div>
-            ))}
-            {!inbox.length ? <p className="py-2 text-sm italic text-slate-400">Inbox is clear.</p> : null}
-          </div>
-        </section>
-
-        <section>
-          <SectionTitle icon={FolderKanban} title="Recent Contexts" />
-          <div className="mt-2 grid gap-3 sm:grid-cols-2">
-            {recentProjects.map((project) => (
-              <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-indigo-200 hover:shadow-sm">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="truncate text-sm font-semibold text-slate-950">{project.name}</h3>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${projectStatus[project.status].color}`}>{projectStatus[project.status].label}</span>
-                </div>
-                <span className={`mt-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, project.domainId)}`}>{domainName(data.domains, project.domainId)}</span>
-                {project.nextAction ? <p className="mt-2 truncate text-xs text-indigo-600">Next: {project.nextAction}</p> : null}
-                {project.latestStatus ? <p className="mt-1 truncate text-[11px] text-slate-400">{project.latestStatus}</p> : null}
-              </button>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <details className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
-        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500">This Week and Agent Suggestions</summary>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div>
-            <h3 className="text-sm font-semibold text-slate-800">Deadlines this week</h3>
-            <div className="mt-2 space-y-2">
-              {weekDeadlines.map((deadline) => (
-                <div key={deadline.id} className="text-sm text-slate-700">{deadline.title} <span className="text-xs text-slate-400">- {deadline.date}</span></div>
-              ))}
-              {!weekDeadlines.length ? <p className="text-sm text-slate-400">No deadlines this week.</p> : null}
-            </div>
-          </div>
-          <div className="rounded-lg bg-indigo-50 p-4">
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-indigo-700"><Sparkles className="h-4 w-4" /> Suggestions</div>
-            <ul className="space-y-1 text-sm text-indigo-800">
-              {overdue.length ? <li>{overdue.length} overdue task(s) need reschedule, completion, or dropping.</li> : null}
-              {data.captures.filter((capture) => capture.status === "unprocessed").length > 5 ? <li>Your inbox is getting dense. Run a quick triage.</li> : null}
-              {recentProjects.filter((project) => !project.nextAction).length ? <li>Some active projects need a next action.</li> : null}
-              {!overdue.length ? <li>Use today priorities to keep the surface small.</li> : null}
-            </ul>
-          </div>
-        </div>
-      </details>
-    </Page>
-  );
+  return <Dashboard2View />;
 }
 
 function DashboardCanvas({

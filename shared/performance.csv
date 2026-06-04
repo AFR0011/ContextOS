@@ -1,1 +1,5 @@
 timestamp,phase,command,duration_seconds,status
+2026-06-04T00:00:00.000Z,TEST,npm run typecheck,1.5,passed
+2026-06-04T00:00:00.000Z,TEST,npm run build,6.0,passed
+2026-06-04T00:00:00.000Z,TEST,"npx playwright test -g ""dashboard canvas|today tasks|offline capture""",5.2,passed
+2026-06-04T00:00:00.000Z,TEST,npm run test:e2e,23.6,passed

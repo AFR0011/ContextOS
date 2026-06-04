@@ -255,6 +255,53 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           }
           break;
         }
+
+        case "dashboardScratchpads": {
+          const existing = await tx.dashboardScratchpad.findFirst({ where: { id: payload.id, userId } });
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
+            await tx.dashboardScratchpad.upsert({
+              where: { id: payload.id },
+              update: {
+                content: payload.content ?? "",
+                updatedAt: toDate(updatedAt) ?? new Date()
+              },
+              create: {
+                id: payload.id,
+                userId,
+                content: payload.content ?? "",
+                createdAt: toDate(payload.createdAt) ?? new Date(),
+                updatedAt: toDate(updatedAt) ?? new Date()
+              }
+            });
+          }
+          break;
+        }
+        case "dashboardPreferences": {
+          const existing = await tx.dashboardPreference.findFirst({ where: { id: payload.id, userId } });
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
+            await tx.dashboardPreference.upsert({
+              where: { id: payload.id },
+              update: {
+                sectionOrder: payload.sectionOrder ?? [],
+                collapsedSections: payload.collapsedSections ?? [],
+                dateWindowDays: Number(payload.dateWindowDays ?? 14),
+                showCompleted: Boolean(payload.showCompleted),
+                updatedAt: toDate(updatedAt) ?? new Date()
+              },
+              create: {
+                id: payload.id,
+                userId,
+                sectionOrder: payload.sectionOrder ?? [],
+                collapsedSections: payload.collapsedSections ?? [],
+                dateWindowDays: Number(payload.dateWindowDays ?? 14),
+                showCompleted: Boolean(payload.showCompleted),
+                createdAt: toDate(payload.createdAt) ?? new Date(),
+                updatedAt: toDate(updatedAt) ?? new Date()
+              }
+            });
+          }
+          break;
+        }
         case "reviews": {
           const existing = await tx.review.findFirst({ where: { id: payload.id, userId } });
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {

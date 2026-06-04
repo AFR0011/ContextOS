@@ -2,6 +2,8 @@ import "server-only";
 
 import type {
   Capture,
+  DashboardPreference,
+  DashboardScratchpad,
   Deadline,
   Domain,
   Note,
@@ -17,7 +19,7 @@ import { utcDateToDateKey } from "./dates";
 const iso = (date: Date | null | undefined) => (date ? date.toISOString() : null);
 
 export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
-  const [domains, projects, tasks, captures, notes, deadlines, reviews, priorities] = await Promise.all([
+  const [domains, projects, tasks, captures, notes, deadlines, reviews, priorities, dashboardScratchpads, dashboardPreferences] = await Promise.all([
     prisma.domain.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
     prisma.project.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.task.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
@@ -25,7 +27,9 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
     prisma.note.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.deadline.findMany({ where: { userId }, orderBy: { date: "asc" } }),
     prisma.review.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
-    prisma.priority.findMany({ where: { userId }, orderBy: { createdAt: "asc" } })
+    prisma.priority.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
+    prisma.dashboardScratchpad.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
+    prisma.dashboardPreference.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } })
   ]);
 
   return {
@@ -114,6 +118,21 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       done: p.done,
       createdAt: p.createdAt.toISOString(),
       updatedAt: p.updatedAt.toISOString()
+    })),
+    dashboardScratchpads: dashboardScratchpads.map((scratchpad): DashboardScratchpad => ({
+      id: scratchpad.id,
+      content: scratchpad.content,
+      createdAt: scratchpad.createdAt.toISOString(),
+      updatedAt: scratchpad.updatedAt.toISOString()
+    })),
+    dashboardPreferences: dashboardPreferences.map((preference): DashboardPreference => ({
+      id: preference.id,
+      sectionOrder: preference.sectionOrder as DashboardPreference["sectionOrder"],
+      collapsedSections: preference.collapsedSections as DashboardPreference["collapsedSections"],
+      dateWindowDays: preference.dateWindowDays,
+      showCompleted: preference.showCompleted,
+      createdAt: preference.createdAt.toISOString(),
+      updatedAt: preference.updatedAt.toISOString()
     })),
     serverSyncedAt: new Date().toISOString()
   };

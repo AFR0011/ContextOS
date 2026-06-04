@@ -29,6 +29,8 @@
 - Password: `contextos-demo-v011`
 
 ## Verification Ladder
+Run verification commands sequentially. In this Next.js app, `npm run build` can rewrite generated `.next` route type files while `npm run typecheck` is reading them, causing false transient typecheck failures if they run in parallel.
+
 1. Typecheck:
    ```bash
    npm run typecheck
@@ -48,12 +50,15 @@
    ```
 5. Manual checks:
    - Log in with the demo account.
-   - Add a quick capture.
+   - Add a slash capture from the Dashboard Canvas editor.
    - Convert an inbox capture to a task.
-   - Edit a project next action and latest status.
+   - Check a Today task done and confirm it remains visible and can be unchecked.
+   - Edit project recovery context through the project markdown editor.
    - Create a project subcontext and confirm the parent rolls up child tasks/deadlines.
    - Edit the Dashboard Canvas and confirm it appears in Resources.
+   - Open an Area and confirm projects/subcontexts appear inside it.
    - Open Areas and Resources from the PARA nav group.
+   - Toggle dark mode and reload to confirm it persists.
    - Go offline, add a capture, reload a visited route, return online, and confirm pending sync clears.
 
 ## v0.1.x Usage Trial

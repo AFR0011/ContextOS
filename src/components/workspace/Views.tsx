@@ -31,6 +31,7 @@ import {
   Zap
 } from "lucide-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
+import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
 import { useWorkspace } from "@/lib/client-store";
 import { isDateKeyInLocalWeek, localDateKey, localWeekStartKey } from "@/lib/dates";
 import type { Capture, Deadline, Domain, Note, Priority, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
@@ -116,6 +117,16 @@ function activeTasks(tasks: Task[]) {
   return tasks.filter((task) => !task.trashedAt && !task.archivedAt && task.status !== "done" && task.status !== "dropped");
 }
 
+function executionTasks(tasks: Task[]) {
+  return tasks.filter((task) => !task.trashedAt && !task.archivedAt && task.status !== "dropped");
+}
+
+function sortDoneLast(a: Task, b: Task) {
+  if (a.status === "done" && b.status !== "done") return 1;
+  if (a.status !== "done" && b.status === "done") return -1;
+  return a.createdAt.localeCompare(b.createdAt);
+}
+
 function Page({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
@@ -192,6 +203,7 @@ function TaskRow({ task, labels = [] }: { task: Task; labels?: string[] }) {
     <div className="group flex items-start gap-3 px-3 py-2.5 hover:bg-slate-50">
       <button
         onClick={() => updateTask(task.id, { status: done ? "todo" : "done" })}
+        aria-label={done ? `Mark ${task.title} todo` : `Mark ${task.title} done`}
         className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border-2 ${done ? "border-emerald-500 bg-emerald-500" : "border-slate-300 hover:border-indigo-400"}`}
       >
         {done ? <Check className="h-3 w-3 text-white" /> : null}
@@ -278,16 +290,18 @@ function TaskList({ rows }: { rows: { task: Task; labels: string[] }[] }) {
 
 export function DashboardView() {
   const router = useRouter();
-  const { data, loading, addNote, updateNote } = useWorkspace();
+  const { data, loading, addCapture, addNote, updateNote } = useWorkspace();
   const today = localDateKey();
   const tasks = activeTasks(data.tasks);
+  const todayTasks = executionTasks(data.tasks);
   const overdue = tasks.filter(isOverdue);
   const overdueIds = new Set(overdue.map((task) => task.id));
-  const todayRows = tasks
+  const todayRows = todayTasks
     .filter((task) => !overdueIds.has(task.id) && (task.dueDate === today || task.plannedDate === today || task.status === "in-progress"))
+    .sort(sortDoneLast)
     .map((task) => ({
       task,
-      labels: [task.dueDate === today ? "Due Today" : "", task.plannedDate === today ? "Planned" : "", task.status === "in-progress" ? "In Progress" : "", domainName(data.domains, task.domainId)].filter(Boolean)
+      labels: [task.status === "done" ? "Done" : "", task.dueDate === today ? "Due Today" : "", task.plannedDate === today ? "Planned" : "", task.status === "in-progress" ? "In Progress" : "", domainName(data.domains, task.domainId)].filter(Boolean)
     }));
   const inbox = data.captures.filter((capture) => capture.status === "unprocessed").slice(0, 5);
   const recentProjects = data.projects.filter((project) => !project.trashedAt && project.status === "active").slice(0, 6);
@@ -297,36 +311,21 @@ export function DashboardView() {
 
   return (
     <Page title="Dashboard" subtitle={loading ? "Loading cached workspace..." : "Capture first. Choose today's work. Recover context fast."}>
-      <QuickCapture />
-
-      <div className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-        <DashboardCanvas
-          loading={loading}
-          note={dashboardCanvas}
-          canCreate={Boolean(notesDomainId)}
-          onSave={(content) => {
-            if (dashboardCanvas) {
-              updateNote(dashboardCanvas.id, { content });
-              return;
-            }
-            if (content.trim() && notesDomainId) addNote({ title: DASHBOARD_CANVAS_TITLE, content, projectId: null, domainId: notesDomainId });
-          }}
-        />
-
-        <section>
-          <SectionTitle icon={Star} title="Today's Priorities" tone="amber" />
-          <div className="mt-3">
-            <PriorityEditor scope="daily" dateKeyValue={today} limit={3} />
-          </div>
-        </section>
-      </div>
-
-      <section className="mt-6">
-        <SectionTitle icon={Clock} title="Today" tone="indigo" count={todayRows.length} />
-        <div className="mt-2">
-          <TaskList rows={todayRows} />
-        </div>
-      </section>
+      <DashboardCanvas
+        loading={loading}
+        note={dashboardCanvas}
+        canCreate={Boolean(notesDomainId)}
+        today={today}
+        todayRows={todayRows}
+        onCapture={addCapture}
+        onSave={(content) => {
+          if (dashboardCanvas) {
+            updateNote(dashboardCanvas.id, { content });
+            return;
+          }
+          if (content.trim() && notesDomainId) addNote({ title: DASHBOARD_CANVAS_TITLE, content, projectId: null, domainId: notesDomainId });
+        }}
+      />
 
       {overdue.length ? (
         <section className="mt-6">
@@ -399,25 +398,57 @@ export function DashboardView() {
   );
 }
 
-function DashboardCanvas({ note, canCreate, loading, onSave }: { note?: Note; canCreate: boolean; loading: boolean; onSave: (content: string) => void }) {
+function DashboardCanvas({
+  note,
+  canCreate,
+  loading,
+  today,
+  todayRows,
+  onCapture,
+  onSave
+}: {
+  note?: Note;
+  canCreate: boolean;
+  loading: boolean;
+  today: string;
+  todayRows: { task: Task; labels: string[] }[];
+  onCapture: (line: string) => void;
+  onSave: (content: string) => void;
+}) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4">
-      <SectionTitle icon={FileText} title="Dashboard Canvas" tone="indigo" />
       {loading ? (
         <p className="mt-3 rounded-lg bg-slate-50 px-3 py-6 text-sm text-slate-400">Loading dashboard canvas...</p>
       ) : (
-        <>
-          <div className="mt-3">
-            <EditableField
-              value={note?.content ?? ""}
-              placeholder={canCreate ? "Loose dashboard notes, dates, goals, or checklists..." : "Create a domain before saving dashboard notes."}
-              multiline
-              rows={7}
-              onSave={onSave}
-            />
+        <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <SectionTitle icon={FileText} title="Dashboard Canvas" tone="indigo" />
+            <div className="mt-3">
+              <MarkdownEditor
+                value={note?.content ?? ""}
+                placeholder={canCreate ? "Type / for blocks or captures..." : "Create a domain before saving dashboard notes."}
+                minLines={7}
+                dataTestId="dashboard-canvas-editor"
+                onCaptureLine={onCapture}
+                onSave={onSave}
+              />
+            </div>
           </div>
-          <p className="mt-2 text-xs text-slate-400">Markdown/checklists stay local to the canvas unless you turn them into tasks.</p>
-        </>
+          <div className="space-y-5">
+            <section>
+              <SectionTitle icon={Star} title="Today's Priorities" tone="amber" />
+              <div className="mt-3">
+                <PriorityEditor scope="daily" dateKeyValue={today} limit={3} />
+              </div>
+            </section>
+            <section>
+              <SectionTitle icon={Clock} title="Today" tone="indigo" count={todayRows.length} />
+              <div className="mt-2">
+                <TaskList rows={todayRows} />
+              </div>
+            </section>
+          </div>
+        </div>
       )}
     </section>
   );
@@ -478,19 +509,21 @@ function CaptureCard({ capture, onConvert, onArchive, onDelete }: { capture: Cap
 export function TodayView() {
   const { data } = useWorkspace();
   const today = localDateKey();
-  const tasks = activeTasks(data.tasks);
+  const tasks = executionTasks(data.tasks);
+  const overdue = activeTasks(data.tasks).filter(isOverdue);
   const seen = new Set<string>();
   const rows: { task: Task; labels: string[] }[] = [];
   const add = (task: Task, labels: string[]) => {
     if (!seen.has(task.id)) {
       seen.add(task.id);
-      rows.push({ task, labels: [...labels, domainName(data.domains, task.domainId)].filter(Boolean) });
+      rows.push({ task, labels: [task.status === "done" ? "Done" : "", ...labels, domainName(data.domains, task.domainId)].filter(Boolean) });
     }
   };
-  tasks.filter(isOverdue).forEach((task) => add(task, ["Overdue"]));
+  overdue.forEach((task) => add(task, ["Overdue"]));
   tasks.filter((task) => task.dueDate === today && !isOverdue(task)).forEach((task) => add(task, ["Due Today"]));
   tasks.filter((task) => task.plannedDate === today && !isOverdue(task)).forEach((task) => add(task, ["Planned Today"]));
   tasks.filter((task) => task.status === "in-progress").forEach((task) => add(task, ["In Progress"]));
+  rows.sort((a, b) => sortDoneLast(a.task, b.task));
   const deadlines = data.deadlines.filter((deadline) => !deadline.trashedAt && deadline.date === today);
 
   return (
@@ -619,9 +652,51 @@ export function ProjectsView() {
   );
 }
 
+function AreaProjectTree({
+  project,
+  projects,
+  tasks,
+  deadlines,
+  depth,
+  onOpen
+}: {
+  project: Project;
+  projects: Project[];
+  tasks: Task[];
+  deadlines: Deadline[];
+  depth: number;
+  onOpen: (projectId: string) => void;
+}) {
+  const children = childProjects(projects, project.id);
+  const descendantIds = descendantProjectIds(projects, project.id);
+  const projectIds = new Set([project.id, ...descendantIds]);
+  const taskCount = activeTasks(tasks).filter((task) => task.projectId && projectIds.has(task.projectId)).length;
+  const deadlineCount = deadlines.filter((deadline) => !deadline.trashedAt && deadline.projectId && projectIds.has(deadline.projectId)).length;
+
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={() => onOpen(project.id)}
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-slate-50"
+        style={{ paddingLeft: `${0.5 + depth * 1.1}rem` }}
+      >
+        <Layers className="h-3.5 w-3.5 shrink-0 text-slate-300" />
+        <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700">{project.name}</span>
+        {taskCount ? <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">{taskCount} task{taskCount > 1 ? "s" : ""}</span> : null}
+        {deadlineCount ? <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700">{deadlineCount} date{deadlineCount > 1 ? "s" : ""}</span> : null}
+      </button>
+      {children.map((child) => (
+        <AreaProjectTree key={child.id} project={child} projects={projects} tasks={tasks} deadlines={deadlines} depth={depth + 1} onOpen={onOpen} />
+      ))}
+    </div>
+  );
+}
+
 export function AreasView() {
   const router = useRouter();
   const { data, loading } = useWorkspace();
+  const [openAreaId, setOpenAreaId] = useState<string | null>(null);
   const activeDomains = data.domains.filter((domain) => !domain.archived);
 
   return (
@@ -635,6 +710,7 @@ export function AreasView() {
           const resourceCount = data.notes.filter((note) => note.domainId === domain.id && !note.projectId && !note.trashedAt).length;
           const deadlineCount = data.deadlines.filter((deadline) => !deadline.trashedAt && deadline.projectId && projectIds.has(deadline.projectId)).length;
           const roots = domainProjects.filter((project) => !project.parentProjectId || !projectIds.has(project.parentProjectId));
+          const open = openAreaId === domain.id;
           return (
             <section key={domain.id} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex items-start justify-between gap-3">
@@ -642,7 +718,14 @@ export function AreasView() {
                   <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, domain.id)}`}>Area</span>
                   <h2 className="mt-2 text-base font-semibold text-slate-950">{domain.name}</h2>
                 </div>
-                <Boxes className="h-5 w-5 text-slate-300" />
+                <button
+                  type="button"
+                  aria-label={open ? `Close ${domain.name}` : `Open ${domain.name}`}
+                  onClick={() => setOpenAreaId(open ? null : domain.id)}
+                  className="rounded-md p-1 text-slate-400 hover:bg-slate-50 hover:text-indigo-600"
+                >
+                  {open ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                </button>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-lg bg-slate-50 p-2"><p className="text-sm font-semibold text-slate-900">{domainProjects.length}</p><p className="text-[10px] uppercase tracking-wider text-slate-400">Projects</p></div>
@@ -650,7 +733,7 @@ export function AreasView() {
                 <div className="rounded-lg bg-slate-50 p-2"><p className="text-sm font-semibold text-slate-900">{resourceCount}</p><p className="text-[10px] uppercase tracking-wider text-slate-400">Resources</p></div>
               </div>
               <div className="mt-4 space-y-2">
-                {roots.slice(0, 3).map((project) => (
+                {(!open ? roots.slice(0, 3) : []).map((project) => (
                   <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-slate-50">
                     <FolderKanban className="h-3.5 w-3.5 text-slate-300" />
                     <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700">{project.name}</span>
@@ -659,6 +742,13 @@ export function AreasView() {
                 ))}
                 {!roots.length ? <p className="text-xs italic text-slate-400">No active projects in this area.</p> : null}
               </div>
+              {open && roots.length ? (
+                <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50/60 p-2">
+                  {roots.map((project) => (
+                    <AreaProjectTree key={project.id} project={project} projects={data.projects} tasks={data.tasks} deadlines={data.deadlines} depth={0} onOpen={(id) => router.push(`/projects/${id}`)} />
+                  ))}
+                </div>
+              ) : null}
               <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-slate-400">
                 {deadlineCount ? <span>{deadlineCount} deadline{deadlineCount > 1 ? "s" : ""}</span> : null}
                 {domain.archived ? <span>Archived</span> : null}
@@ -815,12 +905,71 @@ function EditableField({
   );
 }
 
+const recoveryHeadings = {
+  currentObjective: "Current Objective",
+  nextAction: "Next Action",
+  latestStatus: "Latest Status",
+  openLoops: "Open Loops"
+} as const;
+
+function projectRecoveryMarkdown(project: Project) {
+  return [
+    `## ${recoveryHeadings.currentObjective}`,
+    project.currentObjective,
+    "",
+    `## ${recoveryHeadings.nextAction}`,
+    project.nextAction,
+    "",
+    `## ${recoveryHeadings.latestStatus}`,
+    project.latestStatus,
+    "",
+    `## ${recoveryHeadings.openLoops}`,
+    ...project.openLoops.map((loop) => `- [ ] ${loop}`)
+  ].join("\n");
+}
+
+function parseProjectRecoveryMarkdown(markdown: string) {
+  const sections: Record<keyof typeof recoveryHeadings, string[] | null> = {
+    currentObjective: null,
+    nextAction: null,
+    latestStatus: null,
+    openLoops: null
+  };
+  const headingMap = new Map(Object.entries(recoveryHeadings).map(([key, value]) => [value.toLowerCase(), key as keyof typeof recoveryHeadings]));
+  let active: keyof typeof recoveryHeadings | null = null;
+
+  markdown.split(/\r?\n/).forEach((line) => {
+    const heading = line.match(/^##\s+(.+)$/);
+    if (heading) {
+      active = headingMap.get((heading[1] ?? "").trim().toLowerCase()) ?? null;
+      if (active && sections[active] === null) sections[active] = [];
+      return;
+    }
+    if (active) sections[active]?.push(line);
+  });
+
+  const cleanText = (key: keyof typeof recoveryHeadings) => (sections[key] === null ? null : sections[key]!.join("\n").trim());
+  const rawLoops = sections.openLoops;
+  const openLoops =
+    rawLoops === null
+      ? null
+      : rawLoops
+          .map((line) => line.replace(/^- \[( |x|X)\]\s?/, "").replace(/^- /, "").trim())
+          .filter(Boolean);
+
+  return {
+    currentObjective: cleanText("currentObjective"),
+    nextAction: cleanText("nextAction"),
+    latestStatus: cleanText("latestStatus"),
+    openLoops
+  };
+}
+
 export function ProjectDetailView({ projectId }: { projectId: string }) {
   const router = useRouter();
   const { data, updateProject, addProject, addTask, addDeadline, updateDeadline, addNote, updateNote } = useWorkspace();
   const project = data.projects.find((item) => item.id === projectId);
   const [newSubcontext, setNewSubcontext] = useState("");
-  const [newLoop, setNewLoop] = useState("");
   const [newTask, setNewTask] = useState("");
   const [newDeadline, setNewDeadline] = useState("");
   const [newDeadlineDate, setNewDeadlineDate] = useState(localDateKey());
@@ -846,12 +995,6 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
     project.openLoops.length ? `Review ${project.openLoops.length} open loop(s).` : "",
     !activeTaskCount ? "No active tasks. Add one small concrete task." : ""
   ].filter(Boolean);
-
-  function addLoop() {
-    if (!newLoop.trim()) return;
-    updateProject(currentProject.id, { openLoops: [...currentProject.openLoops, newLoop.trim()] });
-    setNewLoop("");
-  }
 
   function addSubcontext() {
     const name = newSubcontext.trim();
@@ -918,11 +1061,23 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4">
-        <InfoBlock title="Current Objective"><EditableField value={project.currentObjective} placeholder="What is this project trying to achieve?" multiline onSave={(value) => updateProject(project.id, { currentObjective: value })} /></InfoBlock>
-        <InfoBlock title="Next Action" accent><EditableField value={project.nextAction} placeholder="What is the next concrete action?" onSave={(value) => updateProject(project.id, { nextAction: value })} /></InfoBlock>
-        <InfoBlock title="Latest Status"><EditableField value={project.latestStatus} placeholder="Where did you leave off?" multiline onSave={(value) => updateProject(project.id, { latestStatus: value })} /></InfoBlock>
-      </div>
+      <InfoBlock title="Recovery Canvas" accent className="mt-4">
+        <MarkdownEditor
+          value={projectRecoveryMarkdown(project)}
+          placeholder="Write project recovery context..."
+          minLines={10}
+          dataTestId="project-recovery-editor"
+          onSave={(markdown) => {
+            const parsed = parseProjectRecoveryMarkdown(markdown);
+            updateProject(project.id, {
+              currentObjective: parsed.currentObjective ?? project.currentObjective,
+              nextAction: parsed.nextAction ?? project.nextAction,
+              latestStatus: parsed.latestStatus ?? project.latestStatus,
+              openLoops: parsed.openLoops ?? project.openLoops
+            });
+          }}
+        />
+      </InfoBlock>
 
       <InfoBlock title="Subcontexts" className="mt-4">
         <div className="space-y-2">
@@ -953,22 +1108,6 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           <div className="flex items-center gap-2 pt-2">
             <input value={newSubcontext} onChange={(event) => setNewSubcontext(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addSubcontext()} placeholder="Add subcontext, course, assignment, or duty..." className="flex-1 border-b border-slate-200 bg-transparent py-1 text-sm outline-none focus:border-indigo-300" />
             <button onClick={addSubcontext} className="text-indigo-600"><Plus className="h-4 w-4" /></button>
-          </div>
-        </div>
-      </InfoBlock>
-
-      <InfoBlock title="Open Loops / Blockers" className="mt-4">
-        <div className="space-y-1">
-          {project.openLoops.map((loop, index) => (
-            <div key={`${loop}-${index}`} className="group flex items-center gap-2 py-1.5">
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              <span className="flex-1 text-sm text-slate-700">{loop}</span>
-              <button onClick={() => updateProject(project.id, { openLoops: project.openLoops.filter((_, i) => i !== index) })} className="opacity-0 text-slate-400 hover:text-red-500 group-hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
-            </div>
-          ))}
-          <div className="flex items-center gap-2 pt-2">
-            <input value={newLoop} onChange={(event) => setNewLoop(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addLoop()} placeholder="Add open loop or blocker..." className="flex-1 border-b border-slate-200 bg-transparent py-1 text-sm outline-none focus:border-indigo-300" />
-            <button onClick={addLoop} className="text-indigo-600"><Plus className="h-4 w-4" /></button>
           </div>
         </div>
       </InfoBlock>
@@ -1036,7 +1175,13 @@ function NoteCard({ note, editing, onEdit, onDone, onUpdate }: { note: Note; edi
       <div className="rounded-lg border border-slate-100 p-3">
         <EditableField value={note.title} placeholder="Note title" onSave={(title) => onUpdate({ title })} inputClassName="font-semibold" />
         <div className="mt-2">
-          <EditableField value={note.content} multiline rows={5} placeholder="Markdown supported: #, ##, -, [], >" onSave={(content) => onUpdate({ content })} />
+          <MarkdownEditor
+            value={note.content}
+            placeholder="Type / for blocks..."
+            minLines={5}
+            dataTestId={`note-editor-${note.id}`}
+            onSave={(content) => onUpdate({ content })}
+          />
         </div>
         <button onClick={onDone} className="mt-3 text-xs font-semibold text-indigo-600">Done</button>
       </div>
@@ -1054,10 +1199,13 @@ function MarkdownPreview({ content }: { content: string }) {
   return (
     <div className="prose-lite mt-2 line-clamp-5 text-xs text-slate-600">
       {content.split("\n").map((line, index) => {
+        const checkbox = line.match(/^- \[( |x|X)\]\s?(.*)$/);
+        if (checkbox) return <p key={index}>{checkbox[1].toLowerCase() === "x" ? "[x]" : "[ ]"} {checkbox[2]}</p>;
         if (line.startsWith("## ")) return <h2 key={index}>{line.slice(3)}</h2>;
         if (line.startsWith("# ")) return <h1 key={index}>{line.slice(2)}</h1>;
-        if (line.startsWith("- ")) return <p key={index}>• {line.slice(2)}</p>;
+        if (line.startsWith("- ")) return <p key={index}>- {line.slice(2)}</p>;
         if (line.startsWith("> ")) return <blockquote key={index}>{line.slice(2)}</blockquote>;
+        if (line.startsWith("```")) return <code key={index}>{line}</code>;
         return <p key={index}>{line || "\u00a0"}</p>;
       })}
     </div>

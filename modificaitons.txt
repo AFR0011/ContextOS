@@ -1,0 +1,6 @@
+1) Turn the dashboard canvas into a true markdown editor like Notion (slash commands for different markdown elements, instantly rendered as markdown not as text, etc.)
+2) Merge quick capture into the dashboard canvas instead of having a separate field for it, I should be able to use the same slash commands in the editor to quick capture.
+3) Today's tasks should not disappear completely when their box is checked, they should instead be crossed off but still visible and interactable (similar to the Notion todo items). Also, they should be seamlessly integrated into the canvas dashboard.
+4) I should be able to open areas and see the projects inside them the same way I can open a project/subcontext
+5) For project/subcontext pages, let's integrate all the different fields into one markdown editor so that it's easier to work with, because right now I keep having to click on many different fields just to fill in the information regarding the project.
+6) add dark mode.

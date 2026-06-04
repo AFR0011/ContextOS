@@ -79,9 +79,10 @@ test("seeded demo account can log in and render dashboard", async ({ page }) => 
 test("quick capture appears in inbox and can convert to a task", async ({ page }) => {
   await login(page);
   const text = `offline-ready capture ${Date.now()}`;
-  await page.getByPlaceholder(/Quick capture/).fill(`/task ${text}`);
-  await page.getByPlaceholder(/Quick capture/).press("Enter");
-  await expect(page.getByText(`/task ${text}`)).toBeVisible();
+  const editor = page.getByTestId("dashboard-canvas-editor");
+  await editor.getByTestId("dashboard-canvas-editor-line-3").fill(`/task ${text}`);
+  await editor.getByTestId("dashboard-canvas-editor-line-3").press("Enter");
+  await expect(editor.getByTestId("dashboard-canvas-editor-line-3")).toHaveValue(text);
   await page.goto("/inbox");
   await expect(page.getByText(`/task ${text}`)).toBeVisible();
   await page.getByRole("button", { name: "Capture actions" }).first().click();
@@ -97,10 +98,11 @@ test("project recovery fields persist after reload", async ({ page }) => {
   await page.getByRole("button", { name: "Projects" }).click();
   await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
   const nextAction = `Verify recovery persistence ${Date.now()}`;
-  await page.getByPlaceholder("What is the next concrete action?").fill(nextAction);
-  await page.getByPlaceholder("What is the next concrete action?").blur();
+  const editor = page.getByTestId("project-recovery-editor");
+  await editor.getByTestId("project-recovery-editor-line-4").fill(nextAction);
+  await editor.getByRole("button", { name: "Save" }).click();
   await page.reload();
-  await expect(page.getByPlaceholder("What is the next concrete action?")).toHaveValue(nextAction);
+  await expect(page.getByTestId("project-recovery-editor-line-4")).toHaveValue(nextAction);
 });
 
 test("project subcontexts roll child tasks and deadlines into parent recovery", async ({ page }) => {
@@ -136,15 +138,28 @@ test("project subcontexts roll child tasks and deadlines into parent recovery", 
 
 test("dashboard canvas saves as a standalone resource note", async ({ page }) => {
   await login(page);
-  const content = `## Canvas check ${Date.now()}\n- [ ] Keep dashboard widgets and scratch notes together`;
-  const canvas = page.locator("section").filter({ hasText: "Dashboard Canvas" }).locator("textarea");
-  await canvas.fill(content);
-  await page.getByRole("button", { name: "Save", exact: true }).click();
+  const content = `Canvas check ${Date.now()}`;
+  const editor = page.getByTestId("dashboard-canvas-editor");
+  await editor.getByTestId("dashboard-canvas-editor-line-0").fill(content);
+  await editor.getByRole("button", { name: "Save", exact: true }).click();
   await page.reload();
-  await expect(page.locator("section").filter({ hasText: "Dashboard Canvas" }).locator("textarea")).toHaveValue(content);
+  await expect(page.getByTestId("dashboard-canvas-editor-line-0")).toHaveValue(content);
 
   await page.getByRole("button", { name: "Resources" }).click();
   await expect(page.getByText("Dashboard Canvas").first()).toBeVisible();
+});
+
+test("today tasks stay visible and interactable after completion", async ({ page }) => {
+  await login(page);
+  const taskTitle = "Process inbox captures";
+  await expect(page.getByText(taskTitle)).toBeVisible();
+  await page.getByRole("button", { name: `Mark ${taskTitle} done` }).click();
+  await expect(page.getByText(taskTitle)).toBeVisible();
+  await expect(page.getByRole("button", { name: `Mark ${taskTitle} todo` })).toBeVisible();
+
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(page.getByText(taskTitle)).toBeVisible();
+  await expect(page.getByRole("button", { name: `Mark ${taskTitle} todo` })).toBeVisible();
 });
 
 test("areas and resources expose PARA navigation", async ({ page }) => {
@@ -152,6 +167,8 @@ test("areas and resources expose PARA navigation", async ({ page }) => {
   await page.getByRole("button", { name: "Areas" }).click();
   await expect(page.getByRole("heading", { name: "Areas" })).toBeVisible();
   await expect(page.getByText("Dev / Freelance")).toBeVisible();
+  await page.getByRole("button", { name: "Open Dev / Freelance" }).click();
+  await expect(page.getByText("Dashboard 2.0 Foundation")).toBeVisible();
 
   await page.getByRole("button", { name: "Resources" }).click();
   await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();
@@ -165,19 +182,30 @@ test("areas and resources expose PARA navigation", async ({ page }) => {
   await expect(page.getByText(title).first()).toBeVisible();
 });
 
+test("workspace dark mode toggles and persists", async ({ page }) => {
+  await login(page);
+  await page.getByRole("button", { name: "Switch to dark mode" }).first().click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await page.reload();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await page.getByRole("button", { name: "Switch to light mode" }).first().click();
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
+});
+
 test("offline capture is stored locally and sync state shows pending work", async ({ page, context }) => {
   await login(page);
   await page.goto("/inbox");
   await page.goto("/dashboard");
   await context.setOffline(true);
   const text = `offline capture ${Date.now()}`;
-  await page.getByPlaceholder(/Quick capture/).fill(text);
-  await page.getByPlaceholder(/Quick capture/).press("Enter");
-  await expect(page.getByText(text)).toBeVisible();
+  const editor = page.getByTestId("dashboard-canvas-editor");
+  await editor.getByTestId("dashboard-canvas-editor-line-3").fill(`/note ${text}`);
+  await editor.getByTestId("dashboard-canvas-editor-line-3").press("Enter");
+  await expect(editor.getByTestId("dashboard-canvas-editor-line-3")).toHaveValue(text);
   await expect(page.getByText(/pending/i).first()).toBeVisible();
-  await expect.poll(() => offlineCacheState(page, text)).toEqual({ hasCapture: true, pendingCount: 1 });
+  await expect.poll(() => offlineCacheState(page, `/note ${text}`)).toEqual({ hasCapture: true, pendingCount: 1 });
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect.poll(() => offlineCacheState(page, text)).toEqual({ hasCapture: true, pendingCount: 1 });
+  await expect.poll(() => offlineCacheState(page, `/note ${text}`)).toEqual({ hasCapture: true, pendingCount: 1 });
   await context.setOffline(false);
   await page.reload();
   await expect(page.getByText(text)).toBeVisible();
@@ -260,17 +288,17 @@ test("long note edits save intentionally and persist", async ({ page }) => {
   await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
   await page.getByText("Demo handoff").click();
 
-  const content = `# Draft save check\n- Saved intentionally ${Date.now()}`;
-  const noteEditor = page.getByPlaceholder("Markdown supported: #, ##, -, [], >");
-  await noteEditor.fill(content);
+  const content = `Draft save check ${Date.now()}`;
+  const noteEditor = page.locator('[data-testid^="note-editor-"]').first();
+  await noteEditor.locator('input[data-testid$="-line-0"]').fill(content);
   await expect(page.getByText("Unsaved changes").first()).toBeVisible();
-  await page.getByRole("button", { name: "Save" }).click();
+  await noteEditor.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Saved").first()).toBeVisible();
   await page.getByRole("button", { name: "Done" }).click();
 
   await page.reload();
   await page.getByText("Demo handoff").click();
-  await expect(page.getByPlaceholder("Markdown supported: #, ##, -, [], >")).toHaveValue(content);
+  await expect(page.locator('[data-testid^="note-editor-"]').first().locator('input[data-testid$="-line-0"]')).toHaveValue(content);
 });
 
 test("deadline date remains stable after save and refresh", async ({ page }) => {

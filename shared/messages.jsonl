@@ -1,0 +1,1 @@
+{"ts":"2026-06-04T00:00:00.000Z","from":"architect-planner","to":"executor","type":"handoff","subject":"v0.1.7 active batch","body":"Implement only the workspace markdown canvas batch described in DEV_STATE.md."}

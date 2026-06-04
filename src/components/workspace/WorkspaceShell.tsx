@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Moon,
   RefreshCw,
   Search,
   Settings,
@@ -107,11 +108,25 @@ function SyncIndicator({ sync, compact = false }: { sync: SyncSnapshot; compact?
 
 export default function WorkspaceShell({ user, children }: { user: PublicUser; children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState<boolean | null>(null);
   const pathname = usePathname();
   const currentPath = pathname ?? "";
   const router = useRouter();
   const { data, sync } = useWorkspace();
   const inboxCount = data.captures.filter((capture) => capture.status === "unprocessed").length;
+  const isDark = darkMode ?? false;
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("contextos-theme");
+    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+    setDarkMode(stored ? stored === "dark" : prefersDark);
+  }, []);
+
+  useEffect(() => {
+    if (darkMode === null) return;
+    document.documentElement.classList.toggle("dark", darkMode);
+    window.localStorage.setItem("contextos-theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -134,7 +149,15 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             <p className="text-sm font-bold text-slate-950">ContextOS</p>
             <p className="text-[11px] font-medium text-slate-400">MVP v0.1</p>
           </div>
-          <button className="ml-auto rounded-md p-1 text-slate-400 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(false)}>
+          <button
+            className="ml-auto rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            onClick={() => setDarkMode(!isDark)}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+          <button className="rounded-md p-1 text-slate-400 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(false)}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -189,6 +212,14 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
         <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
           <button className="rounded-md p-1 text-slate-600 hover:bg-slate-100" onClick={() => setOpen(true)}>
             <Menu className="h-5 w-5" />
+          </button>
+          <button
+            className="rounded-md p-1 text-slate-600 hover:bg-slate-100"
+            onClick={() => setDarkMode(!isDark)}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <Zap className="h-4 w-4 text-indigo-600" />

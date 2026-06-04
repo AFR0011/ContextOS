@@ -100,7 +100,7 @@ test("seeded demo account can log in and render dashboard", async ({ page }) => 
   await expect(page.getByRole("button", { name: /Dates/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Tasks/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Projects/ })).toBeVisible();
-  await expect(page.getByText("ContextOS Demo").first()).toBeVisible();
+  await expect(page.getByTestId("dashboard-section-projects").getByRole("button", { name: /ContextOS Demo/ })).toBeVisible();
 });
 
 test("quick capture appears in inbox and can convert to a task", async ({ page }) => {
@@ -123,11 +123,15 @@ test("project recovery fields persist after reload", async ({ page }) => {
   await page.getByRole("button", { name: "Projects" }).click();
   await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
   const nextAction = `Verify recovery persistence ${Date.now()}`;
+  const note = `Recovery note ${Date.now()}`;
   const editor = page.getByTestId("project-recovery-editor");
-  await editor.getByTestId("project-recovery-editor-line-4").fill(nextAction);
-  await editor.getByRole("button", { name: "Save" }).click();
+  await editor.getByPlaceholder("Concrete next action...").fill(nextAction);
+  await editor.getByPlaceholder("Concrete next action...").blur();
+  await page.getByTestId("project-recovery-notes-textarea").fill(note);
+  await page.getByTestId("project-recovery-notes").getByRole("button", { name: "Save" }).click();
   await page.reload();
-  await expect(page.getByTestId("project-recovery-editor-line-4")).toHaveValue(nextAction);
+  await expect(page.getByPlaceholder("Concrete next action...")).toHaveValue(nextAction);
+  await expect(page.getByTestId("project-recovery-notes-textarea")).toHaveValue(note);
 });
 
 test("project subcontexts roll child tasks and deadlines into parent recovery", async ({ page }) => {
@@ -186,10 +190,26 @@ test("dashboard can add and complete a real task", async ({ page }) => {
   const title = `Dashboard real task ${Date.now()}`;
   const taskSection = page.getByTestId("dashboard-section-tasks");
   await page.getByTestId("dashboard-add-task-input").fill(title);
-  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await taskSection.getByRole("button", { name: "Add", exact: true }).click();
   await expect(taskSection.getByRole("button", { name: title, exact: true })).toBeVisible();
   await taskSection.getByRole("button", { name: `Mark ${title} done` }).click();
   await expect(taskSection.getByRole("button", { name: title, exact: true })).not.toBeVisible();
+});
+
+test("dashboard can add a project-linked deadline with time and location", async ({ page }) => {
+  await login(page);
+  const title = `Dashboard deadline ${Date.now()}`;
+  const datesSection = page.getByTestId("dashboard-section-dates");
+  await datesSection.getByTestId("dashboard-add-deadline-input").fill(title);
+  await datesSection.getByLabel("Deadline time").fill("14:30");
+  await datesSection.getByLabel("Deadline location").fill("Library");
+  await datesSection.getByLabel("Deadline project").selectOption({ label: "ContextOS Demo" });
+  await datesSection.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(datesSection.getByText(title)).toBeVisible();
+  await expect(datesSection.getByText("14:30")).toBeVisible();
+  await expect(datesSection.getByText("Library")).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toBeVisible();
 });
 
 test("today tasks stay visible and interactable after completion", async ({ page }) => {
@@ -216,7 +236,13 @@ test("areas and resources expose PARA navigation", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Areas" })).toBeVisible();
   await expect(page.getByText("Dev / Freelance")).toBeVisible();
   await page.getByRole("button", { name: "Open Dev / Freelance" }).click();
-  await expect(page.getByText("Dashboard 2.0 Foundation")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Dashboard 2.0 Foundation/ })).toBeVisible();
+  const areaProject = `Area project ${Date.now()}`;
+  await page.getByPlaceholder("New project in Dev / Freelance...").fill(areaProject);
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByText(areaProject)).toBeVisible();
+  await page.getByRole("button", { name: `Delete ${areaProject}` }).click();
+  await expect(page.getByText(areaProject)).not.toBeVisible();
 
   await page.getByRole("button", { name: "Resources" }).click();
   await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();

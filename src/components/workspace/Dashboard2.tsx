@@ -4,6 +4,9 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
+  Bell,
+  BookOpen,
+  CalendarClock,
   CalendarDays,
   Check,
   ChevronDown,
@@ -11,6 +14,7 @@ import {
   Circle,
   Eraser,
   FolderKanban,
+  MapPin,
   NotebookPen,
   Plus,
   SquarePen,
@@ -18,9 +22,9 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
-import { addDaysToDateKey, dateKeyToLocalDate, localDateKey } from "@/lib/dates";
+import { addDaysToDateKey, dateKeyToLocalDate, localDateKey, localWeekStartKey } from "@/lib/dates";
 import { useWorkspace } from "@/lib/client-store";
-import type { DashboardPreference, DashboardSectionId, Deadline, Project, Task, TaskStatus } from "@/lib/types";
+import type { DashboardPreference, DashboardSectionId, Deadline, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
 
 const DASHBOARD_SECTION_ORDER: DashboardSectionId[] = ["notepad", "dates", "tasks", "projects"];
 const DONE_TASK_STATUSES: TaskStatus[] = ["done", "dropped"];
@@ -72,6 +76,10 @@ function formatDateKey(dateKey: string) {
   return date ? format(date, "MMM d, yyyy") : dateKey;
 }
 
+function activeProjectOptions(projects: Project[]) {
+  return projects.filter((project) => !project.trashedAt && !project.archivedAt && project.status !== "archived").sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function daysBetween(startKey: string, endKey: string) {
   const start = dateKeyToLocalDate(startKey);
   const end = dateKeyToLocalDate(endKey);
@@ -93,9 +101,33 @@ function sectionDefaults(preference?: DashboardPreference) {
   return {
     collapsedSections: preference?.collapsedSections ?? [],
     dateWindowDays: preference?.dateWindowDays ?? 14,
+    reviewPromptDismissals: preference?.reviewPromptDismissals ?? [],
     showCompleted: preference?.showCompleted ?? false,
     sectionOrder: preference?.sectionOrder?.length ? preference.sectionOrder : DASHBOARD_SECTION_ORDER
   };
+}
+
+function reviewLabel(type: ReviewType) {
+  const labels: Record<ReviewType, string> = {
+    "daily-startup": "Daily startup",
+    "daily-shutdown": "Daily shutdown",
+    weekly: "Weekly review"
+  };
+  return labels[type];
+}
+
+function dueReviewType(reviews: { type: ReviewType; date: string }[], dismissals: string[]) {
+  const today = localDateKey();
+  const week = localWeekStartKey();
+  const nowHour = new Date().getHours();
+  const reviewedToday = (type: ReviewType) => reviews.some((review) => review.type === type && localDateKey(parseISO(review.date)) === today);
+  const weeklyDone = reviews.some((review) => review.type === "weekly" && localWeekStartKey(parseISO(review.date)) === week);
+  const candidates: { type: ReviewType; key: string; message: string }[] = [
+    { type: "daily-startup", key: `daily-startup:${today}`, message: "Start the day with one short review." }
+  ];
+  if (nowHour >= 16) candidates.push({ type: "daily-shutdown", key: `daily-shutdown:${today}`, message: "Close today with a shutdown note." });
+  candidates.push({ type: "weekly", key: `weekly:${week}`, message: "Set or refresh this week's recovery plan." });
+  return candidates.find((candidate) => !dismissals.includes(candidate.key) && (candidate.type === "weekly" ? !weeklyDone : !reviewedToday(candidate.type)));
 }
 
 function DashboardPageShell({ children, loading }: { children: React.ReactNode; loading: boolean }) {
@@ -293,8 +325,14 @@ function NotepadSection() {
 
 function DatesSection({ today, windowDays, showCompleted }: { today: string; windowDays: number; showCompleted: boolean }) {
   const router = useRouter();
-  const { data, updateTask, updateDeadline } = useWorkspace();
+  const { data, addDeadline, updateTask, updateDeadline } = useWorkspace();
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(today);
+  const [time, setTime] = useState("");
+  const [location, setLocation] = useState("");
+  const [projectId, setProjectId] = useState("");
   const windowEnd = addDaysToDateKey(today, windowDays) ?? today;
+  const projects = activeProjectOptions(data.projects);
 
   const items = useMemo<DateDashboardItem[]>(() => {
     const taskItems: DateDashboardItem[] = [];
@@ -340,11 +378,59 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
   }, [data.deadlines, data.projects, data.tasks, showCompleted, today, windowEnd]);
 
   if (!items.length) {
-    return <EmptySmall icon={CalendarDays} title="No dated items in range" description={`Showing overdue plus the next ${windowDays} days.`} />;
+    return (
+      <div className="space-y-3">
+        <DeadlineComposer
+          title={title}
+          date={date}
+          time={time}
+          location={location}
+          projectId={projectId}
+          projects={projects}
+          onTitle={setTitle}
+          onDate={setDate}
+          onTime={setTime}
+          onLocation={setLocation}
+          onProject={setProjectId}
+          onCreate={() => {
+            const trimmed = title.trim();
+            if (!trimmed) return;
+            addDeadline({ title: trimmed, date, time: time || null, location: location.trim(), projectId: projectId || null });
+            setTitle("");
+            setTime("");
+            setLocation("");
+            setProjectId("");
+          }}
+        />
+        <EmptySmall icon={CalendarDays} title="No dated items in range" description={`Showing overdue plus the next ${windowDays} days.`} />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2">
+      <DeadlineComposer
+        title={title}
+        date={date}
+        time={time}
+        location={location}
+        projectId={projectId}
+        projects={projects}
+        onTitle={setTitle}
+        onDate={setDate}
+        onTime={setTime}
+        onLocation={setLocation}
+        onProject={setProjectId}
+        onCreate={() => {
+          const trimmed = title.trim();
+          if (!trimmed) return;
+          addDeadline({ title: trimmed, date, time: time || null, location: location.trim(), projectId: projectId || null });
+          setTitle("");
+          setTime("");
+          setLocation("");
+          setProjectId("");
+        }}
+      />
       {items.map((item) => {
         const isTask = item.kind === "task";
         const task = isTask ? (item.source as Task) : null;
@@ -366,6 +452,8 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     <span className={`cos-pill ${item.overdue ? "cos-pill-danger" : item.dateKey === today ? "cos-pill-primary" : "cos-pill-muted"}`}>{dateBadge(item.dateKey, today)}</span>
                     <span className="cos-pill cos-pill-muted">{item.kind === "deadline" ? "Deadline" : task?.dueDate ? "Task due" : "Task planned"}</span>
+                    {deadline?.time ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{deadline.time}</span> : null}
+                    {deadline?.location ? <span className="cos-pill cos-pill-muted"><MapPin className="h-3 w-3" />{deadline.location}</span> : null}
                     {item.projectName ? <span className="cos-pill cos-pill-muted">{item.projectName}</span> : null}
                   </div>
                 </div>
@@ -379,9 +467,72 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
   );
 }
 
+function DeadlineComposer({
+  title,
+  date,
+  time,
+  location,
+  projectId,
+  projects,
+  onTitle,
+  onDate,
+  onTime,
+  onLocation,
+  onProject,
+  onCreate
+}: {
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  projectId: string;
+  projects: Project[];
+  onTitle: (value: string) => void;
+  onDate: (value: string) => void;
+  onTime: (value: string) => void;
+  onLocation: (value: string) => void;
+  onProject: (value: string) => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-2">
+      <div className="flex items-center gap-2">
+        <CalendarClock className="ml-1 h-5 w-5 shrink-0 text-[var(--cos-date)]" />
+        <input
+          data-testid="dashboard-add-deadline-input"
+          value={title}
+          onChange={(event) => onTitle(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") onCreate();
+            if (event.key === "Escape") onTitle("");
+          }}
+          placeholder="Add a deadline..."
+          className="min-h-10 min-w-0 flex-1 bg-transparent text-base text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
+        />
+        <button type="button" onClick={onCreate} disabled={!title.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 text-sm disabled:bg-[var(--cos-border)]">
+          Add
+        </button>
+      </div>
+      <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_0.8fr_1.1fr_1.1fr]">
+        <input aria-label="Deadline date" type="date" value={date} onChange={(event) => onDate(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
+        <input aria-label="Deadline time" type="time" value={time} onChange={(event) => onTime(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
+        <input aria-label="Deadline location" value={location} onChange={(event) => onLocation(event.target.value)} placeholder="Location" className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
+        <select aria-label="Deadline project" value={projectId} onChange={(event) => onProject(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs">
+          <option value="">No project</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>{project.name}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 function TasksSection({ today, showCompleted }: { today: string; showCompleted: boolean }) {
   const { data, addTask } = useWorkspace();
   const [title, setTitle] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const projects = activeProjectOptions(data.projects);
   const rows = useMemo(() => {
     return data.tasks
       .filter((task) => isTaskVisible(task, showCompleted))
@@ -399,8 +550,10 @@ function TasksSection({ today, showCompleted }: { today: string; showCompleted: 
   function createTask() {
     const trimmed = title.trim();
     if (!trimmed) return;
-    addTask({ title: trimmed, plannedDate: today });
+    const project = projects.find((item) => item.id === projectId);
+    addTask({ title: trimmed, plannedDate: today, projectId: projectId || null, domainId: project?.domainId ?? null });
     setTitle("");
+    setProjectId("");
   }
 
   return (
@@ -422,6 +575,14 @@ function TasksSection({ today, showCompleted }: { today: string; showCompleted: 
           Add
         </button>
       </div>
+      {projects.length ? (
+        <select aria-label="Task project" value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input w-full bg-[var(--cos-bg-soft)] px-3 py-2 text-xs">
+          <option value="">No project</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>{project.name}</option>
+          ))}
+        </select>
+      ) : null}
       {rows.length ? rows.map((task) => <TaskLine key={task.id} task={task} meta={task.dueDate && task.dueDate < today && isTaskOpen(task) ? "Overdue" : task.status === "in-progress" ? "In progress" : undefined} />) : <EmptySmall icon={Target} title="No operational tasks" description="Add one small task for today." />}
     </div>
   );
@@ -485,6 +646,43 @@ function EmptySmall({ icon: Icon, title, description }: { icon: LucideIcon; titl
   );
 }
 
+function ReviewPrompt({ preferences }: { preferences: ReturnType<typeof sectionDefaults> }) {
+  const router = useRouter();
+  const { data, updateDashboardPreferences } = useWorkspace();
+  const due = dueReviewType(data.reviews, preferences.reviewPromptDismissals);
+  if (!due) return null;
+
+  function dismiss() {
+    if (!due) return;
+    updateDashboardPreferences({
+      sectionOrder: preferences.sectionOrder,
+      collapsedSections: preferences.collapsedSections,
+      dateWindowDays: preferences.dateWindowDays,
+      reviewPromptDismissals: [...preferences.reviewPromptDismissals, due.key],
+      showCompleted: preferences.showCompleted
+    });
+  }
+
+  return (
+    <section className="rounded-lg border border-[var(--cos-review)] bg-[var(--cos-review-soft)] px-4 py-3 text-sm text-[var(--cos-review)]">
+      <div className="flex items-start gap-3">
+        <Bell className="mt-0.5 h-4 w-4 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">{reviewLabel(due.type)} is due</p>
+          <p className="mt-0.5 text-xs opacity-90">{due.message}</p>
+        </div>
+        <button type="button" onClick={() => router.push("/reviews")} className="cos-btn cos-btn-ghost min-h-8 px-2 py-1 text-xs">
+          <BookOpen className="h-3.5 w-3.5" />
+          Review
+        </button>
+        <button type="button" onClick={dismiss} aria-label={`Dismiss ${reviewLabel(due.type)} prompt`} className="grid h-8 w-8 shrink-0 place-items-center rounded-md hover:bg-[var(--cos-bg-elevated)]">
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export function Dashboard2View() {
   const { data, loading, updateDashboardPreferences } = useWorkspace();
   const today = localDateKey();
@@ -504,6 +702,7 @@ export function Dashboard2View() {
       sectionOrder: preferences.sectionOrder,
       collapsedSections: Array.from(next),
       dateWindowDays: preferences.dateWindowDays,
+      reviewPromptDismissals: preferences.reviewPromptDismissals,
       showCompleted: preferences.showCompleted
     });
   }
@@ -540,6 +739,7 @@ export function Dashboard2View() {
           <p><span className="font-semibold">Today:</span> recover notes, dated pressure, executable tasks, and active projects in one pass.</p>
         </div>
       </div>
+      <ReviewPrompt preferences={preferences} />
       {preferences.sectionOrder.map((id) => (
         <Fragment key={id}>{sectionComponents[id] ?? null}</Fragment>
       ))}

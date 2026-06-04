@@ -48,19 +48,33 @@ function now() {
 }
 
 function normalizeWorkspace(value: Partial<WorkspaceData> | null | undefined): WorkspaceData {
+  const projects = (value?.projects ?? []).map((project) => ({
+    ...project,
+    recoveryNotes: project.recoveryNotes ?? ""
+  }));
+  const deadlines = (value?.deadlines ?? []).map((deadline) => ({
+    ...deadline,
+    time: deadline.time ?? null,
+    location: deadline.location ?? ""
+  }));
+  const dashboardPreferences = (value?.dashboardPreferences ?? []).map((preference) => ({
+    ...preference,
+    reviewPromptDismissals: preference.reviewPromptDismissals ?? []
+  }));
+
   return {
     ...emptyWorkspace(),
     ...(value ?? {}),
     domains: value?.domains ?? [],
-    projects: value?.projects ?? [],
+    projects,
     tasks: value?.tasks ?? [],
     captures: value?.captures ?? [],
     notes: value?.notes ?? [],
-    deadlines: value?.deadlines ?? [],
+    deadlines,
     reviews: value?.reviews ?? [],
     priorities: value?.priorities ?? [],
     dashboardScratchpads: value?.dashboardScratchpads ?? [],
-    dashboardPreferences: value?.dashboardPreferences ?? [],
+    dashboardPreferences,
     serverSyncedAt: value?.serverSyncedAt ?? ""
   };
 }
@@ -192,7 +206,7 @@ interface StoreApi {
   updateTask: (id: string, updates: Partial<Task>) => void;
   addProject: (data: { name: string; domainId: string; parentProjectId?: string | null; currentObjective?: string; nextAction?: string }) => string;
   updateProject: (id: string, updates: Partial<Project>) => void;
-  addDeadline: (data: { title: string; date: string; projectId?: string | null; notes?: string }) => string;
+  addDeadline: (data: { title: string; date: string; time?: string | null; location?: string; projectId?: string | null; notes?: string }) => string;
   updateDeadline: (id: string, updates: Partial<Deadline>) => void;
   addNote: (data: { title: string; content?: string; projectId?: string | null; domainId: string }) => string;
   updateNote: (id: string, updates: Partial<Note>) => void;
@@ -512,6 +526,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             currentObjective: "",
             nextAction: "",
             latestStatus: "",
+            recoveryNotes: "",
             openLoops: [],
             createdAt: ts,
             updatedAt: ts,
@@ -539,6 +554,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             id: convertedToId,
             title,
             date: localDateKey(),
+            time: null,
+            location: "",
             projectId: null,
             taskIds: [],
             notes: "",
@@ -583,6 +600,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           currentObjective: input.currentObjective ?? "",
           nextAction: input.nextAction ?? "",
           latestStatus: "",
+          recoveryNotes: "",
           openLoops: [],
           createdAt: ts,
           updatedAt: ts,
@@ -602,6 +620,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           id: newId("deadline"),
           title: input.title,
           date: input.date,
+          time: input.time ?? null,
+          location: input.location ?? "",
           projectId: input.projectId ?? null,
           taskIds: [],
           notes: input.notes ?? "",
@@ -716,6 +736,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
               id: newId("dash-prefs"),
               sectionOrder: [],
               collapsedSections: [],
+              reviewPromptDismissals: [],
               dateWindowDays: 14,
               showCompleted: false,
               createdAt: ts,

@@ -38,6 +38,7 @@ export interface Project {
   currentObjective: string;
   nextAction: string;
   latestStatus: string;
+  recoveryNotes: string;
   openLoops: string[];
   createdAt: string;
   updatedAt: string;
@@ -86,6 +87,8 @@ export interface Deadline {
   id: string;
   title: string;
   date: string;
+  time: string | null;
+  location: string;
   projectId: string | null;
   taskIds: string[];
   notes: string;
@@ -115,6 +118,7 @@ export interface DashboardPreference {
   id: string;
   sectionOrder: DashboardSectionId[];
   collapsedSections: DashboardSectionId[];
+  reviewPromptDismissals: string[];
   dateWindowDays: number;
   showCompleted: boolean;
   createdAt: string;

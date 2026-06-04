@@ -63,6 +63,7 @@ model Project {
   currentObjective String    @default("")
   nextAction       String    @default("")
   latestStatus     String    @default("")
+  recoveryNotes    String    @default("")
   openLoops        String[]  @default([])
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -140,6 +141,8 @@ model Deadline {
   userId     String
   title      String
   date       DateTime
+  time       String?
+  location   String    @default("")
   projectId  String?
   taskIds    String[]  @default([])
   notes      String    @default("")
@@ -204,6 +207,7 @@ model DashboardPreference {
   userId            String   @unique
   sectionOrder      String[] @default([])
   collapsedSections String[] @default([])
+  reviewPromptDismissals String[] @default([])
   dateWindowDays    Int      @default(14)
   showCompleted     Boolean  @default(false)
   createdAt         DateTime @default(now())

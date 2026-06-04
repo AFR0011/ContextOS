@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -9,17 +9,24 @@ import {
   BookOpen,
   Calendar,
   CalendarCheck,
+  CalendarClock,
   Check,
+  CheckSquare,
   ChevronDown,
   ChevronRight,
   Clock,
   Download,
   FileText,
   FolderKanban,
+  Heading1,
+  Heading2,
   Layers,
+  List,
+  MapPin,
   Inbox,
   MoreHorizontal,
   Plus,
+  Quote,
   RefreshCw,
   RotateCcw,
   Search,
@@ -485,6 +492,7 @@ export function ProjectsView() {
   const [showNew, setShowNew] = useState(false);
   const [name, setName] = useState("");
   const [domainId, setDomainId] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const activeDomains = data.domains.filter((domain) => !domain.archived);
   const projects = rootProjects(data.projects);
 
@@ -495,6 +503,15 @@ export function ProjectsView() {
     setName("");
     setShowNew(false);
     router.push(`/projects/${id}`);
+  }
+
+  function toggle(projectId: string) {
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (next.has(projectId)) next.delete(projectId);
+      else next.add(projectId);
+      return next;
+    });
   }
 
   return (
@@ -511,7 +528,7 @@ export function ProjectsView() {
           </div>
         </div>
       ) : null}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-3">
         {projects.map((project) => {
           const descendantIds = descendantProjectIds(data.projects, project.id);
           const projectIds = new Set([project.id, ...descendantIds]);
@@ -519,37 +536,82 @@ export function ProjectsView() {
           const deadlineCount = data.deadlines.filter((deadline) => !deadline.trashedAt && deadline.projectId && projectIds.has(deadline.projectId)).length;
           const children = childProjects(data.projects, project.id);
           return (
-            <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="cos-surface p-4 text-left hover:border-[var(--cos-primary-border)] hover:shadow-[var(--cos-shadow-md)]">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="text-sm font-semibold text-[var(--cos-text-strong)]">{project.name}</h3>
-                <span className={`cos-pill ${projectStatus[project.status].color}`}>{projectStatus[project.status].label}</span>
-              </div>
-              <span className={`mt-2 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, project.domainId)}`}>{domainName(data.domains, project.domainId)}</span>
-              {project.currentObjective ? <p className="mt-2 line-clamp-2 text-xs text-[var(--cos-text-muted)]">{project.currentObjective}</p> : null}
-              {project.nextAction ? <p className="mt-2 truncate text-xs font-medium text-[var(--cos-primary-text)]">Next: {project.nextAction}</p> : null}
-              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[var(--cos-text-subtle)]">
-                {children.length ? <span>{children.length} subcontext{children.length > 1 ? "s" : ""}</span> : null}
-                {count ? <span>{count} open task{count > 1 ? "s" : ""}</span> : null}
-                {deadlineCount ? <span>{deadlineCount} deadline{deadlineCount > 1 ? "s" : ""}</span> : null}
-              </div>
-              {children.length ? (
-                <div className="mt-3 space-y-1 border-t border-[var(--cos-border-soft)] pt-3">
-                  {children.slice(0, 3).map((child) => (
-                    <div key={child.id} className="flex items-center gap-2 text-xs text-[var(--cos-text-muted)]">
-                      <Layers className="h-3.5 w-3.5 text-[var(--cos-text-subtle)]" />
-                      <span className="min-w-0 flex-1 truncate">{child.name}</span>
-                      {child.nextAction ? <span className="max-w-24 truncate text-[var(--cos-primary-text)]">{child.nextAction}</span> : null}
-                    </div>
-                  ))}
-                  {children.length > 3 ? <p className="pl-5 text-[11px] text-[var(--cos-text-subtle)]">+{children.length - 3} more</p> : null}
-                </div>
-              ) : null}
-            </button>
+            <ProjectIndexRow
+              key={project.id}
+              project={project}
+              projects={data.projects}
+              taskCount={count}
+              deadlineCount={deadlineCount}
+              expanded={expanded}
+              onToggle={toggle}
+              onOpen={(id) => router.push(`/projects/${id}`)}
+              domains={data.domains}
+            />
           );
         })}
       </div>
       {!projects.length ? <EmptyState icon={FolderKanban} title="No projects yet" description="Create an outcome or subcontext to start." /> : null}
     </Page>
+  );
+}
+
+function ProjectIndexRow({
+  project,
+  projects,
+  taskCount,
+  deadlineCount,
+  expanded,
+  onToggle,
+  onOpen,
+  domains,
+  depth = 0
+}: {
+  project: Project;
+  projects: Project[];
+  taskCount?: number;
+  deadlineCount?: number;
+  expanded: Set<string>;
+  onToggle: (projectId: string) => void;
+  onOpen: (projectId: string) => void;
+  domains: Domain[];
+  depth?: number;
+}) {
+  const children = childProjects(projects, project.id);
+  const isOpen = expanded.has(project.id);
+  return (
+    <section className={`${depth === 0 ? "cos-surface" : "rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)]"} overflow-hidden`}>
+      <div className="flex items-start gap-2 p-3">
+        <button
+          type="button"
+          onClick={() => children.length ? onToggle(project.id) : onOpen(project.id)}
+          aria-label={children.length ? (isOpen ? `Collapse ${project.name}` : `Expand ${project.name}`) : `Open ${project.name}`}
+          className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-elevated)] hover:text-[var(--cos-primary-text)]"
+        >
+          {children.length ? (isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />) : <FolderKanban className="h-4 w-4" />}
+        </button>
+        <button type="button" onClick={() => onOpen(project.id)} className="min-w-0 flex-1 text-left">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-sm font-semibold text-[var(--cos-text-strong)]">{project.name}</h3>
+            <span className={`cos-pill ${projectStatus[project.status].color}`}>{projectStatus[project.status].label}</span>
+            {depth === 0 ? <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${domainColor(domains, project.domainId)}`}>{domainName(domains, project.domainId)}</span> : null}
+          </div>
+          <p className={`mt-1 truncate text-xs font-medium ${project.nextAction ? "text-[var(--cos-primary-text)]" : "text-[var(--cos-danger-text)]"}`}>Next: {project.nextAction || "Missing next action"}</p>
+          <p className={`mt-1 line-clamp-2 text-xs ${project.latestStatus ? "text-[var(--cos-text-muted)]" : "font-medium text-[var(--cos-warning-text)]"}`}>Status: {project.latestStatus || "No latest status"}</p>
+          <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-[var(--cos-text-subtle)]">
+            {children.length ? <span>{children.length} subcontext{children.length > 1 ? "s" : ""}</span> : null}
+            {taskCount ? <span>{taskCount} open task{taskCount > 1 ? "s" : ""}</span> : null}
+            {deadlineCount ? <span>{deadlineCount} deadline{deadlineCount > 1 ? "s" : ""}</span> : null}
+          </div>
+        </button>
+      </div>
+      {isOpen && children.length ? (
+        <div className="space-y-2 border-t border-[var(--cos-border-soft)] p-3 pl-6">
+          {children.map((child) => (
+            <ProjectIndexRow key={child.id} project={child} projects={projects} expanded={expanded} onToggle={onToggle} onOpen={onOpen} domains={domains} depth={depth + 1} />
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -559,7 +621,8 @@ function AreaProjectTree({
   tasks,
   deadlines,
   depth,
-  onOpen
+  onOpen,
+  onDelete
 }: {
   project: Project;
   projects: Project[];
@@ -567,6 +630,7 @@ function AreaProjectTree({
   deadlines: Deadline[];
   depth: number;
   onOpen: (projectId: string) => void;
+  onDelete: (projectId: string) => void;
 }) {
   const children = childProjects(projects, project.id);
   const descendantIds = descendantProjectIds(projects, project.id);
@@ -576,19 +640,21 @@ function AreaProjectTree({
 
   return (
     <div className="space-y-1">
-      <button
-        type="button"
-        onClick={() => onOpen(project.id)}
+      <div
         className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-[var(--cos-bg-elevated)]"
         style={{ paddingLeft: `${0.5 + depth * 1.1}rem` }}
       >
         <Layers className="h-3.5 w-3.5 shrink-0 text-[var(--cos-text-subtle)]" />
-        <span className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--cos-text)]">{project.name}</span>
+        <button type="button" onClick={() => onOpen(project.id)} className="min-w-0 flex-1 truncate text-left text-xs font-medium text-[var(--cos-text)] hover:text-[var(--cos-primary-text)]">{project.name}</button>
+        {project.nextAction ? <span className="hidden max-w-36 truncate text-[11px] text-[var(--cos-primary-text)] sm:inline">Next: {project.nextAction}</span> : null}
         {taskCount ? <span className="cos-pill cos-pill-muted">{taskCount} task{taskCount > 1 ? "s" : ""}</span> : null}
         {deadlineCount ? <span className="cos-pill cos-pill-warning">{deadlineCount} date{deadlineCount > 1 ? "s" : ""}</span> : null}
-      </button>
+        <button type="button" onClick={() => onDelete(project.id)} aria-label={`Delete ${project.name}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger-text)]">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
       {children.map((child) => (
-        <AreaProjectTree key={child.id} project={child} projects={projects} tasks={tasks} deadlines={deadlines} depth={depth + 1} onOpen={onOpen} />
+        <AreaProjectTree key={child.id} project={child} projects={projects} tasks={tasks} deadlines={deadlines} depth={depth + 1} onOpen={onOpen} onDelete={onDelete} />
       ))}
     </div>
   );
@@ -596,9 +662,17 @@ function AreaProjectTree({
 
 export function AreasView() {
   const router = useRouter();
-  const { data, loading } = useWorkspace();
+  const { data, loading, addProject, updateProject } = useWorkspace();
   const [openAreaId, setOpenAreaId] = useState<string | null>(null);
+  const [newProjectByArea, setNewProjectByArea] = useState<Record<string, string>>({});
   const activeDomains = data.domains.filter((domain) => !domain.archived);
+
+  function createAreaProject(domainId: string) {
+    const name = (newProjectByArea[domainId] ?? "").trim();
+    if (!name) return;
+    addProject({ name, domainId });
+    setNewProjectByArea((current) => ({ ...current, [domainId]: "" }));
+  }
 
   return (
     <Page title="Areas" subtitle="Ongoing responsibilities, systems, and domains that hold projects and resources.">
@@ -646,8 +720,33 @@ export function AreasView() {
               {open && roots.length ? (
                 <div className="mt-4 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-2">
                   {roots.map((project) => (
-                    <AreaProjectTree key={project.id} project={project} projects={data.projects} tasks={data.tasks} deadlines={data.deadlines} depth={0} onOpen={(id) => router.push(`/projects/${id}`)} />
+                    <AreaProjectTree
+                      key={project.id}
+                      project={project}
+                      projects={data.projects}
+                      tasks={data.tasks}
+                      deadlines={data.deadlines}
+                      depth={0}
+                      onOpen={(id) => router.push(`/projects/${id}`)}
+                      onDelete={(id) => updateProject(id, { trashedAt: new Date().toISOString() })}
+                    />
                   ))}
+                </div>
+              ) : null}
+              {open ? (
+                <div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-2">
+                  <Plus className="h-4 w-4 shrink-0 text-[var(--cos-primary)]" />
+                  <input
+                    value={newProjectByArea[domain.id] ?? ""}
+                    onChange={(event) => setNewProjectByArea((current) => ({ ...current, [domain.id]: event.target.value }))}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") createAreaProject(domain.id);
+                      if (event.key === "Escape") setNewProjectByArea((current) => ({ ...current, [domain.id]: "" }));
+                    }}
+                    placeholder={`New project in ${domain.name}...`}
+                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--cos-text-subtle)]"
+                  />
+                  <button type="button" onClick={() => createAreaProject(domain.id)} disabled={!newProjectByArea[domain.id]?.trim()} className="cos-btn cos-btn-primary px-3 py-1.5 text-xs disabled:bg-[var(--cos-border)]">Add</button>
                 </div>
               ) : null}
               <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-[var(--cos-text-subtle)]">
@@ -806,6 +905,89 @@ function EditableField({
   );
 }
 
+function MarkdownTextareaEditor({
+  value,
+  placeholder,
+  dataTestId,
+  rows = 10,
+  onSave
+}: {
+  value: string;
+  placeholder: string;
+  dataTestId?: string;
+  rows?: number;
+  onSave: (value: string) => void;
+}) {
+  const { sync } = useWorkspace();
+  const [draft, setDraft] = useState(value);
+  const [savedFlash, setSavedFlash] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const dirty = draft !== value;
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  function commit() {
+    if (!dirty) return;
+    onSave(draft);
+    setSavedFlash(true);
+    window.setTimeout(() => setSavedFlash(false), 1200);
+  }
+
+  function insert(prefix: string, fallback = "") {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setDraft((current) => `${current}${current ? "\n" : ""}${prefix}${fallback}`);
+      return;
+    }
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = draft.slice(start, end) || fallback;
+    const before = draft.slice(0, start);
+    const after = draft.slice(end);
+    const next = `${before}${prefix}${selected}${after}`;
+    setDraft(next);
+    window.setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
+    }, 0);
+  }
+
+  return (
+    <div data-testid={dataTestId} className="rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)]">
+      <div className="flex flex-wrap items-center gap-1 border-b border-[var(--cos-border-soft)] px-2 py-2">
+        <button type="button" onClick={() => insert("# ", "Heading")} aria-label="Insert heading" className="cos-btn cos-btn-ghost min-h-8 px-2 text-xs"><Heading1 className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={() => insert("## ", "Section")} aria-label="Insert subheading" className="cos-btn cos-btn-ghost min-h-8 px-2 text-xs"><Heading2 className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={() => insert("- ", "List item")} aria-label="Insert list item" className="cos-btn cos-btn-ghost min-h-8 px-2 text-xs"><List className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={() => insert("- [ ] ", "To-do")} aria-label="Insert todo" className="cos-btn cos-btn-ghost min-h-8 px-2 text-xs"><CheckSquare className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={() => insert("> ", "Quote")} aria-label="Insert quote" className="cos-btn cos-btn-ghost min-h-8 px-2 text-xs"><Quote className="h-3.5 w-3.5" /></button>
+      </div>
+      <textarea
+        ref={textareaRef}
+        data-testid={dataTestId ? `${dataTestId}-textarea` : undefined}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={(event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key === "Enter") commit();
+          if (event.key === "Escape") setDraft(value);
+        }}
+        rows={rows}
+        placeholder={placeholder}
+        className="min-h-64 w-full resize-y bg-transparent px-3 py-3 text-sm leading-6 text-[var(--cos-text)] outline-none placeholder:text-[var(--cos-text-subtle)]"
+      />
+      <div className="flex min-h-10 flex-wrap items-center justify-end gap-2 border-t border-[var(--cos-border-soft)] px-3 py-2 text-[11px]">
+        {dirty ? <span className="text-[var(--cos-warning-text)]">Unsaved changes</span> : savedFlash ? <span className="text-[var(--cos-success-text)]">Saved</span> : null}
+        {dirty && !sync.online ? <span className="cos-pill cos-pill-warning">Offline: save will queue</span> : null}
+        <button type="button" disabled={!dirty} onClick={commit} className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 py-1 font-semibold text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)] disabled:hover:bg-transparent">
+          <Send className="h-3.5 w-3.5" />
+          Save
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const recoveryHeadings = {
   currentObjective: "Current Objective",
   nextAction: "Next Action",
@@ -874,6 +1056,8 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const [newTask, setNewTask] = useState("");
   const [newDeadline, setNewDeadline] = useState("");
   const [newDeadlineDate, setNewDeadlineDate] = useState(localDateKey());
+  const [newDeadlineTime, setNewDeadlineTime] = useState("");
+  const [newDeadlineLocation, setNewDeadlineLocation] = useState("");
   const [newNote, setNewNote] = useState("");
   const [editingNote, setEditingNote] = useState<string | null>(null);
 
@@ -929,6 +1113,9 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       "## Open Loops",
       ...currentProject.openLoops.map((loop) => `- ${loop}`),
       "",
+      "## Recovery Notes",
+      currentProject.recoveryNotes,
+      "",
       "## Subcontexts",
       ...subcontexts.map((child) => `- ${child.name}${child.nextAction ? ` — Next: ${child.nextAction}` : ""}`),
       "",
@@ -963,21 +1150,45 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       </div>
 
       <InfoBlock title="Recovery Canvas" accent className="mt-4">
-        <MarkdownEditor
-          value={projectRecoveryMarkdown(project)}
-          placeholder="Write project recovery context..."
-          minLines={10}
-          dataTestId="project-recovery-editor"
-          onSave={(markdown) => {
-            const parsed = parseProjectRecoveryMarkdown(markdown);
-            updateProject(project.id, {
-              currentObjective: parsed.currentObjective ?? project.currentObjective,
-              nextAction: parsed.nextAction ?? project.nextAction,
-              latestStatus: parsed.latestStatus ?? project.latestStatus,
-              openLoops: parsed.openLoops ?? project.openLoops
-            });
-          }}
-        />
+        <div data-testid="project-recovery-editor" className="space-y-4">
+          <div className="grid gap-3 lg:grid-cols-3">
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]">Next action</span>
+              <EditableField value={project.nextAction} placeholder="Concrete next action..." onSave={(nextAction) => updateProject(project.id, { nextAction })} inputClassName="font-medium text-[var(--cos-primary-text)]" />
+            </label>
+            <label className="block lg:col-span-2">
+              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]">Latest status</span>
+              <EditableField value={project.latestStatus} placeholder="What changed most recently?" onSave={(latestStatus) => updateProject(project.id, { latestStatus })} />
+            </label>
+          </div>
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]">Current objective</span>
+            <EditableField value={project.currentObjective} multiline rows={3} placeholder="What is this project trying to achieve right now?" onSave={(currentObjective) => updateProject(project.id, { currentObjective })} />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]">Open loops</span>
+            <EditableField
+              value={project.openLoops.join("\n")}
+              multiline
+              rows={3}
+              placeholder="One open loop per line..."
+              onSave={(value) => updateProject(project.id, { openLoops: value.split(/\r?\n/).map((line) => line.replace(/^- \[( |x|X)\]\s?/, "").replace(/^- /, "").trim()).filter(Boolean) })}
+            />
+          </label>
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]">Freeform recovery notes</span>
+              <span className="text-[11px] text-[var(--cos-text-subtle)]">Markdown supported</span>
+            </div>
+            <MarkdownTextareaEditor
+              value={project.recoveryNotes}
+              placeholder="Add togglable headings, lists, todos, rough handoff notes, blockers, and context you want future-you to find..."
+              rows={12}
+              dataTestId="project-recovery-notes"
+              onSave={(recoveryNotes) => updateProject(project.id, { recoveryNotes })}
+            />
+          </div>
+        </div>
       </InfoBlock>
 
       <InfoBlock title="Subcontexts" className="mt-4">
@@ -1016,16 +1227,20 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       <InfoBlock title="Deadlines" className="mt-4">
         <div className="space-y-2">
           {deadlines.map((deadline) => (
-            <div key={deadline.id} className="group flex items-center gap-2 text-sm">
-              <span className="flex-1 text-[var(--cos-text)]">{deadline.title}</span>
+            <div key={deadline.id} className="group grid gap-2 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-2 text-sm sm:grid-cols-[1fr_auto_auto_auto] sm:items-center">
+              <span className="min-w-0 text-[var(--cos-text)]">{deadline.title}</span>
               {deadline.projectId !== project.id ? <span className="cos-pill cos-pill-muted max-w-32 truncate">{projectName(data.projects, deadline.projectId)}</span> : null}
               <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="cos-input px-2 py-1 text-xs" />
+              <input aria-label={`${deadline.title} time`} type="time" value={deadline.time ?? ""} onChange={(event) => updateDeadline(deadline.id, { time: event.target.value || null })} className="cos-input px-2 py-1 text-xs" />
+              <EditableField value={deadline.location} placeholder="Location" onSave={(location) => updateDeadline(deadline.id, { location })} inputClassName="px-2 py-1 text-xs" />
             </div>
           ))}
           <div className="flex flex-wrap items-center gap-2 pt-2">
             <input value={newDeadline} onChange={(event) => setNewDeadline(event.target.value)} placeholder="Deadline title..." className="min-w-0 flex-1 border-b border-[var(--cos-border)] bg-transparent py-1 text-sm outline-none focus:border-[var(--cos-primary-border)]" />
             <input type="date" value={newDeadlineDate} onChange={(event) => setNewDeadlineDate(event.target.value)} className="cos-input px-2 py-1 text-xs" />
-            <button onClick={() => { if (newDeadline.trim()) { addDeadline({ title: newDeadline.trim(), date: newDeadlineDate, projectId: project.id }); setNewDeadline(""); } }} className="text-[var(--cos-primary-text)]"><Plus className="h-4 w-4" /></button>
+            <input aria-label="New deadline time" type="time" value={newDeadlineTime} onChange={(event) => setNewDeadlineTime(event.target.value)} className="cos-input px-2 py-1 text-xs" />
+            <input aria-label="New deadline location" value={newDeadlineLocation} onChange={(event) => setNewDeadlineLocation(event.target.value)} placeholder="Location" className="cos-input px-2 py-1 text-xs" />
+            <button onClick={() => { if (newDeadline.trim()) { addDeadline({ title: newDeadline.trim(), date: newDeadlineDate, time: newDeadlineTime || null, location: newDeadlineLocation.trim(), projectId: project.id }); setNewDeadline(""); setNewDeadlineTime(""); setNewDeadlineLocation(""); } }} className="text-[var(--cos-primary-text)]"><Plus className="h-4 w-4" /></button>
           </div>
         </div>
       </InfoBlock>
@@ -1118,21 +1333,25 @@ export function DeadlinesView() {
   const [showAdd, setShowAdd] = useState(false);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(localDateKey());
+  const [time, setTime] = useState("");
+  const [location, setLocation] = useState("");
   const [projectId, setProjectId] = useState("");
   const activeProjects = data.projects.filter((project) => !project.trashedAt && project.status !== "archived");
   const deadlines = data.deadlines.filter((deadline) => !deadline.trashedAt).sort((a, b) => a.date.localeCompare(b.date));
 
   function create() {
     if (!title.trim()) return;
-    addDeadline({ title: title.trim(), date, projectId: projectId || null });
+    addDeadline({ title: title.trim(), date, time: time || null, location: location.trim(), projectId: projectId || null });
     setTitle("");
+    setTime("");
+    setLocation("");
     setProjectId("");
     setShowAdd(false);
   }
 
   return (
     <Page title="Deadlines" subtitle="Separate hard dates from task due dates." action={<button onClick={() => setShowAdd(true)} className="cos-btn cos-btn-primary px-4 py-2 text-sm"><Plus className="h-4 w-4" /> Add Deadline</button>}>
-      {showAdd ? <div className="cos-surface mb-4 p-4"><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Deadline title..." className="cos-input w-full px-3 py-2 text-sm" /><div className="mt-3 flex flex-wrap gap-3"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="cos-input px-3 py-2 text-sm" /><select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input px-3 py-2 text-sm"><option value="">No project</option>{activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select><button onClick={create} className="text-sm font-semibold text-[var(--cos-primary-text)]">Add</button></div></div> : null}
+      {showAdd ? <div className="cos-surface mb-4 p-4"><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Deadline title..." className="cos-input w-full px-3 py-2 text-sm" /><div className="mt-3 flex flex-wrap gap-3"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="cos-input px-3 py-2 text-sm" /><input aria-label="Deadline time" type="time" value={time} onChange={(event) => setTime(event.target.value)} className="cos-input px-3 py-2 text-sm" /><input aria-label="Deadline location" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Location" className="cos-input min-w-0 flex-1 px-3 py-2 text-sm" /><select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input px-3 py-2 text-sm"><option value="">No project</option>{activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select><button onClick={create} className="text-sm font-semibold text-[var(--cos-primary-text)]">Add</button></div></div> : null}
       <div className="space-y-2">
         {deadlines.map((deadline) => {
           const overdue = deadline.date < localDateKey();
@@ -1142,9 +1361,19 @@ export function DeadlinesView() {
                 <Calendar className={`mt-2 h-4 w-4 ${overdue ? "text-[var(--cos-danger)]" : "text-[var(--cos-date)]"}`} />
                 <div className="min-w-0 flex-1">
                   <EditableField value={deadline.title} placeholder="Deadline title" onSave={(title) => updateDeadline(deadline.id, { title })} inputClassName={`font-medium ${overdue ? "text-[var(--cos-danger-text)]" : "text-[var(--cos-text-strong)]"}`} />
-                  <p className="px-3 text-xs text-[var(--cos-text-subtle)]">{projectName(data.projects, deadline.projectId)}</p>
+                  <div className="flex flex-wrap gap-1.5 px-3 text-xs text-[var(--cos-text-subtle)]">
+                    {deadline.time ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{deadline.time}</span> : null}
+                    {deadline.location ? <span className="cos-pill cos-pill-muted"><MapPin className="h-3 w-3" />{deadline.location}</span> : null}
+                    {projectName(data.projects, deadline.projectId) ? <span>{projectName(data.projects, deadline.projectId)}</span> : null}
+                  </div>
                 </div>
                 <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="cos-input mt-2 px-2 py-1 text-xs" />
+                <input aria-label={`${deadline.title} time`} type="time" value={deadline.time ?? ""} onChange={(event) => updateDeadline(deadline.id, { time: event.target.value || null })} className="cos-input mt-2 px-2 py-1 text-xs" />
+                <div className="mt-2 max-w-36"><EditableField value={deadline.location} placeholder="Location" onSave={(location) => updateDeadline(deadline.id, { location })} inputClassName="px-2 py-1 text-xs" /></div>
+                <select aria-label={`${deadline.title} project`} value={deadline.projectId ?? ""} onChange={(event) => updateDeadline(deadline.id, { projectId: event.target.value || null })} className="cos-input mt-2 max-w-40 px-2 py-1 text-xs">
+                  <option value="">No project</option>
+                  {activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+                </select>
                 <button onClick={() => updateDeadline(deadline.id, { trashedAt: new Date().toISOString() })} className="mt-2 text-[var(--cos-text-subtle)] hover:text-[var(--cos-danger)]"><Trash2 className="h-4 w-4" /></button>
               </div>
               <div className="mt-2 pl-7">

@@ -1,5 +1,31 @@
 # ContextOS Dev Log
 
+## 2026-06-04 - DESIGN.md Visual Design-System Alignment
+
+Planner scope: apply `DESIGN.md` visual direction across the existing app without changing functionality, data flow, routes, API behavior, auth, offline sync semantics, Prisma models, or migrations.
+
+Implementation:
+
+- Added ContextOS visual tokens in `src/app/globals.css` for app backgrounds, elevated surfaces, text, borders, status colors, primary accent, focus rings, radii, shadows, and light/dark aliases.
+- Added reusable `.cos-*` presentation classes for pages, surfaces, rows, inputs, buttons, pills, and empty states.
+- Restyled auth, shell/navigation, dashboard command sheet, markdown editor, shared route components, cards/panels, list rows, badges, inputs, settings, search, reviews, archive, deadlines, project detail, and mobile navigation.
+- Tightened radius tokens and audited remaining large card radii so panels stay at 8px or less.
+- Updated browser theme color metadata to the ContextOS accent.
+- Kept implementation to visual/className/presentation-copy changes. No schema, API, auth, routing, persistence, sync, or business-logic changes were intentionally made.
+- Updated e2e selectors to scope duplicate dashboard task text to the intended section/control, and warmed the service-worker shell before the local-dev offline reload assertion.
+
+Verification:
+
+- `npx prisma generate` - passed; recovered stale generated Prisma client types.
+- `npm run db:migrate` - passed; applied existing dashboard command-sheet migration required by the local test database.
+- `npm run db:seed` - passed.
+- `npm run typecheck` - passed after final changes.
+- `npm run build` - passed after final changes.
+- `npm run test:e2e` - passed, 18 tests.
+- In-app browser desktop smoke - passed across Dashboard, Today, Projects, Search, and Settings.
+- Mobile Playwright smoke at 390x844 - passed; no horizontal overflow before or after drawer navigation to Today.
+- Screenshot artifacts saved to `test-results/contextos-design-desktop.png` and `test-results/contextos-design-mobile.png`.
+
 ## 2026-06-04 - v0.1.7 Workspace Markdown Canvas
 
 Planner selected one batch from `modificaitons.txt`: implement a markdown-first dashboard/project editing surface, visible completed Today tasks, expandable Areas, and dark mode.

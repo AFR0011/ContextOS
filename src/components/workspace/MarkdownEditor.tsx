@@ -214,7 +214,7 @@ export function MarkdownEditor({
   }
 
   return (
-    <div data-testid={dataTestId} className={`markdown-editor rounded-lg border border-slate-200 bg-white p-3 shadow-sm ${className}`}>
+    <div data-testid={dataTestId} className={`markdown-editor cos-surface p-3 ${className}`}>
       <div className="space-y-1">
         {lines.map((line, index) => {
           const block = parseBlock(line);
@@ -222,32 +222,32 @@ export function MarkdownEditor({
           const lineTestId = dataTestId ? `${dataTestId}-line-${index}` : undefined;
           const textClass =
             block.kind === "h1"
-              ? "text-xl font-bold text-slate-950"
+              ? "text-xl font-bold text-[var(--cos-text-strong)]"
               : block.kind === "h2"
-                ? "text-base font-semibold text-slate-900"
+                ? "text-base font-semibold text-[var(--cos-text-strong)]"
                 : block.kind === "quote"
-                  ? "italic text-slate-700"
+                  ? "italic text-[var(--cos-text)]"
                   : block.kind === "code-fence"
-                    ? "font-mono text-xs text-slate-600"
+                    ? "font-mono text-xs text-[var(--cos-text-muted)]"
                     : block.kind === "checkbox" && block.checked
-                      ? "text-slate-400 line-through"
-                      : "text-slate-800";
+                      ? "text-[var(--cos-text-subtle)] line-through"
+                      : "text-[var(--cos-text)]";
 
           return (
-            <div key={`${index}-${lineTestId ?? "line"}`} data-markdown-line={index} className="markdown-block group relative rounded-md px-2 py-1 transition-colors hover:bg-slate-50 focus-within:bg-slate-50">
+            <div key={`${index}-${lineTestId ?? "line"}`} data-markdown-line={index} className="markdown-block group relative rounded-md px-2 py-1 hover:bg-[var(--cos-bg-soft)] focus-within:bg-[var(--cos-bg-soft)]">
               <div className="flex min-h-8 items-center gap-2">
-                {block.kind === "bullet" ? <span className="w-4 text-center text-slate-400">-</span> : null}
-                {block.kind === "quote" ? <span className="h-6 w-1 rounded-full bg-indigo-200" /> : null}
+                {block.kind === "bullet" ? <span className="w-4 text-center text-[var(--cos-text-subtle)]">-</span> : null}
+                {block.kind === "quote" ? <span className="h-6 w-1 rounded-full bg-[var(--cos-primary-border)]" /> : null}
                 {block.kind === "checkbox" ? (
                   <input
                     type="checkbox"
                     checked={Boolean(block.checked)}
                     onChange={(event) => updateLine(index, lineFromBlock({ ...block, checked: event.target.checked }, block.text))}
-                    className="h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600"
+                    className="h-4 w-4 shrink-0 rounded border-[var(--cos-border-strong)] text-[var(--cos-primary)]"
                     aria-label="Toggle markdown checkbox"
                   />
                 ) : null}
-                {block.kind === "code-fence" ? <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">```</span> : null}
+                {block.kind === "code-fence" ? <span className="rounded bg-[var(--cos-bg-inset)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--cos-text-muted)]">```</span> : null}
                 <input
                   ref={(element) => {
                     inputRefs.current[index] = element;
@@ -281,11 +281,11 @@ export function MarkdownEditor({
                     }
                   }}
                   placeholder={blockPlaceholder(block.kind, placeholder, index === 0)}
-                  className={`markdown-line-input min-w-0 flex-1 bg-transparent py-1 text-sm outline-none placeholder:text-slate-400 ${textClass}`}
+                  className={`markdown-line-input min-w-0 flex-1 bg-transparent py-1 text-sm outline-none placeholder:text-[var(--cos-text-subtle)] ${textClass}`}
                 />
               </div>
               {choices.length ? (
-                <div className="absolute left-2 top-full z-20 mt-1 grid w-64 gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                <div className="absolute left-2 top-full z-20 mt-1 grid w-64 gap-1 rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-1 shadow-[var(--cos-shadow-md)]">
                   {choices.map((command) => {
                     const Icon = command.icon;
                     return (
@@ -294,10 +294,10 @@ export function MarkdownEditor({
                         type="button"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => applyCommand(index, command)}
-                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700"
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium text-[var(--cos-text)] hover:bg-[var(--cos-primary-soft)] hover:text-[var(--cos-primary-text)]"
                       >
                         <Icon className="h-3.5 w-3.5" />
-                        <span className="w-16 text-slate-400">{command.command}</span>
+                        <span className="w-16 text-[var(--cos-text-subtle)]">{command.command}</span>
                         <span>{command.label}</span>
                       </button>
                     );
@@ -308,14 +308,14 @@ export function MarkdownEditor({
           );
         })}
       </div>
-      <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-2 text-[11px]">
-        {capturedFlash ? <span className="rounded bg-emerald-50 px-1.5 py-0.5 font-medium text-emerald-700">Captured</span> : null}
-        {dirty ? <span className="text-amber-600">Unsaved changes</span> : savedFlash ? <span className="text-emerald-600">Saved</span> : null}
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-[var(--cos-border-soft)] pt-2 text-[11px]">
+        {capturedFlash ? <span className="cos-pill cos-pill-success">Captured</span> : null}
+        {dirty ? <span className="text-[var(--cos-warning-text)]">Unsaved changes</span> : savedFlash ? <span className="text-[var(--cos-success-text)]">Saved</span> : null}
         <button
           type="button"
           disabled={!dirty}
           onClick={() => commit()}
-          className="inline-flex items-center gap-1 rounded px-2 py-1 font-semibold text-indigo-600 hover:bg-indigo-50 disabled:text-slate-300 disabled:hover:bg-transparent"
+          className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 py-1 font-semibold text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)] disabled:hover:bg-transparent"
         >
           <Send className="h-3.5 w-3.5" />
           Save

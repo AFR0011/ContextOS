@@ -1,5 +1,55 @@
 # ContextOS Version Log
 
+## v0.1.8 Visual Design-System Alignment
+
+Status:
+Implemented locally and verified on 2026-06-04.
+
+Goal:
+Apply `DESIGN.md` visual direction across the existing app while preserving all functionality and data behavior.
+
+Changed files:
+- `DEV_STATE.md`
+- `DEV_LOG.md`
+- `QA_REPORT.md`
+- `RISK_REGISTER.md`
+- `shared/errors.md`
+- `docs/PROJECT_STATE.md`
+- `docs/VERSION_LOG.md`
+- `src/app/globals.css`
+- `src/app/layout.tsx`
+- `src/components/AuthForm.tsx`
+- `src/components/workspace/Dashboard2.tsx`
+- `src/components/workspace/MarkdownEditor.tsx`
+- `src/components/workspace/Views.tsx`
+- `src/components/workspace/WorkspaceShell.tsx`
+- `tests/e2e/contextos.spec.ts`
+
+Schema changes:
+None.
+
+Implemented visual changes:
+- Added shared ContextOS tokens for backgrounds, elevated surfaces, text, borders, primary accent, status colors, focus rings, radii, shadows, and light/dark aliases.
+- Restyled shared page, surface, row, button, input, pill, and empty-state classes.
+- Aligned auth pages, shell/navigation, dashboard command sheet, markdown editor, route surfaces, cards, rows, badges, search/settings/review surfaces, and mobile spacing to the calm operational direction in `DESIGN.md`.
+- Tightened card/panel radius to 8px or less and removed large rounded card remnants.
+- Updated browser theme color metadata to the ContextOS accent.
+
+Behavior changes:
+None intended. No route, API, auth, offline sync, data model, Prisma, migration, or business-logic behavior was intentionally changed.
+
+Verification:
+- `npx prisma generate` - passed.
+- `npm run db:migrate` - passed.
+- `npm run db:seed` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npm run test:e2e` - passed, 18 tests.
+- Desktop/mobile visual smoke - passed; artifacts saved to `test-results/contextos-design-desktop.png` and `test-results/contextos-design-mobile.png`.
+
+Known issues:
+- This pass aligns the existing UI; it does not introduce new dashboard functionality or a new design-system library.
+
 ## v0.1.7 Sprint 7 - Workspace Markdown Canvas
 
 Status:

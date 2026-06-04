@@ -38,30 +38,30 @@ import { isDateKeyInLocalWeek, localDateKey, localWeekStartKey } from "@/lib/dat
 import type { Capture, Deadline, Domain, Note, Priority, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
 
 const taskStatus: Record<TaskStatus, { label: string; color: string }> = {
-  todo: { label: "Todo", color: "bg-slate-100 text-slate-700" },
-  "in-progress": { label: "In Progress", color: "bg-blue-100 text-blue-700" },
-  blocked: { label: "Blocked", color: "bg-red-100 text-red-700" },
-  waiting: { label: "Waiting", color: "bg-purple-100 text-purple-700" },
-  done: { label: "Done", color: "bg-emerald-100 text-emerald-700" },
-  dropped: { label: "Dropped", color: "bg-slate-100 text-slate-500" }
+  todo: { label: "Todo", color: "cos-pill-muted" },
+  "in-progress": { label: "In Progress", color: "cos-pill-primary" },
+  blocked: { label: "Blocked", color: "cos-pill-danger" },
+  waiting: { label: "Waiting", color: "cos-pill-warning" },
+  done: { label: "Done", color: "cos-pill-success" },
+  dropped: { label: "Dropped", color: "cos-pill-muted" }
 };
 
 const projectStatus = {
-  active: { label: "Active", color: "bg-emerald-100 text-emerald-700" },
-  paused: { label: "Paused", color: "bg-amber-100 text-amber-700" },
-  done: { label: "Done", color: "bg-blue-100 text-blue-700" },
-  archived: { label: "Archived", color: "bg-slate-100 text-slate-500" }
+  active: { label: "Active", color: "cos-pill-success" },
+  paused: { label: "Paused", color: "cos-pill-warning" },
+  done: { label: "Done", color: "cos-pill-primary" },
+  archived: { label: "Archived", color: "cos-pill-muted" }
 };
 
 const domainColors = [
-  "bg-blue-100 text-blue-800",
-  "bg-emerald-100 text-emerald-800",
-  "bg-purple-100 text-purple-800",
-  "bg-amber-100 text-amber-800",
-  "bg-rose-100 text-rose-800",
-  "bg-cyan-100 text-cyan-800",
-  "bg-orange-100 text-orange-800",
-  "bg-slate-100 text-slate-800"
+  "border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]",
+  "border border-[var(--cos-border-soft)] bg-[var(--cos-bg-inset)] text-[var(--cos-text-muted)]",
+  "border border-[var(--cos-border-soft)] bg-[var(--cos-project-soft)] text-[var(--cos-project)]",
+  "border border-[var(--cos-border-soft)] bg-[var(--cos-date-soft)] text-[var(--cos-date)]",
+  "border border-[var(--cos-border-soft)] bg-[var(--cos-review-soft)] text-[var(--cos-review)]",
+  "border border-[var(--cos-border-soft)] bg-[var(--cos-bg-inset)] text-[var(--cos-text-muted)]",
+  "border border-[var(--cos-border-soft)] bg-[var(--cos-bg-inset)] text-[var(--cos-text-muted)]",
+  "border border-[var(--cos-border-soft)] bg-[var(--cos-bg-inset)] text-[var(--cos-text-muted)]"
 ];
 
 const DASHBOARD_CANVAS_TITLE = "Dashboard Canvas";
@@ -130,11 +130,11 @@ function sortDoneLast(a: Task, b: Task) {
 
 function Page({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-950">{title}</h1>
-          {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
+    <div className="cos-page">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">{title}</h1>
+          {subtitle ? <p className="mt-1 max-w-2xl text-sm text-[var(--cos-text-muted)]">{subtitle}</p> : null}
         </div>
         {action}
       </div>
@@ -144,22 +144,28 @@ function Page({ title, subtitle, action, children }: { title: string; subtitle?:
 }
 
 function SectionTitle({ icon: Icon, title, count, tone = "slate" }: { icon?: any; title: string; count?: number; tone?: "slate" | "red" | "amber" | "indigo" | "emerald" }) {
-  const color = { slate: "text-slate-500", red: "text-red-500", amber: "text-amber-500", indigo: "text-indigo-500", emerald: "text-emerald-500" }[tone];
+  const color = {
+    slate: "text-[var(--cos-text-muted)]",
+    red: "text-[var(--cos-danger)]",
+    amber: "text-[var(--cos-warning)]",
+    indigo: "text-[var(--cos-primary)]",
+    emerald: "text-[var(--cos-success)]"
+  }[tone];
   return (
     <div className="flex items-center gap-2">
       {Icon ? <Icon className={`h-4 w-4 ${color}`} /> : null}
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</h2>
-      {count !== undefined ? <span className="text-xs text-slate-400">({count})</span> : null}
+      <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-muted)]">{title}</h2>
+      {count !== undefined ? <span className="text-xs text-[var(--cos-text-subtle)]">({count})</span> : null}
     </div>
   );
 }
 
 function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description?: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-200 bg-white py-8 text-center">
-      <Icon className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-      <p className="text-sm font-medium text-slate-500">{title}</p>
-      {description ? <p className="mt-1 text-xs text-slate-400">{description}</p> : null}
+    <div className="cos-empty px-4 py-8 text-center">
+      <Icon className="mx-auto mb-3 h-10 w-10 text-[var(--cos-text-subtle)]" />
+      <p className="text-sm font-medium text-[var(--cos-text-muted)]">{title}</p>
+      {description ? <p className="mt-1 text-xs text-[var(--cos-text-subtle)]">{description}</p> : null}
     </div>
   );
 }
@@ -178,8 +184,8 @@ function QuickCapture() {
   }
 
   return (
-    <div className={`flex items-center gap-2 rounded-xl border bg-white px-4 py-3 shadow-sm transition-all ${flash ? "border-emerald-300 ring-2 ring-emerald-100" : "border-slate-200 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100"}`}>
-      <Zap className={`h-5 w-5 shrink-0 ${flash ? "text-emerald-500" : "text-indigo-500"}`} />
+    <div className={`cos-input flex items-center gap-2 px-4 py-3 ${flash ? "border-[var(--cos-success-border)] shadow-[0_0_0_3px_var(--cos-success-soft)]" : ""}`}>
+      <Zap className={`h-5 w-5 shrink-0 ${flash ? "text-[var(--cos-success)]" : "text-[var(--cos-primary)]"}`} />
       <input
         value={text}
         onChange={(event) => setText(event.target.value)}
@@ -188,9 +194,9 @@ function QuickCapture() {
           if (event.key === "Escape") setText("");
         }}
         placeholder="Quick capture... try /task, /note, /project, /deadline, /status"
-        className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
+        className="min-w-0 flex-1 bg-transparent text-sm text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
       />
-      <button onClick={submit} disabled={!text.trim()} className="rounded-lg p-2 text-indigo-600 hover:bg-indigo-50 disabled:text-slate-300">
+      <button onClick={submit} disabled={!text.trim()} className="grid h-9 w-9 place-items-center rounded-lg text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)]">
         <Send className="h-4 w-4" />
       </button>
     </div>
@@ -201,20 +207,20 @@ function TaskRow({ task, labels = [] }: { task: Task; labels?: string[] }) {
   const { updateTask } = useWorkspace();
   const done = task.status === "done";
   return (
-    <div className="group flex items-start gap-3 px-3 py-2.5 hover:bg-slate-50">
+    <div className="group flex items-start gap-3 px-3 py-3 hover:bg-[var(--cos-bg-soft)]">
       <button
         onClick={() => updateTask(task.id, { status: done ? "todo" : "done" })}
         aria-label={done ? `Mark ${task.title} todo` : `Mark ${task.title} done`}
-        className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border-2 ${done ? "border-emerald-500 bg-emerald-500" : "border-slate-300 hover:border-indigo-400"}`}
+        className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border-2 ${done ? "border-[var(--cos-success)] bg-[var(--cos-success)]" : "border-[var(--cos-border-strong)] hover:border-[var(--cos-primary)]"}`}
       >
         {done ? <Check className="h-3 w-3 text-white" /> : null}
       </button>
       <div className="min-w-0 flex-1">
-        <p className={`text-sm ${done ? "text-slate-400 line-through" : "text-slate-900"}`}>{task.title}</p>
+        <p className={`text-sm ${done ? "text-[var(--cos-text-subtle)] line-through" : "text-[var(--cos-text-strong)]"}`}>{task.title}</p>
         {labels.length ? (
           <div className="mt-1 flex flex-wrap gap-1.5">
             {labels.map((label) => (
-              <span key={label} className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${label === "Overdue" ? "bg-red-50 text-red-600" : label.includes("Due") ? "bg-amber-50 text-amber-700" : label.includes("Progress") ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"}`}>
+              <span key={label} className={`cos-pill ${label === "Overdue" ? "cos-pill-danger" : label.includes("Due") ? "cos-pill-warning" : label.includes("Progress") ? "cos-pill-primary" : "cos-pill-muted"}`}>
                 {label}
               </span>
             ))}
@@ -224,7 +230,7 @@ function TaskRow({ task, labels = [] }: { task: Task; labels?: string[] }) {
       <select
         value={task.status}
         onChange={(event) => updateTask(task.id, { status: event.target.value as TaskStatus })}
-        className={`rounded-full border-0 px-2 py-0.5 text-[11px] font-medium opacity-0 transition-opacity group-hover:opacity-100 ${taskStatus[task.status].color}`}
+        className={`cos-pill border-0 opacity-0 group-hover:opacity-100 ${taskStatus[task.status].color}`}
       >
         {Object.entries(taskStatus).map(([value, config]) => (
           <option key={value} value={value}>
@@ -252,11 +258,11 @@ function PriorityEditor({ scope, dateKeyValue, limit }: { scope: "daily" | "week
     <div className="space-y-1">
       {priorities.map((priority) => (
         <div key={priority.id} className="group flex items-center gap-3 py-1.5">
-          <button onClick={() => updatePriority(priority.id, { done: !priority.done })} className={`grid h-5 w-5 place-items-center rounded border-2 ${priority.done ? "border-amber-500 bg-amber-500" : "border-amber-300 hover:border-amber-400"}`}>
+          <button onClick={() => updatePriority(priority.id, { done: !priority.done })} className={`grid h-6 w-6 place-items-center rounded-lg border-2 ${priority.done ? "border-[var(--cos-warning)] bg-[var(--cos-warning)]" : "border-[var(--cos-warning-border)] hover:border-[var(--cos-warning)]"}`}>
             {priority.done ? <Check className="h-3 w-3 text-white" /> : null}
           </button>
-          <span className={`flex-1 text-sm ${priority.done ? "text-slate-400 line-through" : "font-medium text-slate-900"}`}>{priority.text}</span>
-          <button onClick={() => removePriority(priority.id)} className="opacity-0 text-slate-400 transition-opacity hover:text-red-500 group-hover:opacity-100">
+          <span className={`flex-1 text-sm ${priority.done ? "text-[var(--cos-text-subtle)] line-through" : "font-medium text-[var(--cos-text-strong)]"}`}>{priority.text}</span>
+          <button onClick={() => removePriority(priority.id)} className="opacity-0 text-[var(--cos-text-subtle)] hover:text-[var(--cos-danger)] group-hover:opacity-100">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -268,9 +274,9 @@ function PriorityEditor({ scope, dateKeyValue, limit }: { scope: "daily" | "week
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => event.key === "Enter" && submit()}
           placeholder={atLimit ? "Maximum reached" : scope === "daily" ? "Add a top priority..." : "Add weekly priority..."}
-          className="min-w-0 flex-1 border-b border-slate-200 bg-transparent py-1 text-sm outline-none placeholder:text-slate-400 focus:border-amber-300 disabled:opacity-50"
+          className="min-w-0 flex-1 border-b border-[var(--cos-border)] bg-transparent py-1 text-sm outline-none placeholder:text-[var(--cos-text-subtle)] focus:border-[var(--cos-warning)] disabled:opacity-50"
         />
-        <button onClick={submit} disabled={atLimit} className="rounded p-1 text-amber-600 hover:bg-amber-50 disabled:opacity-40">
+        <button onClick={submit} disabled={atLimit} className="rounded p-1 text-[var(--cos-warning-text)] hover:bg-[var(--cos-warning-soft)] disabled:opacity-40">
           <Plus className="h-4 w-4" />
         </button>
       </div>
@@ -281,7 +287,7 @@ function PriorityEditor({ scope, dateKeyValue, limit }: { scope: "daily" | "week
 function TaskList({ rows }: { rows: { task: Task; labels: string[] }[] }) {
   if (!rows.length) return <EmptyState icon={Clock} title="No tasks here" />;
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white divide-y divide-slate-100">
+    <div className="cos-surface overflow-hidden divide-y divide-[var(--cos-border-soft)]">
       {rows.map((row) => (
         <TaskRow key={row.task.id} task={row.task} labels={row.labels} />
       ))}
@@ -311,9 +317,9 @@ function DashboardCanvas({
   onSave: (content: string) => void;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4">
+    <section className="cos-surface p-4">
       {loading ? (
-        <p className="mt-3 rounded-lg bg-slate-50 px-3 py-6 text-sm text-slate-400">Loading dashboard canvas...</p>
+        <p className="mt-3 rounded-lg bg-[var(--cos-bg-soft)] px-3 py-6 text-sm text-[var(--cos-text-subtle)]">Loading dashboard canvas...</p>
       ) : (
         <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
@@ -357,9 +363,9 @@ export function InboxView() {
   return (
     <Page title="Inbox" subtitle="Capture and triage without deciding too early.">
       <QuickCapture />
-      <div className="mt-4 flex gap-1 rounded-lg bg-slate-100 p-1">
+      <div className="mt-4 flex gap-1 rounded-lg bg-[var(--cos-bg-inset)] p-1">
         {(["unprocessed", "all", "converted", "archived"] as const).map((tab) => (
-          <button key={tab} onClick={() => setFilter(tab)} className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium capitalize ${filter === tab ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>{tab}</button>
+          <button key={tab} onClick={() => setFilter(tab)} className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium capitalize ${filter === tab ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]"}`}>{tab}</button>
         ))}
       </div>
       <div className="mt-4 space-y-2">
@@ -375,26 +381,26 @@ export function InboxView() {
 function CaptureCard({ capture, onConvert, onArchive, onDelete }: { capture: Capture; onConvert: (id: string, target: "task" | "project" | "note" | "deadline") => void; onArchive: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="cos-surface p-4">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <p className="whitespace-pre-wrap text-sm text-slate-900">{capture.text}</p>
+          <p className="whitespace-pre-wrap text-sm text-[var(--cos-text-strong)]">{capture.text}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            {capture.type ? <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[11px] font-medium text-indigo-600">{capture.type}</span> : null}
-            <span className="text-[11px] text-slate-400">{formatDistanceToNow(parseISO(capture.createdAt), { addSuffix: true })}</span>
-            {capture.status !== "unprocessed" ? <span className="text-[11px] font-medium text-emerald-600">{capture.status}</span> : null}
+            {capture.type ? <span className="cos-pill cos-pill-primary">{capture.type}</span> : null}
+            <span className="text-[11px] text-[var(--cos-text-subtle)]">{formatDistanceToNow(parseISO(capture.createdAt), { addSuffix: true })}</span>
+            {capture.status !== "unprocessed" ? <span className="cos-pill cos-pill-success">{capture.status}</span> : null}
           </div>
         </div>
-        {capture.status === "unprocessed" ? <button aria-label="Capture actions" onClick={() => setOpen(!open)} className="rounded p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600"><MoreHorizontal className="h-5 w-5" /></button> : null}
+        {capture.status === "unprocessed" ? <button aria-label="Capture actions" onClick={() => setOpen(!open)} className="rounded p-1 text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text)]"><MoreHorizontal className="h-5 w-5" /></button> : null}
       </div>
       {open && capture.status === "unprocessed" ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--cos-border-soft)] pt-3">
           {(["task", "project", "note", "deadline"] as const).map((target) => (
-            <button key={target} onClick={() => onConvert(capture.id, target)} className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-medium capitalize text-indigo-700 hover:bg-indigo-100">Convert to {target}</button>
+            <button key={target} onClick={() => onConvert(capture.id, target)} className="rounded-lg bg-[var(--cos-primary-soft)] px-3 py-1.5 text-xs font-medium capitalize text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-border)]">Convert to {target}</button>
           ))}
           <div className="flex-1" />
-          <button onClick={onArchive} className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100">Archive</button>
-          <button onClick={onDelete} className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100">Delete</button>
+          <button onClick={onArchive} className="rounded-lg bg-[var(--cos-bg-inset)] px-3 py-1.5 text-xs font-medium text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]">Archive</button>
+          <button onClick={onDelete} className="rounded-lg bg-[var(--cos-danger-soft)] px-3 py-1.5 text-xs font-medium text-[var(--cos-danger-text)]">Delete</button>
         </div>
       ) : null}
     </div>
@@ -433,7 +439,7 @@ export function TodayView() {
         <section className="mt-6">
           <SectionTitle icon={Calendar} title="Deadlines Today" tone="amber" />
           <div className="mt-2 space-y-2">
-            {deadlines.map((deadline) => <div key={deadline.id} className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">{deadline.title}</div>)}
+            {deadlines.map((deadline) => <div key={deadline.id} className="rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] p-3 text-sm font-medium text-[var(--cos-warning-text)]">{deadline.title}</div>)}
           </div>
         </section>
       ) : null}
@@ -462,11 +468,11 @@ export function ThisWeekView() {
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
         <section>
           <SectionTitle icon={Calendar} title="Deadlines This Week" tone="amber" count={weekDeadlines.length} />
-          <div className="mt-2 space-y-2">{weekDeadlines.map((deadline) => <div key={deadline.id} className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{deadline.title} <span className="text-xs">{deadline.date}</span></div>)}</div>
+          <div className="mt-2 space-y-2">{weekDeadlines.map((deadline) => <div key={deadline.id} className="rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] p-3 text-sm text-[var(--cos-warning-text)]">{deadline.title} <span className="text-xs">{deadline.date}</span></div>)}</div>
         </section>
         <section>
           <SectionTitle icon={FolderKanban} title="Active Projects" tone="emerald" count={activeProjects.length} />
-          <div className="mt-2 grid gap-3 sm:grid-cols-2">{activeProjects.slice(0, 6).map((project) => <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-indigo-200"><p className="truncate text-sm font-semibold text-slate-900">{project.name}</p>{project.nextAction ? <p className="mt-1 truncate text-xs text-indigo-600">{project.nextAction}</p> : null}</button>)}</div>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">{activeProjects.slice(0, 6).map((project) => <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="cos-surface p-3 text-left hover:border-[var(--cos-primary-border)]"><p className="truncate text-sm font-semibold text-[var(--cos-text-strong)]">{project.name}</p>{project.nextAction ? <p className="mt-1 truncate text-xs text-[var(--cos-primary-text)]">{project.nextAction}</p> : null}</button>)}</div>
         </section>
       </div>
     </Page>
@@ -492,16 +498,16 @@ export function ProjectsView() {
   }
 
   return (
-    <Page title="Projects" subtitle="Track outcomes, next actions, and recovery context." action={<button onClick={() => setShowNew(true)} className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"><Plus className="h-4 w-4" /> New Project</button>}>
+    <Page title="Projects" subtitle="Track outcomes, next actions, and recovery context." action={<button onClick={() => setShowNew(true)} className="cos-btn cos-btn-primary px-4 py-2 text-sm"><Plus className="h-4 w-4" /> New Project</button>}>
       {showNew ? (
-        <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
-          <input value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && create()} autoFocus placeholder="Project name..." className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-300" />
+        <div className="cos-surface mb-4 p-4">
+          <input value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && create()} autoFocus placeholder="Project name..." className="cos-input w-full px-3 py-2 text-sm" />
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <select value={domainId} onChange={(event) => setDomainId(event.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+            <select value={domainId} onChange={(event) => setDomainId(event.target.value)} className="cos-input px-3 py-2 text-sm">
               {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
             </select>
-            <button onClick={create} className="text-sm font-semibold text-indigo-600">Create</button>
-            <button onClick={() => setShowNew(false)} className="text-sm text-slate-500">Cancel</button>
+            <button onClick={create} className="text-sm font-semibold text-[var(--cos-primary-text)]">Create</button>
+            <button onClick={() => setShowNew(false)} className="text-sm text-[var(--cos-text-muted)]">Cancel</button>
           </div>
         </div>
       ) : null}
@@ -513,29 +519,29 @@ export function ProjectsView() {
           const deadlineCount = data.deadlines.filter((deadline) => !deadline.trashedAt && deadline.projectId && projectIds.has(deadline.projectId)).length;
           const children = childProjects(data.projects, project.id);
           return (
-            <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-indigo-200 hover:shadow-md">
+            <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="cos-surface p-4 text-left hover:border-[var(--cos-primary-border)] hover:shadow-[var(--cos-shadow-md)]">
               <div className="flex items-start justify-between gap-2">
-                <h3 className="text-sm font-semibold text-slate-950">{project.name}</h3>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${projectStatus[project.status].color}`}>{projectStatus[project.status].label}</span>
+                <h3 className="text-sm font-semibold text-[var(--cos-text-strong)]">{project.name}</h3>
+                <span className={`cos-pill ${projectStatus[project.status].color}`}>{projectStatus[project.status].label}</span>
               </div>
-              <span className={`mt-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, project.domainId)}`}>{domainName(data.domains, project.domainId)}</span>
-              {project.currentObjective ? <p className="mt-2 line-clamp-2 text-xs text-slate-600">{project.currentObjective}</p> : null}
-              {project.nextAction ? <p className="mt-2 truncate text-xs font-medium text-indigo-600">Next: {project.nextAction}</p> : null}
-              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-400">
+              <span className={`mt-2 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, project.domainId)}`}>{domainName(data.domains, project.domainId)}</span>
+              {project.currentObjective ? <p className="mt-2 line-clamp-2 text-xs text-[var(--cos-text-muted)]">{project.currentObjective}</p> : null}
+              {project.nextAction ? <p className="mt-2 truncate text-xs font-medium text-[var(--cos-primary-text)]">Next: {project.nextAction}</p> : null}
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[var(--cos-text-subtle)]">
                 {children.length ? <span>{children.length} subcontext{children.length > 1 ? "s" : ""}</span> : null}
                 {count ? <span>{count} open task{count > 1 ? "s" : ""}</span> : null}
                 {deadlineCount ? <span>{deadlineCount} deadline{deadlineCount > 1 ? "s" : ""}</span> : null}
               </div>
               {children.length ? (
-                <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+                <div className="mt-3 space-y-1 border-t border-[var(--cos-border-soft)] pt-3">
                   {children.slice(0, 3).map((child) => (
-                    <div key={child.id} className="flex items-center gap-2 text-xs text-slate-600">
-                      <Layers className="h-3.5 w-3.5 text-slate-300" />
+                    <div key={child.id} className="flex items-center gap-2 text-xs text-[var(--cos-text-muted)]">
+                      <Layers className="h-3.5 w-3.5 text-[var(--cos-text-subtle)]" />
                       <span className="min-w-0 flex-1 truncate">{child.name}</span>
-                      {child.nextAction ? <span className="max-w-24 truncate text-indigo-500">{child.nextAction}</span> : null}
+                      {child.nextAction ? <span className="max-w-24 truncate text-[var(--cos-primary-text)]">{child.nextAction}</span> : null}
                     </div>
                   ))}
-                  {children.length > 3 ? <p className="pl-5 text-[11px] text-slate-400">+{children.length - 3} more</p> : null}
+                  {children.length > 3 ? <p className="pl-5 text-[11px] text-[var(--cos-text-subtle)]">+{children.length - 3} more</p> : null}
                 </div>
               ) : null}
             </button>
@@ -573,13 +579,13 @@ function AreaProjectTree({
       <button
         type="button"
         onClick={() => onOpen(project.id)}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-slate-50"
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-[var(--cos-bg-elevated)]"
         style={{ paddingLeft: `${0.5 + depth * 1.1}rem` }}
       >
-        <Layers className="h-3.5 w-3.5 shrink-0 text-slate-300" />
-        <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700">{project.name}</span>
-        {taskCount ? <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">{taskCount} task{taskCount > 1 ? "s" : ""}</span> : null}
-        {deadlineCount ? <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700">{deadlineCount} date{deadlineCount > 1 ? "s" : ""}</span> : null}
+        <Layers className="h-3.5 w-3.5 shrink-0 text-[var(--cos-text-subtle)]" />
+        <span className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--cos-text)]">{project.name}</span>
+        {taskCount ? <span className="cos-pill cos-pill-muted">{taskCount} task{taskCount > 1 ? "s" : ""}</span> : null}
+        {deadlineCount ? <span className="cos-pill cos-pill-warning">{deadlineCount} date{deadlineCount > 1 ? "s" : ""}</span> : null}
       </button>
       {children.map((child) => (
         <AreaProjectTree key={child.id} project={child} projects={projects} tasks={tasks} deadlines={deadlines} depth={depth + 1} onOpen={onOpen} />
@@ -607,44 +613,44 @@ export function AreasView() {
           const roots = domainProjects.filter((project) => !project.parentProjectId || !projectIds.has(project.parentProjectId));
           const open = openAreaId === domain.id;
           return (
-            <section key={domain.id} className="rounded-xl border border-slate-200 bg-white p-4">
+            <section key={domain.id} className="cos-surface p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, domain.id)}`}>Area</span>
-                  <h2 className="mt-2 text-base font-semibold text-slate-950">{domain.name}</h2>
+                  <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, domain.id)}`}>Area</span>
+                  <h2 className="mt-2 text-base font-semibold text-[var(--cos-text-strong)]">{domain.name}</h2>
                 </div>
                 <button
                   type="button"
                   aria-label={open ? `Close ${domain.name}` : `Open ${domain.name}`}
                   onClick={() => setOpenAreaId(open ? null : domain.id)}
-                  className="rounded-md p-1 text-slate-400 hover:bg-slate-50 hover:text-indigo-600"
+                  className="rounded-md p-1 text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-primary-text)]"
                 >
                   {open ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                 </button>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-slate-50 p-2"><p className="text-sm font-semibold text-slate-900">{domainProjects.length}</p><p className="text-[10px] uppercase tracking-wider text-slate-400">Projects</p></div>
-                <div className="rounded-lg bg-slate-50 p-2"><p className="text-sm font-semibold text-slate-900">{openTaskCount}</p><p className="text-[10px] uppercase tracking-wider text-slate-400">Tasks</p></div>
-                <div className="rounded-lg bg-slate-50 p-2"><p className="text-sm font-semibold text-slate-900">{resourceCount}</p><p className="text-[10px] uppercase tracking-wider text-slate-400">Resources</p></div>
+                <div className="rounded-lg bg-[var(--cos-bg-soft)] p-2"><p className="text-sm font-semibold text-[var(--cos-text-strong)]">{domainProjects.length}</p><p className="text-[10px] uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Projects</p></div>
+                <div className="rounded-lg bg-[var(--cos-bg-soft)] p-2"><p className="text-sm font-semibold text-[var(--cos-text-strong)]">{openTaskCount}</p><p className="text-[10px] uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Tasks</p></div>
+                <div className="rounded-lg bg-[var(--cos-bg-soft)] p-2"><p className="text-sm font-semibold text-[var(--cos-text-strong)]">{resourceCount}</p><p className="text-[10px] uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Resources</p></div>
               </div>
               <div className="mt-4 space-y-2">
                 {(!open ? roots.slice(0, 3) : []).map((project) => (
-                  <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-slate-50">
-                    <FolderKanban className="h-3.5 w-3.5 text-slate-300" />
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700">{project.name}</span>
-                    {childProjects(data.projects, project.id).length ? <span className="text-[10px] text-slate-400">{childProjects(data.projects, project.id).length} sub</span> : null}
+                  <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-[var(--cos-bg-soft)]">
+                    <FolderKanban className="h-3.5 w-3.5 text-[var(--cos-text-subtle)]" />
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--cos-text)]">{project.name}</span>
+                    {childProjects(data.projects, project.id).length ? <span className="text-[10px] text-[var(--cos-text-subtle)]">{childProjects(data.projects, project.id).length} sub</span> : null}
                   </button>
                 ))}
-                {!roots.length ? <p className="text-xs italic text-slate-400">No active projects in this area.</p> : null}
+                {!roots.length ? <p className="text-xs italic text-[var(--cos-text-subtle)]">No active projects in this area.</p> : null}
               </div>
               {open && roots.length ? (
-                <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50/60 p-2">
+                <div className="mt-4 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-2">
                   {roots.map((project) => (
                     <AreaProjectTree key={project.id} project={project} projects={data.projects} tasks={data.tasks} deadlines={data.deadlines} depth={0} onOpen={(id) => router.push(`/projects/${id}`)} />
                   ))}
                 </div>
               ) : null}
-              <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-slate-400">
+              <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-[var(--cos-text-subtle)]">
                 {deadlineCount ? <span>{deadlineCount} deadline{deadlineCount > 1 ? "s" : ""}</span> : null}
                 {domain.archived ? <span>Archived</span> : null}
               </div>
@@ -679,30 +685,30 @@ export function ResourcesView() {
 
   return (
     <Page title="Resources" subtitle="Standalone markdown notes, reference lists, and knowledge you may want searchable later.">
-      <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="cos-surface mb-4 p-4">
         <SectionTitle icon={FileText} title="New Resource" tone="indigo" />
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <input value={newTitle} disabled={loading || !activeDomains.length} onChange={(event) => setNewTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && createResource()} placeholder={loading ? "Loading resources..." : "Resource title..."} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-300 disabled:bg-slate-50 disabled:text-slate-400" />
-          <select value={newDomainId} disabled={loading || !activeDomains.length} onChange={(event) => setNewDomainId(event.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400">
+          <input value={newTitle} disabled={loading || !activeDomains.length} onChange={(event) => setNewTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && createResource()} placeholder={loading ? "Loading resources..." : "Resource title..."} className="cos-input min-w-0 flex-1 px-3 py-2 text-sm disabled:bg-[var(--cos-bg-inset)] disabled:text-[var(--cos-text-subtle)]" />
+          <select value={newDomainId} disabled={loading || !activeDomains.length} onChange={(event) => setNewDomainId(event.target.value)} className="cos-input px-3 py-2 text-sm disabled:bg-[var(--cos-bg-inset)] disabled:text-[var(--cos-text-subtle)]">
             {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
           </select>
-          <button onClick={createResource} disabled={loading || !activeDomains.length || !newTitle.trim()} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40">Add</button>
+          <button onClick={createResource} disabled={loading || !activeDomains.length || !newTitle.trim()} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-40">Add</button>
         </div>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        <button onClick={() => setDomainId("")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${selectedDomain === "all" ? "bg-slate-900 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}>All</button>
+        <button onClick={() => setDomainId("")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${selectedDomain === "all" ? "bg-[var(--cos-text-strong)] text-[var(--cos-text-inverse)]" : "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)]"}`}>All</button>
         {activeDomains.map((domain) => (
-          <button key={domain.id} onClick={() => setDomainId(domain.id)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${selectedDomain === domain.id ? "bg-slate-900 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}>{domain.name}</button>
+          <button key={domain.id} onClick={() => setDomainId(domain.id)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${selectedDomain === domain.id ? "bg-[var(--cos-text-strong)] text-[var(--cos-text-inverse)]" : "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)]"}`}>{domain.name}</button>
         ))}
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
         {resources.map((note) => (
-          <div key={note.id} className="rounded-xl border border-slate-200 bg-white p-3">
+          <div key={note.id} className="cos-surface p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, note.domainId)}`}>{domainName(data.domains, note.domainId)}</span>
-              {note.title === DASHBOARD_CANVAS_TITLE ? <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">Dashboard</span> : null}
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, note.domainId)}`}>{domainName(data.domains, note.domainId)}</span>
+              {note.title === DASHBOARD_CANVAS_TITLE ? <span className="cos-pill cos-pill-primary">Dashboard</span> : null}
             </div>
             <NoteCard note={note} editing={editingNote === note.id} onEdit={() => setEditingNote(note.id)} onDone={() => setEditingNote(null)} onUpdate={(updates) => updateNote(note.id, updates)} />
           </div>
@@ -752,7 +758,7 @@ function EditableField({
     setSavedFlash(false);
   }
 
-  const baseClass = `w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-sm outline-none placeholder:text-slate-400 hover:bg-slate-50 focus:border-indigo-200 focus:bg-white focus:ring-2 focus:ring-indigo-100 ${inputClassName}`;
+  const baseClass = `w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-sm outline-none placeholder:text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-soft)] focus:border-[var(--cos-primary-border)] focus:bg-[var(--cos-bg-elevated)] focus:ring-2 focus:ring-[var(--cos-focus)] ${inputClassName}`;
 
   return (
     <div className={`min-w-0 ${className}`}>
@@ -787,10 +793,10 @@ function EditableField({
       )}
       {(dirty || savedFlash) ? (
         <div className="mt-1 flex flex-wrap items-center justify-end gap-2 text-[11px]">
-          <span className={dirty ? "text-amber-600" : "text-emerald-600"}>{dirty ? "Unsaved changes" : "Saved"}</span>
-          {dirty && !sync.online ? <span data-testid="offline-edit-warning" className="rounded bg-amber-50 px-1.5 py-0.5 font-medium text-amber-700">Offline: save will queue</span> : null}
+          <span className={dirty ? "text-[var(--cos-warning-text)]" : "text-[var(--cos-success-text)]"}>{dirty ? "Unsaved changes" : "Saved"}</span>
+          {dirty && !sync.online ? <span data-testid="offline-edit-warning" className="cos-pill cos-pill-warning">Offline: save will queue</span> : null}
           {dirty ? (
-            <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={commit} className="rounded px-2 py-0.5 font-semibold text-indigo-600 hover:bg-indigo-50">
+            <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={commit} className="rounded px-2 py-0.5 font-semibold text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)]">
               Save
             </button>
           ) : null}
@@ -872,7 +878,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const [editingNote, setEditingNote] = useState<string | null>(null);
 
   if (!project) {
-    return <Page title="Project not found"><button onClick={() => router.push("/projects")} className="text-sm font-semibold text-indigo-600">Back to projects</button></Page>;
+    return <Page title="Project not found"><button onClick={() => router.push("/projects")} className="text-sm font-semibold text-[var(--cos-primary-text)]">Back to projects</button></Page>;
   }
 
   const currentProject = project;
@@ -941,18 +947,18 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   }
 
   return (
-    <Page title={project.name} subtitle="Recovery-first project detail." action={<button onClick={() => router.push("/projects")} className="text-sm font-semibold text-indigo-600">Back</button>}>
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <Page title={project.name} subtitle="Recovery-first project detail." action={<button onClick={() => router.push("/projects")} className="text-sm font-semibold text-[var(--cos-primary-text)]">Back</button>}>
+      <div className="cos-surface p-5">
         <EditableField value={project.name} placeholder="Project name" onSave={(value) => updateProject(project.id, { name: value })} inputClassName="text-base font-semibold" />
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <select value={project.status} onChange={(event) => updateProject(project.id, { status: event.target.value as any, archivedAt: event.target.value === "archived" ? new Date().toISOString() : null })} className={`rounded-full border-0 px-3 py-1 text-xs font-medium ${projectStatus[project.status].color}`}>
             {Object.entries(projectStatus).map(([value, config]) => <option key={value} value={value}>{config.label}</option>)}
           </select>
-          <select value={project.domainId} onChange={(event) => updateProject(project.id, { domainId: event.target.value })} className={`rounded border-0 px-2 py-1 text-[11px] font-medium ${domainColor(data.domains, project.domainId)}`}>
+          <select value={project.domainId} onChange={(event) => updateProject(project.id, { domainId: event.target.value })} className={`rounded-full border-0 px-2 py-1 text-[11px] font-medium ${domainColor(data.domains, project.domainId)}`}>
             {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
           </select>
-          {project.parentProjectId ? <span className="rounded bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-500">Parent: {projectName(data.projects, project.parentProjectId)}</span> : null}
-          <span className="text-[11px] text-slate-400">Updated {formatDistanceToNow(parseISO(project.updatedAt), { addSuffix: true })}</span>
+          {project.parentProjectId ? <span className="cos-pill cos-pill-muted">Parent: {projectName(data.projects, project.parentProjectId)}</span> : null}
+          <span className="text-[11px] text-[var(--cos-text-subtle)]">Updated {formatDistanceToNow(parseISO(project.updatedAt), { addSuffix: true })}</span>
         </div>
       </div>
 
@@ -982,15 +988,15 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
             const childTaskCount = activeTasks(data.tasks).filter((task) => task.projectId && childIds.has(task.projectId)).length;
             const childDeadlineCount = data.deadlines.filter((deadline) => !deadline.trashedAt && deadline.projectId && childIds.has(deadline.projectId)).length;
             return (
-              <button key={child.id} onClick={() => router.push(`/projects/${child.id}`)} className="flex w-full items-start gap-3 rounded-lg border border-slate-100 p-3 text-left hover:bg-slate-50">
-                <Layers className="mt-0.5 h-4 w-4 text-indigo-400" />
+              <button key={child.id} onClick={() => router.push(`/projects/${child.id}`)} className="cos-row flex w-full items-start gap-3 p-3 text-left hover:bg-[var(--cos-bg-soft)]">
+                <Layers className="mt-0.5 h-4 w-4 text-[var(--cos-primary)]" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="truncate text-sm font-semibold text-slate-900">{child.name}</h3>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${projectStatus[child.status].color}`}>{projectStatus[child.status].label}</span>
+                    <h3 className="truncate text-sm font-semibold text-[var(--cos-text-strong)]">{child.name}</h3>
+                    <span className={`cos-pill ${projectStatus[child.status].color}`}>{projectStatus[child.status].label}</span>
                   </div>
-                  {child.nextAction ? <p className="mt-1 truncate text-xs font-medium text-indigo-600">Next: {child.nextAction}</p> : null}
-                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-400">
+                  {child.nextAction ? <p className="mt-1 truncate text-xs font-medium text-[var(--cos-primary-text)]">Next: {child.nextAction}</p> : null}
+                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-[var(--cos-text-subtle)]">
                     {childTaskCount ? <span>{childTaskCount} open task{childTaskCount > 1 ? "s" : ""}</span> : null}
                     {childDeadlineCount ? <span>{childDeadlineCount} deadline{childDeadlineCount > 1 ? "s" : ""}</span> : null}
                     {childDescendants.size ? <span>{childDescendants.size} nested</span> : null}
@@ -999,10 +1005,10 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
               </button>
             );
           })}
-          {!subcontexts.length ? <p className="text-sm italic text-slate-400">No subcontexts yet.</p> : null}
+          {!subcontexts.length ? <p className="text-sm italic text-[var(--cos-text-subtle)]">No subcontexts yet.</p> : null}
           <div className="flex items-center gap-2 pt-2">
-            <input value={newSubcontext} onChange={(event) => setNewSubcontext(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addSubcontext()} placeholder="Add subcontext, course, assignment, or duty..." className="flex-1 border-b border-slate-200 bg-transparent py-1 text-sm outline-none focus:border-indigo-300" />
-            <button onClick={addSubcontext} className="text-indigo-600"><Plus className="h-4 w-4" /></button>
+            <input value={newSubcontext} onChange={(event) => setNewSubcontext(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addSubcontext()} placeholder="Add subcontext, course, assignment, or duty..." className="flex-1 border-b border-[var(--cos-border)] bg-transparent py-1 text-sm outline-none focus:border-[var(--cos-primary-border)]" />
+            <button onClick={addSubcontext} className="text-[var(--cos-primary-text)]"><Plus className="h-4 w-4" /></button>
           </div>
         </div>
       </InfoBlock>
@@ -1011,28 +1017,28 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         <div className="space-y-2">
           {deadlines.map((deadline) => (
             <div key={deadline.id} className="group flex items-center gap-2 text-sm">
-              <span className="flex-1 text-slate-700">{deadline.title}</span>
-              {deadline.projectId !== project.id ? <span className="max-w-32 truncate rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">{projectName(data.projects, deadline.projectId)}</span> : null}
-              <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="rounded border border-slate-200 px-2 py-1 text-xs" />
+              <span className="flex-1 text-[var(--cos-text)]">{deadline.title}</span>
+              {deadline.projectId !== project.id ? <span className="cos-pill cos-pill-muted max-w-32 truncate">{projectName(data.projects, deadline.projectId)}</span> : null}
+              <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="cos-input px-2 py-1 text-xs" />
             </div>
           ))}
           <div className="flex flex-wrap items-center gap-2 pt-2">
-            <input value={newDeadline} onChange={(event) => setNewDeadline(event.target.value)} placeholder="Deadline title..." className="min-w-0 flex-1 border-b border-slate-200 bg-transparent py-1 text-sm outline-none focus:border-indigo-300" />
-            <input type="date" value={newDeadlineDate} onChange={(event) => setNewDeadlineDate(event.target.value)} className="rounded border border-slate-200 px-2 py-1 text-xs" />
-            <button onClick={() => { if (newDeadline.trim()) { addDeadline({ title: newDeadline.trim(), date: newDeadlineDate, projectId: project.id }); setNewDeadline(""); } }} className="text-indigo-600"><Plus className="h-4 w-4" /></button>
+            <input value={newDeadline} onChange={(event) => setNewDeadline(event.target.value)} placeholder="Deadline title..." className="min-w-0 flex-1 border-b border-[var(--cos-border)] bg-transparent py-1 text-sm outline-none focus:border-[var(--cos-primary-border)]" />
+            <input type="date" value={newDeadlineDate} onChange={(event) => setNewDeadlineDate(event.target.value)} className="cos-input px-2 py-1 text-xs" />
+            <button onClick={() => { if (newDeadline.trim()) { addDeadline({ title: newDeadline.trim(), date: newDeadlineDate, projectId: project.id }); setNewDeadline(""); } }} className="text-[var(--cos-primary-text)]"><Plus className="h-4 w-4" /></button>
           </div>
         </div>
       </InfoBlock>
 
-      <details className="mt-4 rounded-xl border border-slate-200 bg-white">
-        <summary className="flex cursor-pointer items-center gap-2 p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <details className="cos-surface mt-4">
+        <summary className="flex cursor-pointer items-center gap-2 p-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-muted)]">
           <ChevronRight className="h-4 w-4" /> Active Tasks ({activeTaskCount})
         </summary>
-        <div className="border-t border-slate-100 p-4">
+        <div className="border-t border-[var(--cos-border-soft)] p-4">
           <TaskList rows={tasks.map((task) => ({ task, labels: [taskStatus[task.status].label, task.projectId !== project.id ? projectName(data.projects, task.projectId) : ""].filter(Boolean) }))} />
           <div className="mt-3 flex items-center gap-2">
-            <input value={newTask} onChange={(event) => setNewTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && newTask.trim()) { addTask({ title: newTask.trim(), projectId: project.id, domainId: project.domainId }); setNewTask(""); } }} placeholder="Add task..." className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-300" />
-            <button onClick={() => { if (newTask.trim()) { addTask({ title: newTask.trim(), projectId: project.id, domainId: project.domainId }); setNewTask(""); } }} className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white">Add</button>
+            <input value={newTask} onChange={(event) => setNewTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && newTask.trim()) { addTask({ title: newTask.trim(), projectId: project.id, domainId: project.domainId }); setNewTask(""); } }} placeholder="Add task..." className="cos-input flex-1 px-3 py-2 text-sm" />
+            <button onClick={() => { if (newTask.trim()) { addTask({ title: newTask.trim(), projectId: project.id, domainId: project.domainId }); setNewTask(""); } }} className="cos-btn cos-btn-primary px-3 py-2 text-sm">Add</button>
           </div>
         </div>
       </details>
@@ -1043,31 +1049,31 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
             <NoteCard key={note.id} note={note} editing={editingNote === note.id} onEdit={() => setEditingNote(note.id)} onDone={() => setEditingNote(null)} onUpdate={(updates) => updateNote(note.id, updates)} />
           ))}
           <div className="flex items-center gap-2 pt-2">
-            <input value={newNote} onChange={(event) => setNewNote(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && newNote.trim()) { const id = addNote({ title: newNote.trim(), projectId: project.id, domainId: project.domainId }); setNewNote(""); setEditingNote(id); } }} placeholder="Add a note..." className="flex-1 border-b border-slate-200 bg-transparent py-1 text-sm outline-none focus:border-indigo-300" />
-            <button onClick={() => { if (newNote.trim()) { const id = addNote({ title: newNote.trim(), projectId: project.id, domainId: project.domainId }); setNewNote(""); setEditingNote(id); } }} className="text-indigo-600"><Plus className="h-4 w-4" /></button>
+            <input value={newNote} onChange={(event) => setNewNote(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && newNote.trim()) { const id = addNote({ title: newNote.trim(), projectId: project.id, domainId: project.domainId }); setNewNote(""); setEditingNote(id); } }} placeholder="Add a note..." className="flex-1 border-b border-[var(--cos-border)] bg-transparent py-1 text-sm outline-none focus:border-[var(--cos-primary-border)]" />
+            <button onClick={() => { if (newNote.trim()) { const id = addNote({ title: newNote.trim(), projectId: project.id, domainId: project.domainId }); setNewNote(""); setEditingNote(id); } }} className="text-[var(--cos-primary-text)]"><Plus className="h-4 w-4" /></button>
           </div>
         </div>
       </InfoBlock>
 
-      {suggestions.length ? <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4"><div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-600"><Sparkles className="h-4 w-4" /> Agent Suggestions</div><ul className="space-y-1 text-sm text-indigo-800">{suggestions.map((suggestion) => <li key={suggestion}>{suggestion}</li>)}</ul></div> : null}
+      {suggestions.length ? <div className="mt-4 rounded-lg border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] p-4"><div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]"><Sparkles className="h-4 w-4" /> Agent Suggestions</div><ul className="space-y-1 text-sm text-[var(--cos-primary-text)]">{suggestions.map((suggestion) => <li key={suggestion}>{suggestion}</li>)}</ul></div> : null}
 
       <div className="mt-4 flex flex-wrap gap-3">
-        <button onClick={exportMarkdown} className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"><Download className="h-4 w-4" /> Export Markdown</button>
-        <button aria-label={project.status === "archived" ? "Unarchive project" : "Archive project"} onClick={() => updateProject(project.id, { status: project.status === "archived" ? "active" : "archived", archivedAt: project.status === "archived" ? null : new Date().toISOString() })} className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"><Archive className="h-4 w-4" /> {project.status === "archived" ? "Unarchive" : "Archive"}</button>
-        <button onClick={() => { updateProject(project.id, { trashedAt: new Date().toISOString() }); router.push("/projects"); }} className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4" /> Delete</button>
+        <button onClick={exportMarkdown} className="cos-btn cos-btn-ghost px-3 py-2 text-sm"><Download className="h-4 w-4" /> Export Markdown</button>
+        <button aria-label={project.status === "archived" ? "Unarchive project" : "Archive project"} onClick={() => updateProject(project.id, { status: project.status === "archived" ? "active" : "archived", archivedAt: project.status === "archived" ? null : new Date().toISOString() })} className="cos-btn cos-btn-ghost px-3 py-2 text-sm"><Archive className="h-4 w-4" /> {project.status === "archived" ? "Unarchive" : "Archive"}</button>
+        <button onClick={() => { updateProject(project.id, { trashedAt: new Date().toISOString() }); router.push("/projects"); }} className="cos-btn px-3 py-2 text-sm text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"><Trash2 className="h-4 w-4" /> Delete</button>
       </div>
     </Page>
   );
 }
 
 function InfoBlock({ title, children, accent, className = "" }: { title: string; children: React.ReactNode; accent?: boolean; className?: string }) {
-  return <section className={`${className} rounded-xl border ${accent ? "border-indigo-200 bg-indigo-50" : "border-slate-200 bg-white"} p-4`}><h3 className={`mb-2 text-xs font-semibold uppercase tracking-wider ${accent ? "text-indigo-600" : "text-slate-500"}`}>{title}</h3>{children}</section>;
+  return <section className={`${className} rounded-lg border ${accent ? "border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)]" : "border-[var(--cos-border)] bg-[var(--cos-bg-elevated)]"} p-4 shadow-[var(--cos-shadow-sm)]`}><h3 className={`mb-2 text-xs font-semibold uppercase tracking-[0.14em] ${accent ? "text-[var(--cos-primary-text)]" : "text-[var(--cos-text-muted)]"}`}>{title}</h3>{children}</section>;
 }
 
 function NoteCard({ note, editing, onEdit, onDone, onUpdate }: { note: Note; editing: boolean; onEdit: () => void; onDone: () => void; onUpdate: (updates: Partial<Note>) => void }) {
   if (editing) {
     return (
-      <div className="rounded-lg border border-slate-100 p-3">
+      <div className="rounded-lg border border-[var(--cos-border-soft)] p-3">
         <EditableField value={note.title} placeholder="Note title" onSave={(title) => onUpdate({ title })} inputClassName="font-semibold" />
         <div className="mt-2">
           <MarkdownEditor
@@ -1078,21 +1084,21 @@ function NoteCard({ note, editing, onEdit, onDone, onUpdate }: { note: Note; edi
             onSave={(content) => onUpdate({ content })}
           />
         </div>
-        <button onClick={onDone} className="mt-3 text-xs font-semibold text-indigo-600">Done</button>
+        <button onClick={onDone} className="mt-3 text-xs font-semibold text-[var(--cos-primary-text)]">Done</button>
       </div>
     );
   }
   return (
-    <button onClick={onEdit} className="w-full rounded-lg border border-slate-100 p-3 text-left hover:bg-slate-50">
-      <h4 className="text-sm font-semibold text-slate-900">{note.title}</h4>
-      {note.content ? <MarkdownPreview content={note.content} /> : <p className="mt-1 text-xs text-slate-400">Empty note</p>}
+    <button onClick={onEdit} className="w-full rounded-lg border border-[var(--cos-border-soft)] p-3 text-left hover:bg-[var(--cos-bg-soft)]">
+      <h4 className="text-sm font-semibold text-[var(--cos-text-strong)]">{note.title}</h4>
+      {note.content ? <MarkdownPreview content={note.content} /> : <p className="mt-1 text-xs text-[var(--cos-text-subtle)]">Empty note</p>}
     </button>
   );
 }
 
 function MarkdownPreview({ content }: { content: string }) {
   return (
-    <div className="prose-lite mt-2 line-clamp-5 text-xs text-slate-600">
+    <div className="prose-lite mt-2 line-clamp-5 text-xs text-[var(--cos-text-muted)]">
       {content.split("\n").map((line, index) => {
         const checkbox = line.match(/^- \[( |x|X)\]\s?(.*)$/);
         if (checkbox) return <p key={index}>{checkbox[1].toLowerCase() === "x" ? "[x]" : "[ ]"} {checkbox[2]}</p>;
@@ -1125,21 +1131,21 @@ export function DeadlinesView() {
   }
 
   return (
-    <Page title="Deadlines" subtitle="Separate hard dates from task due dates." action={<button onClick={() => setShowAdd(true)} className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"><Plus className="h-4 w-4" /> Add Deadline</button>}>
-      {showAdd ? <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4"><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Deadline title..." className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" /><div className="mt-3 flex flex-wrap gap-3"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm" /><select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm"><option value="">No project</option>{activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select><button onClick={create} className="text-sm font-semibold text-indigo-600">Add</button></div></div> : null}
+    <Page title="Deadlines" subtitle="Separate hard dates from task due dates." action={<button onClick={() => setShowAdd(true)} className="cos-btn cos-btn-primary px-4 py-2 text-sm"><Plus className="h-4 w-4" /> Add Deadline</button>}>
+      {showAdd ? <div className="cos-surface mb-4 p-4"><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Deadline title..." className="cos-input w-full px-3 py-2 text-sm" /><div className="mt-3 flex flex-wrap gap-3"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="cos-input px-3 py-2 text-sm" /><select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input px-3 py-2 text-sm"><option value="">No project</option>{activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select><button onClick={create} className="text-sm font-semibold text-[var(--cos-primary-text)]">Add</button></div></div> : null}
       <div className="space-y-2">
         {deadlines.map((deadline) => {
           const overdue = deadline.date < localDateKey();
           return (
-            <div key={deadline.id} className={`rounded-xl border bg-white p-3 ${overdue ? "border-red-200" : "border-slate-200"}`}>
+            <div key={deadline.id} className={`rounded-lg border bg-[var(--cos-bg-elevated)] p-3 shadow-[var(--cos-shadow-sm)] ${overdue ? "border-[var(--cos-danger-border)]" : "border-[var(--cos-border)]"}`}>
               <div className="flex items-start gap-3">
-                <Calendar className={`mt-2 h-4 w-4 ${overdue ? "text-red-500" : "text-slate-400"}`} />
+                <Calendar className={`mt-2 h-4 w-4 ${overdue ? "text-[var(--cos-danger)]" : "text-[var(--cos-date)]"}`} />
                 <div className="min-w-0 flex-1">
-                  <EditableField value={deadline.title} placeholder="Deadline title" onSave={(title) => updateDeadline(deadline.id, { title })} inputClassName={`font-medium ${overdue ? "text-red-700" : "text-slate-900"}`} />
-                  <p className="px-3 text-xs text-slate-400">{projectName(data.projects, deadline.projectId)}</p>
+                  <EditableField value={deadline.title} placeholder="Deadline title" onSave={(title) => updateDeadline(deadline.id, { title })} inputClassName={`font-medium ${overdue ? "text-[var(--cos-danger-text)]" : "text-[var(--cos-text-strong)]"}`} />
+                  <p className="px-3 text-xs text-[var(--cos-text-subtle)]">{projectName(data.projects, deadline.projectId)}</p>
                 </div>
-                <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="mt-2 rounded border border-slate-200 px-2 py-1 text-xs" />
-                <button onClick={() => updateDeadline(deadline.id, { trashedAt: new Date().toISOString() })} className="mt-2 text-slate-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="cos-input mt-2 px-2 py-1 text-xs" />
+                <button onClick={() => updateDeadline(deadline.id, { trashedAt: new Date().toISOString() })} className="mt-2 text-[var(--cos-text-subtle)] hover:text-[var(--cos-danger)]"><Trash2 className="h-4 w-4" /></button>
               </div>
               <div className="mt-2 pl-7">
                 <EditableField value={deadline.notes} multiline rows={2} placeholder="Deadline notes..." onSave={(notes) => updateDeadline(deadline.id, { notes })} />
@@ -1161,13 +1167,13 @@ export function ReviewsView() {
   const labels: Record<ReviewType, string> = { "daily-startup": "Daily Startup", "daily-shutdown": "Daily Shutdown", weekly: "Weekly Review" };
 
   if (type) {
-    return <Page title={labels[type]} subtitle="Store review context for recovery."><div className="space-y-5">{questions.map(([key, label]) => <label key={key} className="block"><span className="mb-2 block text-sm font-medium text-slate-700">{label}</span><textarea value={responses[key] || ""} onChange={(event) => setResponses((prev) => ({ ...prev, [key]: event.target.value }))} rows={3} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-300" /></label>)}</div><div className="mt-6 flex gap-3"><button onClick={() => { addReview(type, responses); setType(null); setResponses({}); }} className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white">Save Review</button><button onClick={() => setType(null)} className="text-sm text-slate-500">Cancel</button></div></Page>;
+    return <Page title={labels[type]} subtitle="Store review context for recovery."><div className="cos-surface space-y-5 p-4">{questions.map(([key, label]) => <label key={key} className="block"><span className="mb-2 block text-sm font-medium text-[var(--cos-text)]">{label}</span><textarea value={responses[key] || ""} onChange={(event) => setResponses((prev) => ({ ...prev, [key]: event.target.value }))} rows={3} className="cos-input w-full px-3 py-2 text-sm" /></label>)}</div><div className="mt-6 flex gap-3"><button onClick={() => { addReview(type, responses); setType(null); setResponses({}); }} className="cos-btn cos-btn-primary px-5 py-2 text-sm">Save Review</button><button onClick={() => setType(null)} className="cos-btn cos-btn-ghost px-3 py-2 text-sm">Cancel</button></div></Page>;
   }
 
   return (
     <Page title="Reviews" subtitle="Daily and weekly recovery notes.">
-      <div className="grid gap-4 sm:grid-cols-3">{(["daily-startup", "daily-shutdown", "weekly"] as ReviewType[]).map((reviewType) => <button key={reviewType} onClick={() => { setType(reviewType); setResponses({}); }} className="rounded-xl border border-slate-200 bg-white p-5 text-left hover:border-indigo-200"><BookOpen className="mb-2 h-5 w-5 text-indigo-500" /><h3 className="text-sm font-semibold text-slate-900">{labels[reviewType]}</h3></button>)}</div>
-      <section className="mt-8"><SectionTitle title="Past Reviews" count={data.reviews.length} /><div className="mt-3 space-y-2">{data.reviews.map((review) => <details key={review.id} className="rounded-xl border border-slate-200 bg-white"><summary className="cursor-pointer p-3 text-sm font-medium text-slate-800">{labels[review.type]} <span className="ml-2 text-xs text-slate-400">{format(parseISO(review.date), "MMM d, yyyy h:mm a")}</span></summary><div className="space-y-3 px-3 pb-3">{Object.entries(review.responses).map(([key, value]) => <div key={key}><p className="text-xs font-medium capitalize text-slate-500">{key}</p><p className="whitespace-pre-wrap text-sm text-slate-700">{value}</p></div>)}</div></details>)}</div></section>
+      <div className="grid gap-4 sm:grid-cols-3">{(["daily-startup", "daily-shutdown", "weekly"] as ReviewType[]).map((reviewType) => <button key={reviewType} onClick={() => { setType(reviewType); setResponses({}); }} className="cos-surface p-5 text-left hover:border-[var(--cos-review)]"><BookOpen className="mb-2 h-5 w-5 text-[var(--cos-review)]" /><h3 className="text-sm font-semibold text-[var(--cos-text-strong)]">{labels[reviewType]}</h3></button>)}</div>
+      <section className="mt-8"><SectionTitle title="Past Reviews" count={data.reviews.length} /><div className="mt-3 space-y-2">{data.reviews.map((review) => <details key={review.id} className="cos-surface"><summary className="cursor-pointer p-3 text-sm font-medium text-[var(--cos-text)]">{labels[review.type]} <span className="ml-2 text-xs text-[var(--cos-text-subtle)]">{format(parseISO(review.date), "MMM d, yyyy h:mm a")}</span></summary><div className="space-y-3 px-3 pb-3">{Object.entries(review.responses).map(([key, value]) => <div key={key}><p className="text-xs font-medium capitalize text-[var(--cos-text-muted)]">{key}</p><p className="whitespace-pre-wrap text-sm text-[var(--cos-text)]">{value}</p></div>)}</div></details>)}</div></section>
     </Page>
   );
 }
@@ -1189,7 +1195,7 @@ export function SearchView() {
     return items.slice(0, 60);
   }, [data, q, router]);
 
-  return <Page title="Search" subtitle="Find projects, tasks, captures, notes, deadlines, and reviews."><div className="relative"><Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} autoFocus placeholder="Search workspace..." className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" /></div><div className="mt-4 space-y-1">{results.map((result) => <button key={`${result.type}-${result.id}`} onClick={result.onClick} className="flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-white"><span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">{result.type}</span><div className="min-w-0 flex-1"><p className="truncate text-sm text-slate-900">{result.title}</p>{result.subtitle ? <p className="truncate text-xs text-slate-400">{result.subtitle}</p> : null}</div></button>)}{query && !results.length ? <EmptyState icon={Search} title={`No results for "${query}"`} /> : null}</div></Page>;
+  return <Page title="Search" subtitle="Find projects, tasks, captures, notes, deadlines, and reviews."><div className="relative"><Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--cos-text-subtle)]" /><input value={query} onChange={(event) => setQuery(event.target.value)} autoFocus placeholder="Search workspace..." className="cos-input w-full py-3 pl-10 pr-4 text-sm" /></div><div className="mt-4 space-y-1">{results.map((result) => <button key={`${result.type}-${result.id}`} onClick={result.onClick} className="flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-[var(--cos-bg-elevated)]"><span className="cos-pill cos-pill-muted">{result.type}</span><div className="min-w-0 flex-1"><p className="truncate text-sm text-[var(--cos-text-strong)]">{result.title}</p>{result.subtitle ? <p className="truncate text-xs text-[var(--cos-text-subtle)]">{result.subtitle}</p> : null}</div></button>)}{query && !results.length ? <EmptyState icon={Search} title={`No results for "${query}"`} /> : null}</div></Page>;
 }
 
 export function ArchiveView() {
@@ -1204,7 +1210,7 @@ export function ArchiveView() {
     ...data.deadlines.filter((item) => item.trashedAt).map((item) => ({ id: item.id, type: "Deadline", title: item.title, restore: () => updateDeadline(item.id, { trashedAt: null, archivedAt: null }) }))
   ];
 
-  return <Page title="Archive" subtitle="Archived records and soft-deleted trash."><div className="mb-4 flex gap-1 rounded-lg bg-slate-100 p-1"><button onClick={() => setTab("archived")} className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium ${tab === "archived" ? "bg-white shadow-sm" : "text-slate-500"}`}>Archived ({archived.length})</button><button onClick={() => setTab("trash")} className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium ${tab === "trash" ? "bg-white shadow-sm" : "text-slate-500"}`}>Trash ({trash.length})</button></div>{tab === "archived" ? <div className="space-y-2">{archived.map((project) => <div key={project.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4"><FolderKanban className="h-4 w-4 text-slate-400" /><div className="flex-1"><p className="text-sm font-medium text-slate-700">{project.name}</p><p className="text-xs text-slate-400">{domainName(data.domains, project.domainId)}</p></div><button onClick={() => router.push(`/projects/${project.id}`)} className="text-xs font-medium text-indigo-600">View</button><button aria-label={`Restore ${project.name}`} onClick={() => updateProject(project.id, { status: "active" as any, archivedAt: null })} className="text-xs font-medium text-emerald-600">Restore</button></div>)}{!archived.length ? <EmptyState icon={Archive} title="No archived projects" /> : null}</div> : <div className="space-y-2">{trash.map((item) => <div key={`${item.type}-${item.id}`} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4"><FileText className="h-4 w-4 text-slate-400" /><div className="flex-1"><p className="text-sm text-slate-700">{item.title}</p><p className="text-xs text-slate-400">{item.type}</p></div><button onClick={item.restore} className="flex items-center gap-1 text-xs font-medium text-emerald-600"><RotateCcw className="h-3 w-3" /> Restore</button></div>)}{!trash.length ? <EmptyState icon={Trash2} title="Trash is empty" /> : null}</div>}</Page>;
+  return <Page title="Archive" subtitle="Archived records and soft-deleted trash."><div className="mb-4 flex gap-1 rounded-lg bg-[var(--cos-bg-inset)] p-1"><button onClick={() => setTab("archived")} className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium ${tab === "archived" ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)]"}`}>Archived ({archived.length})</button><button onClick={() => setTab("trash")} className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium ${tab === "trash" ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)]"}`}>Trash ({trash.length})</button></div>{tab === "archived" ? <div className="space-y-2">{archived.map((project) => <div key={project.id} className="cos-surface flex items-center gap-3 p-4"><FolderKanban className="h-4 w-4 text-[var(--cos-text-subtle)]" /><div className="flex-1"><p className="text-sm font-medium text-[var(--cos-text)]">{project.name}</p><p className="text-xs text-[var(--cos-text-subtle)]">{domainName(data.domains, project.domainId)}</p></div><button onClick={() => router.push(`/projects/${project.id}`)} className="text-xs font-medium text-[var(--cos-primary-text)]">View</button><button aria-label={`Restore ${project.name}`} onClick={() => updateProject(project.id, { status: "active" as any, archivedAt: null })} className="text-xs font-medium text-[var(--cos-success-text)]">Restore</button></div>)}{!archived.length ? <EmptyState icon={Archive} title="No archived projects" /> : null}</div> : <div className="space-y-2">{trash.map((item) => <div key={`${item.type}-${item.id}`} className="cos-surface flex items-center gap-3 p-4"><FileText className="h-4 w-4 text-[var(--cos-text-subtle)]" /><div className="flex-1"><p className="text-sm text-[var(--cos-text)]">{item.title}</p><p className="text-xs text-[var(--cos-text-subtle)]">{item.type}</p></div><button onClick={item.restore} className="flex items-center gap-1 text-xs font-medium text-[var(--cos-success-text)]"><RotateCcw className="h-3 w-3" /> Restore</button></div>)}{!trash.length ? <EmptyState icon={Trash2} title="Trash is empty" /> : null}</div>}</Page>;
 }
 
 export function SettingsView() {
@@ -1213,7 +1219,7 @@ export function SettingsView() {
 
   return (
     <Page title="Settings" subtitle="Domains, sync state, and demo reset.">
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
+      <section className="cos-surface p-4">
         <SectionTitle title="Sync" />
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <SyncMetric label="Status" value={sync.syncing ? "Syncing" : sync.online ? "Online" : "Offline"} testId="sync-status" />
@@ -1223,50 +1229,50 @@ export function SettingsView() {
           <SyncMetric label="Stale warnings" value={String(sync.staleMutationCount)} />
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <button onClick={() => void syncNow()} disabled={!sync.online || sync.syncing} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+          <button onClick={() => void syncNow()} disabled={!sync.online || sync.syncing} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50">
             <RefreshCw className={`h-4 w-4 ${sync.syncing ? "animate-spin" : ""}`} />
             {sync.syncing ? "Syncing..." : "Sync now"}
           </button>
-          <button onClick={() => void forceRefreshFromServer()} disabled={!sync.online || sync.refreshing || sync.syncing} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+          <button onClick={() => void forceRefreshFromServer()} disabled={!sync.online || sync.refreshing || sync.syncing} className="cos-btn cos-btn-secondary px-4 py-2 text-sm disabled:opacity-50">
             <Download className="h-4 w-4" />
             {sync.refreshing ? "Refreshing..." : "Refresh from server"}
           </button>
         </div>
-        {!sync.online ? <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">Offline. Edits are saved locally and will sync when the connection returns.</p> : null}
+        {!sync.online ? <p className="mt-3 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">Offline. Edits are saved locally and will sync when the connection returns.</p> : null}
         {sync.error ? (
-          <p data-testid="sync-error" className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p data-testid="sync-error" className="mt-3 flex items-start gap-2 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{sync.error}{sync.lastErrorAt ? ` Last error: ${formatSyncTimestamp(sync.lastErrorAt)}.` : ""}</span>
           </p>
         ) : null}
         {sync.lastWarning ? (
-          <p data-testid="sync-warning" className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <p data-testid="sync-warning" className="mt-3 flex items-start gap-2 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{sync.lastWarning}{sync.lastWarningAt ? ` Last warning: ${formatSyncTimestamp(sync.lastWarningAt)}.` : ""}</span>
           </p>
         ) : null}
       </section>
 
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+      <section className="cos-surface mt-6 p-4">
         <SectionTitle title="Domains" />
-        <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-100">
+        <div className="mt-3 divide-y divide-[var(--cos-border-soft)] rounded-lg border border-[var(--cos-border-soft)]">
           {data.domains.map((domain) => (
             <div key={domain.id} className="flex items-center gap-3 px-4 py-3">
-              <EditableField value={domain.name} placeholder="Domain name" onSave={(name) => updateDomain(domain.id, { name })} className="flex-1" inputClassName="py-1 text-slate-800" />
-              <button onClick={() => updateDomain(domain.id, { archived: !domain.archived })} className="text-xs font-medium text-slate-500 hover:text-indigo-600">{domain.archived ? "Restore" : "Archive"}</button>
+              <EditableField value={domain.name} placeholder="Domain name" onSave={(name) => updateDomain(domain.id, { name })} className="flex-1" inputClassName="py-1 text-[var(--cos-text)]" />
+              <button onClick={() => updateDomain(domain.id, { archived: !domain.archived })} className="text-xs font-medium text-[var(--cos-text-muted)] hover:text-[var(--cos-primary-text)]">{domain.archived ? "Restore" : "Archive"}</button>
             </div>
           ))}
           <div className="flex items-center gap-2 px-4 py-3">
             <input value={newDomain} onChange={(event) => setNewDomain(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && newDomain.trim()) { addDomain(newDomain.trim()); setNewDomain(""); } }} placeholder="Add domain..." className="flex-1 bg-transparent text-sm outline-none" />
-            <button onClick={() => { if (newDomain.trim()) { addDomain(newDomain.trim()); setNewDomain(""); } }} className="text-indigo-600"><Plus className="h-4 w-4" /></button>
+            <button onClick={() => { if (newDomain.trim()) { addDomain(newDomain.trim()); setNewDomain(""); } }} className="text-[var(--cos-primary-text)]"><Plus className="h-4 w-4" /></button>
           </div>
         </div>
       </section>
 
-      <section className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <h2 className="text-sm font-semibold text-amber-900">Demo data</h2>
-        <p className="mt-1 text-sm text-amber-800">Reset this account to the seeded demo workspace. Pending offline changes are cleared.</p>
-        <button onClick={() => void resetDemoData()} className="mt-3 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">Reset demo data</button>
+      <section className="mt-6 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] p-4">
+        <h2 className="text-sm font-semibold text-[var(--cos-warning-text)]">Demo data</h2>
+        <p className="mt-1 text-sm text-[var(--cos-warning-text)]">Reset this account to the seeded demo workspace. Pending offline changes are cleared.</p>
+        <button onClick={() => void resetDemoData()} className="cos-btn mt-3 bg-[var(--cos-warning)] px-4 py-2 text-sm text-white hover:opacity-90">Reset demo data</button>
       </section>
     </Page>
   );
@@ -1278,9 +1284,9 @@ function formatSyncTimestamp(value: string | null) {
 
 function SyncMetric({ label, value, testId }: { label: string; value: string; testId?: string }) {
   return (
-    <div className="rounded-lg bg-slate-50 p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-      <p data-testid={testId ?? (label === "Pending" ? "pending-count" : undefined)} className="mt-1 text-sm font-semibold text-slate-800">{value}</p>
+    <div className="rounded-lg bg-[var(--cos-bg-soft)] p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">{label}</p>
+      <p data-testid={testId ?? (label === "Pending" ? "pending-count" : undefined)} className="mt-1 text-sm font-semibold text-[var(--cos-text)]">{value}</p>
     </div>
   );
 }

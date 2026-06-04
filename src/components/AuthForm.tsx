@@ -34,38 +34,38 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-slate-950 px-4 py-10 text-white">
+    <div className="grid min-h-screen place-items-center bg-[var(--cos-bg)] px-4 py-10 text-[var(--cos-text)]">
       <div className="w-full max-w-md">
         <div className="mb-8 flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-500">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--cos-primary)] text-white shadow-sm">
             <Zap className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">ContextOS</h1>
-            <p className="text-sm text-slate-400">Execution-first context recovery</p>
+            <h1 className="text-xl font-bold tracking-tight text-[var(--cos-text-strong)]">ContextOS</h1>
+            <p className="text-sm text-[var(--cos-text-muted)]">Execution-first context recovery</p>
           </div>
         </div>
 
-        <form onSubmit={submit} className="rounded-2xl border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-indigo-950/30">
+        <form onSubmit={submit} className="cos-surface p-5 sm:p-6">
           <div>
-            <h2 className="text-2xl font-bold">{mode === "login" ? "Sign in" : "Create account"}</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <h2 className="text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">{mode === "login" ? "Sign in" : "Create account"}</h2>
+            <p className="mt-1 text-sm text-[var(--cos-text-muted)]">
               {mode === "login" ? "Use the seeded demo account or your own account." : "New accounts start with the demo workspace data."}
             </p>
           </div>
 
-          <label className="mt-6 block text-sm font-medium text-slate-700">
+          <label className="mt-6 block text-sm font-medium text-[var(--cos-text)]">
             Email
             <input
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               type="email"
               required
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+              className="cos-input mt-1 w-full px-3 py-2 text-sm"
             />
           </label>
 
-          <label className="mt-4 block text-sm font-medium text-slate-700">
+          <label className="mt-4 block text-sm font-medium text-[var(--cos-text)]">
             Password
             <input
               value={password}
@@ -73,15 +73,15 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               type="password"
               required
               minLength={mode === "register" ? 8 : undefined}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+              className="cos-input mt-1 w-full px-3 py-2 text-sm"
             />
           </label>
 
-          {error ? <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+          {error ? <p className="mt-4 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
 
           <button
             disabled={loading}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="cos-btn cos-btn-primary mt-6 w-full px-4 py-2.5 text-sm disabled:opacity-60"
           >
             {loading ? "Working..." : mode === "login" ? "Sign in" : "Create account"}
             <ArrowRight className="h-4 w-4" />
@@ -90,7 +90,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           <button
             type="button"
             onClick={() => router.push(mode === "login" ? "/register" : "/login")}
-            className="mt-4 w-full text-center text-sm font-medium text-slate-500 hover:text-indigo-700"
+            className="mt-4 w-full rounded-lg px-3 py-2 text-center text-sm font-medium text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-primary-text)]"
           >
             {mode === "login" ? "Create a new account" : "I already have an account"}
           </button>

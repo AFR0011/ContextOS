@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -98,13 +98,13 @@ function sectionDefaults(preference?: DashboardPreference) {
   };
 }
 
-function DashboardPageShell({ children }: { children: React.ReactNode }) {
+function DashboardPageShell({ children, loading }: { children: React.ReactNode; loading: boolean }) {
   return (
-    <div className="mx-auto max-w-3xl px-3 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-4 sm:px-5 sm:pt-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-4 sm:px-5 sm:pt-6 lg:px-8">
       <header className="mb-4 px-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-500">Dashboard 2.0</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Mobile Command Sheet</h1>
-        <p className="mt-1 text-sm text-slate-500">Mind, dates, tasks, projects. Not another wall of fake metrics. Humanity survives one fewer KPI card.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--cos-primary-text)]">Mobile Command Sheet</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">{loading ? "Loading dashboard" : "Dashboard"}</h1>
+        <p className="mt-1 text-sm text-[var(--cos-text-muted)]">Mind, dates, tasks, and active projects in one calm operating view.</p>
       </header>
       <div className="space-y-3">{children}</div>
     </div>
@@ -129,24 +129,25 @@ function CollapsibleSection({
   children: React.ReactNode;
 }) {
   return (
-    <section data-testid={`dashboard-section-${id}`} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section data-testid={`dashboard-section-${id}`} className="cos-surface overflow-hidden">
       <button
         type="button"
         onClick={() => onToggle(id)}
         aria-expanded={!collapsed}
-        className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left active:bg-slate-50"
+        aria-label={id === "projects" ? (collapsed ? "Open project recovery section" : "Collapse project recovery section") : undefined}
+        className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left active:bg-[var(--cos-bg-soft)]"
       >
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--cos-bg-inset)] text-[var(--cos-text-muted)]">
           <Icon className="h-4.5 w-4.5" />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-bold text-slate-950">{title}</h2>
-          <p className="text-[11px] text-slate-400">Tap to {collapsed ? "open" : "collapse"}</p>
+          <h2 className="text-sm font-bold text-[var(--cos-text-strong)]">{title}</h2>
+          <p className="text-[11px] text-[var(--cos-text-subtle)]">Tap to {collapsed ? "open" : "collapse"}</p>
         </div>
-        {count !== undefined ? <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{count}</span> : null}
-        {collapsed ? <ChevronRight className="h-5 w-5 text-slate-400" /> : <ChevronDown className="h-5 w-5 text-slate-400" />}
+        {count !== undefined ? <span className="cos-pill cos-pill-muted">{count}</span> : null}
+        {collapsed ? <ChevronRight className="h-5 w-5 text-[var(--cos-text-subtle)]" /> : <ChevronDown className="h-5 w-5 text-[var(--cos-text-subtle)]" />}
       </button>
-      {!collapsed ? <div className="border-t border-slate-100 px-4 py-4">{children}</div> : null}
+      {!collapsed ? <div className="border-t border-[var(--cos-border-soft)] px-4 py-4">{children}</div> : null}
     </section>
   );
 }
@@ -158,7 +159,7 @@ function CheckboxButton({ checked, onClick, label }: { checked: boolean; onClick
       onClick={onClick}
       aria-label={label}
       className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg border-2 ${
-        checked ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 bg-white text-transparent hover:border-indigo-400"
+        checked ? "border-[var(--cos-success)] bg-[var(--cos-success)] text-white" : "border-[var(--cos-border-strong)] bg-[var(--cos-bg-elevated)] text-transparent hover:border-[var(--cos-primary)]"
       }`}
     >
       <Check className="h-4 w-4" />
@@ -195,13 +196,13 @@ function InlineTaskTitle({ task }: { task: Task }) {
             setEditing(false);
           }
         }}
-        className="w-full rounded-lg border border-indigo-200 bg-white px-2 py-1.5 text-sm font-medium text-slate-950 outline-none ring-2 ring-indigo-50"
+        className="cos-input w-full px-2 py-1.5 text-sm font-medium"
       />
     );
   }
 
   return (
-    <button type="button" onClick={() => setEditing(true)} className="min-w-0 text-left text-sm font-medium text-slate-900 hover:text-indigo-700">
+    <button type="button" onClick={() => setEditing(true)} className="min-w-0 text-left text-sm font-medium text-[var(--cos-text-strong)] hover:text-[var(--cos-primary-text)]">
       {task.title}
     </button>
   );
@@ -211,17 +212,17 @@ function TaskLine({ task, meta }: { task: Task; meta?: string }) {
   const { updateTask } = useWorkspace();
   const done = task.status === "done";
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3">
+    <div className="cos-row-muted flex items-start gap-3 px-3 py-3">
       <CheckboxButton checked={done} onClick={() => updateTask(task.id, { status: done ? "todo" : "done" })} label={done ? `Mark ${task.title} todo` : `Mark ${task.title} done`} />
       <div className="min-w-0 flex-1">
         <div className={done ? "line-through opacity-50" : ""}>
           <InlineTaskTitle task={task} />
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
-          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500">{statusLabel(task.status)}</span>
-          {meta ? <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500">{meta}</span> : null}
-          {task.dueDate ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Due {formatDateKey(task.dueDate)}</span> : null}
-          {task.plannedDate ? <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">Planned {formatDateKey(task.plannedDate)}</span> : null}
+          <span className="cos-pill cos-pill-muted">{statusLabel(task.status)}</span>
+          {meta ? <span className="cos-pill cos-pill-warning">{meta}</span> : null}
+          {task.dueDate ? <span className="cos-pill cos-pill-warning">Due {formatDateKey(task.dueDate)}</span> : null}
+          {task.plannedDate ? <span className="cos-pill cos-pill-primary">Planned {formatDateKey(task.plannedDate)}</span> : null}
         </div>
       </div>
     </div>
@@ -267,20 +268,20 @@ function NotepadSection() {
         data-testid="dashboard-scratchpad"
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
-        placeholder="Scratch what is on your mind. Loose thoughts go here; real tasks and dates belong below. Revolutionary concept: putting things where they belong."
+        placeholder="Scratch what is on your mind. Capture first; organize when it matters."
         rows={8}
-        className="min-h-44 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-base leading-6 text-slate-950 outline-none placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+        className="cos-input min-h-44 w-full resize-y bg-[var(--cos-bg-soft)] px-3 py-3 text-base leading-6 placeholder:text-[var(--cos-text-subtle)] focus:bg-[var(--cos-bg-elevated)]"
       />
       <div className="mt-3 flex min-h-9 flex-wrap items-center gap-2 text-xs">
-        <span className="text-slate-400">
+        <span className="text-[var(--cos-text-subtle)]">
           {saveState === "dirty" ? "Autosaving..." : saveState === "saved" ? "Saved locally" : scratchpad?.updatedAt ? `Updated ${formatDistanceToNow(parseISO(scratchpad.updatedAt), { addSuffix: true })}` : "Ready"}
         </span>
-        {!sync.online ? <span className="rounded-full bg-amber-50 px-2 py-1 font-semibold text-amber-700">Offline: queued for sync</span> : null}
+        {!sync.online ? <span className="cos-pill cos-pill-warning">Offline: queued for sync</span> : null}
         <button
           type="button"
           onClick={clear}
           disabled={!draft.trim()}
-          className="ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-2 font-semibold text-slate-500 hover:bg-slate-100 disabled:opacity-40"
+          className="cos-btn cos-btn-ghost ml-auto min-h-9 px-3 py-2 text-xs disabled:opacity-40"
         >
           <Eraser className="h-4 w-4" />
           Clear
@@ -349,7 +350,7 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
         const task = isTask ? (item.source as Task) : null;
         const deadline = !isTask ? (item.source as Deadline) : null;
         return (
-          <div key={item.id} className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3">
+          <div key={item.id} className="cos-row-muted flex items-start gap-3 px-3 py-3">
             <CheckboxButton
               checked={item.done}
               onClick={() => {
@@ -361,14 +362,14 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
             <button type="button" onClick={() => (item.kind === "deadline" ? router.push("/deadlines") : undefined)} className="min-w-0 flex-1 text-left">
               <div className="flex min-w-0 items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className={`text-sm font-semibold ${item.done ? "text-slate-400 line-through" : "text-slate-900"}`}>{item.title}</p>
+                  <p className={`text-sm font-semibold ${item.done ? "text-[var(--cos-text-subtle)] line-through" : "text-[var(--cos-text-strong)]"}`}>{item.title}</p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${item.overdue ? "bg-red-50 text-red-700" : item.dateKey === today ? "bg-indigo-50 text-indigo-700" : "bg-white text-slate-500"}`}>{dateBadge(item.dateKey, today)}</span>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500">{item.kind === "deadline" ? "Deadline" : task?.dueDate ? "Task due" : "Task planned"}</span>
-                    {item.projectName ? <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500">{item.projectName}</span> : null}
+                    <span className={`cos-pill ${item.overdue ? "cos-pill-danger" : item.dateKey === today ? "cos-pill-primary" : "cos-pill-muted"}`}>{dateBadge(item.dateKey, today)}</span>
+                    <span className="cos-pill cos-pill-muted">{item.kind === "deadline" ? "Deadline" : task?.dueDate ? "Task due" : "Task planned"}</span>
+                    {item.projectName ? <span className="cos-pill cos-pill-muted">{item.projectName}</span> : null}
                   </div>
                 </div>
-                <span className="shrink-0 text-xs font-semibold text-slate-400">{formatDateKey(item.dateKey)}</span>
+                <span className="shrink-0 text-xs font-semibold text-[var(--cos-text-subtle)]">{formatDateKey(item.dateKey)}</span>
               </div>
             </button>
           </div>
@@ -404,8 +405,8 @@ function TasksSection({ today, showCompleted }: { today: string; showCompleted: 
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 focus-within:border-indigo-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100">
-        <Plus className="ml-1 h-5 w-5 shrink-0 text-indigo-500" />
+      <div className="cos-input flex items-center gap-2 bg-[var(--cos-bg-soft)] p-2 focus-within:bg-[var(--cos-bg-elevated)]">
+        <Plus className="ml-1 h-5 w-5 shrink-0 text-[var(--cos-primary)]" />
         <input
           data-testid="dashboard-add-task-input"
           value={title}
@@ -415,13 +416,13 @@ function TasksSection({ today, showCompleted }: { today: string; showCompleted: 
             if (event.key === "Escape") setTitle("");
           }}
           placeholder="Add a real task for today..."
-          className="min-h-10 min-w-0 flex-1 bg-transparent text-base text-slate-950 outline-none placeholder:text-slate-400"
+          className="min-h-10 min-w-0 flex-1 bg-transparent text-base text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
         />
-        <button type="button" onClick={createTask} disabled={!title.trim()} className="min-h-10 rounded-lg bg-indigo-600 px-3 text-sm font-bold text-white disabled:bg-slate-200">
+        <button type="button" onClick={createTask} disabled={!title.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 text-sm disabled:bg-[var(--cos-border)]">
           Add
         </button>
       </div>
-      {rows.length ? rows.map((task) => <TaskLine key={task.id} task={task} meta={task.dueDate && task.dueDate < today && isTaskOpen(task) ? "Overdue" : task.status === "in-progress" ? "In progress" : undefined} />) : <EmptySmall icon={Target} title="No operational tasks" description="Add one small task. Not a life philosophy. A task." />}
+      {rows.length ? rows.map((task) => <TaskLine key={task.id} task={task} meta={task.dueDate && task.dueDate < today && isTaskOpen(task) ? "Overdue" : task.status === "in-progress" ? "In progress" : undefined} />) : <EmptySmall icon={Target} title="No operational tasks" description="Add one small task for today." />}
     </div>
   );
 }
@@ -446,21 +447,21 @@ function ProjectsSection() {
         const missingNext = !project.nextAction.trim();
         const missingStatus = !project.latestStatus.trim();
         return (
-          <button key={project.id} type="button" onClick={() => router.push(`/projects/${project.id}`)} className="w-full rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-3 text-left active:bg-slate-100">
+          <button key={project.id} type="button" onClick={() => router.push(`/projects/${project.id}`)} className="cos-row-muted w-full px-3 py-3 text-left active:bg-[var(--cos-bg-inset)]">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-bold text-slate-950">{project.name}</h3>
-                <p className={`mt-1 text-sm ${missingNext ? "font-semibold text-red-700" : "text-indigo-700"}`}>Next: {project.nextAction || "Missing next action"}</p>
-                <p className={`mt-1 line-clamp-2 text-xs ${missingStatus ? "font-semibold text-amber-700" : "text-slate-500"}`}>Status: {project.latestStatus || "No latest status"}</p>
+                <h3 className="truncate text-sm font-bold text-[var(--cos-text-strong)]">{project.name}</h3>
+                <p className={`mt-1 text-sm ${missingNext ? "font-semibold text-[var(--cos-danger-text)]" : "text-[var(--cos-primary-text)]"}`}>Next: {project.nextAction || "Missing next action"}</p>
+                <p className={`mt-1 line-clamp-2 text-xs ${missingStatus ? "font-semibold text-[var(--cos-warning-text)]" : "text-[var(--cos-text-muted)]"}`}>Status: {project.latestStatus || "No latest status"}</p>
               </div>
-              <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-slate-300" />
+              <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[var(--cos-text-subtle)]" />
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {missingNext ? <WarningPill tone="red" label="No next action" /> : null}
               {missingStatus ? <WarningPill tone="amber" label="No status" /> : null}
               {stale ? <WarningPill tone="amber" label={`Stale ${PROJECT_STALE_DAYS}+d`} /> : null}
-              {!missingNext && !missingStatus && !stale ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Recoverable</span> : null}
-              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500">Updated {formatDistanceToNow(updatedAt, { addSuffix: true })}</span>
+              {!missingNext && !missingStatus && !stale ? <span className="cos-pill cos-pill-success">Recoverable</span> : null}
+              <span className="cos-pill cos-pill-muted">Changed {formatDistanceToNow(updatedAt, { addSuffix: true })}</span>
             </div>
           </button>
         );
@@ -470,16 +471,16 @@ function ProjectsSection() {
 }
 
 function WarningPill({ tone, label }: { tone: "red" | "amber"; label: string }) {
-  const classes = tone === "red" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700";
-  return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${classes}`}><AlertTriangle className="h-3 w-3" />{label}</span>;
+  const classes = tone === "red" ? "cos-pill-danger" : "cos-pill-warning";
+  return <span className={`cos-pill ${classes}`}><AlertTriangle className="h-3 w-3" />{label}</span>;
 }
 
 function EmptySmall({ icon: Icon, title, description }: { icon: LucideIcon; title: string; description: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center">
-      <Icon className="mx-auto mb-2 h-7 w-7 text-slate-300" />
-      <p className="text-sm font-semibold text-slate-600">{title}</p>
-      <p className="mt-1 text-xs text-slate-400">{description}</p>
+    <div className="cos-empty px-4 py-6 text-center">
+      <Icon className="mx-auto mb-2 h-7 w-7 text-[var(--cos-text-subtle)]" />
+      <p className="text-sm font-semibold text-[var(--cos-text-muted)]">{title}</p>
+      <p className="mt-1 text-xs text-[var(--cos-text-subtle)]">{description}</p>
     </div>
   );
 }
@@ -531,15 +532,17 @@ export function Dashboard2View() {
   };
 
   return (
-    <DashboardPageShell>
-      {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">Loading cached command sheet...</div> : null}
-      <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+    <DashboardPageShell loading={loading}>
+      {loading ? <div className="cos-surface p-4 text-sm text-[var(--cos-text-muted)]">Loading cached command sheet...</div> : null}
+      <div className="rounded-lg border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] px-4 py-3 text-sm text-[var(--cos-primary-text)]">
         <div className="flex items-start gap-2">
-          <Circle className="mt-1 h-3 w-3 fill-indigo-500 text-indigo-500" />
-          <p><span className="font-semibold">Today:</span> recover the mind, dates, tasks, and active projects without spelunking through five pages like a productivity goblin.</p>
+          <Circle className="mt-1 h-3 w-3 fill-[var(--cos-primary)] text-[var(--cos-primary)]" />
+          <p><span className="font-semibold">Today:</span> recover notes, dated pressure, executable tasks, and active projects in one pass.</p>
         </div>
       </div>
-      {preferences.sectionOrder.map((id) => sectionComponents[id] ?? null)}
+      {preferences.sectionOrder.map((id) => (
+        <Fragment key={id}>{sectionComponents[id] ?? null}</Fragment>
+      ))}
     </DashboardPageShell>
   );
 }

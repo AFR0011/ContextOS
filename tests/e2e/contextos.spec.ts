@@ -51,6 +51,28 @@ async function offlineCacheState(page: Page, text: string) {
   }, text);
 }
 
+async function warmOfflineShell(page: Page) {
+  await page.evaluate(async () => {
+    if (!("serviceWorker" in navigator)) return;
+    await navigator.serviceWorker.ready;
+    if (navigator.serviceWorker.controller) return;
+
+    await new Promise<void>((resolve) => {
+      const timeout = window.setTimeout(resolve, 2000);
+      navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        () => {
+          window.clearTimeout(timeout);
+          resolve();
+        },
+        { once: true }
+      );
+    });
+  });
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+}
+
 test("date utilities keep date-only values on the local calendar day", async () => {
   const originalTimeZone = process.env.TZ;
   process.env.TZ = "Europe/Bucharest";
@@ -162,25 +184,30 @@ test("dashboard sections collapse and persist after refresh", async ({ page }) =
 test("dashboard can add and complete a real task", async ({ page }) => {
   await login(page);
   const title = `Dashboard real task ${Date.now()}`;
+  const taskSection = page.getByTestId("dashboard-section-tasks");
   await page.getByTestId("dashboard-add-task-input").fill(title);
   await page.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(page.getByText(title)).toBeVisible();
-  await page.getByRole("button", { name: `Mark ${title} done` }).click();
-  await expect(page.getByText(title)).not.toBeVisible();
+  await expect(taskSection.getByRole("button", { name: title, exact: true })).toBeVisible();
+  await taskSection.getByRole("button", { name: `Mark ${title} done` }).click();
+  await expect(taskSection.getByRole("button", { name: title, exact: true })).not.toBeVisible();
 });
 
 test("today tasks stay visible and interactable after completion", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(page).toHaveURL(/\/today$/);
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   const taskTitle = "Process inbox captures";
-  await expect(page.getByText(taskTitle)).toBeVisible();
-  await page.getByRole("button", { name: `Mark ${taskTitle} done` }).click();
-  await expect(page.getByText(taskTitle)).toBeVisible();
-  await expect(page.getByRole("button", { name: `Mark ${taskTitle} todo` })).toBeVisible();
+  const main = page.locator("main");
+  await expect(main.getByText(taskTitle).first()).toBeVisible();
+  await main.getByRole("button", { name: `Mark ${taskTitle} done` }).first().click();
+  await expect(main.getByText(taskTitle).first()).toBeVisible();
+  await expect(main.getByRole("button", { name: `Mark ${taskTitle} todo` }).first()).toBeVisible();
 
   await page.reload();
-  await expect(page.getByText(taskTitle)).toBeVisible();
-  await expect(page.getByRole("button", { name: `Mark ${taskTitle} todo` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+  await expect(main.getByText(taskTitle).first()).toBeVisible();
+  await expect(main.getByRole("button", { name: `Mark ${taskTitle} todo` }).first()).toBeVisible();
 });
 
 test("areas and resources expose PARA navigation", async ({ page }) => {
@@ -215,6 +242,7 @@ test("workspace dark mode toggles and persists", async ({ page }) => {
 
 test("offline notepad edit is stored locally and sync state shows pending work", async ({ page, context }) => {
   await login(page);
+  await warmOfflineShell(page);
   await context.setOffline(true);
   const text = `offline scratchpad ${Date.now()}`;
   await page.getByTestId("dashboard-scratchpad").fill(text);

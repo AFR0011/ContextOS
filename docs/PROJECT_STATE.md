@@ -27,6 +27,12 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 - Production credential rotation is partly external: any previously shared Neon/Postgres credential must be rotated in the provider, then copied into deployment environment variables.
 
 ## Latest Verified State
+- DESIGN.md visual design-system alignment is implemented locally as a visual-only pass.
+- Shared ContextOS tokens now define app backgrounds, text, borders, primary accent, status colors, focus rings, radii, shadows, and light/dark aliases.
+- Auth, shell/navigation, Dashboard, Inbox, Today, This Week, Projects, Project Detail, Deadlines, Reviews, Search, Archive, Settings, markdown editor surfaces, cards, rows, badges, buttons, inputs, and empty states now use the calmer operational styling direction from `DESIGN.md`.
+- No functionality, data flow, database schema, Prisma model, API contract, auth/session behavior, offline sync semantics, route behavior, or business logic was intentionally changed in the design pass.
+- Verification on 2026-06-04: `npx prisma generate`, `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed; e2e now has 18 passing tests.
+- Browser/mobile visual smoke on 2026-06-04: desktop Dashboard/Today/Projects/Search/Settings navigation passed, mobile 390x844 Dashboard plus drawer navigation to Today passed with 0px horizontal overflow; screenshots saved to `test-results/contextos-design-desktop.png` and `test-results/contextos-design-mobile.png`.
 - v0.1.7 workspace markdown canvas changes are implemented locally.
 - Dashboard quick capture is now integrated into the Dashboard Canvas markdown editor; slash captures such as `/task`, `/note`, `/project`, `/deadline`, and `/status` still enter the existing capture/inbox flow.
 - The shared markdown editor renders editable headings, subheadings, bullets, checkboxes, quotes, and code fences while preserving markdown storage.

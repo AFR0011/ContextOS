@@ -61,6 +61,8 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       title: t.title,
       plannedDate: utcDateToDateKey(t.plannedDate),
       dueDate: utcDateToDateKey(t.dueDate),
+      startTime: t.startTime,
+      endTime: t.endTime,
       projectId: t.projectId,
       domainId: t.domainId,
       status: t.status as Task["status"],

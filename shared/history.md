@@ -2,6 +2,11 @@
 
 ## 2026-06-05
 
+- One supervised dev-loop cycle for v0.1.11 dashboard timeline and schedule tables.
+- Architect-planner selected current `modificaitons.txt` items 1-3.
+- Executor implemented task time ranges, Daily timeline, rendered notepad preview, and Piano Schedule resource/table preview.
+- Tester ran typecheck, build, Prisma validate, migration, seed, targeted Playwright, full e2e, and browser smoke.
+- Docs-QA recorded current audit in `docs/CURRENT_AUDIT_2026-06-05.md`.
 - One supervised dev-loop cycle for v0.1.10 PWA polish batch.
 - Architect-planner selected Item 9 (PWA polish) from modificaitons.txt.
 - Executor implemented: manifest update, icon generation script, PNG icons, layout.tsx enhancements.

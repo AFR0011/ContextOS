@@ -96,6 +96,11 @@ function projectName(projects: Project[], id: string | null | undefined) {
   return projects.find((project) => project.id === id)?.name || "";
 }
 
+function taskTimeLabel(task: Pick<Task, "startTime" | "endTime">) {
+  if (task.startTime && task.endTime) return `${task.startTime}-${task.endTime}`;
+  return task.startTime ?? task.endTime ?? "";
+}
+
 function visibleProjects(projects: Project[]) {
   return projects.filter((project) => !project.trashedAt && project.status !== "archived");
 }
@@ -226,11 +231,12 @@ function TaskRow({ task, labels = [] }: { task: Task; labels?: string[] }) {
         <p className={`text-sm ${done ? "text-[var(--cos-text-subtle)] line-through" : "text-[var(--cos-text-strong)]"}`}>{task.title}</p>
         {labels.length ? (
           <div className="mt-1 flex flex-wrap gap-1.5">
-            {labels.map((label) => (
+          {labels.map((label) => (
               <span key={label} className={`cos-pill ${label === "Overdue" ? "cos-pill-danger" : label.includes("Due") ? "cos-pill-warning" : label.includes("Progress") ? "cos-pill-primary" : "cos-pill-muted"}`}>
                 {label}
               </span>
             ))}
+            {taskTimeLabel(task) ? <span className="cos-pill cos-pill-primary">{taskTimeLabel(task)}</span> : null}
           </div>
         ) : null}
       </div>
@@ -431,7 +437,13 @@ export function TodayView() {
   tasks.filter((task) => task.dueDate === today && !isOverdue(task)).forEach((task) => add(task, ["Due Today"]));
   tasks.filter((task) => task.plannedDate === today && !isOverdue(task)).forEach((task) => add(task, ["Planned Today"]));
   tasks.filter((task) => task.status === "in-progress").forEach((task) => add(task, ["In Progress"]));
-  rows.sort((a, b) => sortDoneLast(a.task, b.task));
+  rows.sort((a, b) => {
+    const doneSort = sortDoneLast(a.task, b.task);
+    if (doneSort !== 0) return doneSort;
+    const aTime = a.task.startTime ?? a.task.endTime ?? "99:99";
+    const bTime = b.task.startTime ?? b.task.endTime ?? "99:99";
+    return aTime.localeCompare(bTime);
+  });
   const deadlines = data.deadlines.filter((deadline) => !deadline.trashedAt && deadline.date === today);
 
   return (
@@ -809,7 +821,7 @@ export function ResourcesView() {
               <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${domainColor(data.domains, note.domainId)}`}>{domainName(data.domains, note.domainId)}</span>
               {note.title === DASHBOARD_CANVAS_TITLE ? <span className="cos-pill cos-pill-primary">Dashboard</span> : null}
             </div>
-            <NoteCard note={note} editing={editingNote === note.id} onEdit={() => setEditingNote(note.id)} onDone={() => setEditingNote(null)} onUpdate={(updates) => updateNote(note.id, updates)} />
+            <NoteCard note={note} domains={data.domains} editing={editingNote === note.id} onEdit={() => setEditingNote(note.id)} onDone={() => setEditingNote(null)} onUpdate={(updates) => updateNote(note.id, updates)} />
           </div>
         ))}
       </div>
@@ -1261,7 +1273,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       <InfoBlock title="Notes / Decisions" className="mt-4">
         <div className="space-y-2">
           {notes.map((note) => (
-            <NoteCard key={note.id} note={note} editing={editingNote === note.id} onEdit={() => setEditingNote(note.id)} onDone={() => setEditingNote(null)} onUpdate={(updates) => updateNote(note.id, updates)} />
+            <NoteCard key={note.id} note={note} domains={data.domains} editing={editingNote === note.id} onEdit={() => setEditingNote(note.id)} onDone={() => setEditingNote(null)} onUpdate={(updates) => updateNote(note.id, updates)} />
           ))}
           <div className="flex items-center gap-2 pt-2">
             <input value={newNote} onChange={(event) => setNewNote(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && newNote.trim()) { const id = addNote({ title: newNote.trim(), projectId: project.id, domainId: project.domainId }); setNewNote(""); setEditingNote(id); } }} placeholder="Add a note..." className="flex-1 border-b border-[var(--cos-border)] bg-transparent py-1 text-sm outline-none focus:border-[var(--cos-primary-border)]" />
@@ -1285,7 +1297,7 @@ function InfoBlock({ title, children, accent, className = "" }: { title: string;
   return <section className={`${className} rounded-lg border ${accent ? "border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)]" : "border-[var(--cos-border)] bg-[var(--cos-bg-elevated)]"} p-4 shadow-[var(--cos-shadow-sm)]`}><h3 className={`mb-2 text-xs font-semibold uppercase tracking-[0.14em] ${accent ? "text-[var(--cos-primary-text)]" : "text-[var(--cos-text-muted)]"}`}>{title}</h3>{children}</section>;
 }
 
-function NoteCard({ note, editing, onEdit, onDone, onUpdate }: { note: Note; editing: boolean; onEdit: () => void; onDone: () => void; onUpdate: (updates: Partial<Note>) => void }) {
+function NoteCard({ note, domains = [], editing, onEdit, onDone, onUpdate }: { note: Note; domains?: Domain[]; editing: boolean; onEdit: () => void; onDone: () => void; onUpdate: (updates: Partial<Note>) => void }) {
   if (editing) {
     return (
       <div className="rounded-lg border border-[var(--cos-border-soft)] p-3">
@@ -1306,12 +1318,75 @@ function NoteCard({ note, editing, onEdit, onDone, onUpdate }: { note: Note; edi
   return (
     <button onClick={onEdit} className="w-full rounded-lg border border-[var(--cos-border-soft)] p-3 text-left hover:bg-[var(--cos-bg-soft)]">
       <h4 className="text-sm font-semibold text-[var(--cos-text-strong)]">{note.title}</h4>
-      {note.content ? <MarkdownPreview content={note.content} /> : <p className="mt-1 text-xs text-[var(--cos-text-subtle)]">Empty note</p>}
+      {note.content ? (
+        isPianoScheduleNote(note, domains) ? <PianoSchedulePreview content={note.content} /> : <MarkdownPreview content={note.content} />
+      ) : <p className="mt-1 text-xs text-[var(--cos-text-subtle)]">Empty note</p>}
     </button>
   );
 }
 
+function isPianoScheduleNote(note: Note, domains: Domain[]) {
+  const domain = domains.find((item) => item.id === note.domainId);
+  return note.title.toLowerCase().includes("piano schedule") || domain?.name === "Piano / Content";
+}
+
+function parseMarkdownTables(content: string) {
+  const lines = content.split(/\r?\n/);
+  const tables: { headers: string[]; rows: string[][] }[] = [];
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    const line = lines[index] ?? "";
+    const next = lines[index + 1] ?? "";
+    if (!line.includes("|") || !/^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(next)) continue;
+    const headers = line.split("|").map((cell) => cell.trim()).filter(Boolean);
+    const rows: string[][] = [];
+    index += 2;
+    while (index < lines.length && (lines[index] ?? "").includes("|")) {
+      rows.push((lines[index] ?? "").split("|").map((cell) => cell.trim()).filter(Boolean));
+      index += 1;
+    }
+    tables.push({ headers, rows });
+  }
+  return tables;
+}
+
+function MarkdownTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  return (
+    <div className="my-3 overflow-x-auto rounded-lg border border-[var(--cos-border-soft)]">
+      <table className="min-w-full border-collapse text-left text-xs">
+        <thead className="bg-[var(--cos-bg-inset)] text-[var(--cos-text-muted)]">
+          <tr>{headers.map((header) => <th key={header} className="border-b border-[var(--cos-border-soft)] px-3 py-2 font-semibold">{header}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex} className="border-t border-[var(--cos-border-soft)]">
+              {headers.map((header, cellIndex) => <td key={`${header}-${cellIndex}`} className="px-3 py-2 text-[var(--cos-text)]">{row[cellIndex] ?? ""}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function PianoSchedulePreview({ content }: { content: string }) {
+  const table = parseMarkdownTables(content)[0];
+  if (!table) return <MarkdownPreview content={content} />;
+  return (
+    <div data-testid="piano-schedule-table" className="mt-2">
+      <MarkdownTable headers={table.headers} rows={table.rows} />
+    </div>
+  );
+}
+
 function MarkdownPreview({ content }: { content: string }) {
+  const table = parseMarkdownTables(content)[0];
+  if (table) {
+    return (
+      <div className="mt-2 line-clamp-5 text-xs text-[var(--cos-text-muted)]">
+        <MarkdownTable headers={table.headers} rows={table.rows.slice(0, 4)} />
+      </div>
+    );
+  }
   return (
     <div className="prose-lite mt-2 line-clamp-5 text-xs text-[var(--cos-text-muted)]">
       {content.split("\n").map((line, index) => {

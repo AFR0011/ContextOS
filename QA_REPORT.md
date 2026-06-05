@@ -1,5 +1,33 @@
 # ContextOS QA Report
 
+## 2026-06-05 - v0.1.11 Dashboard Timeline and Schedule Tables
+
+Status: PASS.
+
+Checks run:
+
+- `npx prisma generate` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed. Existing warning: `metadataBase` is not set.
+- `npx prisma validate` - passed.
+- `git diff --check` - passed.
+- `docker compose up -d` - Postgres container running.
+- `npm run db:migrate` - passed after Docker/Postgres became available; applied `20260605160000_add_task_time_range`.
+- `npm run db:seed` - passed.
+- `npx playwright test -g "date utilities"` - passed.
+- `npx playwright test -g "daily timeline task"` - passed.
+- `npm run test:e2e` - passed, 19 tests.
+- `npm audit --audit-level=moderate` - failed with 5 moderate advisories; fixes require breaking/incorrect forced dependency changes and were not applied.
+
+Browser smoke:
+
+- In-app browser recovered from the earlier database outage after Postgres was started.
+- Dashboard rendered at `http://localhost:3000/dashboard`.
+- Daily timeline and seeded task time ranges were visible.
+- Server data contains the seeded `Piano Schedule` resource; clean e2e context verified the table. The already-open in-app browser retained stale IndexedDB resource data after external reseed, which is recorded as residual risk.
+
+Verdict: PASS_WITH_RISKS.
+
 ## 2026-06-05 - v0.1.10 PWA Polish Batch
 
 Status: VERIFICATION IN PROGRESS

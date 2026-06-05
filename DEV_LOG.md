@@ -1,5 +1,39 @@
 # ContextOS Dev Log
 
+## 2026-06-05 - v0.1.11 Dashboard Timeline, Rendered Notepad, Piano Schedule
+
+Planner scope: implement the current `modificaitons.txt` items 1-3 in one batch, then audit the current app.
+
+Implementation:
+
+- Added optional `Task.startTime` and `Task.endTime` fields with a Prisma migration.
+- Propagated task time ranges through shared types, bootstrap serialization, sync replay, IndexedDB normalization, and local task creation.
+- Replaced the dashboard `Tasks` panel label/behavior with `Daily timeline`, including start/end time inputs and project-linked daily task visibility.
+- Added time-range badges and row-level time editing for dashboard timeline items.
+- Kept the dashboard notepad as a fast autosaving textarea and added a live rendered Markdown preview with table support.
+- Added a seeded Piano Schedule resource under `Piano / Content` with `Index`, `Song`, `Today?`, and `Status` table columns inspired by the Notion database schema.
+- Added table-aware resource preview for the Piano Schedule.
+- Updated e2e coverage for rendered dashboard Markdown, Daily timeline task time ranges, and the Piano Schedule table.
+- Added `docs/CURRENT_AUDIT_2026-06-05.md` with the current product/code audit.
+
+Verification:
+
+- `npx prisma generate` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed with existing `metadataBase` warning.
+- `npx prisma validate` - passed.
+- `git diff --check` - passed.
+- `npm run db:migrate` - initially blocked while Postgres/Docker were unavailable; passed after Docker was restored and applied `20260605160000_add_task_time_range`.
+- `npm run db:seed` - passed.
+- `npx playwright test -g "date utilities"` - passed.
+- `npx playwright test -g "daily timeline task"` - passed after scoping an ambiguous test selector.
+- `npm run test:e2e` - passed, 19 tests.
+- In-app browser smoke reached Dashboard and confirmed Daily timeline plus seeded time ranges render.
+
+Audit:
+
+- See `docs/CURRENT_AUDIT_2026-06-05.md`.
+
 ## 2026-06-05 - v0.1.10 PWA Polish (Icons, Manifest)
 
 Planner scope: Implement Item 9 from modificaitons.txt - PWA polish: Add icons and manifest improvements for installable PWA experience.

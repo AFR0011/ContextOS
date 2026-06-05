@@ -57,6 +57,11 @@ function normalizeWorkspace(value: Partial<WorkspaceData> | null | undefined): W
     time: deadline.time ?? null,
     location: deadline.location ?? ""
   }));
+  const tasks = (value?.tasks ?? []).map((task) => ({
+    ...task,
+    startTime: task.startTime ?? null,
+    endTime: task.endTime ?? null
+  }));
   const dashboardPreferences = (value?.dashboardPreferences ?? []).map((preference) => ({
     ...preference,
     reviewPromptDismissals: preference.reviewPromptDismissals ?? []
@@ -67,7 +72,7 @@ function normalizeWorkspace(value: Partial<WorkspaceData> | null | undefined): W
     ...(value ?? {}),
     domains: value?.domains ?? [],
     projects,
-    tasks: value?.tasks ?? [],
+    tasks,
     captures: value?.captures ?? [],
     notes: value?.notes ?? [],
     deadlines,
@@ -506,6 +511,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             title,
             plannedDate: null,
             dueDate: null,
+            startTime: null,
+            endTime: null,
             projectId: null,
             domainId: null,
             status: "todo",
@@ -574,6 +581,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           title: input.title,
           plannedDate: input.plannedDate ?? null,
           dueDate: input.dueDate ?? null,
+          startTime: input.startTime ?? null,
+          endTime: input.endTime ?? null,
           projectId: input.projectId ?? null,
           domainId: input.domainId ?? null,
           status: (input.status as TaskStatus) ?? "todo",

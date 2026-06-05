@@ -1,31 +1,25 @@
 # Shared Context
 
-- Phase: EXECUTE (PWA Polish - Item 9)
-- Active batch: v0.1.10 PWA polish with icons and manifest
-- Owner: Executor (implementing)
-- Planner handoff: See DEV_STATE.md for active batch details
-- Latest feedback: Building and type-checking...
-- Current risks: see RISK_REGISTER.md (3 active risks, 2 accepted, 1 new low-risk)
-- Next required action: After build complete - tester verification of PWA installability.
+- Phase: QA COMPLETE
+- Active batch: v0.1.11 dashboard timeline, rendered freeform notes, piano schedule resource
+- Owner: Docs-QA
+- Planner handoff: Implement `modificaitons.txt` items 1-3 only, then audit the current app.
+- Latest feedback: Implementation verified; audit recorded in `docs/CURRENT_AUDIT_2026-06-05.md`.
+- Current risks: see `RISK_REGISTER.md` (notably DB-unavailable handling, stale browser cache after external seed/reset, and moderate dependency advisories).
+- Next required action: Pick the next batch from audit priorities, preferably graceful DB-unavailable handling around auth/bootstrap/sync.
 
 ## Implementation Summary
 
-**Task:** PWA polish per Item 9 in modificaitons.txt
-**Status:** Code changes complete, waiting for build/test
+**Task:** Apply `modificaitons.txt` items 1-3.
+**Status:** QA complete.
 
 **Changes:**
-- Updated `public/manifest.webmanifest` with icons array, orientation, categories
-- Created icon generation script at `scripts/generate-icons.cjs`
-- Generated PNG icons: 192x192, 512x512, and iOS touch icons
-- Enhanced `src/app/layout.tsx` with apple touch icon link
+- Added `Task.startTime` and `Task.endTime` with migration `20260605160000_add_task_time_range`.
+- Propagated task time fields through server serialization, sync replay, client store, seed data, and shared types.
+- Replaced dashboard Tasks label/behavior with Daily timeline.
+- Added live Markdown preview for the dashboard notepad.
+- Added seeded Piano Schedule resource/table and table-aware preview.
+- Added current audit document.
 
-**Verification Plan:**
-```bash
-npm run typecheck    # PASSED
-npm run build        # COMPLETED - verified all routes
-```
-
-**Manual Testing Required:**
-- Open DevTools -> Application tab -> Manifest panel
-- Check Service Workers panel for active worker
-- On mobile browser: verify "Add to Home Screen" appears
+**Verification:**
+- Typecheck, build, Prisma validate, migration, seed, targeted Playwright, and full e2e passed.

@@ -35,3 +35,19 @@ Build and typecheck passed. Icons generated successfully (192x192, 512x512, appl
 ## tester -> docs-qa (v0.1.10 QA complete)
 
 All automated checks passed. Manual PWA installability testing pending on mobile browsers.
+
+## architect-planner -> executor (v0.1.11)
+
+Implement `modificaitons.txt` items 1-3 only: piano schedule-like table, rendered freeform editor, and Dashboard Daily timeline with task time ranges.
+
+## executor -> tester (v0.1.11 build complete)
+
+Implementation complete. Task time fields are propagated through schema, server serialization, sync replay, client store, seed, dashboard, views, and tests.
+
+## tester -> docs-qa (v0.1.11 QA complete)
+
+PASS_WITH_RISKS: typecheck, build, Prisma validate, migration, seed, targeted Playwright, and full e2e passed. Residual risks are DB-unavailable handling, stale browser cache after external seed/reset, and moderate dependency advisories.
+
+## docs-qa -> architect-planner (v0.1.11)
+
+Batch complete. Next recommended batch is graceful database-unavailable handling around auth, bootstrap, sync, and reset flows.

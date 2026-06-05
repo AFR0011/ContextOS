@@ -4,7 +4,11 @@
 
 | ID | Risk | Level | Mitigation | Status |
 | --- | --- | --- | --- | --- |
-| R-2026-06-05-03 | PWA manifest changes could break install flow on some browsers | Low | Configuration-only change; easily reversible by reverting manifest.json |
+| R-2026-06-05-05 | Markdown table rendering could make the freeform editor heavier or less mobile-friendly. | Medium | Kept the editor as textarea plus lightweight preview; e2e covers rendered headings/checklist preview. | Accepted |
+| R-2026-06-05-06 | Piano schedule table could overfit one Notion database and become a general Notion clone. | Low | Kept it as a Markdown-backed Resource/table pattern, not formulas/relations. | Accepted |
+| R-2026-06-05-07 | Already-open browser IndexedDB cache can drift after external seed/reset. | Low | Settings has refresh-from-server; audit recommends clearer stale-cache recovery. | Accepted |
+| R-2026-06-05-08 | Moderate dependency advisories exist in current Next/Prisma dependency tree. | Medium | Do not run forced fixes; review safe upstream upgrades. | Open |
+| R-2026-06-05-03 | PWA manifest changes could break install flow on some browsers | Low | Configuration-only change; easily reversible by reverting manifest.json | Open |
 | R-2026-06-05-01 | Residual dark-mode tokenization risk across less-used routes. | Low | Dark mode uses broad global overrides; visual pass on major routes completed. | Accepted |
 | R-2026-06-05-02 | Markdown editor is intentionally line/block based and may need trial feedback before deeper Notion-like behavior. | Medium | Kept implementation minimal and markdown-backed; awaiting real usage feedback. | Accepted |
 
@@ -12,6 +16,7 @@
 
 | ID | Risk | Level | Status |
 | --- | --- | --- | --- |
+| R-2026-06-05-04 | Task time-range schema expansion could desync Prisma, API serialization, offline cache, and sync replay. | Medium | Closed - propagated through schema, migration, types, serialization, sync replay, client normalization, seed, and e2e coverage. |
 | R-2026-06-04-08 | Schema expansion for deadlines/recovery notes could desync Prisma, API serialization, offline cache, and sync replay. | Medium | Mitigated by propagating fields through schema, migration, types, seed, bootstrap serialization, sync server, client normalization, and e2e coverage. | Closed |
 | R-2026-06-04-09 | Freeform recovery notes could regress fixed project recovery fields. | Medium | Kept fixed fields as structured `Project` fields and added `recoveryNotes` separately; e2e verifies both next action and notes persist. | Closed |
 | R-2026-06-04-10 | Adding deadline location inputs could reintroduce one mutation per keystroke. | Low | Used draft-save `EditableField` for editable deadline location surfaces; only discrete date/time/select changes sync immediately. | Closed |

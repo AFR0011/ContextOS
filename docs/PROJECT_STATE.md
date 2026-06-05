@@ -27,6 +27,14 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 - Production credential rotation is partly external: any previously shared Neon/Postgres credential must be rotated in the provider, then copied into deployment environment variables.
 
 ## Latest Verified State
+- v0.1.11 dashboard timeline and schedule-table changes are implemented locally.
+- Dashboard freeform notepad keeps fast textarea editing and now renders a live Markdown preview, including headings, checklists, and tables.
+- Dashboard `Tasks` is replaced by `Daily timeline`; tasks can carry optional `startTime` and `endTime`, display as time-range pills, and can be project-linked while planned for today.
+- `Task.startTime` and `Task.endTime` are propagated through Prisma, bootstrap serialization, sync replay, IndexedDB normalization, seed data, and shared types.
+- A seeded `Piano Schedule` Resource under `Piano / Content` mirrors the Notion schedule-table shape with `Index`, `Song`, `Today?`, and `Status` columns.
+- Current audit saved to `docs/CURRENT_AUDIT_2026-06-05.md`.
+- Verification on 2026-06-05: `npx prisma generate`, `npm run typecheck`, `npm run build`, `npx prisma validate`, `git diff --check`, `docker compose up -d`, `npm run db:migrate`, `npm run db:seed`, targeted Playwright, and `npm run test:e2e` passed; e2e has 19 passing tests.
+- Residual audit risks: database outage handling is brittle, already-open browser IndexedDB cache can drift after external seed/reset, and `npm audit --audit-level=moderate` reports 5 moderate advisories requiring safe dependency review.
 - v0.1.9 dashboard deadlines and recovery-note changes are implemented locally.
 - Dashboard Dates can create project-linked deadlines with optional local time and location; dashboard tasks can optionally select a project.
 - Deadlines now store optional `time` and `location` fields and expose them across creation/edit surfaces.

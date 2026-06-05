@@ -71,6 +71,11 @@ function statusLabel(status: TaskStatus) {
   return labels[status];
 }
 
+function taskTimeLabel(task: Pick<Task, "startTime" | "endTime">) {
+  if (task.startTime && task.endTime) return `${task.startTime}-${task.endTime}`;
+  return task.startTime ?? task.endTime ?? "";
+}
+
 function formatDateKey(dateKey: string) {
   const date = dateKeyToLocalDate(dateKey);
   return date ? format(date, "MMM d, yyyy") : dateKey;
@@ -240,7 +245,7 @@ function InlineTaskTitle({ task }: { task: Task }) {
   );
 }
 
-function TaskLine({ task, meta }: { task: Task; meta?: string }) {
+function TaskLine({ task, meta, project }: { task: Task; meta?: string; project?: string }) {
   const { updateTask } = useWorkspace();
   const done = task.status === "done";
   return (
@@ -251,14 +256,80 @@ function TaskLine({ task, meta }: { task: Task; meta?: string }) {
           <InlineTaskTitle task={task} />
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          {taskTimeLabel(task) ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{taskTimeLabel(task)}</span> : null}
           <span className="cos-pill cos-pill-muted">{statusLabel(task.status)}</span>
           {meta ? <span className="cos-pill cos-pill-warning">{meta}</span> : null}
           {task.dueDate ? <span className="cos-pill cos-pill-warning">Due {formatDateKey(task.dueDate)}</span> : null}
           {task.plannedDate ? <span className="cos-pill cos-pill-primary">Planned {formatDateKey(task.plannedDate)}</span> : null}
+          {project ? <span className="cos-pill cos-pill-muted">{project}</span> : null}
+        </div>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <input
+            aria-label={`${task.title} start time`}
+            type="time"
+            value={task.startTime ?? ""}
+            onChange={(event) => updateTask(task.id, { startTime: event.target.value || null })}
+            className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-1 text-xs"
+          />
+          <input
+            aria-label={`${task.title} end time`}
+            type="time"
+            value={task.endTime ?? ""}
+            onChange={(event) => updateTask(task.id, { endTime: event.target.value || null })}
+            className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-1 text-xs"
+          />
         </div>
       </div>
     </div>
   );
+}
+
+function MarkdownPreview({ content }: { content: string }) {
+  const blocks: React.ReactNode[] = [];
+  const lines = content.split(/\r?\n/);
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index] ?? "";
+    const next = lines[index + 1] ?? "";
+    if (line.includes("|") && /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(next)) {
+      const headers = line.split("|").map((cell) => cell.trim()).filter(Boolean);
+      const rows: string[][] = [];
+      index += 2;
+      while (index < lines.length && (lines[index] ?? "").includes("|")) {
+        rows.push((lines[index] ?? "").split("|").map((cell) => cell.trim()).filter(Boolean));
+        index += 1;
+      }
+      blocks.push(
+        <div key={`table-${index}`} className="my-3 overflow-x-auto rounded-lg border border-[var(--cos-border-soft)]">
+          <table className="min-w-full border-collapse text-left text-xs">
+            <thead className="bg-[var(--cos-bg-inset)] text-[var(--cos-text-muted)]">
+              <tr>{headers.map((header) => <th key={header} className="border-b border-[var(--cos-border-soft)] px-3 py-2 font-semibold">{header}</th>)}</tr>
+            </thead>
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={rowIndex} className="border-t border-[var(--cos-border-soft)]">
+                  {headers.map((header, cellIndex) => <td key={`${header}-${cellIndex}`} className="px-3 py-2 text-[var(--cos-text)]">{row[cellIndex] ?? ""}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
+    const checkbox = line.match(/^- \[( |x|X)\]\s?(.*)$/);
+    if (checkbox) blocks.push(<p key={index} className="flex gap-2"><span>{checkbox[1].toLowerCase() === "x" ? "[x]" : "[ ]"}</span><span>{checkbox[2]}</span></p>);
+    else if (line.startsWith("## ")) blocks.push(<h2 key={index}>{line.slice(3)}</h2>);
+    else if (line.startsWith("# ")) blocks.push(<h1 key={index}>{line.slice(2)}</h1>);
+    else if (line.startsWith("- ")) blocks.push(<p key={index}>- {line.slice(2)}</p>);
+    else if (line.startsWith("> ")) blocks.push(<blockquote key={index}>{line.slice(2)}</blockquote>);
+    else if (line.startsWith("```")) blocks.push(<code key={index}>{line}</code>);
+    else blocks.push(<p key={index}>{line || "\u00a0"}</p>);
+    index += 1;
+  }
+
+  return <div className="prose-lite text-sm text-[var(--cos-text-muted)]">{blocks}</div>;
 }
 
 function NotepadSection() {
@@ -295,16 +366,21 @@ function NotepadSection() {
   }
 
   return (
-    <div>
-      <textarea
-        data-testid="dashboard-scratchpad"
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        placeholder="Scratch what is on your mind. Capture first; organize when it matters."
-        rows={8}
-        className="cos-input min-h-44 w-full resize-y bg-[var(--cos-bg-soft)] px-3 py-3 text-base leading-6 placeholder:text-[var(--cos-text-subtle)] focus:bg-[var(--cos-bg-elevated)]"
-      />
-      <div className="mt-3 flex min-h-9 flex-wrap items-center gap-2 text-xs">
+    <div className="grid gap-3 lg:grid-cols-[1fr_0.95fr]">
+      <div>
+        <textarea
+          data-testid="dashboard-scratchpad"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder="Scratch what is on your mind. Capture first; organize when it matters."
+          rows={10}
+          className="cos-input min-h-56 w-full resize-y bg-[var(--cos-bg-soft)] px-3 py-3 text-base leading-6 placeholder:text-[var(--cos-text-subtle)] focus:bg-[var(--cos-bg-elevated)]"
+        />
+      </div>
+      <div data-testid="dashboard-markdown-preview" className="min-h-56 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)] px-3 py-3">
+        {draft.trim() ? <MarkdownPreview content={draft} /> : <p className="text-sm text-[var(--cos-text-subtle)]">Markdown preview appears here as you type.</p>}
+      </div>
+      <div className="mt-3 flex min-h-9 flex-wrap items-center gap-2 text-xs lg:col-span-2">
         <span className="text-[var(--cos-text-subtle)]">
           {saveState === "dirty" ? "Autosaving..." : saveState === "saved" ? "Saved locally" : scratchpad?.updatedAt ? `Updated ${formatDistanceToNow(parseISO(scratchpad.updatedAt), { addSuffix: true })}` : "Ready"}
         </span>
@@ -452,6 +528,7 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     <span className={`cos-pill ${item.overdue ? "cos-pill-danger" : item.dateKey === today ? "cos-pill-primary" : "cos-pill-muted"}`}>{dateBadge(item.dateKey, today)}</span>
                     <span className="cos-pill cos-pill-muted">{item.kind === "deadline" ? "Deadline" : task?.dueDate ? "Task due" : "Task planned"}</span>
+                    {task && taskTimeLabel(task) ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{taskTimeLabel(task)}</span> : null}
                     {deadline?.time ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{deadline.time}</span> : null}
                     {deadline?.location ? <span className="cos-pill cos-pill-muted"><MapPin className="h-3 w-3" />{deadline.location}</span> : null}
                     {item.projectName ? <span className="cos-pill cos-pill-muted">{item.projectName}</span> : null}
@@ -528,10 +605,12 @@ function DeadlineComposer({
   );
 }
 
-function TasksSection({ today, showCompleted }: { today: string; showCompleted: boolean }) {
+function DailyTimelineSection({ today, showCompleted }: { today: string; showCompleted: boolean }) {
   const { data, addTask } = useWorkspace();
   const [title, setTitle] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const projects = activeProjectOptions(data.projects);
   const rows = useMemo(() => {
     return data.tasks
@@ -543,6 +622,9 @@ function TasksSection({ today, showCompleted }: { today: string; showCompleted: 
         if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
         if (a.status === "done" && b.status !== "done") return 1;
         if (a.status !== "done" && b.status === "done") return -1;
+        const aTime = a.startTime ?? a.endTime ?? "99:99";
+        const bTime = b.startTime ?? b.endTime ?? "99:99";
+        if (aTime !== bTime) return aTime.localeCompare(bTime);
         return a.createdAt.localeCompare(b.createdAt);
       });
   }, [data.tasks, showCompleted, today]);
@@ -551,9 +633,11 @@ function TasksSection({ today, showCompleted }: { today: string; showCompleted: 
     const trimmed = title.trim();
     if (!trimmed) return;
     const project = projects.find((item) => item.id === projectId);
-    addTask({ title: trimmed, plannedDate: today, projectId: projectId || null, domainId: project?.domainId ?? null });
+    addTask({ title: trimmed, plannedDate: today, startTime: startTime || null, endTime: endTime || null, projectId: projectId || null, domainId: project?.domainId ?? null });
     setTitle("");
     setProjectId("");
+    setStartTime("");
+    setEndTime("");
   }
 
   return (
@@ -568,22 +652,26 @@ function TasksSection({ today, showCompleted }: { today: string; showCompleted: 
             if (event.key === "Enter") createTask();
             if (event.key === "Escape") setTitle("");
           }}
-          placeholder="Add a real task for today..."
+          placeholder="Add something to today's timeline..."
           className="min-h-10 min-w-0 flex-1 bg-transparent text-base text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
         />
         <button type="button" onClick={createTask} disabled={!title.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 text-sm disabled:bg-[var(--cos-border)]">
           Add
         </button>
       </div>
-      {projects.length ? (
-        <select aria-label="Task project" value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input w-full bg-[var(--cos-bg-soft)] px-3 py-2 text-xs">
-          <option value="">No project</option>
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>{project.name}</option>
-          ))}
-        </select>
-      ) : null}
-      {rows.length ? rows.map((task) => <TaskLine key={task.id} task={task} meta={task.dueDate && task.dueDate < today && isTaskOpen(task) ? "Overdue" : task.status === "in-progress" ? "In progress" : undefined} />) : <EmptySmall icon={Target} title="No operational tasks" description="Add one small task for today." />}
+      <div className="grid gap-2 sm:grid-cols-[0.7fr_0.7fr_1.4fr]">
+        <input aria-label="Task start time" type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="cos-input bg-[var(--cos-bg-soft)] px-3 py-2 text-xs" />
+        <input aria-label="Task end time" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} className="cos-input bg-[var(--cos-bg-soft)] px-3 py-2 text-xs" />
+        {projects.length ? (
+          <select aria-label="Task project" value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input w-full bg-[var(--cos-bg-soft)] px-3 py-2 text-xs">
+            <option value="">No project</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>{project.name}</option>
+            ))}
+          </select>
+        ) : null}
+      </div>
+      {rows.length ? rows.map((task) => <TaskLine key={task.id} task={task} project={projectName(data.projects, task.projectId)} meta={task.dueDate && task.dueDate < today && isTaskOpen(task) ? "Overdue" : task.status === "in-progress" ? "In progress" : undefined} />) : <EmptySmall icon={Target} title="No timeline items" description="Add one small block for today." />}
     </div>
   );
 }
@@ -719,8 +807,8 @@ export function Dashboard2View() {
       </CollapsibleSection>
     ),
     tasks: (
-      <CollapsibleSection id="tasks" title="Tasks" icon={SquarePen} count={tasksCount} collapsed={collapsed.has("tasks")} onToggle={toggleSection}>
-        <TasksSection today={today} showCompleted={preferences.showCompleted} />
+      <CollapsibleSection id="tasks" title="Daily timeline" icon={SquarePen} count={tasksCount} collapsed={collapsed.has("tasks")} onToggle={toggleSection}>
+        <DailyTimelineSection today={today} showCompleted={preferences.showCompleted} />
       </CollapsibleSection>
     ),
     projects: (

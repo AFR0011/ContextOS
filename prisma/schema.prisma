@@ -84,6 +84,8 @@ model Task {
   title       String
   plannedDate DateTime?
   dueDate     DateTime?
+  startTime   String?
+  endTime     String?
   projectId   String?
   domainId    String?
   status      String    @default("todo")

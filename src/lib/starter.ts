@@ -144,6 +144,8 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         title: "Process inbox captures",
         plannedDate: dateOnly(0),
         dueDate: null,
+        startTime: "09:30",
+        endTime: "10:00",
         projectId: contextProjectId,
         domainId: domains.dev,
         status: "todo"
@@ -154,6 +156,8 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         title: "Write one clean latest-status note",
         plannedDate: dateOnly(0),
         dueDate: dateOnly(1),
+        startTime: "10:30",
+        endTime: "11:15",
         projectId: contextDashboardProjectId,
         domainId: domains.dev,
         status: "in-progress"
@@ -164,6 +168,8 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         title: "Rerun RF baseline with corrected threshold logic",
         plannedDate: dateOnly(1),
         dueDate: dateOnly(3),
+        startTime: null,
+        endTime: null,
         projectId: thesisProjectId,
         domainId: domains.research,
         status: "blocked"
@@ -174,6 +180,8 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         title: "Review deadlines and identify risk points",
         plannedDate: null,
         dueDate: dateOnly(0),
+        startTime: "15:00",
+        endTime: null,
         projectId: careerProjectId,
         domainId: domains.career,
         status: "todo"
@@ -257,6 +265,26 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         content: "Last useful context: compare calibration tables after the RF rerun finishes.",
         projectId: thesisProjectId,
         domainId: domains.research
+      },
+      {
+        id: idFor(userId, "note-piano-schedule"),
+        userId,
+        title: "Piano Schedule",
+        content: [
+          "| Index | Song | Today? | Status |",
+          "| --- | --- | --- | --- |",
+          "| 1 | Current warmup piece | Yes | Refine |",
+          "| 2 | Harder variation study | Yes | Learn Harder Variation |",
+          "| 3 | Repertoire maintenance | No | Perfect |",
+          "",
+          "## Status options",
+          "- New",
+          "- Learn Harder Variation",
+          "- Refine",
+          "- Perfect"
+        ].join("\n"),
+        projectId: null,
+        domainId: domains.piano
       }
     ],
     skipDuplicates: true

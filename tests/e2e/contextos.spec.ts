@@ -98,7 +98,7 @@ test("seeded demo account can log in and render dashboard", async ({ page }) => 
   await expect(page.getByText("Mobile Command Sheet")).toBeVisible();
   await expect(page.getByRole("button", { name: /Notepad/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Dates/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Tasks/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Daily timeline/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Projects/ })).toBeVisible();
   await expect(page.getByTestId("dashboard-section-projects").getByRole("button", { name: /ContextOS Demo/ })).toBeVisible();
 });
@@ -167,11 +167,14 @@ test("project subcontexts roll child tasks and deadlines into parent recovery", 
 
 test("dashboard notepad autosaves and persists after reload", async ({ page }) => {
   await login(page);
-  const content = `Scratchpad check ${Date.now()}`;
+  const content = `## Scratchpad check ${Date.now()}\n- [ ] Render markdown`;
   await page.getByTestId("dashboard-scratchpad").fill(content);
+  await expect(page.getByTestId("dashboard-markdown-preview").getByRole("heading", { name: /Scratchpad check/ })).toBeVisible();
+  await expect(page.getByTestId("dashboard-markdown-preview").getByText("Render markdown")).toBeVisible();
   await expect(page.getByText(/Saved locally|Updated/i)).toBeVisible({ timeout: 3000 });
   await page.reload();
   await expect(page.getByTestId("dashboard-scratchpad")).toHaveValue(content);
+  await expect(page.getByTestId("dashboard-markdown-preview").getByRole("heading", { name: /Scratchpad check/ })).toBeVisible();
 });
 
 test("dashboard sections collapse and persist after refresh", async ({ page }) => {
@@ -185,13 +188,21 @@ test("dashboard sections collapse and persist after refresh", async ({ page }) =
   await expect(page.getByTestId("dashboard-section-dates")).toContainText(/Task due|Deadline|No dated items/);
 });
 
-test("dashboard can add and complete a real task", async ({ page }) => {
+test("dashboard can add and complete a daily timeline task with a time range", async ({ page }) => {
   await login(page);
   const title = `Dashboard real task ${Date.now()}`;
   const taskSection = page.getByTestId("dashboard-section-tasks");
   await page.getByTestId("dashboard-add-task-input").fill(title);
+  await taskSection.getByLabel("Task start time").fill("09:15");
+  await taskSection.getByLabel("Task end time").fill("10:00");
+  await taskSection.getByLabel("Task project").selectOption({ label: "ContextOS Demo" });
   await taskSection.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(taskSection.getByRole("button", { name: title, exact: true })).toBeVisible();
+  const timelineRow = taskSection.locator(".cos-row-muted").filter({ hasText: title });
+  await expect(timelineRow.getByRole("button", { name: title, exact: true })).toBeVisible();
+  await expect(timelineRow.getByText("09:15-10:00")).toBeVisible();
+  await expect(timelineRow.getByText("ContextOS Demo")).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId("dashboard-section-tasks").getByText("09:15-10:00")).toBeVisible();
   await taskSection.getByRole("button", { name: `Mark ${title} done` }).click();
   await expect(taskSection.getByRole("button", { name: title, exact: true })).not.toBeVisible();
 });
@@ -246,6 +257,9 @@ test("areas and resources expose PARA navigation", async ({ page }) => {
 
   await page.getByRole("button", { name: "Resources" }).click();
   await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();
+  await expect(page.getByText("Piano Schedule")).toBeVisible();
+  await expect(page.getByTestId("piano-schedule-table")).toContainText("Status");
+  await expect(page.getByTestId("piano-schedule-table")).toContainText("Refine");
   const title = `Vocabulary resource ${Date.now()}`;
   await page.getByPlaceholder("Resource title...").fill(title);
   await page.getByRole("button", { name: "Add", exact: true }).click();

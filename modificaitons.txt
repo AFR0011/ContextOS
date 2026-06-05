@@ -1,9 +1,3 @@
-1) Add ability to add deadlines from dashboard
-2) Make it so that tasks/deadlines created from dashboard can optionally be assigned which project they belong to.
-3) Under projects, only include the top-level projects with latest status/next action, and they can be expanded/collapsed to show/hide the subprojects/subcontexts, and the lowest-level projects/subcontexts should show only the latest status and next action.
-4) Some form of reminder/notification for daily/weekly reviews (e.g., when app is opened for the first/last time during the day)
-5) Projects should be possible to make/delete from the areas tab when expanding the project list of an area.
-6) Add optional time and location for deadlines/dates.
-7) for projects' "recovery canvas" the attempt at the markdown style editor is not usable at all. I was thinking something like the attached video where I could add togglable headers/lists, todo lists, basically markdown freeform notes, while preserving the fixed fields (next action, latest status, etc.)
-8) Markdown export functionality - Export projects, notes, tasks, deadlines to markdown files
-9) PWA polish - Add icons, manifest improvements for installable PWA experience
+1) Add piano schedule-like tables (similar to what I have in my Notion piano schedule page)
+2) Make the freeform editor more seamless; also, currently markdown isn't even rendered
+3) Replace dashboard "tasks" with "Daily timeline"; same concept of tasks, just that each task can have an assigned time/time-range. Also, project tasks that are set for the current day should also be shown there.

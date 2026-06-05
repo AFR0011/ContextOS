@@ -51,6 +51,8 @@ export interface Task {
   title: string;
   plannedDate: string | null;
   dueDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
   projectId: string | null;
   domainId: string | null;
   status: TaskStatus;

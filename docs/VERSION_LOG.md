@@ -1,5 +1,46 @@
 # ContextOS Version Log
 
+## v0.1.11 Dashboard Timeline and Schedule Tables
+
+Status:
+Implemented locally and verified on 2026-06-05.
+
+Goal:
+Apply `modificaitons.txt` items 1-3: piano schedule-like tables, rendered freeform dashboard editing, and a Dashboard Daily timeline with task time ranges.
+
+Changed files:
+- `prisma/schema.prisma`
+- `prisma/migrations/20260605160000_add_task_time_range/migration.sql`
+- `src/lib/types.ts`
+- `src/lib/data.ts`
+- `src/lib/sync-server.ts`
+- `src/lib/client-store.tsx`
+- `src/lib/starter.ts`
+- `src/components/workspace/Dashboard2.tsx`
+- `src/components/workspace/Views.tsx`
+- `tests/e2e/contextos.spec.ts`
+- `docs/CURRENT_AUDIT_2026-06-05.md`
+- Active dev-loop docs and shared coordination docs
+
+Schema changes:
+- Added optional `Task.startTime`.
+- Added optional `Task.endTime`.
+
+Verification:
+- `npx prisma generate` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npx prisma validate` - passed.
+- `git diff --check` - passed.
+- `npm run db:migrate` - passed after Docker/Postgres became available.
+- `npm run db:seed` - passed.
+- `npm run test:e2e` - passed, 19 tests.
+
+Known issues:
+- DB-unavailable handling is still brittle.
+- Already-open browser IndexedDB data can be stale after external seed/reset.
+- `npm audit --audit-level=moderate` reports moderate advisories needing safe dependency review.
+
 ## v0.1.9 Dashboard Deadlines, Areas Project Controls, Recovery Notes
 
 Status:

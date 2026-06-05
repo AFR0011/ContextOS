@@ -40,6 +40,7 @@ Known issues:
 - DB-unavailable handling is still brittle.
 - Already-open browser IndexedDB data can be stale after external seed/reset.
 - `npm audit --audit-level=moderate` reports moderate advisories needing safe dependency review.
+- Future-work concerns were promoted to `docs/MIGRATION_BACKLOG.md`.
 
 ## v0.1.9 Dashboard Deadlines, Areas Project Controls, Recovery Notes
 

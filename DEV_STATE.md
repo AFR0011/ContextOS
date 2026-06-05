@@ -92,5 +92,6 @@ npm run test:e2e                             PASSED (19 tests)
 ## Next Phase
 
 1. Review `docs/CURRENT_AUDIT_2026-06-05.md`.
-2. Fix highest-priority audit item next: graceful DB-unavailable handling around auth/bootstrap/sync.
-3. Review moderate dependency advisories without forced downgrade fixes.
+2. Review `docs/MIGRATION_BACKLOG.md` before selecting the next batch.
+3. Fix highest-priority audit item next: graceful DB-unavailable handling around auth/bootstrap/sync.
+4. Review moderate dependency advisories without forced downgrade fixes.

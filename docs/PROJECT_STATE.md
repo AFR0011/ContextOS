@@ -95,6 +95,9 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 - Manual draft-save smoke on 2026-06-03: local browser edit of Latest Status while offline showed unsaved state, queued one pending mutation after save, then synced back to zero.
 
 ## Next Useful Work
+- Review `docs/MIGRATION_BACKLOG.md` before selecting the next v0.1.x or v0.2.0 batch.
+- Highest-priority future concern: graceful database-unavailable handling around auth/bootstrap/sync/reset.
+- Also prioritize stale local-cache recovery after external seed/reset and safe review of moderate dependency advisories.
 - Use the v0.1.x PARA foundation for one real workday and record friction in `docs/FRICTION_LOG.md`.
 - During the trial, pay special attention to whether the markdown canvas reduces context-switching and whether slash capture inside the editor feels faster than the old separate capture field.
 - Pay special attention to whether subcontexts solve course/assistantship nesting and whether Dashboard Canvas reduces Notion dashboard use.

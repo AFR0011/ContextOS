@@ -83,6 +83,11 @@ Use [FRICTION_LOG.md](FRICTION_LOG.md) during the one-day trial.
 - For dev verification, assert cached workspace/outbox durability first, then reconnect and confirm the queued records render and pending sync clears.
 - For full offline reload hydration, use a production build smoke because service worker app-shell and chunk caching are the relevant boundary.
 
+## Local Dev Cache And Server Notes
+- `playwright.config.ts` can reuse an existing server on port 3000. After substantial source/schema changes, confirm the port is serving current code or stop the listener so Playwright starts a fresh dev server.
+- After external `npm run db:seed` or `POST /api/reset-demo`, an already-open browser may keep stale IndexedDB workspace data. Use Settings -> refresh from server when no pending offline mutations exist, or open a clean browser context for verification.
+- If Postgres is unavailable, auth pages and workspace APIs may fail before rendering useful UI. Start Postgres with `docker compose up -d` before DB-backed verification.
+
 ## Notes
 - `.env` is ignored and may contain local-only demo values.
 - `.env.example` is the only env file intended to be committed.

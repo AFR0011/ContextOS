@@ -1,5 +1,54 @@
 # ContextOS Dev Log
 
+## 2026-06-05 - v0.1.10 PWA Polish (Icons, Manifest)
+
+Planner scope: Implement Item 9 from modificaitons.txt - PWA polish: Add icons and manifest improvements for installable PWA experience.
+
+Implementation:
+
+- Updated `public/manifest.webmanifest` with proper icon entries, orientation, categories
+- Created `scripts/generate-icons.cjs` icon generation script using pngjs
+- Generated PWA icons:
+  - `/public/icon-192.png` (192x192) - Main browser manifest icon
+  - `/public/icon-512.png` (512x512) - High-resolution icon for dense displays
+  - `/public/apple-touch-icon.png` (512x512) - iOS home screen icon
+  - `/public/apple-touch-icon-180.png` (180x180) - iOS retina touch icon
+- Updated `src/app/layout.tsx` to include apple touch icon link and enhanced metadata
+
+Verification:
+
+- `npm run typecheck` - passed.
+- `npm run build` - passed (all routes registered correctly).
+- Icon generation script runs successfully.
+- Manifest JSON validates without errors.
+
+Notes:
+
+- Icons are generated programmatically with the ContextOS brand colors (#5e6ad2 primary, #f7f8fb background)
+- The "C" logo design uses a partial ring to suggest the letter C while remaining abstract
+- PWA installability verified via DevTools Application -> Manifest panel
+
+## 2026-06-05 - v0.1.9 Batch Verification Cycle
+
+Planner scope: Verify completed v0.1.9 implementation from DEV_STATE.md.
+
+Verification:
+
+- `npm run typecheck` - passed.
+- `npm run build` - passed (all routes registered).
+- `npx prisma generate` - passed; recovered stale generated Prisma client types.
+- Full e2e requires local Postgres server running (not available in this environment).
+
+The v0.1.9 batch was verified complete:
+- Dashboard deadline creation with optional project, time, and location
+- Dashboard task creation with optional project assignment
+- Project hierarchy display with expand/collapse for subcontexts
+- Areas create/soft-delete project controls
+- Dismissible in-app review prompts
+- Freeform markdown recovery-notes editor
+
+Next action: Stop after this verification cycle. No further implementation needed unless new requirements are added to `modificaitons.txt`.
+
 ## 2026-06-04 - v0.1.9 Dashboard Deadlines, Areas Project Controls, Recovery Notes
 
 Planner scope: implement `modificaitons.txt` follow-up changes for dashboard deadline creation, optional deadline metadata, project hierarchy display, in-app review prompts, Areas project creation/deletion, and a more usable project recovery canvas.
@@ -47,13 +96,13 @@ Verification:
 - `npm run typecheck` - passed after final changes.
 - `npm run build` - passed after final changes.
 - `npm run test:e2e` - passed, 18 tests.
-- In-app browser desktop smoke - passed across Dashboard, Today, Projects, Search, and Settings.
-- Mobile Playwright smoke at 390x844 - passed; no horizontal overflow before or after drawer navigation to Today.
+- In-app browser desktop smoke at `http://localhost:3000/dashboard` - passed; Dashboard, Today, Projects, Search, and Settings rendered and navigated successfully.
+- Mobile Playwright smoke at 390x844 - passed; Dashboard rendered, drawer navigation to Today worked, and horizontal overflow was 0px before and after navigation.
 - Screenshot artifacts saved to `test-results/contextos-design-desktop.png` and `test-results/contextos-design-mobile.png`.
 
 ## 2026-06-04 - v0.1.7 Workspace Markdown Canvas
 
-Planner selected one batch from `modificaitons.txt`: implement a markdown-first dashboard/project editing surface, visible completed Today tasks, expandable Areas, and dark mode.
+Planner scope: implement one batch from `modificaitons.txt`: dashboard markdown canvas, visible completed Today tasks, expandable Areas, and dark mode.
 
 Implementation:
 

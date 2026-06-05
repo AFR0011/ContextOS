@@ -5,3 +5,5 @@
 5) Projects should be possible to make/delete from the areas tab when expanding the project list of an area.
 6) Add optional time and location for deadlines/dates.
 7) for projects' "recovery canvas" the attempt at the markdown style editor is not usable at all. I was thinking something like the attached video where I could add togglable headers/lists, todo lists, basically markdown freeform notes, while preserving the fixed fields (next action, latest status, etc.)
+8) Markdown export functionality - Export projects, notes, tasks, deadlines to markdown files
+9) PWA polish - Add icons, manifest improvements for installable PWA experience

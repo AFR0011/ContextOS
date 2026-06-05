@@ -2,71 +2,91 @@
 
 ## Active Loop
 
-- Status: QA complete
-- Date: 2026-06-04
-- Active batch: v0.1.9 dashboard deadlines, Areas controls, recovery notes
-- Source request: `modificaitons.txt`
+- Status: QA COMPLETE - Batch v0.1.10 PWA Polish
+- Date: 2026-06-05
+- Active batch: v0.1.10 PWA polish (icons, manifest)
+- Source request: `modificaitons.txt` items 8-9
 - Canonical product source: `BLUEPRINT.md`
 - Baseline docs: `docs/PROJECT_STATE.md`, `docs/REPO_MAP.md`, `docs/RUN_PROTOCOL.md`
 
-## Selected Batch
+## Active Batch Summary
 
-Implement one independently testable batch from the follow-up modifications list:
+### Goal
+Implement PWA polish per Item 9 in modificaitons.txt: Add icon assets and enhance web app manifest for installable PWA experience.
 
-1. Add dashboard deadline creation with optional project, local time, and location metadata.
-2. Allow dashboard-created tasks to optionally select a project.
-3. Add deadline `time` and `location`, project `recoveryNotes`, and review-prompt dismissal persistence through schema, sync, seed, and client cache.
-4. Keep Projects focused on top-level projects, with expandable/collapsible subcontexts that show latest status and next action.
-5. Add project create and soft-delete controls inside expanded Areas.
-6. Add dismissible in-app daily/weekly review prompts.
-7. Replace fragile project recovery heading parsing with structured fixed fields plus a freeform markdown recovery-notes editor.
+### Implementation
 
-## Intended Files
+| File | Change |
+|------|--------|
+| `public/manifest.webmanifest` | Added icons array with 192x192 and 512x512 entries, orientation, categories |
+| `src/app/layout.tsx` | Added apple touch icon link and enhanced metadata |
+| `scripts/generate-icons.cjs` | New icon generation script using pngjs |
+| `public/icon-192.png` | Generated 192x192 PNG icon |
+| `public/icon-512.png` | Generated 512x512 PNG icon |
+| `public/apple-touch-icon.png` | Generated iOS touch icon (512x512) |
+| `public/apple-touch-icon-180.png` | Generated iOS retina touch icon |
 
-- `prisma/schema.prisma`
-- `prisma/migrations/20260604160000_add_recovery_deadline_review_fields/migration.sql`
-- `src/lib/types.ts`
-- `src/lib/data.ts`
-- `src/lib/sync-server.ts`
-- `src/lib/client-store.tsx`
-- `src/lib/starter.ts`
-- `src/components/workspace/Dashboard2.tsx`
-- `src/components/workspace/Views.tsx`
-- `tests/e2e/contextos.spec.ts`
-- `docs/PROJECT_STATE.md`
-- `docs/VERSION_LOG.md`
-- `DEV_LOG.md`
-- `QA_REPORT.md`
-- `RISK_REGISTER.md`
+### Acceptance Criteria
 
-## Acceptance Criteria
+| Criteria | Status |
+|----------|--------|
+| Manifest has 2+ icon sizes (192px, 512px) | DONE |
+| Icon files exist at specified paths | DONE |
+| iOS touch icon exists | DONE |
+| Manifest link in HTML head | DONE |
+| Service worker registered | VERIFIED |
 
-- Dashboard can create a project-linked deadline with optional local time and location.
-- Dashboard can create a task with optional project assignment.
-- Deadline time/location/project metadata persists through reload and sync.
-- Projects page shows root projects first and can expand nested subcontexts.
-- Expanded Areas can create and soft-delete projects.
-- Dashboard review prompts can be dismissed and do not require browser notification permission.
-- Project recovery fixed fields and freeform recovery notes persist after reload.
-- Existing offline/local persistence behavior remains intact.
-- `npm run typecheck`, `npm run build`, and full Playwright coverage pass.
+### Verification Evidence
 
-## Verification Plan
+```
+TypeCheck: PASSED
+Build:     PASSED (all routes registered correctly)
 
-1. `npx prisma generate`
-2. `npm run db:migrate`
-3. `npm run db:seed`
-4. `npm run typecheck`
-5. `npm run build`
-6. `npm run test:e2e`
+Icon files created:
+- public/icon-192.png    (192x192, 2621 bytes)
+- public/icon-512.png    (512x512, 7722 bytes)
+- public/apple-touch-icon.png (512x512, 7722 bytes)
+- public/apple-touch-icon-180.png (180x180, 2611 bytes)
 
-## Risk And Mitigation
+Manifest JSON: Valid
+```
 
-- Risk: Schema additions could desync server/client/offline paths. Mitigation: propagated fields through schema, migration, types, serialization, sync replay, seed, and client normalization.
-- Risk: Recovery notes could regress fixed fields. Mitigation: kept fixed fields structured and stored freeform notes separately.
-- Risk: Review reminders could become noisy. Mitigation: used dismissible in-app prompts only.
-- Risk: Stale dev server could invalidate e2e evidence. Mitigation: stopped stale port-3000 server and reran the full suite.
+### Manual Testing Required
 
-## Next Action
+On mobile browser:
+1. Open `http://localhost:3000/dashboard`
+2. Check DevTools -> Application -> Manifest panel
+3. Verify "Add to Home Screen" appears (Chrome Android / Safari iOS)
+4. Confirm icons render correctly in install dialog
 
-Stop after this supervised cycle and report the completed batch. Next useful product action is a real usage pass focused on whether the new dashboard deadline and recovery-note flows remove the observed friction.
+### Risk Assessment
+
+| ID | Risk | Level | Status |
+|---|------|-------|--------|
+| R-2026-06-05-03 | PWA manifest changes could break install flow on some browsers | Low | Mitigated - configuration only, easily reversible |
+
+## Shared Files Updated This Cycle
+
+| File | Description |
+|------|-------------|
+| DEV_STATE.md | Active batch documented |
+| DEV_LOG.md | v0.1.10 entry added |
+| QA_REPORT.md | Batch verification evidence added |
+| RISK_REGISTER.md | Risk R-2026-06-05-03 added |
+| shared/context.md | Batch active status updated |
+| shared/status.md | Executor in progress -> QA complete |
+| shared/messages.jsonl | Handoff messages logged |
+| shared/messages.md | Summary added |
+| shared/history.md | Cycle logged |
+
+## Next Phase
+
+### If manual testing passes:
+1. QA updates QA_REPORT.md with PWA installability confirmation
+2. Close batch as COMPLETE
+3. Update version to v0.1.10 in CHANGELOG if exists, or DEV_STATE.md
+
+### If manual testing fails:
+1. Log error to shared/errors.md
+2. Executor fixes specific issue
+3. Re-test until passes

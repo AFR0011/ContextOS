@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar,
   CheckSquare,
@@ -25,8 +25,11 @@ interface MarkdownEditorProps {
   placeholder: string;
   className?: string;
   dataTestId?: string;
+  footer?: ReactNode;
+  hideSaveButton?: boolean;
   minLines?: number;
-  onSave: (value: string) => void;
+  onChange?: (value: string) => void;
+  onSave?: (value: string) => void;
   onCaptureLine?: (line: string) => void;
 }
 
@@ -123,12 +126,23 @@ function slashQuery(line: string) {
   return trimmed.slice(1).split(/\s+/)[0].toLowerCase();
 }
 
+function draftFromLines(lines: string[]) {
+  const meaningfulLines = [...lines];
+  while (meaningfulLines.length > 1 && meaningfulLines[meaningfulLines.length - 1] === "") {
+    meaningfulLines.pop();
+  }
+  return meaningfulLines.join("\n");
+}
+
 export function MarkdownEditor({
   value,
   placeholder,
   className = "",
   dataTestId,
+  footer,
+  hideSaveButton = false,
   minLines = 1,
+  onChange,
   onSave,
   onCaptureLine
 }: MarkdownEditorProps) {
@@ -156,15 +170,16 @@ export function MarkdownEditor({
   }
 
   function commit(nextDraft = draft) {
-    if (nextDraft === value) return;
+    if (nextDraft === value || !onSave) return;
     onSave(nextDraft);
     setSavedFlash(true);
     window.setTimeout(() => setSavedFlash(false), 1200);
   }
 
   function replaceLines(nextLines: string[], options?: { commit?: boolean; focusIndex?: number }) {
-    const nextDraft = nextLines.join("\n");
+    const nextDraft = draftFromLines(nextLines);
     setDraft(nextDraft);
+    onChange?.(nextDraft);
     if (options?.commit) commit(nextDraft);
     if (options?.focusIndex !== undefined) focusLine(options.focusIndex);
   }
@@ -176,6 +191,15 @@ export function MarkdownEditor({
   function insertLineAfter(index: number) {
     const nextLines = [...lines.slice(0, index + 1), "", ...lines.slice(index + 1)];
     replaceLines(nextLines, { focusIndex: index + 1 });
+  }
+
+  function insertPastedText(index: number, block: ParsedBlock, text: string) {
+    const pastedLines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+    if (pastedLines.length <= 1) return false;
+    const firstLine = lineFromBlock(block, pastedLines[0] ?? "");
+    const nextLines = [...lines.slice(0, index), firstLine, ...pastedLines.slice(1), ...lines.slice(index + 1)];
+    replaceLines(nextLines, { focusIndex: index + pastedLines.length - 1 });
+    return true;
   }
 
   function removeLine(index: number) {
@@ -277,7 +301,13 @@ export function MarkdownEditor({
                     }
                     if (event.key === "Escape") {
                       setDraft(value);
+                      onChange?.(value);
                       setActiveIndex(null);
+                    }
+                  }}
+                  onPaste={(event) => {
+                    if (insertPastedText(index, block, event.clipboardData.getData("text"))) {
+                      event.preventDefault();
                     }
                   }}
                   placeholder={blockPlaceholder(block.kind, placeholder, index === 0)}
@@ -309,17 +339,23 @@ export function MarkdownEditor({
         })}
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-[var(--cos-border-soft)] pt-2 text-[11px]">
-        {capturedFlash ? <span className="cos-pill cos-pill-success">Captured</span> : null}
-        {dirty ? <span className="text-[var(--cos-warning-text)]">Unsaved changes</span> : savedFlash ? <span className="text-[var(--cos-success-text)]">Saved</span> : null}
-        <button
-          type="button"
-          disabled={!dirty}
-          onClick={() => commit()}
-          className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 py-1 font-semibold text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)] disabled:hover:bg-transparent"
-        >
-          <Send className="h-3.5 w-3.5" />
-          Save
-        </button>
+        {footer ?? (
+          <>
+            {capturedFlash ? <span className="cos-pill cos-pill-success">Captured</span> : null}
+            {dirty ? <span className="text-[var(--cos-warning-text)]">Unsaved changes</span> : savedFlash ? <span className="text-[var(--cos-success-text)]">Saved</span> : null}
+            {!hideSaveButton ? (
+              <button
+                type="button"
+                disabled={!dirty}
+                onClick={() => commit()}
+                className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 py-1 font-semibold text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)] disabled:hover:bg-transparent"
+              >
+                <Send className="h-3.5 w-3.5" />
+                Save
+              </button>
+            ) : null}
+          </>
+        )}
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
+import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
 import { addDaysToDateKey, dateKeyToLocalDate, localDateKey, localWeekStartKey } from "@/lib/dates";
 import { useWorkspace } from "@/lib/client-store";
 import type { DashboardPreference, DashboardSectionId, Deadline, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
@@ -284,54 +285,6 @@ function TaskLine({ task, meta, project }: { task: Task; meta?: string; project?
   );
 }
 
-function MarkdownPreview({ content }: { content: string }) {
-  const blocks: React.ReactNode[] = [];
-  const lines = content.split(/\r?\n/);
-  let index = 0;
-
-  while (index < lines.length) {
-    const line = lines[index] ?? "";
-    const next = lines[index + 1] ?? "";
-    if (line.includes("|") && /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(next)) {
-      const headers = line.split("|").map((cell) => cell.trim()).filter(Boolean);
-      const rows: string[][] = [];
-      index += 2;
-      while (index < lines.length && (lines[index] ?? "").includes("|")) {
-        rows.push((lines[index] ?? "").split("|").map((cell) => cell.trim()).filter(Boolean));
-        index += 1;
-      }
-      blocks.push(
-        <div key={`table-${index}`} className="my-3 overflow-x-auto rounded-lg border border-[var(--cos-border-soft)]">
-          <table className="min-w-full border-collapse text-left text-xs">
-            <thead className="bg-[var(--cos-bg-inset)] text-[var(--cos-text-muted)]">
-              <tr>{headers.map((header) => <th key={header} className="border-b border-[var(--cos-border-soft)] px-3 py-2 font-semibold">{header}</th>)}</tr>
-            </thead>
-            <tbody>
-              {rows.map((row, rowIndex) => (
-                <tr key={rowIndex} className="border-t border-[var(--cos-border-soft)]">
-                  {headers.map((header, cellIndex) => <td key={`${header}-${cellIndex}`} className="px-3 py-2 text-[var(--cos-text)]">{row[cellIndex] ?? ""}</td>)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-      continue;
-    }
-    const checkbox = line.match(/^- \[( |x|X)\]\s?(.*)$/);
-    if (checkbox) blocks.push(<p key={index} className="flex gap-2"><span>{checkbox[1].toLowerCase() === "x" ? "[x]" : "[ ]"}</span><span>{checkbox[2]}</span></p>);
-    else if (line.startsWith("## ")) blocks.push(<h2 key={index}>{line.slice(3)}</h2>);
-    else if (line.startsWith("# ")) blocks.push(<h1 key={index}>{line.slice(2)}</h1>);
-    else if (line.startsWith("- ")) blocks.push(<p key={index}>- {line.slice(2)}</p>);
-    else if (line.startsWith("> ")) blocks.push(<blockquote key={index}>{line.slice(2)}</blockquote>);
-    else if (line.startsWith("```")) blocks.push(<code key={index}>{line}</code>);
-    else blocks.push(<p key={index}>{line || "\u00a0"}</p>);
-    index += 1;
-  }
-
-  return <div className="prose-lite text-sm text-[var(--cos-text-muted)]">{blocks}</div>;
-}
-
 function NotepadSection() {
   const { data, sync, updateDashboardScratchpad } = useWorkspace();
   const scratchpad = data.dashboardScratchpads[0];
@@ -366,36 +319,32 @@ function NotepadSection() {
   }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[1fr_0.95fr]">
-      <div>
-        <textarea
-          data-testid="dashboard-scratchpad"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="Scratch what is on your mind. Capture first; organize when it matters."
-          rows={10}
-          className="cos-input min-h-56 w-full resize-y bg-[var(--cos-bg-soft)] px-3 py-3 text-base leading-6 placeholder:text-[var(--cos-text-subtle)] focus:bg-[var(--cos-bg-elevated)]"
-        />
-      </div>
-      <div data-testid="dashboard-markdown-preview" className="min-h-56 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)] px-3 py-3">
-        {draft.trim() ? <MarkdownPreview content={draft} /> : <p className="text-sm text-[var(--cos-text-subtle)]">Markdown preview appears here as you type.</p>}
-      </div>
-      <div className="mt-3 flex min-h-9 flex-wrap items-center gap-2 text-xs lg:col-span-2">
-        <span className="text-[var(--cos-text-subtle)]">
-          {saveState === "dirty" ? "Autosaving..." : saveState === "saved" ? "Saved locally" : scratchpad?.updatedAt ? `Updated ${formatDistanceToNow(parseISO(scratchpad.updatedAt), { addSuffix: true })}` : "Ready"}
-        </span>
-        {!sync.online ? <span className="cos-pill cos-pill-warning">Offline: queued for sync</span> : null}
-        <button
-          type="button"
-          onClick={clear}
-          disabled={!draft.trim()}
-          className="cos-btn cos-btn-ghost ml-auto min-h-9 px-3 py-2 text-xs disabled:opacity-40"
-        >
-          <Eraser className="h-4 w-4" />
-          Clear
-        </button>
-      </div>
-    </div>
+    <MarkdownEditor
+      dataTestId="dashboard-scratchpad"
+      value={draft}
+      onChange={setDraft}
+      placeholder="Scratch what is on your mind. Capture first; organize when it matters."
+      minLines={8}
+      hideSaveButton
+      className="min-h-56 bg-[var(--cos-bg-soft)]"
+      footer={
+        <>
+          <span className="mr-auto text-[var(--cos-text-subtle)]">
+            {saveState === "dirty" ? "Autosaving..." : saveState === "saved" ? "Saved locally" : scratchpad?.updatedAt ? `Updated ${formatDistanceToNow(parseISO(scratchpad.updatedAt), { addSuffix: true })}` : "Ready"}
+          </span>
+          {!sync.online ? <span className="cos-pill cos-pill-warning">Offline: queued for sync</span> : null}
+          <button
+            type="button"
+            onClick={clear}
+            disabled={!draft.trim()}
+            className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs disabled:opacity-40"
+          >
+            <Eraser className="h-4 w-4" />
+            Clear
+          </button>
+        </>
+      }
+    />
   );
 }
 

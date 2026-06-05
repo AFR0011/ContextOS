@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function login(page: Page) {
   await page.goto("/login");
@@ -17,6 +17,18 @@ async function expectInputValue(page: Page, selector: string, value: string) {
       page.locator(selector).evaluateAll((inputs, expected) => inputs.some((input) => (input as HTMLInputElement).value === expected), value)
     )
     .toBe(true);
+}
+
+function markdownLine(editor: Locator, index: number) {
+  return editor.locator(`input[data-testid$="-line-${index}"]`);
+}
+
+async function fillMarkdownEditor(editor: Locator, lines: string[]) {
+  await markdownLine(editor, 0).fill(lines[0] ?? "");
+  for (let index = 1; index < lines.length; index += 1) {
+    await markdownLine(editor, index - 1).press("Enter");
+    await markdownLine(editor, index).fill(lines[index] ?? "");
+  }
 }
 
 async function offlineCacheState(page: Page, text: string) {
@@ -167,14 +179,18 @@ test("project subcontexts roll child tasks and deadlines into parent recovery", 
 
 test("dashboard notepad autosaves and persists after reload", async ({ page }) => {
   await login(page);
-  const content = `## Scratchpad check ${Date.now()}\n- [ ] Render markdown`;
-  await page.getByTestId("dashboard-scratchpad").fill(content);
-  await expect(page.getByTestId("dashboard-markdown-preview").getByRole("heading", { name: /Scratchpad check/ })).toBeVisible();
-  await expect(page.getByTestId("dashboard-markdown-preview").getByText("Render markdown")).toBeVisible();
+  const heading = `Scratchpad check ${Date.now()}`;
+  const content = `## ${heading}\n- [ ] Render markdown`;
+  const scratchpad = page.getByTestId("dashboard-scratchpad");
+  await expect(page.getByTestId("dashboard-markdown-preview")).toHaveCount(0);
+  await fillMarkdownEditor(scratchpad, [`## ${heading}`, "- [ ] Render markdown"]);
+  await expect(markdownLine(scratchpad, 0)).toHaveValue(heading);
+  await expect(markdownLine(scratchpad, 1)).toHaveValue("Render markdown");
+  await expect(scratchpad.locator('input[type="checkbox"]').first()).not.toBeChecked();
   await expect(page.getByText(/Saved locally|Updated/i)).toBeVisible({ timeout: 3000 });
   await page.reload();
-  await expect(page.getByTestId("dashboard-scratchpad")).toHaveValue(content);
-  await expect(page.getByTestId("dashboard-markdown-preview").getByRole("heading", { name: /Scratchpad check/ })).toBeVisible();
+  await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(heading);
+  await expect.poll(() => offlineCacheState(page, content)).toMatchObject({ hasScratchpad: true });
 });
 
 test("dashboard sections collapse and persist after refresh", async ({ page }) => {
@@ -264,6 +280,13 @@ test("areas and resources expose PARA navigation", async ({ page }) => {
   await page.getByPlaceholder("Resource title...").fill(title);
   await page.getByRole("button", { name: "Add", exact: true }).click();
   await expectInputValue(page, "input", title);
+  const resourceEditor = page.locator('[data-testid^="note-editor-"]').first();
+  await fillMarkdownEditor(resourceEditor, [`## ${title}`, "- [ ] Practice retrieval"]);
+  await expect(markdownLine(resourceEditor, 0)).toHaveValue(title);
+  await expect(markdownLine(resourceEditor, 1)).toHaveValue("Practice retrieval");
+  await expect(resourceEditor.locator('input[type="checkbox"]').first()).not.toBeChecked();
+  await resourceEditor.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Saved").first()).toBeVisible();
 
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.getByPlaceholder("Search workspace...").fill(title);
@@ -285,15 +308,15 @@ test("offline notepad edit is stored locally and sync state shows pending work",
   await warmOfflineShell(page);
   await context.setOffline(true);
   const text = `offline scratchpad ${Date.now()}`;
-  await page.getByTestId("dashboard-scratchpad").fill(text);
+  await fillMarkdownEditor(page.getByTestId("dashboard-scratchpad"), [text]);
   await expect(page.getByText(/pending/i).first()).toBeVisible({ timeout: 4000 });
   await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("dashboard-scratchpad")).toHaveValue(text);
+  await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(text);
   await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
   await context.setOffline(false);
   await page.reload();
-  await expect(page.getByTestId("dashboard-scratchpad")).toHaveValue(text);
+  await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(text);
   await page.getByRole("button", { name: "Settings" }).click();
   await page.getByRole("button", { name: /sync now/i }).click();
   await expect(page.getByTestId("pending-count")).toHaveText("0");

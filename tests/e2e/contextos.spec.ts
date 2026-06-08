@@ -87,6 +87,39 @@ async function dashboardScratchpadContent(page: Page) {
   });
 }
 
+async function workspaceCache(page: Page) {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("contextos-offline-v1", 1);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains("kv")) database.createObjectStore("kv");
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    function get<T>(key: string) {
+      return new Promise<T | null>((resolve, reject) => {
+        const tx = db.transaction("kv", "readonly");
+        const request = tx.objectStore("kv").get(key);
+        request.onsuccess = () => resolve((request.result as T | undefined) ?? null);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    const workspace = await get<any>("workspace");
+    const outbox = await get<any[]>("outbox");
+    db.close();
+    return { workspace, outbox: outbox ?? [] };
+  });
+}
+
+async function scheduledLine(value: { title: string; dateKey: string; time?: string | null; location?: string }) {
+  const { formatScheduledTodoSyntax } = await import("../../src/lib/scheduled-todo");
+  return formatScheduledTodoSyntax({ title: value.title, dateKey: value.dateKey, time: value.time ?? null, location: value.location ?? "" });
+}
+
 async function warmOfflineShell(page: Page) {
   await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) return;
@@ -130,11 +163,16 @@ test("date utilities keep date-only values on the local calendar day", async () 
 });
 
 test("seeded demo account can log in and render dashboard", async ({ page }) => {
+  const { addDaysToDateKey, localDateKey } = await import("../../src/lib/dates");
   await login(page);
+  const today = localDateKey();
+  const future = addDaysToDateKey(today, 4) ?? today;
   await expect(page.getByText("Mobile Command Sheet")).toBeVisible();
   await expect(page.getByRole("button", { name: /Notepad/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Dates/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Daily timeline/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Dates/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Daily timeline/ })).toHaveCount(0);
+  await expect(page.getByDisplayValue(await scheduledLine({ title: "Process inbox captures", dateKey: today, time: "09:30" }))).toBeVisible();
+  await expect(page.getByDisplayValue(await scheduledLine({ title: "ContextOS v0.1 verification pass", dateKey: future }))).toBeVisible();
   await expect(page.getByRole("button", { name: /Projects/ })).toBeVisible();
   await expect(page.getByTestId("dashboard-section-projects").getByRole("button", { name: /ContextOS Demo/ })).toBeVisible();
 });
@@ -217,6 +255,40 @@ test("dashboard notepad autosaves and persists after reload", async ({ page }) =
   await expect.poll(() => offlineCacheState(page, content)).toMatchObject({ hasScratchpad: true });
 });
 
+test("dashboard notepad plain todos stay scratch-only", async ({ page }) => {
+  await login(page);
+  const text = `Text Amir ${Date.now()}`;
+  const scratchpad = page.getByTestId("dashboard-scratchpad");
+  await markdownLine(scratchpad, 0).fill(text);
+  await scratchpad.locator('input[type="checkbox"]').first().check();
+
+  await expect.poll(async () => {
+    const { workspace } = await workspaceCache(page);
+    return {
+      taskMatches: workspace.tasks.filter((task: any) => task.title === text && !task.trashedAt).length,
+      deadlineMatches: workspace.deadlines.filter((deadline: any) => deadline.title === text && !deadline.trashedAt).length,
+      scratch: workspace.dashboardScratchpads[0]?.content ?? ""
+    };
+  }).toEqual({ taskMatches: 0, deadlineMatches: 0, scratch: `- [x] ${text}` });
+});
+
+test("dashboard notepad invalid scheduled syntax shows validation without creating entities", async ({ page }) => {
+  await login(page);
+  const text = `Invalid syntax ${Date.now()}`;
+  const invalidLine = `${text} (310226) [2500]`;
+  const scratchpad = page.getByTestId("dashboard-scratchpad");
+  await markdownLine(scratchpad, 0).fill(invalidLine);
+  await expect(page.getByText(/Invalid date/)).toBeVisible();
+
+  await expect.poll(async () => {
+    const { workspace } = await workspaceCache(page);
+    return {
+      taskMatches: workspace.tasks.filter((task: any) => task.title === text && !task.trashedAt).length,
+      deadlineMatches: workspace.deadlines.filter((deadline: any) => deadline.title === text && !deadline.trashedAt).length
+    };
+  }).toEqual({ taskMatches: 0, deadlineMatches: 0 });
+});
+
 test("dashboard notepad supports toggle headings and persists markdown details", async ({ page }) => {
   await login(page);
   const suffix = Date.now();
@@ -254,48 +326,78 @@ test("dashboard notepad supports toggle headings and persists markdown details",
 
 test("dashboard sections collapse and persist after refresh", async ({ page }) => {
   await login(page);
-  const datesHeader = page.getByRole("button", { name: /Dates/ });
-  await datesHeader.click();
-  await expect(page.getByTestId("dashboard-section-dates").getByText(/Task due|Deadline|No dated items/)).not.toBeVisible();
+  const notepadHeader = page.getByRole("button", { name: /Notepad/ });
+  await notepadHeader.click();
+  await expect(page.getByTestId("dashboard-scratchpad")).not.toBeVisible();
   await page.reload();
-  await expect(page.getByTestId("dashboard-section-dates").getByText(/Task due|Deadline|No dated items/)).not.toBeVisible();
-  await page.getByRole("button", { name: /Dates/ }).click();
-  await expect(page.getByTestId("dashboard-section-dates")).toContainText(/Task due|Deadline|No dated items/);
+  await expect(page.getByTestId("dashboard-scratchpad")).not.toBeVisible();
+  await page.getByRole("button", { name: /Notepad/ }).click();
+  await expect(page.getByTestId("dashboard-scratchpad")).toBeVisible();
 });
 
-test("dashboard can add and complete a daily timeline task with a time range", async ({ page }) => {
+test("dashboard notepad creates, edits, checks, and demotes a scheduled task without duplicating it", async ({ page }) => {
+  const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
+  const today = localDateKey();
   const title = `Dashboard real task ${Date.now()}`;
-  const taskSection = page.getByTestId("dashboard-section-tasks");
-  await page.getByTestId("dashboard-add-task-input").fill(title);
-  await taskSection.getByLabel("Task start time").fill("09:15");
-  await taskSection.getByLabel("Task end time").fill("10:00");
-  await taskSection.getByLabel("Task project").selectOption({ label: "ContextOS Demo" });
-  await taskSection.getByRole("button", { name: "Add", exact: true }).click();
-  const timelineRow = taskSection.locator(".cos-row-muted").filter({ hasText: title });
-  await expect(timelineRow.getByRole("button", { name: title, exact: true })).toBeVisible();
-  await expect(timelineRow.getByText("09:15-10:00")).toBeVisible();
-  await expect(timelineRow.getByText("ContextOS Demo")).toBeVisible();
+  const createdLine = await scheduledLine({ title, dateKey: today, time: "09:15" });
+  const scratchpad = page.getByTestId("dashboard-scratchpad");
+
+  await markdownLine(scratchpad, 0).fill(createdLine);
+  await expect(page.getByDisplayValue(createdLine)).toBeVisible();
+
+  await expect.poll(async () => {
+    const { workspace } = await workspaceCache(page);
+    return workspace.tasks.filter((task: any) => task.title === title && !task.trashedAt);
+  }).toHaveLength(1);
+
+  const before = await workspaceCache(page);
+  const taskId = before.workspace.tasks.find((task: any) => task.title === title && !task.trashedAt).id;
+  const updatedTitle = `${title} and rope`;
+  const updatedLine = await scheduledLine({ title: updatedTitle, dateKey: today, time: "10:45" });
+  await page.getByDisplayValue(createdLine).fill(updatedLine);
+
+  await expect.poll(async () => {
+    const { workspace } = await workspaceCache(page);
+    const task = workspace.tasks.find((item: any) => item.id === taskId);
+    return task ? { title: task.title, startTime: task.startTime, activeCopies: workspace.tasks.filter((item: any) => !item.trashedAt && item.title.includes(title)).length } : null;
+  }).toEqual({ title: updatedTitle, startTime: "10:45", activeCopies: 1 });
+
+  const editedBlock = page.locator('[data-testid="dashboard-notepad-today"] .group').filter({ has: page.getByDisplayValue(updatedLine) }).first();
+  await editedBlock.locator('input[type="checkbox"]').check();
+  await expect.poll(async () => {
+    const { workspace } = await workspaceCache(page);
+    return workspace.tasks.find((item: any) => item.id === taskId)?.status;
+  }).toBe("done");
+
+  await page.getByDisplayValue(updatedLine).fill(updatedTitle);
+  await expect.poll(async () => {
+    const { workspace } = await workspaceCache(page);
+    return workspace.tasks.find((item: any) => item.id === taskId)?.trashedAt;
+  }).not.toBeNull();
+  await expect(page.getByDisplayValue(updatedTitle)).toBeVisible();
+
   await page.reload();
-  await expect(page.getByTestId("dashboard-section-tasks").getByText("09:15-10:00")).toBeVisible();
-  await taskSection.getByRole("button", { name: `Mark ${title} done` }).click();
-  await expect(taskSection.getByRole("button", { name: title, exact: true })).not.toBeVisible();
+  await expect(page.getByDisplayValue(updatedTitle)).toBeVisible();
 });
 
-test("dashboard can add a project-linked deadline with time and location", async ({ page }) => {
+test("dashboard notepad creates and persists a location-bearing deadline", async ({ page }) => {
+  const { addDaysToDateKey, localDateKey } = await import("../../src/lib/dates");
   await login(page);
   const title = `Dashboard deadline ${Date.now()}`;
-  const datesSection = page.getByTestId("dashboard-section-dates");
-  await datesSection.getByTestId("dashboard-add-deadline-input").fill(title);
-  await datesSection.getByLabel("Deadline time").fill("14:30");
-  await datesSection.getByLabel("Deadline location").fill("Library");
-  await datesSection.getByLabel("Deadline project").selectOption({ label: "ContextOS Demo" });
-  await datesSection.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(datesSection.getByText(title)).toBeVisible();
-  await expect(datesSection.getByText("14:30")).toBeVisible();
-  await expect(datesSection.getByText("Library")).toBeVisible();
+  const dateKey = addDaysToDateKey(localDateKey(), 3) ?? localDateKey();
+  const line = await scheduledLine({ title, dateKey, time: "15:00", location: "China Bazaar" });
+  await markdownLine(page.getByTestId("dashboard-scratchpad"), 0).fill(line);
+  await expect(page.getByDisplayValue(line)).toBeVisible();
+
+  await expect.poll(async () => {
+    const { workspace } = await workspaceCache(page);
+    const deadline = workspace.deadlines.find((item: any) => item.title === title && !item.trashedAt);
+    return deadline ? { date: deadline.date, time: deadline.time, location: deadline.location } : null;
+  }).toEqual({ date: dateKey, time: "15:00", location: "China Bazaar" });
+
   await page.reload();
-  await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toBeVisible();
+  await expect(page.getByDisplayValue(line)).toBeVisible();
 });
 
 test("today tasks stay visible and interactable after completion", async ({ page }) => {

@@ -24,11 +24,14 @@ export function toggleTypeForLevel(level: number): BlockType {
   return "toggleHeading3";
 }
 
-export function createEmptyBlock(): EditorBlock {
+export function createEmptyBlock(type: BlockType = "paragraph"): EditorBlock {
   return {
     id: generateId(),
-    type: "paragraph",
-    text: ""
+    type,
+    text: "",
+    checked: type === "todo" ? false : undefined,
+    language: type === "code" ? "ts" : undefined,
+    open: isToggleHeadingType(type) ? true : undefined
   };
 }
 

@@ -327,7 +327,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
     create: {
       id: idFor(userId, "dashboard-preferences"),
       userId,
-      sectionOrder: ["notepad", "dates", "tasks", "projects"],
+      sectionOrder: ["notepad", "projects"],
       collapsedSections: [],
       reviewPromptDismissals: [],
       dateWindowDays: 14,

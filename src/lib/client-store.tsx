@@ -211,7 +211,7 @@ interface StoreApi {
   updateTask: (id: string, updates: Partial<Task>) => void;
   addProject: (data: { name: string; domainId: string; parentProjectId?: string | null; currentObjective?: string; nextAction?: string }) => string;
   updateProject: (id: string, updates: Partial<Project>) => void;
-  addDeadline: (data: { title: string; date: string; time?: string | null; location?: string; projectId?: string | null; notes?: string }) => string;
+  addDeadline: (data: { title: string; date: string; time?: string | null; location?: string; projectId?: string | null; notes?: string; archivedAt?: string | null }) => string;
   updateDeadline: (id: string, updates: Partial<Deadline>) => void;
   addNote: (data: { title: string; content?: string; projectId?: string | null; domainId: string }) => string;
   updateNote: (id: string, updates: Partial<Note>) => void;
@@ -636,7 +636,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           notes: input.notes ?? "",
           createdAt: ts,
           updatedAt: ts,
-          archivedAt: null,
+          archivedAt: input.archivedAt ?? null,
           trashedAt: null
         };
         mutate("deadlines", deadline);

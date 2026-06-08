@@ -197,9 +197,14 @@ export function BlockMarkdownEditor({
   disabled = false,
   hideSaveButton = false,
   footer,
-  onCaptureLine
+  onCaptureLine,
+  blocks: controlledBlocks,
+  onBlocksChange,
+  validationMessages = {},
+  defaultBlockType = "paragraph"
 }: BlockMarkdownEditorProps) {
-  const [blocks, setBlocks] = useState<EditorBlock[]>(() => parseMarkdownToBlocks(value));
+  const isControlled = controlledBlocks !== undefined;
+  const [blocks, setBlocks] = useState<EditorBlock[]>(() => controlledBlocks ?? parseMarkdownToBlocks(value));
   const [draftMarkdown, setDraftMarkdown] = useState(value);
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
   const [actionMenuBlockId, setActionMenuBlockId] = useState<string | null>(null);
@@ -216,6 +221,7 @@ export function BlockMarkdownEditor({
   const dirty = draftMarkdown !== value;
 
   useEffect(() => {
+    if (isControlled) return;
     if (value === lastEmittedRef.current) {
       setDraftMarkdown(value);
       return;
@@ -223,7 +229,15 @@ export function BlockMarkdownEditor({
     setBlocks(parseMarkdownToBlocks(value));
     setDraftMarkdown(value);
     lastEmittedRef.current = value;
-  }, [value]);
+  }, [isControlled, value]);
+
+  useEffect(() => {
+    if (!isControlled || !controlledBlocks) return;
+    setBlocks(controlledBlocks);
+    const serialized = serializeBlocksToMarkdown(controlledBlocks);
+    setDraftMarkdown(serialized);
+    lastEmittedRef.current = serialized;
+  }, [controlledBlocks, isControlled]);
 
   useEffect(() => {
     if (!focusedBlockId) return;
@@ -254,7 +268,8 @@ export function BlockMarkdownEditor({
     const serialized = serializeBlocksToMarkdown(nextBlocks);
     lastEmittedRef.current = serialized;
     setDraftMarkdown(serialized);
-    onChange?.(serialized);
+    if (!isControlled) onChange?.(serialized);
+    onBlocksChange?.(nextBlocks);
   }
 
   function commit(nextMarkdown = draftMarkdown) {
@@ -347,7 +362,7 @@ export function BlockMarkdownEditor({
     setNextBlocks(nextBlocks, blockId);
   }
 
-  function handleInsertBlockBelow(blockId: string, type: BlockType = "paragraph") {
+  function handleInsertBlockBelow(blockId: string, type: BlockType = defaultBlockType) {
     const blockIndex = blocks.findIndex((block) => block.id === blockId);
     if (blockIndex === -1) return;
     const targetIndex = blocks[blockIndex].open === false && isToggleHeadingType(blocks[blockIndex].type)
@@ -368,7 +383,7 @@ export function BlockMarkdownEditor({
 
   function handleDeleteBlock(blockId: string) {
     if (blocks.length <= 1) {
-      const resetBlock = createEmptyBlock();
+      const resetBlock = createEmptyBlock(defaultBlockType);
       setNextBlocks([resetBlock], resetBlock.id, 0);
       return;
     }
@@ -394,7 +409,7 @@ export function BlockMarkdownEditor({
   function handleDuplicateBlock(blockId: string) {
     const index = blocks.findIndex((block) => block.id === blockId);
     if (index === -1) return;
-    const duplicate = { ...blocks[index], id: generateId() };
+    const duplicate = { ...blocks[index], id: generateId(), entityRef: undefined };
     const nextBlocks = [...blocks];
     nextBlocks.splice(index + 1, 0, duplicate);
     setNextBlocks(nextBlocks, duplicate.id);
@@ -593,6 +608,7 @@ export function BlockMarkdownEditor({
           const isFocused = focusedBlockId === block.id;
           const lineTestId = `${dataTestId}-line-${index}`;
           const inputClassName = blockInputClass(block, mode);
+          const validationMessage = validationMessages[block.id];
 
           if (block.type === "numbered" && (index === 0 || blocks[index - 1].type !== "numbered")) {
             numberedItemIndex = 1;
@@ -749,6 +765,7 @@ export function BlockMarkdownEditor({
                         placeholder={isFocused ? placeholderFor(block, placeholder) : ""}
                         className={inputClassName}
                         disabled={disabled}
+                        aria-invalid={Boolean(validationMessage)}
                       />
                     </div>
                   ) : (
@@ -765,6 +782,7 @@ export function BlockMarkdownEditor({
                       placeholder={isFocused || block.text === "" ? placeholderFor(block, placeholder) : ""}
                       className={inputClassName}
                       disabled={disabled}
+                      aria-invalid={Boolean(validationMessage)}
                     />
                   )}
 
@@ -774,6 +792,11 @@ export function BlockMarkdownEditor({
                       filteredCommands={filteredCommands}
                       onSelect={(command) => applyCommandToBlock(block.id, command, slashCommand.triggerIndex)}
                     />
+                  ) : null}
+                  {validationMessage ? (
+                    <p data-testid={`${lineTestId}-validation`} className="px-2 pb-1 text-[11px] font-medium text-[var(--cos-danger-text)]">
+                      {validationMessage}
+                    </p>
                   ) : null}
                 </div>
               </div>

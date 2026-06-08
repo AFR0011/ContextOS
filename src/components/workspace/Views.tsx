@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -18,15 +18,11 @@ import {
   Download,
   FileText,
   FolderKanban,
-  Heading1,
-  Heading2,
   Layers,
-  List,
   MapPin,
   Inbox,
   MoreHorizontal,
   Plus,
-  Quote,
   RefreshCw,
   RotateCcw,
   Search,
@@ -39,6 +35,7 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
+import { MarkdownPreview as SharedMarkdownPreview } from "@/components/workspace/editor/MarkdownPreview";
 import { Dashboard2View } from "@/components/workspace/Dashboard2";
 import { useWorkspace } from "@/lib/client-store";
 import { isDateKeyInLocalWeek, localDateKey, localWeekStartKey } from "@/lib/dates";
@@ -917,89 +914,6 @@ function EditableField({
   );
 }
 
-function MarkdownTextareaEditor({
-  value,
-  placeholder,
-  dataTestId,
-  rows = 10,
-  onSave
-}: {
-  value: string;
-  placeholder: string;
-  dataTestId?: string;
-  rows?: number;
-  onSave: (value: string) => void;
-}) {
-  const { sync } = useWorkspace();
-  const [draft, setDraft] = useState(value);
-  const [savedFlash, setSavedFlash] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const dirty = draft !== value;
-
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  function commit() {
-    if (!dirty) return;
-    onSave(draft);
-    setSavedFlash(true);
-    window.setTimeout(() => setSavedFlash(false), 1200);
-  }
-
-  function insert(prefix: string, fallback = "") {
-    const textarea = textareaRef.current;
-    if (!textarea) {
-      setDraft((current) => `${current}${current ? "\n" : ""}${prefix}${fallback}`);
-      return;
-    }
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = draft.slice(start, end) || fallback;
-    const before = draft.slice(0, start);
-    const after = draft.slice(end);
-    const next = `${before}${prefix}${selected}${after}`;
-    setDraft(next);
-    window.setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
-    }, 0);
-  }
-
-  return (
-    <div data-testid={dataTestId} className="rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)]">
-      <div className="flex flex-wrap items-center gap-1 border-b border-[var(--cos-border-soft)] px-2 py-2">
-        <button type="button" onClick={() => insert("# ", "Heading")} aria-label="Insert heading" className="cos-btn cos-btn-ghost min-h-8 px-2 text-xs"><Heading1 className="h-3.5 w-3.5" /></button>
-        <button type="button" onClick={() => insert("## ", "Section")} aria-label="Insert subheading" className="cos-btn cos-btn-ghost min-h-8 px-2 text-xs"><Heading2 className="h-3.5 w-3.5" /></button>
-        <button type="button" onClick={() => insert("- ", "List item")} aria-label="Insert list item" className="cos-btn cos-btn-ghost min-h-8 px-2 text-xs"><List className="h-3.5 w-3.5" /></button>
-        <button type="button" onClick={() => insert("- [ ] ", "To-do")} aria-label="Insert todo" className="cos-btn cos-btn-ghost min-h-8 px-2 text-xs"><CheckSquare className="h-3.5 w-3.5" /></button>
-        <button type="button" onClick={() => insert("> ", "Quote")} aria-label="Insert quote" className="cos-btn cos-btn-ghost min-h-8 px-2 text-xs"><Quote className="h-3.5 w-3.5" /></button>
-      </div>
-      <textarea
-        ref={textareaRef}
-        data-testid={dataTestId ? `${dataTestId}-textarea` : undefined}
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => {
-          if ((event.ctrlKey || event.metaKey) && event.key === "Enter") commit();
-          if (event.key === "Escape") setDraft(value);
-        }}
-        rows={rows}
-        placeholder={placeholder}
-        className="min-h-64 w-full resize-y bg-transparent px-3 py-3 text-sm leading-6 text-[var(--cos-text)] outline-none placeholder:text-[var(--cos-text-subtle)]"
-      />
-      <div className="flex min-h-10 flex-wrap items-center justify-end gap-2 border-t border-[var(--cos-border-soft)] px-3 py-2 text-[11px]">
-        {dirty ? <span className="text-[var(--cos-warning-text)]">Unsaved changes</span> : savedFlash ? <span className="text-[var(--cos-success-text)]">Saved</span> : null}
-        {dirty && !sync.online ? <span className="cos-pill cos-pill-warning">Offline: save will queue</span> : null}
-        <button type="button" disabled={!dirty} onClick={commit} className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 py-1 font-semibold text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)] disabled:hover:bg-transparent">
-          <Send className="h-3.5 w-3.5" />
-          Save
-        </button>
-      </div>
-    </div>
-  );
-}
-
 const recoveryHeadings = {
   currentObjective: "Current Objective",
   nextAction: "Next Action",
@@ -1192,10 +1106,10 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]">Freeform recovery notes</span>
               <span className="text-[11px] text-[var(--cos-text-subtle)]">Markdown supported</span>
             </div>
-            <MarkdownTextareaEditor
+            <MarkdownEditor
               value={project.recoveryNotes}
               placeholder="Add togglable headings, lists, todos, rough handoff notes, blockers, and context you want future-you to find..."
-              rows={12}
+              minLines={12}
               dataTestId="project-recovery-notes"
               onSave={(recoveryNotes) => updateProject(project.id, { recoveryNotes })}
             />
@@ -1319,7 +1233,7 @@ function NoteCard({ note, domains = [], editing, onEdit, onDone, onUpdate }: { n
     <button onClick={onEdit} className="w-full rounded-lg border border-[var(--cos-border-soft)] p-3 text-left hover:bg-[var(--cos-bg-soft)]">
       <h4 className="text-sm font-semibold text-[var(--cos-text-strong)]">{note.title}</h4>
       {note.content ? (
-        isPianoScheduleNote(note, domains) ? <PianoSchedulePreview content={note.content} /> : <MarkdownPreview content={note.content} />
+        isPianoScheduleNote(note, domains) ? <PianoSchedulePreview content={note.content} /> : <SharedMarkdownPreview content={note.content} />
       ) : <p className="mt-1 text-xs text-[var(--cos-text-subtle)]">Empty note</p>}
     </button>
   );
@@ -1370,35 +1284,10 @@ function MarkdownTable({ headers, rows }: { headers: string[]; rows: string[][] 
 
 function PianoSchedulePreview({ content }: { content: string }) {
   const table = parseMarkdownTables(content)[0];
-  if (!table) return <MarkdownPreview content={content} />;
+  if (!table) return <SharedMarkdownPreview content={content} />;
   return (
     <div data-testid="piano-schedule-table" className="mt-2">
       <MarkdownTable headers={table.headers} rows={table.rows} />
-    </div>
-  );
-}
-
-function MarkdownPreview({ content }: { content: string }) {
-  const table = parseMarkdownTables(content)[0];
-  if (table) {
-    return (
-      <div className="mt-2 line-clamp-5 text-xs text-[var(--cos-text-muted)]">
-        <MarkdownTable headers={table.headers} rows={table.rows.slice(0, 4)} />
-      </div>
-    );
-  }
-  return (
-    <div className="prose-lite mt-2 line-clamp-5 text-xs text-[var(--cos-text-muted)]">
-      {content.split("\n").map((line, index) => {
-        const checkbox = line.match(/^- \[( |x|X)\]\s?(.*)$/);
-        if (checkbox) return <p key={index}>{checkbox[1].toLowerCase() === "x" ? "[x]" : "[ ]"} {checkbox[2]}</p>;
-        if (line.startsWith("## ")) return <h2 key={index}>{line.slice(3)}</h2>;
-        if (line.startsWith("# ")) return <h1 key={index}>{line.slice(2)}</h1>;
-        if (line.startsWith("- ")) return <p key={index}>- {line.slice(2)}</p>;
-        if (line.startsWith("> ")) return <blockquote key={index}>{line.slice(2)}</blockquote>;
-        if (line.startsWith("```")) return <code key={index}>{line}</code>;
-        return <p key={index}>{line || "\u00a0"}</p>;
-      })}
     </div>
   );
 }
@@ -1451,8 +1340,15 @@ export function DeadlinesView() {
                 </select>
                 <button onClick={() => updateDeadline(deadline.id, { trashedAt: new Date().toISOString() })} className="mt-2 text-[var(--cos-text-subtle)] hover:text-[var(--cos-danger)]"><Trash2 className="h-4 w-4" /></button>
               </div>
-              <div className="mt-2 pl-7">
-                <EditableField value={deadline.notes} multiline rows={2} placeholder="Deadline notes..." onSave={(notes) => updateDeadline(deadline.id, { notes })} />
+              <div className="mt-3 pl-7">
+                <MarkdownEditor
+                  value={deadline.notes}
+                  placeholder="Deadline notes..."
+                  minLines={2}
+                  mode="compact"
+                  dataTestId={`deadline-notes-${deadline.id}`}
+                  onSave={(notes) => updateDeadline(deadline.id, { notes })}
+                />
               </div>
             </div>
           );
@@ -1471,13 +1367,36 @@ export function ReviewsView() {
   const labels: Record<ReviewType, string> = { "daily-startup": "Daily Startup", "daily-shutdown": "Daily Shutdown", weekly: "Weekly Review" };
 
   if (type) {
-    return <Page title={labels[type]} subtitle="Store review context for recovery."><div className="cos-surface space-y-5 p-4">{questions.map(([key, label]) => <label key={key} className="block"><span className="mb-2 block text-sm font-medium text-[var(--cos-text)]">{label}</span><textarea value={responses[key] || ""} onChange={(event) => setResponses((prev) => ({ ...prev, [key]: event.target.value }))} rows={3} className="cos-input w-full px-3 py-2 text-sm" /></label>)}</div><div className="mt-6 flex gap-3"><button onClick={() => { addReview(type, responses); setType(null); setResponses({}); }} className="cos-btn cos-btn-primary px-5 py-2 text-sm">Save Review</button><button onClick={() => setType(null)} className="cos-btn cos-btn-ghost px-3 py-2 text-sm">Cancel</button></div></Page>;
+    return (
+      <Page title={labels[type]} subtitle="Store review context for recovery.">
+        <div className="cos-surface space-y-5 p-4">
+          {questions.map(([key, label]) => (
+            <label key={key} className="block">
+              <span className="mb-2 block text-sm font-medium text-[var(--cos-text)]">{label}</span>
+              <MarkdownEditor
+                value={responses[key] || ""}
+                onChange={(markdown) => setResponses((prev) => ({ ...prev, [key]: markdown }))}
+                placeholder="Type / for blocks..."
+                minLines={3}
+                mode="compact"
+                hideSaveButton
+                dataTestId={`review-response-${key}`}
+              />
+            </label>
+          ))}
+        </div>
+        <div className="mt-6 flex gap-3">
+          <button onClick={() => { addReview(type, responses); setType(null); setResponses({}); }} className="cos-btn cos-btn-primary px-5 py-2 text-sm">Save Review</button>
+          <button onClick={() => setType(null)} className="cos-btn cos-btn-ghost px-3 py-2 text-sm">Cancel</button>
+        </div>
+      </Page>
+    );
   }
 
   return (
     <Page title="Reviews" subtitle="Daily and weekly recovery notes.">
       <div className="grid gap-4 sm:grid-cols-3">{(["daily-startup", "daily-shutdown", "weekly"] as ReviewType[]).map((reviewType) => <button key={reviewType} onClick={() => { setType(reviewType); setResponses({}); }} className="cos-surface p-5 text-left hover:border-[var(--cos-review)]"><BookOpen className="mb-2 h-5 w-5 text-[var(--cos-review)]" /><h3 className="text-sm font-semibold text-[var(--cos-text-strong)]">{labels[reviewType]}</h3></button>)}</div>
-      <section className="mt-8"><SectionTitle title="Past Reviews" count={data.reviews.length} /><div className="mt-3 space-y-2">{data.reviews.map((review) => <details key={review.id} className="cos-surface"><summary className="cursor-pointer p-3 text-sm font-medium text-[var(--cos-text)]">{labels[review.type]} <span className="ml-2 text-xs text-[var(--cos-text-subtle)]">{format(parseISO(review.date), "MMM d, yyyy h:mm a")}</span></summary><div className="space-y-3 px-3 pb-3">{Object.entries(review.responses).map(([key, value]) => <div key={key}><p className="text-xs font-medium capitalize text-[var(--cos-text-muted)]">{key}</p><p className="whitespace-pre-wrap text-sm text-[var(--cos-text)]">{value}</p></div>)}</div></details>)}</div></section>
+      <section className="mt-8"><SectionTitle title="Past Reviews" count={data.reviews.length} /><div className="mt-3 space-y-2">{data.reviews.map((review) => <details key={review.id} className="cos-surface"><summary className="cursor-pointer p-3 text-sm font-medium text-[var(--cos-text)]">{labels[review.type]} <span className="ml-2 text-xs text-[var(--cos-text-subtle)]">{format(parseISO(review.date), "MMM d, yyyy h:mm a")}</span></summary><div className="space-y-3 px-3 pb-3">{Object.entries(review.responses).map(([key, value]) => <div key={key}><p className="text-xs font-medium capitalize text-[var(--cos-text-muted)]">{key}</p><SharedMarkdownPreview content={value} className="text-sm text-[var(--cos-text)]" /></div>)}</div></details>)}</div></section>
     </Page>
   );
 }

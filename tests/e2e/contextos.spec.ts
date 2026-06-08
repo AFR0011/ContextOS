@@ -20,7 +20,7 @@ async function expectInputValue(page: Page, selector: string, value: string) {
 }
 
 function markdownLine(editor: Locator, index: number) {
-  return editor.locator(`input[data-testid$="-line-${index}"]`);
+  return editor.locator(`[data-testid$="-line-${index}"]`).first();
 }
 
 async function fillMarkdownEditor(editor: Locator, lines: string[]) {
@@ -61,6 +61,30 @@ async function offlineCacheState(page: Page, text: string) {
       pendingCount: outbox?.length ?? 0
     };
   }, text);
+}
+
+async function dashboardScratchpadContent(page: Page) {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("contextos-offline-v1", 1);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains("kv")) database.createObjectStore("kv");
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    const workspace = await new Promise<{ dashboardScratchpads?: { content: string }[] } | null>((resolve, reject) => {
+      const tx = db.transaction("kv", "readonly");
+      const request = tx.objectStore("kv").get("workspace");
+      request.onsuccess = () => resolve((request.result as { dashboardScratchpads?: { content: string }[] } | undefined) ?? null);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return workspace?.dashboardScratchpads?.[0]?.content ?? "";
+  });
 }
 
 async function warmOfflineShell(page: Page) {
@@ -139,11 +163,11 @@ test("project recovery fields persist after reload", async ({ page }) => {
   const editor = page.getByTestId("project-recovery-editor");
   await editor.getByPlaceholder("Concrete next action...").fill(nextAction);
   await editor.getByPlaceholder("Concrete next action...").blur();
-  await page.getByTestId("project-recovery-notes-textarea").fill(note);
+  await markdownLine(page.getByTestId("project-recovery-notes"), 0).fill(note);
   await page.getByTestId("project-recovery-notes").getByRole("button", { name: "Save" }).click();
   await page.reload();
   await expect(page.getByPlaceholder("Concrete next action...")).toHaveValue(nextAction);
-  await expect(page.getByTestId("project-recovery-notes-textarea")).toHaveValue(note);
+  await expect(markdownLine(page.getByTestId("project-recovery-notes"), 0)).toHaveValue(note);
 });
 
 test("project subcontexts roll child tasks and deadlines into parent recovery", async ({ page }) => {
@@ -180,7 +204,7 @@ test("project subcontexts roll child tasks and deadlines into parent recovery", 
 test("dashboard notepad autosaves and persists after reload", async ({ page }) => {
   await login(page);
   const heading = `Scratchpad check ${Date.now()}`;
-  const content = `## ${heading}\n- [ ] Render markdown`;
+  const content = `## ${heading}\n\n- [ ] Render markdown`;
   const scratchpad = page.getByTestId("dashboard-scratchpad");
   await expect(page.getByTestId("dashboard-markdown-preview")).toHaveCount(0);
   await fillMarkdownEditor(scratchpad, [`## ${heading}`, "- [ ] Render markdown"]);
@@ -191,6 +215,41 @@ test("dashboard notepad autosaves and persists after reload", async ({ page }) =
   await page.reload();
   await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(heading);
   await expect.poll(() => offlineCacheState(page, content)).toMatchObject({ hasScratchpad: true });
+});
+
+test("dashboard notepad supports toggle headings and persists markdown details", async ({ page }) => {
+  await login(page);
+  const suffix = Date.now();
+  const scratchpad = page.getByTestId("dashboard-scratchpad");
+
+  await markdownLine(scratchpad, 0).fill(`/toggle-h1 Toggle One ${suffix}`);
+  await markdownLine(scratchpad, 0).press("Enter");
+  await expect(markdownLine(scratchpad, 0)).toHaveValue(`Toggle One ${suffix}`);
+
+  await markdownLine(scratchpad, 0).press("Enter");
+  await markdownLine(scratchpad, 1).fill("Nested one");
+  await markdownLine(scratchpad, 1).press("Enter");
+  await markdownLine(scratchpad, 2).fill(`/toggle-h2 Toggle Two ${suffix}`);
+  await markdownLine(scratchpad, 2).press("Enter");
+  await expect(markdownLine(scratchpad, 2)).toHaveValue(`Toggle Two ${suffix}`);
+
+  await markdownLine(scratchpad, 2).press("Enter");
+  await markdownLine(scratchpad, 3).fill("- [ ] Nested todo");
+  await expect(markdownLine(scratchpad, 3)).toHaveValue("Nested todo");
+  await markdownLine(scratchpad, 3).press("Enter");
+  await markdownLine(scratchpad, 4).fill(`/toggle-h3 Toggle Three ${suffix}`);
+  await markdownLine(scratchpad, 4).press("Enter");
+  await expect(markdownLine(scratchpad, 4)).toHaveValue(`Toggle Three ${suffix}`);
+
+  await scratchpad.getByRole("button", { name: "Collapse toggle heading" }).first().click();
+  await expect(markdownLine(scratchpad, 1)).not.toBeVisible();
+  await scratchpad.getByRole("button", { name: "Expand toggle heading" }).first().click();
+  await expect(markdownLine(scratchpad, 1)).toBeVisible();
+
+  await expect.poll(() => dashboardScratchpadContent(page)).toContain(`<summary><h1>Toggle One ${suffix}</h1></summary>`);
+  await expect.poll(() => dashboardScratchpadContent(page)).toContain(`<summary><h2>Toggle Two ${suffix}</h2></summary>`);
+  await expect.poll(() => dashboardScratchpadContent(page)).toContain(`<summary><h3>Toggle Three ${suffix}</h3></summary>`);
+  await expect.poll(() => dashboardScratchpadContent(page)).toContain("- [ ] Nested todo");
 });
 
 test("dashboard sections collapse and persist after refresh", async ({ page }) => {
@@ -398,7 +457,7 @@ test("long note edits save intentionally and persist", async ({ page }) => {
 
   const content = `Draft save check ${Date.now()}`;
   const noteEditor = page.locator('[data-testid^="note-editor-"]').first();
-  await noteEditor.locator('input[data-testid$="-line-0"]').fill(content);
+  await markdownLine(noteEditor, 0).fill(content);
   await expect(page.getByText("Unsaved changes").first()).toBeVisible();
   await noteEditor.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Saved").first()).toBeVisible();
@@ -406,7 +465,7 @@ test("long note edits save intentionally and persist", async ({ page }) => {
 
   await page.reload();
   await page.getByText("Demo handoff").click();
-  await expect(page.locator('[data-testid^="note-editor-"]').first().locator('input[data-testid$="-line-0"]')).toHaveValue(content);
+  await expect(markdownLine(page.locator('[data-testid^="note-editor-"]').first(), 0)).toHaveValue(content);
 });
 
 test("deadline date remains stable after save and refresh", async ({ page }) => {

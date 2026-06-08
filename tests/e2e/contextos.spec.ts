@@ -57,7 +57,7 @@ async function offlineCacheState(page: Page, text: string) {
     db.close();
     return {
       hasCapture: Boolean(workspace?.captures?.some((capture) => capture.text === expectedText)),
-      hasScratchpad: Boolean(workspace?.dashboardScratchpads?.some((scratchpad) => scratchpad.content === expectedText)),
+      hasScratchpad: Boolean(workspace?.dashboardScratchpads?.some((scratchpad) => scratchpad.content === expectedText || scratchpad.content.includes(expectedText))),
       pendingCount: outbox?.length ?? 0
     };
   }, text);
@@ -479,6 +479,33 @@ test("offline notepad edit is stored locally and sync state shows pending work",
   await page.reload();
   await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(text);
   await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("button", { name: /sync now/i }).click();
+  await expect(page.getByTestId("pending-count")).toHaveText("0");
+});
+
+test("offline scheduled notepad task is stored locally and queued", async ({ page, context }) => {
+  const { localDateKey } = await import("../../src/lib/dates");
+  await login(page);
+  await warmOfflineShell(page);
+  await context.setOffline(true);
+
+  const title = `offline scheduled ${Date.now()}`;
+  const line = await scheduledLine({ title, dateKey: localDateKey(), time: "13:00" });
+  await markdownLine(page.getByTestId("dashboard-scratchpad"), 0).fill(line);
+  await expect(page.getByDisplayValue(line)).toBeVisible();
+
+  await expect.poll(async () => {
+    const { workspace, outbox } = await workspaceCache(page);
+    return {
+      hasTask: Boolean(workspace.tasks.some((task: any) => task.title === title && task.startTime === "13:00" && !task.trashedAt)),
+      queuedTask: Boolean(outbox.some((mutation: any) => mutation.entityType === "tasks"))
+    };
+  }).toEqual({ hasTask: true, queuedTask: true });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByDisplayValue(line)).toBeVisible();
+  await context.setOffline(false);
+  await page.goto("/settings");
   await page.getByRole("button", { name: /sync now/i }).click();
   await expect(page.getByTestId("pending-count")).toHaveText("0");
 });

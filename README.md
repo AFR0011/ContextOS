@@ -35,6 +35,7 @@ npm run dev
 npm run build
 npm run typecheck
 npm run db:migrate
+npm run db:deploy
 npm run db:seed
 npm run db:reset
 npm run test:e2e
@@ -58,7 +59,7 @@ Generate a fresh `AUTH_SECRET` for every deployed environment. Never reuse a sec
 
 `npm run db:seed` resets the seeded demo workspace. Use it for local demo setup or an intentional one-off demo reset only. It should not run during normal production deploys.
 
-The Vercel build command runs migrations and builds the app; it does not seed data. `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is explicitly set.
+The Vercel build command builds the app only. Run `npm run db:deploy` deliberately when committed migrations need to be applied. `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is explicitly set.
 
 ## Offline Sync
 

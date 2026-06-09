@@ -36,10 +36,18 @@ npm run dev
 The checked-in `vercel.json` build command is:
 
 ```bash
-npx prisma migrate deploy && npm run build
+npm run build
 ```
 
-This applies committed migrations and builds the app. It does not run `npm run db:seed`.
+This builds the app. It does not run migrations or `npm run db:seed`.
+
+Prisma migration deployment should be run deliberately when committed files under `prisma/migrations/**` change:
+
+```bash
+npm run db:deploy
+```
+
+This avoids multiple Vercel builds competing for Prisma's PostgreSQL advisory migration lock.
 
 Before the first deploy:
 
@@ -54,11 +62,13 @@ Before the first deploy:
 For providers that do not run the Vercel build command, apply migrations manually:
 
 ```bash
-npx prisma migrate deploy
+npm run db:deploy
 npm run build
 ```
 
-Use `npm run db:migrate` only for local development migration creation/application. Use `npx prisma migrate deploy` for production.
+Use `npm run db:migrate` only for local development migration creation/application. Use `npm run db:deploy` for production.
+
+If a deploy fails with Prisma `P1002` while acquiring advisory lock `72707369`, cancel any duplicate in-progress deploys/migration jobs and retry after the previous migration process exits. PostgreSQL advisory locks are session-scoped; a genuinely stuck backend must be cleared from the database provider before migration deployment can continue. Do not disable Prisma advisory locking for normal production deploys.
 
 ## Intentional Production Seeding
 

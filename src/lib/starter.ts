@@ -311,20 +311,17 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
   });
 
 
-  await tx.dashboardScratchpad.upsert({
-    where: { userId },
-    update: {},
-    create: {
+  await tx.dashboardScratchpad.createMany({
+    data: [{
       id: idFor(userId, "dashboard-scratchpad"),
       userId,
       content: ""
-    }
+    }],
+    skipDuplicates: true
   });
 
-  await tx.dashboardPreference.upsert({
-    where: { userId },
-    update: {},
-    create: {
+  await tx.dashboardPreference.createMany({
+    data: [{
       id: idFor(userId, "dashboard-preferences"),
       userId,
       sectionOrder: ["notepad", "projects"],
@@ -332,7 +329,8 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
       reviewPromptDismissals: [],
       dateWindowDays: 14,
       showCompleted: false
-    }
+    }],
+    skipDuplicates: true
   });
 
   await tx.priority.createMany({

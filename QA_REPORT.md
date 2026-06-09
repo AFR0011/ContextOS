@@ -1,5 +1,30 @@
 # ContextOS QA Report
 
+## 2026-06-09 - Dashboard Notepad Command Surface
+
+Status: PASS.
+
+Checks run:
+
+- `npm run test` - passed; scheduled todo parser/formatter tests.
+- `npm run typecheck` - passed.
+- `npm run build` - passed. Existing warning: `metadataBase` is not set.
+- `docker compose up -d` - passed after Docker Desktop was started; Postgres container running.
+- `npm run db:migrate` - passed; no pending schema changes.
+- `npm run db:seed` - passed.
+- `npx playwright test tests/e2e/contextos.spec.ts --grep "seeded demo account|dashboard notepad"` - passed, 7 tests.
+- `npx playwright test tests/e2e/contextos.spec.ts --grep "offline scheduled notepad"` - passed, 1 test.
+- `npx playwright test tests/e2e/contextos.spec.ts --grep "mobile markdown editor"` - passed, 1 test.
+- `npm run test:e2e` - passed, 24 tests.
+
+Regression notes:
+
+- First focused notepad run failed entity demotion persistence; fixed with immediate scratchpad persistence when an entity line becomes scratch.
+- First full e2e rerun failed the mobile Return editor test; fixed by handling native line-break input from the textarea's live value.
+- A concurrent starter bootstrap unique-constraint server log was fixed by replacing dashboard scratchpad/preference singleton upserts with duplicate-skipping creates.
+
+Verdict: PASS.
+
 ## 2026-06-05 - v0.1.11 Dashboard Timeline and Schedule Tables
 
 Status: PASS.

@@ -1,7 +1,7 @@
 # ContextOS Project State
 
 ## Current Objective
-Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, and Resources.
+Run the v0.1.x PARA foundation trial with the Dashboard Notepad command surface, subcontexts, Areas, and Resources.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
@@ -14,6 +14,7 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 - Auth: login, register, logout, current user endpoint.
 - Data APIs: bootstrap, sync, reset demo data.
 - Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Areas, Resources, Deadlines, Reviews, Search, Archive, Settings.
+- Dashboard command surface: one Notepad projection for dated Tasks, Deadlines, completed items, and scratch Markdown.
 - PARA foundation: Domains act as Areas, standalone Notes act as Resources, and Projects can be nested with `parentProjectId`.
 - Demo seed: default domains, nested ContextOS Demo subcontexts, dashboard canvas resource, projects, tasks, captures, deadlines, notes, review, daily and weekly priorities.
 
@@ -27,6 +28,14 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 - Production credential rotation is partly external: any previously shared Neon/Postgres credential must be rotated in the provider, then copied into deployment environment variables.
 
 ## Latest Verified State
+- 2026-06-09 Dashboard Notepad command surface is implemented and verified. Dashboard `Dates` and `Daily timeline` sections are removed/superseded; the Dashboard now defaults to `["notepad", "projects"]`.
+- Dated Tasks and non-trashed Deadlines render as entity-backed Notepad todo blocks grouped by Today, Upcoming, and Completed; scratch Markdown remains the source for normal todos and freeform notes.
+- Scheduled scratch lines use canonical `Title (DDMMYY) [HHMM] {Location}` syntax. Timed location-free lines become Tasks; date-only or location-bearing lines become Deadlines.
+- Entity-backed edits update the same Task/Deadline ID, checkboxes update Task `status` or Deadline `archivedAt`, invalid syntax shows inline validation without mutating structured records, and demotion/delete uses soft trash plus scratch preservation when appropriate.
+- Offline scheduled Notepad mutations queue through the existing IndexedDB outbox; rapid outbox appends are serialized to avoid adjacent mutation loss.
+- Verification on 2026-06-09: `npm run test`, `npm run typecheck`, `npm run build`, `docker compose up -d`, `npm run db:migrate`, `npm run db:seed`, targeted Playwright for dashboard/offline/mobile cases, and `npm run test:e2e` all passed; e2e now has 24 passing tests.
+- Current accepted limitation: Task location is not in the schema; task-backed location edits are blocked with validation and location-bearing new lines create Deadlines.
+- Earlier v0.1.11 Daily timeline bullets below are historical and are superseded by the 2026-06-09 Notepad command surface.
 - v0.1.11 dashboard timeline and schedule-table changes are implemented locally.
 - Dashboard freeform notepad keeps fast textarea editing and now renders a live Markdown preview, including headings, checklists, and tables.
 - Dashboard `Tasks` is replaced by `Daily timeline`; tasks can carry optional `startTime` and `endTime`, display as time-range pills, and can be project-linked while planned for today.
@@ -96,9 +105,11 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 
 ## Next Useful Work
 - Review `docs/MIGRATION_BACKLOG.md` before selecting the next v0.1.x or v0.2.0 batch.
+- Trial the Dashboard Notepad command surface in a real workday and record whether the scheduled syntax is fast enough or needs affordances.
+- Decide whether Task location should be added in a future schema migration or remain Deadline-only.
 - Highest-priority future concern: graceful database-unavailable handling around auth/bootstrap/sync/reset.
 - Also prioritize stale local-cache recovery after external seed/reset and safe review of moderate dependency advisories.
 - Use the v0.1.x PARA foundation for one real workday and record friction in `docs/FRICTION_LOG.md`.
-- During the trial, pay special attention to whether the markdown canvas reduces context-switching and whether slash capture inside the editor feels faster than the old separate capture field.
+- During the trial, pay special attention to whether the Notepad command surface reduces context-switching and whether scheduled-line promotion feels faster than the old separate dashboard composers.
 - Pay special attention to whether subcontexts solve course/assistantship nesting and whether Dashboard Canvas reduces Notion dashboard use.
 - After the trial, sort friction into bug, UX friction, missing feature, and user discipline problem, then fix only obvious small bugs before v0.2.0 planning.

@@ -120,6 +120,20 @@ async function scheduledLine(value: { title: string; dateKey: string; time?: str
   return formatScheduledTodoSyntax({ title: value.title, dateKey: value.dateKey, time: value.time ?? null, location: value.location ?? "" });
 }
 
+async function textareaByValue(page: Page, value: string) {
+  await expect.poll(async () =>
+    page.locator("textarea").evaluateAll((textareas, expected) => textareas.findIndex((textarea) => (textarea as HTMLTextAreaElement).value === expected), value)
+  ).toBeGreaterThanOrEqual(0);
+  const index = await page.locator("textarea").evaluateAll((textareas, expected) => textareas.findIndex((textarea) => (textarea as HTMLTextAreaElement).value === expected), value);
+  return page.locator("textarea").nth(index);
+}
+
+async function expectTextareaValue(page: Page, value: string) {
+  await expect.poll(async () =>
+    page.locator("textarea").evaluateAll((textareas, expected) => textareas.some((textarea) => (textarea as HTMLTextAreaElement).value === expected), value)
+  ).toBe(true);
+}
+
 async function warmOfflineShell(page: Page) {
   await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) return;
@@ -171,8 +185,8 @@ test("seeded demo account can log in and render dashboard", async ({ page }) => 
   await expect(page.getByRole("button", { name: /Notepad/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Dates/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Daily timeline/ })).toHaveCount(0);
-  await expect(page.getByDisplayValue(await scheduledLine({ title: "Process inbox captures", dateKey: today, time: "09:30" }))).toBeVisible();
-  await expect(page.getByDisplayValue(await scheduledLine({ title: "ContextOS v0.1 verification pass", dateKey: future }))).toBeVisible();
+  await expectTextareaValue(page, await scheduledLine({ title: "Process inbox captures", dateKey: today, time: "09:30" }));
+  await expectTextareaValue(page, await scheduledLine({ title: "ContextOS v0.1 verification pass", dateKey: future }));
   await expect(page.getByRole("button", { name: /Projects/ })).toBeVisible();
   await expect(page.getByTestId("dashboard-section-projects").getByRole("button", { name: /ContextOS Demo/ })).toBeVisible();
 });
@@ -253,6 +267,32 @@ test("dashboard notepad autosaves and persists after reload", async ({ page }) =
   await page.reload();
   await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(heading);
   await expect.poll(() => offlineCacheState(page, content)).toMatchObject({ hasScratchpad: true });
+});
+
+test.describe("mobile markdown editor", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test("Return inserts a new focused line instead of advancing to the next field", async ({ page }) => {
+    await login(page);
+    const scratchpad = page.getByTestId("dashboard-scratchpad");
+    const firstLine = markdownLine(scratchpad, 0);
+    const firstText = `Mobile return ${Date.now()}`;
+
+    await firstLine.fill(firstText);
+    await expect(firstLine).toHaveAttribute("enterkeyhint", "enter");
+    await firstLine.evaluate((node) => {
+      const textarea = node as HTMLTextAreaElement;
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      textarea.dispatchEvent(new InputEvent("beforeinput", { bubbles: true, cancelable: true, inputType: "insertLineBreak" }));
+    });
+
+    const secondLine = markdownLine(scratchpad, 1);
+    await expect(firstLine).toHaveValue(firstText);
+    await expect(secondLine).toBeFocused();
+    await secondLine.fill("Mobile second line");
+    await expect(secondLine).toHaveValue("Mobile second line");
+  });
 });
 
 test("dashboard notepad plain todos stay scratch-only", async ({ page }) => {
@@ -344,7 +384,7 @@ test("dashboard notepad creates, edits, checks, and demotes a scheduled task wit
   const scratchpad = page.getByTestId("dashboard-scratchpad");
 
   await markdownLine(scratchpad, 0).fill(createdLine);
-  await expect(page.getByDisplayValue(createdLine)).toBeVisible();
+  await expectTextareaValue(page, createdLine);
 
   await expect.poll(async () => {
     const { workspace } = await workspaceCache(page);
@@ -355,7 +395,7 @@ test("dashboard notepad creates, edits, checks, and demotes a scheduled task wit
   const taskId = before.workspace.tasks.find((task: any) => task.title === title && !task.trashedAt).id;
   const updatedTitle = `${title} and rope`;
   const updatedLine = await scheduledLine({ title: updatedTitle, dateKey: today, time: "10:45" });
-  await page.getByDisplayValue(createdLine).fill(updatedLine);
+  await (await textareaByValue(page, createdLine)).fill(updatedLine);
 
   await expect.poll(async () => {
     const { workspace } = await workspaceCache(page);
@@ -363,22 +403,22 @@ test("dashboard notepad creates, edits, checks, and demotes a scheduled task wit
     return task ? { title: task.title, startTime: task.startTime, activeCopies: workspace.tasks.filter((item: any) => !item.trashedAt && item.title.includes(title)).length } : null;
   }).toEqual({ title: updatedTitle, startTime: "10:45", activeCopies: 1 });
 
-  const editedBlock = page.locator('[data-testid="dashboard-notepad-today"] .group').filter({ has: page.getByDisplayValue(updatedLine) }).first();
+  const editedBlock = (await textareaByValue(page, updatedLine)).locator("xpath=ancestor::div[contains(@class, 'group')][1]");
   await editedBlock.locator('input[type="checkbox"]').check();
   await expect.poll(async () => {
     const { workspace } = await workspaceCache(page);
     return workspace.tasks.find((item: any) => item.id === taskId)?.status;
   }).toBe("done");
 
-  await page.getByDisplayValue(updatedLine).fill(updatedTitle);
+  await (await textareaByValue(page, updatedLine)).fill(updatedTitle);
   await expect.poll(async () => {
     const { workspace } = await workspaceCache(page);
     return workspace.tasks.find((item: any) => item.id === taskId)?.trashedAt;
   }).not.toBeNull();
-  await expect(page.getByDisplayValue(updatedTitle)).toBeVisible();
+  await expectTextareaValue(page, updatedTitle);
 
   await page.reload();
-  await expect(page.getByDisplayValue(updatedTitle)).toBeVisible();
+  await expectTextareaValue(page, updatedTitle);
 });
 
 test("dashboard notepad creates and persists a location-bearing deadline", async ({ page }) => {
@@ -388,7 +428,7 @@ test("dashboard notepad creates and persists a location-bearing deadline", async
   const dateKey = addDaysToDateKey(localDateKey(), 3) ?? localDateKey();
   const line = await scheduledLine({ title, dateKey, time: "15:00", location: "China Bazaar" });
   await markdownLine(page.getByTestId("dashboard-scratchpad"), 0).fill(line);
-  await expect(page.getByDisplayValue(line)).toBeVisible();
+  await expectTextareaValue(page, line);
 
   await expect.poll(async () => {
     const { workspace } = await workspaceCache(page);
@@ -397,7 +437,7 @@ test("dashboard notepad creates and persists a location-bearing deadline", async
   }).toEqual({ date: dateKey, time: "15:00", location: "China Bazaar" });
 
   await page.reload();
-  await expect(page.getByDisplayValue(line)).toBeVisible();
+  await expectTextareaValue(page, line);
 });
 
 test("today tasks stay visible and interactable after completion", async ({ page }) => {
@@ -492,7 +532,7 @@ test("offline scheduled notepad task is stored locally and queued", async ({ pag
   const title = `offline scheduled ${Date.now()}`;
   const line = await scheduledLine({ title, dateKey: localDateKey(), time: "13:00" });
   await markdownLine(page.getByTestId("dashboard-scratchpad"), 0).fill(line);
-  await expect(page.getByDisplayValue(line)).toBeVisible();
+  await expectTextareaValue(page, line);
 
   await expect.poll(async () => {
     const { workspace, outbox } = await workspaceCache(page);
@@ -503,7 +543,7 @@ test("offline scheduled notepad task is stored locally and queued", async ({ pag
   }).toEqual({ hasTask: true, queuedTask: true });
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByDisplayValue(line)).toBeVisible();
+  await expectTextareaValue(page, line);
   await context.setOffline(false);
   await page.goto("/settings");
   await page.getByRole("button", { name: /sync now/i }).click();

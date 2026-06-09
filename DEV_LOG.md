@@ -1,5 +1,41 @@
 # ContextOS Dev Log
 
+## 2026-06-09 - Dashboard Notepad Command Surface
+
+Planner scope: replace the dashboard `Dates` and `Daily timeline` sections with one Notepad-based daily command surface while preserving structured Tasks/Deadlines, `/deadlines`, project detail task/deadline UI, IndexedDB/outbox sync, and soft-trash conventions.
+
+Implementation:
+
+- Added/used scheduled todo parsing and formatting for `Title (DDMMYY) [HHMM] {Location}` with local date-key handling, canonical formatting, invalid date/time validation, and plain-todo passthrough.
+- Extended the block editor with controlled block mode, entity references, inline validation messages, default todo blocks, and robust native/mobile line-break handling.
+- Replaced dashboard Dates/Daily timeline composition with a Notepad surface grouped as Today, Upcoming, Completed, and Scratch.
+- Projected active dated Tasks and non-trashed Deadlines into entity-backed todo blocks; scratch Markdown remains the source for normal todos and freeform notes.
+- Implemented scheduled-line promotion from scratch to real Tasks/Deadlines, same-ID entity edits, checkbox-driven task/deadline completion, invalid syntax guards, and demotion/delete via soft trash plus scratch todo preservation.
+- Kept task v1 location unsupported with inline validation; timed location-free lines become Tasks, while date-only or location-bearing lines become Deadlines.
+- Normalized dashboard preferences/starter defaults to `["notepad", "projects"]` and removed stale dashboard Dates/Tasks section usage.
+- Serialized rapid outbox writes so adjacent task/scratch/deadline mutations do not clobber each other in IndexedDB.
+- Hardened starter singleton dashboard seed rows against concurrent bootstrap collisions with `createMany(..., skipDuplicates: true)`.
+- Expanded Playwright coverage for canonical seeded lines, scratch-only todos, invalid syntax, create/edit/check/demote flows, deadline location creation, reload persistence, mobile editor Return behavior, and offline scheduled outbox behavior.
+
+Verification:
+
+- `npm run test` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed with existing `metadataBase` warning.
+- `docker compose up -d` - passed after starting Docker Desktop.
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `npx playwright test tests/e2e/contextos.spec.ts --grep "seeded demo account|dashboard notepad"` - passed, 7 tests.
+- `npx playwright test tests/e2e/contextos.spec.ts --grep "offline scheduled notepad"` - passed, 1 test.
+- `npx playwright test tests/e2e/contextos.spec.ts --grep "mobile markdown editor"` - passed, 1 test.
+- `npm run test:e2e` - passed, 24 tests.
+
+Notes:
+
+- An initial targeted run exposed entity demotion losing the scratch projection before debounce; fixed by immediate scratch persistence on demotion.
+- An initial full e2e rerun exposed a mobile/native `beforeinput` timing gap; fixed by splitting from the textarea's live value and using a stable native listener.
+- A concurrent bootstrap Prisma unique constraint log was removed by changing dashboard starter singletons to duplicate-skipping creates.
+
 ## 2026-06-05 - v0.1.11 Dashboard Timeline, Rendered Notepad, Piano Schedule
 
 Planner scope: implement the current `modificaitons.txt` items 1-3 in one batch, then audit the current app.

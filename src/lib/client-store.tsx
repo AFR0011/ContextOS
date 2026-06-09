@@ -243,6 +243,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [lastWarningAt, setLastWarningAt] = useState<string | null>(null);
   const [staleMutationCount, setStaleMutationCount] = useState(0);
   const syncInFlight = useRef(false);
+  const outboxWrite = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     dataRef.current = data;
@@ -347,9 +348,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         mutationId: newId("mut"),
         createdAt: now()
       };
-      const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
-      await idbSet(OUTBOX_KEY, [...outbox, queued]);
-      setPendingCount(outbox.length + 1);
+      const append = outboxWrite.current.catch(() => undefined).then(async () => {
+        const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+        await idbSet(OUTBOX_KEY, [...outbox, queued]);
+        setPendingCount(outbox.length + 1);
+      });
+      outboxWrite.current = append;
+      await append;
       window.setTimeout(() => void syncNow(), 80);
     },
     [syncNow]

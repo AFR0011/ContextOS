@@ -1,5 +1,13 @@
 # Shared History
 
+## 2026-06-09
+
+- One supervised dev-loop cycle for Dashboard Notepad command surface.
+- Executor replaced dashboard Dates/Daily timeline with entity-backed Notepad groups while preserving scratch Markdown.
+- Parser/unit coverage and Playwright coverage were added for scheduled syntax, scratch-only todos, invalid syntax, entity promotion/edit/check/demotion, deadline location, offline scheduled outbox, reload persistence, and mobile editor Return behavior.
+- Tester ran parser tests, typecheck, build, Docker/Postgres migration/seed, targeted Playwright, and full e2e; final `npm run test:e2e` passed with 24 tests.
+- Docs-QA updated dev state, dev log, QA report, risk register, project state, and shared status/context/history.
+
 ## 2026-06-05
 
 - One supervised dev-loop cycle for v0.1.11 dashboard timeline and schedule tables.

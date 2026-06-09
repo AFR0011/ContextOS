@@ -358,6 +358,23 @@ function NotepadSection() {
     setEntityDrafts((current) => ({ ...current, [key]: draft }));
   }
 
+  function persistScratchBlocksNow(nextBlocks: EditorBlock[]) {
+    const normalized = nextBlocks.length ? nextBlocks : [createEmptyBlock("todo")];
+    const markdown = serializeScratchBlocks(normalized);
+    setScratchBlocks(normalized);
+    setScratchValidation({});
+    updateDashboardScratchpad(markdown);
+    lastSavedRef.current = markdown;
+    setSaveState("saved");
+    window.setTimeout(() => setSaveState("idle"), 1200);
+  }
+
+  function appendScratchAdditionsNow(additions: { text: string; checked: boolean }[]) {
+    if (!additions.length) return;
+    const nextBlocks = additions.reduce((blocks, addition) => appendScratchBlock(blocks, addition.text, addition.checked), scratchBlocks);
+    persistScratchBlocksNow(nextBlocks);
+  }
+
   function markEntityChecked(entity: NotepadEntityBase, checked: boolean) {
     if (entity.kind === "task") {
       updateTask(entity.id, { status: checked ? "done" : "todo" });
@@ -429,13 +446,14 @@ function NotepadSection() {
   function handleEntityBlocksChange(groupEntities: NotepadEntity[], nextBlocks: EditorBlock[]) {
     const groupByKey = new Map(groupEntities.map((entity) => [entity.key, entity]));
     const seen = new Set<EntityKey>();
+    const scratchAdditions: { text: string; checked: boolean }[] = [];
 
     for (const block of nextBlocks) {
       if (!block.entityRef) {
         if (!block.text.trim()) continue;
         const parsed = parseScheduledTodoSyntax(block.text);
         if (parsed.kind === "scheduled") createScheduledEntity(parsed.value, Boolean(block.checked));
-        else setScratchBlocks((current) => appendScratchBlock(current, block.text, Boolean(block.checked)));
+        else scratchAdditions.push({ text: block.text, checked: Boolean(block.checked) });
         continue;
       }
 
@@ -476,12 +494,14 @@ function NotepadSection() {
       }
 
       trashEntity(entity);
-      if (block.text.trim()) setScratchBlocks((current) => appendScratchBlock(current, block.text, checked));
+      if (block.text.trim()) scratchAdditions.push({ text: block.text, checked });
     }
 
     for (const entity of groupEntities) {
       if (!seen.has(entity.key)) trashEntity(entity);
     }
+
+    appendScratchAdditionsNow(scratchAdditions);
   }
 
   function clear() {

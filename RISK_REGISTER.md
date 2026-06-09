@@ -4,7 +4,6 @@
 
 | ID | Risk | Level | Mitigation | Status |
 | --- | --- | --- | --- | --- |
-| R-2026-06-09-03 | Scheduled todo syntax is intentionally narrow and task-backed location edits are not supported in v1. | Medium | Inline validation blocks invalid/corrupting entity edits; location-bearing new lines create Deadlines until Task location exists. | Accepted |
 | R-2026-06-05-05 | Markdown table rendering could make the freeform editor heavier or less mobile-friendly. | Medium | Kept the editor as textarea plus lightweight preview; e2e covers rendered headings/checklist preview. | Accepted |
 | R-2026-06-05-06 | Piano schedule table could overfit one Notion database and become a general Notion clone. | Low | Kept it as a Markdown-backed Resource/table pattern, not formulas/relations. | Accepted |
 | R-2026-06-05-07 | Already-open browser IndexedDB cache can drift after external seed/reset. | Low | Settings has refresh-from-server; audit recommends clearer stale-cache recovery. | Accepted |
@@ -17,8 +16,6 @@
 
 | ID | Risk | Level | Status |
 | --- | --- | --- | --- |
-| R-2026-06-09-01 | Entity-backed Notepad blocks could corrupt Tasks/Deadlines, duplicate promoted items, or lose scratch demotions. | High | Closed - same-ID edit paths, validation guards, soft-trash demotion, immediate scratch persistence, and targeted/full e2e coverage passed. |
-| R-2026-06-09-02 | Rapid adjacent offline mutations from scheduled create/edit/delete/toggle could overwrite IndexedDB outbox entries. | Medium | Closed - outbox appends are serialized and offline scheduled Playwright coverage passed. |
 | R-2026-06-05-04 | Task time-range schema expansion could desync Prisma, API serialization, offline cache, and sync replay. | Medium | Closed - propagated through schema, migration, types, serialization, sync replay, client normalization, seed, and e2e coverage. |
 | R-2026-06-04-08 | Schema expansion for deadlines/recovery notes could desync Prisma, API serialization, offline cache, and sync replay. | Medium | Mitigated by propagating fields through schema, migration, types, seed, bootstrap serialization, sync server, client normalization, and e2e coverage. | Closed |
 | R-2026-06-04-09 | Freeform recovery notes could regress fixed project recovery fields. | Medium | Kept fixed fields as structured `Project` fields and added `recoveryNotes` separately; e2e verifies both next action and notes persist. | Closed |

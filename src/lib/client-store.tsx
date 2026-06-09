@@ -211,7 +211,7 @@ interface StoreApi {
   updateTask: (id: string, updates: Partial<Task>) => void;
   addProject: (data: { name: string; domainId: string; parentProjectId?: string | null; currentObjective?: string; nextAction?: string }) => string;
   updateProject: (id: string, updates: Partial<Project>) => void;
-  addDeadline: (data: { title: string; date: string; time?: string | null; location?: string; projectId?: string | null; notes?: string; archivedAt?: string | null }) => string;
+  addDeadline: (data: { title: string; date: string; time?: string | null; location?: string; projectId?: string | null; notes?: string }) => string;
   updateDeadline: (id: string, updates: Partial<Deadline>) => void;
   addNote: (data: { title: string; content?: string; projectId?: string | null; domainId: string }) => string;
   updateNote: (id: string, updates: Partial<Note>) => void;
@@ -243,7 +243,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [lastWarningAt, setLastWarningAt] = useState<string | null>(null);
   const [staleMutationCount, setStaleMutationCount] = useState(0);
   const syncInFlight = useRef(false);
-  const outboxWrite = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     dataRef.current = data;
@@ -348,13 +347,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         mutationId: newId("mut"),
         createdAt: now()
       };
-      const append = outboxWrite.current.catch(() => undefined).then(async () => {
-        const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
-        await idbSet(OUTBOX_KEY, [...outbox, queued]);
-        setPendingCount(outbox.length + 1);
-      });
-      outboxWrite.current = append;
-      await append;
+      const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+      await idbSet(OUTBOX_KEY, [...outbox, queued]);
+      setPendingCount(outbox.length + 1);
       window.setTimeout(() => void syncNow(), 80);
     },
     [syncNow]
@@ -641,7 +636,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           notes: input.notes ?? "",
           createdAt: ts,
           updatedAt: ts,
-          archivedAt: input.archivedAt ?? null,
+          archivedAt: null,
           trashedAt: null
         };
         mutate("deadlines", deadline);

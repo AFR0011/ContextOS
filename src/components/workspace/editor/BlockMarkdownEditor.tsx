@@ -24,8 +24,7 @@ import {
   Trash2,
   Type
 } from "lucide-react";
-import { forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import type { BlockMarkdownEditorProps, BlockType, CaptureCommand, EditorBlock } from "./editorTypes";
 import {
   changeBlockType,
@@ -48,13 +47,11 @@ import {
 
 interface AutoGrowingTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   onResize?: () => void;
-  onNativeLineBreak?: (event: InputEvent, textarea: HTMLTextAreaElement) => void;
 }
 
 const AutoGrowingTextarea = forwardRef<HTMLTextAreaElement, AutoGrowingTextareaProps>(
-  ({ onChange, onNativeLineBreak, ...props }, ref) => {
+  ({ onChange, ...props }, ref) => {
     const localRef = useRef<HTMLTextAreaElement | null>(null);
-    const nativeLineBreakRef = useRef(onNativeLineBreak);
 
     const setRefs = (element: HTMLTextAreaElement | null) => {
       localRef.current = element;
@@ -72,24 +69,6 @@ const AutoGrowingTextarea = forwardRef<HTMLTextAreaElement, AutoGrowingTextareaP
     useEffect(() => {
       adjustHeight();
     }, [props.value]);
-
-    useLayoutEffect(() => {
-      nativeLineBreakRef.current = onNativeLineBreak;
-    }, [onNativeLineBreak]);
-
-    useLayoutEffect(() => {
-      const textarea = localRef.current;
-      if (!textarea) return;
-
-      const handleBeforeInput = (event: Event) => {
-        const inputEvent = event as InputEvent;
-        if (inputEvent.inputType !== "insertLineBreak" && inputEvent.inputType !== "insertParagraph") return;
-        nativeLineBreakRef.current?.(inputEvent, textarea);
-      };
-
-      textarea.addEventListener("beforeinput", handleBeforeInput);
-      return () => textarea.removeEventListener("beforeinput", handleBeforeInput);
-    }, []);
 
     return (
       <textarea
@@ -163,15 +142,6 @@ function commandForLine(text: string, commands: CommandItem[]) {
   return commands.find((command) => trimmed === command.command || trimmed.startsWith(`${command.command} `));
 }
 
-function normalizeLineEndings(text: string) {
-  return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-}
-
-function isLineBreakInput(event: React.FormEvent<HTMLTextAreaElement>) {
-  const inputType = (event.nativeEvent as InputEvent).inputType;
-  return inputType === "insertLineBreak" || inputType === "insertParagraph";
-}
-
 function blockInputClass(block: EditorBlock, mode: "full" | "compact") {
   const base = "min-h-8 w-full resize-none overflow-hidden bg-transparent px-2 py-1 text-sm leading-6 text-[var(--cos-text)] outline-none placeholder:text-[var(--cos-text-subtle)]";
 
@@ -227,14 +197,9 @@ export function BlockMarkdownEditor({
   disabled = false,
   hideSaveButton = false,
   footer,
-  onCaptureLine,
-  blocks: controlledBlocks,
-  onBlocksChange,
-  validationMessages = {},
-  defaultBlockType = "paragraph"
+  onCaptureLine
 }: BlockMarkdownEditorProps) {
-  const isControlled = controlledBlocks !== undefined;
-  const [blocks, setBlocks] = useState<EditorBlock[]>(() => controlledBlocks ?? parseMarkdownToBlocks(value));
+  const [blocks, setBlocks] = useState<EditorBlock[]>(() => parseMarkdownToBlocks(value));
   const [draftMarkdown, setDraftMarkdown] = useState(value);
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
   const [actionMenuBlockId, setActionMenuBlockId] = useState<string | null>(null);
@@ -251,7 +216,6 @@ export function BlockMarkdownEditor({
   const dirty = draftMarkdown !== value;
 
   useEffect(() => {
-    if (isControlled) return;
     if (value === lastEmittedRef.current) {
       setDraftMarkdown(value);
       return;
@@ -259,30 +223,17 @@ export function BlockMarkdownEditor({
     setBlocks(parseMarkdownToBlocks(value));
     setDraftMarkdown(value);
     lastEmittedRef.current = value;
-  }, [isControlled, value]);
+  }, [value]);
 
   useEffect(() => {
-    if (!isControlled || !controlledBlocks) return;
-    setBlocks(controlledBlocks);
-    const serialized = serializeBlocksToMarkdown(controlledBlocks);
-    setDraftMarkdown(serialized);
-    lastEmittedRef.current = serialized;
-  }, [controlledBlocks, isControlled]);
-
-  const focusBlock = (blockId: string, cursorPos: number | null = pendingCursorPos.current) => {
-    const element = blockRefs.current[blockId];
-    if (!element) return false;
-    element.focus({ preventScroll: true });
-    if (element instanceof HTMLTextAreaElement && cursorPos !== null) {
-      element.setSelectionRange(cursorPos, cursorPos);
+    if (!focusedBlockId) return;
+    const element = blockRefs.current[focusedBlockId];
+    if (!element) return;
+    element.focus();
+    if (element instanceof HTMLTextAreaElement && pendingCursorPos.current !== null) {
+      element.setSelectionRange(pendingCursorPos.current, pendingCursorPos.current);
       pendingCursorPos.current = null;
     }
-    return true;
-  };
-
-  useLayoutEffect(() => {
-    if (!focusedBlockId) return;
-    focusBlock(focusedBlockId);
   }, [focusedBlockId, blocks]);
 
   const filteredCommands = useMemo(() => {
@@ -303,8 +254,7 @@ export function BlockMarkdownEditor({
     const serialized = serializeBlocksToMarkdown(nextBlocks);
     lastEmittedRef.current = serialized;
     setDraftMarkdown(serialized);
-    if (!isControlled) onChange?.(serialized);
-    onBlocksChange?.(nextBlocks);
+    onChange?.(serialized);
   }
 
   function commit(nextMarkdown = draftMarkdown) {
@@ -314,23 +264,11 @@ export function BlockMarkdownEditor({
     window.setTimeout(() => setSavedFlash(false), 1200);
   }
 
-  function setNextBlocks(nextBlocks: EditorBlock[], focusId?: string, cursorPos?: number | null, options?: { syncFocus?: boolean }) {
-    if (cursorPos !== undefined) pendingCursorPos.current = cursorPos;
-    else pendingCursorPos.current = null;
-
-    if (focusId && options?.syncFocus) {
-      flushSync(() => {
-        setBlocks(nextBlocks);
-        updateParent(nextBlocks);
-        setFocusedBlockId(focusId);
-      });
-      focusBlock(focusId, cursorPos ?? null);
-      return;
-    }
-
+  function setNextBlocks(nextBlocks: EditorBlock[], focusId?: string, cursorPos?: number | null) {
     setBlocks(nextBlocks);
     updateParent(nextBlocks);
     if (focusId) setFocusedBlockId(focusId);
+    if (cursorPos !== undefined) pendingCursorPos.current = cursorPos;
   }
 
   function applyCommandToBlock(blockId: string, command: CommandItem, triggerIndex = 0) {
@@ -362,80 +300,10 @@ export function BlockMarkdownEditor({
     setNextBlocks(nextBlocks, blockId);
   }
 
-  function isContinuingList(block: EditorBlock) {
-    return block.type === "bullet" || block.type === "numbered" || block.type === "todo";
-  }
-
-  function splitBlockAtSelection(block: EditorBlock, index: number, textarea: HTMLTextAreaElement, syncFocus = false) {
-    if (block.type === "code") return false;
-
-    const typedCommand = commandForLine(block.text, commands);
-    if (typedCommand) {
-      applyCommandToBlock(block.id, typedCommand, 0);
-      return true;
-    }
-
-    const isList = isContinuingList(block);
-    if (isList && block.text.trim() === "") {
-      const nextBlocks = blocks.map((item) => (item.id === block.id ? changeBlockType(item, "paragraph") : item));
-      setNextBlocks(nextBlocks, block.id, 0, { syncFocus });
-      return true;
-    }
-
-    const textBefore = block.text.slice(0, textarea.selectionStart);
-    const textAfter = block.text.slice(textarea.selectionEnd);
-    const nextType: BlockType = isList ? block.type : "paragraph";
-    const newBlock: EditorBlock = {
-      id: generateId(),
-      type: nextType,
-      text: textAfter,
-      checked: nextType === "todo" ? false : undefined
-    };
-    const nextBlocks = [...blocks];
-    nextBlocks[index] = { ...block, text: textBefore };
-    nextBlocks.splice(index + 1, 0, newBlock);
-    setNextBlocks(nextBlocks, newBlock.id, 0, { syncFocus });
-    return true;
-  }
-
-  function splitBlockFromTextareaValue(block: EditorBlock, index: number, newText: string, selectionStart: number) {
-    const normalizedText = normalizeLineEndings(newText);
-    const textBeforeCursor = normalizedText.slice(0, selectionStart);
-    const lines = normalizedText.split("\n");
-    const cursorParts = textBeforeCursor.split("\n");
-    const cursorLineIndex = Math.min(lines.length - 1, cursorParts.length - 1);
-    const cursorPos = cursorParts[cursorParts.length - 1]?.length ?? 0;
-    const typedCommand = commandForLine(lines[0] ?? "", commands);
-
-    if (typedCommand && lines.slice(1).every((line) => line.trim() === "")) {
-      applyCommandToBlock(block.id, typedCommand, 0);
-      return;
-    }
-
-    const nextType: BlockType = isContinuingList(block) ? block.type : "paragraph";
-    const nextInsertedBlocks = lines.slice(1).map((line) => ({
-      id: generateId(),
-      type: nextType,
-      text: line,
-      checked: nextType === "todo" ? false : undefined
-    }));
-    const nextBlocks = [...blocks];
-    nextBlocks[index] = { ...block, text: lines[0] ?? "" };
-    nextBlocks.splice(index + 1, 0, ...nextInsertedBlocks);
-
-    const focusBlockId = cursorLineIndex === 0 ? block.id : nextInsertedBlocks[cursorLineIndex - 1]?.id;
-    setNextBlocks(nextBlocks, focusBlockId, cursorPos, { syncFocus: true });
-  }
-
-  function handleBlockTextChange(targetBlock: EditorBlock, index: number, newText: string, selectionStart: number) {
-    if (targetBlock.type !== "code" && /[\r\n]/.test(newText)) {
-      splitBlockFromTextareaValue(targetBlock, index, newText, selectionStart);
-      return;
-    }
-
+  function handleBlockTextChange(blockId: string, newText: string, selectionStart: number) {
     let nextSelectionStart = selectionStart;
     const nextBlocks = blocks.map((block) => {
-      if (block.id !== targetBlock.id) return block;
+      if (block.id !== blockId) return block;
       const shortcut = markdownShortcutToBlock(block, newText);
       if (shortcut) {
         nextSelectionStart = shortcut.text.length;
@@ -455,7 +323,7 @@ export function BlockMarkdownEditor({
     ) {
       const query = textBeforeCursor.slice(lastSlashIndex + 1);
       if (!query.includes(" ")) {
-        setSlashCommand({ blockId: targetBlock.id, query, triggerIndex: lastSlashIndex });
+        setSlashCommand({ blockId, query, triggerIndex: lastSlashIndex });
         setSlashSelectedIndex(0);
         return;
       }
@@ -479,7 +347,7 @@ export function BlockMarkdownEditor({
     setNextBlocks(nextBlocks, blockId);
   }
 
-  function handleInsertBlockBelow(blockId: string, type: BlockType = defaultBlockType) {
+  function handleInsertBlockBelow(blockId: string, type: BlockType = "paragraph") {
     const blockIndex = blocks.findIndex((block) => block.id === blockId);
     if (blockIndex === -1) return;
     const targetIndex = blocks[blockIndex].open === false && isToggleHeadingType(blocks[blockIndex].type)
@@ -500,7 +368,7 @@ export function BlockMarkdownEditor({
 
   function handleDeleteBlock(blockId: string) {
     if (blocks.length <= 1) {
-      const resetBlock = createEmptyBlock(defaultBlockType);
+      const resetBlock = createEmptyBlock();
       setNextBlocks([resetBlock], resetBlock.id, 0);
       return;
     }
@@ -526,7 +394,7 @@ export function BlockMarkdownEditor({
   function handleDuplicateBlock(blockId: string) {
     const index = blocks.findIndex((block) => block.id === blockId);
     if (index === -1) return;
-    const duplicate = { ...blocks[index], id: generateId(), entityRef: undefined };
+    const duplicate = { ...blocks[index], id: generateId() };
     const nextBlocks = [...blocks];
     nextBlocks.splice(index + 1, 0, duplicate);
     setNextBlocks(nextBlocks, duplicate.id);
@@ -550,7 +418,6 @@ export function BlockMarkdownEditor({
       }
       if (event.key === "Enter") {
         event.preventDefault();
-        event.stopPropagation();
         const selected = filteredCommands[slashSelectedIndex];
         if (selected) applyCommandToBlock(block.id, selected, slashCommand.triggerIndex);
         else setSlashCommand(null);
@@ -565,7 +432,6 @@ export function BlockMarkdownEditor({
 
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
-      event.stopPropagation();
       commit();
       return;
     }
@@ -573,8 +439,33 @@ export function BlockMarkdownEditor({
     if (event.key === "Enter" && !event.shiftKey) {
       if (block.type === "code") return;
       event.preventDefault();
-      event.stopPropagation();
-      splitBlockAtSelection(block, index, textarea, true);
+
+      const typedCommand = commandForLine(block.text, commands);
+      if (typedCommand) {
+        applyCommandToBlock(block.id, typedCommand, 0);
+        return;
+      }
+
+      const isList = block.type === "bullet" || block.type === "numbered" || block.type === "todo";
+      if (isList && block.text.trim() === "") {
+        const nextBlocks = blocks.map((item) => (item.id === block.id ? changeBlockType(item, "paragraph") : item));
+        setNextBlocks(nextBlocks, block.id, 0);
+        return;
+      }
+
+      const textBefore = block.text.slice(0, selectionStart);
+      const textAfter = block.text.slice(selectionStart);
+      const nextType: BlockType = isList ? block.type : "paragraph";
+      const newBlock: EditorBlock = {
+        id: generateId(),
+        type: nextType,
+        text: textAfter,
+        checked: nextType === "todo" ? false : undefined
+      };
+      const nextBlocks = [...blocks];
+      nextBlocks[index] = { ...block, text: textBefore };
+      nextBlocks.splice(index + 1, 0, newBlock);
+      setNextBlocks(nextBlocks, newBlock.id, 0);
       return;
     }
 
@@ -631,20 +522,6 @@ export function BlockMarkdownEditor({
         }
       }
     }
-  }
-
-  function handleBeforeInput(event: React.FormEvent<HTMLTextAreaElement>, block: EditorBlock, index: number) {
-    if (!isLineBreakInput(event) || block.type === "code") return;
-    event.preventDefault();
-    event.stopPropagation();
-    splitBlockAtSelection({ ...block, text: event.currentTarget.value }, index, event.currentTarget, true);
-  }
-
-  function handleNativeLineBreak(event: InputEvent, textarea: HTMLTextAreaElement, block: EditorBlock, index: number) {
-    if (block.type === "code") return;
-    event.preventDefault();
-    event.stopPropagation();
-    splitBlockAtSelection({ ...block, text: textarea.value }, index, textarea, true);
   }
 
   function handlePaste(event: React.ClipboardEvent<HTMLTextAreaElement>, block: EditorBlock, index: number) {
@@ -716,7 +593,6 @@ export function BlockMarkdownEditor({
           const isFocused = focusedBlockId === block.id;
           const lineTestId = `${dataTestId}-line-${index}`;
           const inputClassName = blockInputClass(block, mode);
-          const validationMessage = validationMessages[block.id];
 
           if (block.type === "numbered" && (index === 0 || blocks[index - 1].type !== "numbered")) {
             numberedItemIndex = 1;
@@ -868,15 +744,11 @@ export function BlockMarkdownEditor({
                         data-testid={lineTestId}
                         value={block.text}
                         onFocus={() => setFocusedBlockId(block.id)}
-                        onNativeLineBreak={(event, textarea) => handleNativeLineBreak(event, textarea, block, index)}
-                        onBeforeInput={(event) => handleBeforeInput(event, block, index)}
-                        onChange={(event) => handleBlockTextChange(block, index, event.target.value, event.target.selectionStart)}
+                        onChange={(event) => handleBlockTextChange(block.id, event.target.value, event.target.selectionStart)}
                         onKeyDown={(event) => handleKeyDown(event, block, index)}
                         placeholder={isFocused ? placeholderFor(block, placeholder) : ""}
                         className={inputClassName}
                         disabled={disabled}
-                        enterKeyHint="enter"
-                        aria-invalid={Boolean(validationMessage)}
                       />
                     </div>
                   ) : (
@@ -887,16 +759,12 @@ export function BlockMarkdownEditor({
                       data-testid={lineTestId}
                       value={block.text}
                       onFocus={() => setFocusedBlockId(block.id)}
-                      onNativeLineBreak={(event, textarea) => handleNativeLineBreak(event, textarea, block, index)}
-                      onBeforeInput={(event) => handleBeforeInput(event, block, index)}
-                      onChange={(event) => handleBlockTextChange(block, index, event.target.value, event.target.selectionStart)}
+                      onChange={(event) => handleBlockTextChange(block.id, event.target.value, event.target.selectionStart)}
                       onKeyDown={(event) => handleKeyDown(event, block, index)}
                       onPaste={(event) => handlePaste(event, block, index)}
                       placeholder={isFocused || block.text === "" ? placeholderFor(block, placeholder) : ""}
                       className={inputClassName}
                       disabled={disabled}
-                      enterKeyHint="enter"
-                      aria-invalid={Boolean(validationMessage)}
                     />
                   )}
 
@@ -906,11 +774,6 @@ export function BlockMarkdownEditor({
                       filteredCommands={filteredCommands}
                       onSelect={(command) => applyCommandToBlock(block.id, command, slashCommand.triggerIndex)}
                     />
-                  ) : null}
-                  {validationMessage ? (
-                    <p data-testid={`${lineTestId}-validation`} className="px-2 pb-1 text-[11px] font-medium text-[var(--cos-danger-text)]">
-                      {validationMessage}
-                    </p>
                   ) : null}
                 </div>
               </div>

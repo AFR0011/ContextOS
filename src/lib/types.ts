@@ -19,7 +19,7 @@ export type CaptureStatus = "unprocessed" | "converted" | "attached" | "archived
 export type CaptureType = "task" | "note" | "project" | "deadline" | "status" | null;
 export type ReviewType = "daily-startup" | "daily-shutdown" | "weekly";
 export type PriorityScope = "daily" | "weekly";
-export type DashboardSectionId = "notepad" | "projects";
+export type DashboardSectionId = "notepad" | "dates" | "tasks" | "projects";
 
 export interface Domain {
   id: string;

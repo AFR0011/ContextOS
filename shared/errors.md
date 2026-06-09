@@ -6,6 +6,3 @@
 - 2026-06-04: Initial full e2e run failed 3 tests after selector/workflow changes. Fixed stable Save button, task target, and offline slash-capture cache assertion; targeted rerun and full suite passed.
 - 2026-06-04: Parallel `npm run typecheck` and `npm run build` caused a transient `.next/types` race. Sequential rerun passed.
 - 2026-06-04: In-app browser screenshot API timed out. DOM smoke passed and a local Playwright screenshot artifact was created.
-- 2026-06-09: Initial focused Dashboard Notepad Playwright run failed entity demotion scratch persistence. Fixed immediate scratchpad persistence when entity blocks demote; targeted and full e2e passed.
-- 2026-06-09: Initial full e2e rerun failed mobile markdown Return handling. Fixed native line-break splitting from live textarea values with a stable listener; focused mobile test and final full e2e passed.
-- 2026-06-09: Full e2e surfaced a concurrent starter bootstrap unique-constraint server log. Replaced dashboard scratchpad/preference singleton upserts with duplicate-skipping creates; final full e2e passed without that error.

@@ -311,26 +311,28 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
   });
 
 
-  await tx.dashboardScratchpad.createMany({
-    data: [{
+  await tx.dashboardScratchpad.upsert({
+    where: { userId },
+    update: {},
+    create: {
       id: idFor(userId, "dashboard-scratchpad"),
       userId,
       content: ""
-    }],
-    skipDuplicates: true
+    }
   });
 
-  await tx.dashboardPreference.createMany({
-    data: [{
+  await tx.dashboardPreference.upsert({
+    where: { userId },
+    update: {},
+    create: {
       id: idFor(userId, "dashboard-preferences"),
       userId,
-      sectionOrder: ["notepad", "projects"],
+      sectionOrder: ["notepad", "dates", "tasks", "projects"],
       collapsedSections: [],
       reviewPromptDismissals: [],
       dateWindowDays: 14,
       showCompleted: false
-    }],
-    skipDuplicates: true
+    }
   });
 
   await tx.priority.createMany({

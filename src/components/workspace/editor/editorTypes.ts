@@ -24,11 +24,6 @@ export interface EditorBlock {
   checked?: boolean;
   language?: string;
   open?: boolean;
-  entityRef?: {
-    kind: "task" | "deadline";
-    id: string;
-    dateField?: "plannedDate" | "dueDate";
-  };
 }
 
 export interface BlockMarkdownEditorProps {
@@ -46,8 +41,4 @@ export interface BlockMarkdownEditorProps {
   hideSaveButton?: boolean;
   footer?: ReactNode;
   onCaptureLine?: (line: string) => void;
-  blocks?: EditorBlock[];
-  onBlocksChange?: (blocks: EditorBlock[]) => void;
-  validationMessages?: Record<string, string>;
-  defaultBlockType?: BlockType;
 }

@@ -129,6 +129,23 @@ test("date utilities keep date-only values on the local calendar day", async () 
   }
 });
 
+test("dashboard preferences restore default sections when legacy order is missing dates and tasks", async () => {
+  const { normalizeDashboardPreference } = await import("../../src/lib/dashboard-preferences");
+  const preference = normalizeDashboardPreference({
+    sectionOrder: ["notepad", "projects"],
+    collapsedSections: ["projects", "legacy", "projects"],
+    dateWindowDays: 7,
+    reviewPromptDismissals: ["daily-startup:2026-06-09"],
+    showCompleted: true
+  });
+
+  expect(preference.sectionOrder).toEqual(["notepad", "dates", "tasks", "projects"]);
+  expect(preference.collapsedSections).toEqual(["projects"]);
+  expect(preference.dateWindowDays).toBe(7);
+  expect(preference.reviewPromptDismissals).toEqual(["daily-startup:2026-06-09"]);
+  expect(preference.showCompleted).toBe(true);
+});
+
 test("seeded demo account can log in and render dashboard", async ({ page }) => {
   await login(page);
   await expect(page.getByText("Mobile Command Sheet")).toBeVisible();

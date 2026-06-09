@@ -23,11 +23,11 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
+import { normalizeDashboardPreference } from "@/lib/dashboard-preferences";
 import { addDaysToDateKey, dateKeyToLocalDate, localDateKey, localWeekStartKey } from "@/lib/dates";
 import { useWorkspace } from "@/lib/client-store";
 import type { DashboardPreference, DashboardSectionId, Deadline, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
 
-const DASHBOARD_SECTION_ORDER: DashboardSectionId[] = ["notepad", "dates", "tasks", "projects"];
 const DONE_TASK_STATUSES: TaskStatus[] = ["done", "dropped"];
 const PROJECT_STALE_DAYS = 14;
 
@@ -104,13 +104,7 @@ function dateBadge(dateKey: string, today: string) {
 }
 
 function sectionDefaults(preference?: DashboardPreference) {
-  return {
-    collapsedSections: preference?.collapsedSections ?? [],
-    dateWindowDays: preference?.dateWindowDays ?? 14,
-    reviewPromptDismissals: preference?.reviewPromptDismissals ?? [],
-    showCompleted: preference?.showCompleted ?? false,
-    sectionOrder: preference?.sectionOrder?.length ? preference.sectionOrder : DASHBOARD_SECTION_ORDER
-  };
+  return normalizeDashboardPreference(preference);
 }
 
 function reviewLabel(type: ReviewType) {

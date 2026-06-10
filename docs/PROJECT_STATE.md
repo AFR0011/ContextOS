@@ -1,7 +1,7 @@
 # ContextOS Project State
 
 ## Current Objective
-Start v0.2.0 with Daily Schedule Grid timeline maturity while preserving the validated v0.1.x execution workflow.
+Select the next v0.2.x batch after completing Daily Schedule Grid and stale local cache recovery while preserving the validated execution-first workflow.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
@@ -30,7 +30,16 @@ Start v0.2.0 with Daily Schedule Grid timeline maturity while preserving the val
 ## Latest Verified State
 - The one-week usage trial is successful per user report on 2026-06-10: ContextOS does what it is supposed to do for the current execution-first MVP workflow.
 - v0.1.12 DB-up follow-up verification passed on 2026-06-10: `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed with 22 tests.
-- v0.2.0 Daily Schedule Grid is now the active implementation batch.
+- v0.2.0 Daily Schedule Grid is implemented and verified locally.
+- Dashboard and Today now share a `DailySchedule` component that places valid timed tasks in 30-minute schedule rows, treats start-only tasks as 30-minute blocks, and keeps untimed/overdue/in-progress-without-time/invalid-range tasks in an unscheduled/needs-attention list.
+- No Prisma migration, API contract change, or sync payload change was made for v0.2.0.
+- Verification on 2026-06-10: `npm run typecheck`, `npm run build`, targeted schedule Playwright tests, `npm run test:e2e` with 23 tests, and desktop/mobile in-app Browser smoke passed.
+- v0.2.1 Stale Local Cache Recovery is implemented and verified locally.
+- The workspace shell now exposes a compact guarded Refresh action next to sync state; Settings uses the same refresh guard.
+- Refresh from server is disabled while offline, syncing, refreshing, or while pending local mutations exist.
+- External demo reset/reseed recovery is covered: an already-open browser can replace stale local workspace state from the server without clearing pending offline work.
+- Starter workspace singleton records are now created idempotently to tolerate reset/bootstrap races.
+- Verification on 2026-06-10: `npm run db:seed`, targeted stale-cache Playwright tests, `npm run typecheck`, `npm run build`, `npm run test:e2e` with 24 tests, and in-app Browser Settings smoke passed.
 - v0.1.12 graceful database-unavailable handling is implemented locally.
 - Auth pages now render a visible PostgreSQL outage message instead of crashing when Postgres is unavailable.
 - Auth login/register/current-user APIs and workspace bootstrap/sync/reset APIs now return structured `503` JSON with `code: "database_unavailable"` when DB access fails due connectivity.
@@ -104,8 +113,7 @@ Start v0.2.0 with Daily Schedule Grid timeline maturity while preserving the val
 - Manual draft-save smoke on 2026-06-03: local browser edit of Latest Status while offline showed unsaved state, queued one pending mutation after save, then synced back to zero.
 
 ## Next Useful Work
-- Finish v0.2.0 Daily Schedule Grid and verify Dashboard/Today behavior.
 - Review `docs/MIGRATION_BACKLOG.md` before selecting the next v0.2.x batch.
-- Also prioritize stale local-cache recovery after external seed/reset and safe review of moderate dependency advisories.
+- Also prioritize safe review of moderate dependency advisories.
 - Treat the v0.1.x PARA foundation as product-validated unless new friction appears.
 - Do not make major Dashboard, Today, or command-surface changes without a product checkpoint.

@@ -1,5 +1,26 @@
 # ContextOS QA Report
 
+## 2026-06-10 - v0.2.1 Stale Local Cache Recovery
+
+Status: PASS.
+
+Checks run:
+
+- `npm run db:seed` - passed.
+- `npx playwright test tests/e2e/contextos.spec.ts -g "draft-saved domain edit|settings exposes sync visibility|global server refresh"` - passed, 3 tests.
+- `npm run typecheck` - passed.
+- `npm run build` - passed. Existing warning: `metadataBase` is not set.
+- `npm run test:e2e` - passed, 24 tests.
+
+Browser smoke:
+
+- Settings rendered at `http://localhost:3000/settings`.
+- Sidebar version label showed `MVP v0.2`.
+- Global shell refresh action and Settings refresh action were both visible/enabled with pending count `0`.
+- Horizontal overflow was `0px`.
+
+Verdict: PASS. Stale local cache recovery is implemented without schema/API/sync payload changes.
+
 ## 2026-06-10 - v0.1.12 Graceful Database-Unavailable Handling
 
 Status: PASS.
@@ -40,15 +61,23 @@ Verdict: PASS. DB-down and DB-up behavior are both verified.
 
 ## 2026-06-10 - v0.2.0 Daily Schedule Grid
 
-Status: EXECUTE IN PROGRESS.
+Status: PASS.
 
-Planned checks:
+Checks run:
 
-- `npm run typecheck`
-- `npm run build`
-- targeted Playwright schedule-grid tests
-- `npm run test:e2e`
-- Browser smoke for Dashboard and Today schedule rendering
+- `npm run typecheck` - passed.
+- `npm run build` - passed. Existing warning: `metadataBase` is not set.
+- `npx playwright test tests/e2e/contextos.spec.ts -g "seeded demo account|daily timeline task|daily schedule|today tasks"` - passed, 4 tests.
+- `npm run test:e2e` - passed, 23 tests.
+
+Browser smoke:
+
+- Desktop Dashboard at `http://localhost:3000/dashboard` showed the shared schedule grid with seeded tasks in `09:30`, `10:30`, and `15:00` slots.
+- Desktop Today at `http://localhost:3000/today` showed the same schedule split and start-only `15:00-15:30` behavior.
+- Mobile viewport `390x844` showed the Dashboard and Today schedule grids with seeded slot rows present and `0px` horizontal overflow.
+- Before visual judgment, Settings refresh-from-server was used to replace stale IndexedDB data from the already-open browser session.
+
+Verdict: PASS. v0.2.0 schedule grid is implemented without schema/API/sync changes.
 
 ## 2026-06-05 - v0.1.11 Dashboard Timeline and Schedule Tables
 

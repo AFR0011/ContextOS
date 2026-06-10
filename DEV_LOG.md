@@ -1,16 +1,59 @@
 # ContextOS Dev Log
 
+## 2026-06-10 - v0.2.1 Stale Local Cache Recovery
+
+Planner scope: make an already-open browser recover from stale IndexedDB/in-memory workspace data after external seed/reset without risking pending offline mutations. Keep the batch small: global guarded server-refresh action, Settings guard alignment, targeted tests, no schema/API/sync payload changes.
+
+Implementation:
+
+- Bumped package metadata to `0.2.1`.
+- Added a compact `Refresh` action to the existing workspace shell sync indicator.
+- Kept server refresh guarded: the visible refresh actions are disabled while offline, syncing, refreshing, or while pending local mutations exist.
+- Aligned Settings refresh button with the same pending-work guard.
+- Updated shell version label to `MVP v0.2`.
+- Made starter workspace singleton records race-tolerant by using idempotent `createMany(..., skipDuplicates: true)` for review, dashboard scratchpad, and dashboard preferences.
+- Added targeted Playwright coverage for stale local workspace recovery after external reset and for disabled refresh while offline work is pending.
+
+Verification:
+
+- `npm run db:seed` - passed.
+- `npx playwright test tests/e2e/contextos.spec.ts -g "draft-saved domain edit|settings exposes sync visibility|global server refresh"` - passed, 3 tests.
+- `npm run typecheck` - passed.
+- `npm run build` - passed with existing `metadataBase` warning.
+- `npm run test:e2e` - passed, 24 tests.
+- In-app Browser smoke at `http://localhost:3000/settings` passed: `MVP v0.2` visible, pending count `0`, global and Settings refresh actions enabled, and `0px` horizontal overflow.
+
+Result:
+
+- Batch complete. Stale-cache recovery risks `R-2026-06-10-07` and `R-2026-06-10-08` are closed.
+
 ## 2026-06-10 - v0.2.0 Daily Schedule Grid
 
 Planner scope: start v0.2 with timeline maturity by adding a shared visual schedule grid for Dashboard and Today. Preserve the current workflow and reuse existing task time fields. No Prisma migration, API change, sync payload change, drag/drop, recurrence, or calendar integration.
 
 Implementation:
 
-- In progress.
+- Bumped package metadata to `0.2.0`.
+- Added shared `DailySchedule` UI/helpers for time parsing, valid-range detection, 30-minute slot assignment, start-only default duration, display labels, and scheduled/unscheduled partitioning.
+- Replaced Dashboard Daily timeline list rendering with the shared schedule grid while keeping the existing add-task controls and project assignment flow.
+- Replaced Today task list rendering with the same shared schedule split while preserving priorities, deadlines, labels, and completion toggles.
+- Kept the batch schema-free: no Prisma migration, API change, sync payload change, drag/drop, recurrence, calendar import, or conflict detection.
+- Added targeted Playwright coverage for seeded timed rows, timed-task persistence, untimed tasks, invalid time ranges, and Today schedule/completion behavior.
 
 Verification:
 
-- Pending.
+- `npm run db:migrate` - passed before v0.2 implementation; schema already in sync.
+- `npm run db:seed` - passed before v0.2 implementation.
+- `npm run typecheck` - passed.
+- `npm run build` - passed with existing `metadataBase` warning.
+- `npx playwright test tests/e2e/contextos.spec.ts -g "seeded demo account|daily timeline task|daily schedule|today tasks"` - passed, 4 tests.
+- `npm run test:e2e` - passed, 23 tests.
+- In-app Browser desktop smoke confirmed Dashboard and Today schedule grids show seeded `09:30`, `10:30`, and `15:00` rows.
+- In-app Browser mobile smoke at `390x844` confirmed Dashboard and Today schedule grids render with `0px` horizontal overflow.
+
+Result:
+
+- Batch complete. Schedule-grid risks `R-2026-06-10-04`, `R-2026-06-10-05`, and `R-2026-06-10-06` are closed.
 
 ## 2026-06-10 - v0.1.12 DB-Up Verification Closeout
 

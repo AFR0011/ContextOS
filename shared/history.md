@@ -9,6 +9,9 @@
 - Tester ran typecheck, build, Prisma validate, diff check, targeted classifier test, DB-down auth/API smokes, and in-app Browser login smoke.
 - DB-up migration, seed, and full e2e later passed after Docker/Postgres became available; v0.1.12 DB-up risk closed.
 - Started v0.2.0 Daily Schedule Grid batch.
+- Completed v0.2.0 Daily Schedule Grid: package version bumped to `0.2.0`; shared schedule grid wired into Dashboard and Today; targeted tests, full e2e, and desktop/mobile browser smoke passed.
+- Planned v0.2.1 Stale Local Cache Recovery from the high-priority migration backlog.
+- Completed v0.2.1 Stale Local Cache Recovery: guarded shell refresh, Settings guard alignment, idempotent starter singleton creation, targeted tests, full e2e, and browser smoke passed.
 
 ## 2026-06-05
 

@@ -75,3 +75,31 @@ PASS: `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run bui
 ## architect-planner -> executor (v0.2.0)
 
 Implement the Daily Schedule Grid batch only: shared grid component/helpers, Dashboard wiring, Today wiring, version bump to 0.2.0, and targeted tests. No schema/API/sync changes, no drag/drop, no recurrence, no calendar import.
+
+## executor -> tester (v0.2.0 build complete)
+
+Implementation complete. Added shared Daily Schedule grid/helpers, wired Dashboard and Today, bumped package metadata to `0.2.0`, and added targeted Playwright coverage. No schema/API/sync changes.
+
+## tester -> docs-qa (v0.2.0 QA complete)
+
+PASS: typecheck, build, targeted schedule Playwright tests, full e2e with 23 tests, and desktop/mobile in-app Browser smoke passed.
+
+## docs-qa -> architect-planner (v0.2.0)
+
+Batch complete. Next v0.2.x work should be selected separately from `docs/MIGRATION_BACKLOG.md` or new user feedback; richer calendar behaviors remain deferred.
+
+## architect-planner -> executor (v0.2.1)
+
+Implement the Stale Local Cache Recovery batch only: package version bump to `0.2.1`, compact guarded refresh-from-server action in workspace chrome, Settings pending guard alignment, and targeted e2e. No schema/API/sync payload changes.
+
+## executor -> tester (v0.2.1 build complete)
+
+Implementation complete. Added guarded shell refresh, aligned Settings guard, bumped package metadata, updated shell version label, made starter singleton creation race-tolerant, and added targeted stale-cache tests.
+
+## tester -> docs-qa (v0.2.1 QA complete)
+
+PASS: db seed, targeted stale-cache Playwright tests, typecheck, build, full e2e with 24 tests, and in-app Browser Settings smoke passed.
+
+## docs-qa -> architect-planner (v0.2.1)
+
+Batch complete. Next work should be selected as a separate v0.2.x batch; dependency advisory review remains a good candidate.

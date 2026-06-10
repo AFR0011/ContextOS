@@ -97,7 +97,7 @@ After DB-down smoke, restart Postgres and rerun the normal DB-up ladder: `npm ru
 
 ## Local Dev Cache And Server Notes
 - `playwright.config.ts` can reuse an existing server on port 3000. After substantial source/schema changes, confirm the port is serving current code or stop the listener so Playwright starts a fresh dev server.
-- After external `npm run db:seed` or `POST /api/reset-demo`, an already-open browser may keep stale IndexedDB workspace data. Use Settings -> refresh from server when no pending offline mutations exist, or open a clean browser context for verification.
+- After external `npm run db:seed` or `POST /api/reset-demo`, an already-open browser may keep stale IndexedDB workspace data. Use the shell sync indicator's Refresh action or Settings -> refresh from server when no pending offline mutations exist, or open a clean browser context for verification.
 - If Postgres is unavailable, auth pages and workspace APIs should now render/return database-unavailable states. Start Postgres with `docker compose up -d` before DB-up verification.
 
 ## Notes

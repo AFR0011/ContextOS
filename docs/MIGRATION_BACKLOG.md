@@ -14,8 +14,9 @@ This file captures concerns that should survive beyond the v0.1.11 audit. It is 
 ### Stale Local Cache Recovery
 
 - Current issue: after external `db:seed` or reset, an already-open browser may retain stale IndexedDB workspace data.
-- Future work: make Settings refresh-from-server more prominent, detect server/cache generation drift if possible, and document when to refresh.
-- Acceptance signal: after reseed, the app can clearly guide the user to replace stale local cache without losing pending offline changes.
+- Status: v0.2.1 added a compact guarded shell Refresh action, aligned Settings guard behavior, and covered external reset recovery in e2e.
+- Future work: detect server/cache generation drift automatically if this remains confusing in real use.
+- Acceptance signal: after reseed, the app can clearly guide the user to replace stale local cache without losing pending offline changes. Verified on 2026-06-10.
 
 ### Dependency Advisory Review
 
@@ -28,9 +29,9 @@ This file captures concerns that should survive beyond the v0.1.11 audit. It is 
 ### Daily Timeline Maturity
 
 - Current issue: Daily timeline is list-based with optional task time ranges, not a true schedule grid.
-- Status: active v0.2.0 batch is adding a lightweight visual schedule grid with no schema changes, drag/drop, recurrence, or calendar integration.
+- Status: v0.2.0 implemented a lightweight visual schedule grid with no schema changes, drag/drop, recurrence, or calendar integration.
 - Future work: after the grid is validated, decide whether duration validation, conflict detection, drag/drop scheduling, calendar import, or recurrence are justified.
-- Acceptance signal: Dashboard and Today show timed tasks in schedule rows while keeping unscheduled/needs-attention work visible.
+- Acceptance signal: Dashboard and Today show timed tasks in schedule rows while keeping unscheduled/needs-attention work visible. Verified on 2026-06-10.
 
 ### Piano Schedule Scope
 

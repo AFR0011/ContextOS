@@ -290,49 +290,45 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
     skipDuplicates: true
   });
 
-  await tx.review.upsert({
-    where: { id: idFor(userId, "review-startup") },
-    update: {
-      type: "daily-startup",
-      date: new Date(),
-      responses: {
-        priorities: "1. Verify the ContextOS core loop\n2. Process stale captures\n3. Update one project status"
+  await tx.review.createMany({
+    data: [
+      {
+        id: idFor(userId, "review-startup"),
+        userId,
+        type: "daily-startup",
+        date: new Date(),
+        responses: {
+          priorities: "1. Verify the ContextOS core loop\n2. Process stale captures\n3. Update one project status"
+        }
       }
-    },
-    create: {
-      id: idFor(userId, "review-startup"),
-      userId,
-      type: "daily-startup",
-      date: new Date(),
-      responses: {
-        priorities: "1. Verify the ContextOS core loop\n2. Process stale captures\n3. Update one project status"
-      }
-    }
+    ],
+    skipDuplicates: true
   });
 
-
-  await tx.dashboardScratchpad.upsert({
-    where: { userId },
-    update: {},
-    create: {
-      id: idFor(userId, "dashboard-scratchpad"),
-      userId,
-      content: ""
-    }
+  await tx.dashboardScratchpad.createMany({
+    data: [
+      {
+        id: idFor(userId, "dashboard-scratchpad"),
+        userId,
+        content: ""
+      }
+    ],
+    skipDuplicates: true
   });
 
-  await tx.dashboardPreference.upsert({
-    where: { userId },
-    update: {},
-    create: {
-      id: idFor(userId, "dashboard-preferences"),
-      userId,
-      sectionOrder: ["notepad", "dates", "tasks", "projects"],
-      collapsedSections: [],
-      reviewPromptDismissals: [],
-      dateWindowDays: 14,
-      showCompleted: false
-    }
+  await tx.dashboardPreference.createMany({
+    data: [
+      {
+        id: idFor(userId, "dashboard-preferences"),
+        userId,
+        sectionOrder: ["notepad", "dates", "tasks", "projects"],
+        collapsedSections: [],
+        reviewPromptDismissals: [],
+        dateWindowDays: 14,
+        showCompleted: false
+      }
+    ],
+    skipDuplicates: true
   });
 
   await tx.priority.createMany({

@@ -9,6 +9,7 @@ import {
   BookOpen,
   CalendarDays,
   CheckCircle2,
+  Download,
   FileText,
   FolderKanban,
   Inbox,
@@ -67,13 +68,15 @@ function syncStatusLabel(sync: SyncSnapshot) {
   return "Online";
 }
 
-function SyncIndicator({ sync, compact = false }: { sync: SyncSnapshot; compact?: boolean }) {
+function SyncIndicator({ sync, compact = false, onRefreshFromServer }: { sync: SyncSnapshot; compact?: boolean; onRefreshFromServer?: () => Promise<void> }) {
   const Icon = sync.syncing ? RefreshCw : sync.online ? Wifi : WifiOff;
   const tone = sync.error
     ? "border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] text-[var(--cos-danger-text)]"
     : sync.lastWarning || !sync.online || sync.pendingCount > 0
       ? "border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] text-[var(--cos-warning-text)]"
       : "border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] text-[var(--cos-success-text)]";
+  const canRefreshFromServer = Boolean(sync.online && !sync.syncing && !sync.refreshing && sync.pendingCount === 0);
+  const refreshTitle = sync.pendingCount > 0 ? "Sync pending changes before refreshing" : sync.online ? "Refresh workspace from server" : "Refresh unavailable while offline";
 
   if (compact) {
     return (
@@ -102,6 +105,20 @@ function SyncIndicator({ sync, compact = false }: { sync: SyncSnapshot; compact?
           <span>{sync.lastWarning}</span>
         </p>
       ) : null}
+      {onRefreshFromServer ? (
+        <button
+          type="button"
+          data-testid="global-refresh-from-server"
+          onClick={() => void onRefreshFromServer()}
+          disabled={!canRefreshFromServer}
+          aria-label="Refresh workspace from server"
+          title={refreshTitle}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-current/20 bg-white/45 px-2 py-1.5 text-xs font-semibold hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Download className={`h-3.5 w-3.5 ${sync.refreshing ? "animate-pulse" : ""}`} />
+          <span>{sync.refreshing ? "Refreshing" : "Refresh"}</span>
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -112,7 +129,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
   const pathname = usePathname();
   const currentPath = pathname ?? "";
   const router = useRouter();
-  const { data, sync } = useWorkspace();
+  const { data, sync, forceRefreshFromServer } = useWorkspace();
   const inboxCount = data.captures.filter((capture) => capture.status === "unprocessed").length;
   const isDark = darkMode ?? false;
 
@@ -147,7 +164,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </div>
           <div>
             <p className="text-sm font-bold tracking-tight text-[var(--cos-text-strong)]">ContextOS</p>
-            <p className="text-[11px] font-medium text-[var(--cos-text-subtle)]">MVP v0.1</p>
+            <p className="text-[11px] font-medium text-[var(--cos-text-subtle)]">MVP v0.2</p>
           </div>
           <button
             className="cos-btn-ghost ml-auto grid h-9 w-9 place-items-center rounded-md text-[var(--cos-text-muted)]"
@@ -197,7 +214,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
         </nav>
 
         <div className="border-t border-[var(--cos-border-soft)] px-5 py-4">
-          <SyncIndicator sync={sync} />
+          <SyncIndicator sync={sync} onRefreshFromServer={forceRefreshFromServer} />
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium text-[var(--cos-text)]">{user.email}</p>

@@ -5,9 +5,6 @@
 | ID | Risk | Level | Mitigation | Status |
 | --- | --- | --- | --- | --- |
 | R-2026-06-10-01 | Database-outage classifier could miss provider-specific connection errors or overclassify unusual Prisma failures. | Medium | Centralized classifier with targeted coverage; expand patterns only from real provider errors. | Open |
-| R-2026-06-10-04 | Schedule-grid visualization could make the daily command surface harder to scan on mobile. | Medium | Keep compact rows, no drag/drop, and verify Dashboard/Today behavior with e2e plus browser smoke. | Open |
-| R-2026-06-10-05 | Sharing schedule logic between Dashboard and Today could regress existing task labels or completion behavior. | Medium | Use one shared component and add targeted coverage on both surfaces. | Open |
-| R-2026-06-10-06 | Invalid time ranges could disappear if only valid grid placement is implemented. | Low | Explicitly route invalid ranges to the needs-attention list. | Open |
 | R-2026-06-05-05 | Markdown table rendering could make the freeform editor heavier or less mobile-friendly. | Medium | Kept the editor as textarea plus lightweight preview; e2e covers rendered headings/checklist preview. | Accepted |
 | R-2026-06-05-06 | Piano schedule table could overfit one Notion database and become a general Notion clone. | Low | Kept it as a Markdown-backed Resource/table pattern, not formulas/relations. | Accepted |
 | R-2026-06-05-07 | Already-open browser IndexedDB cache can drift after external seed/reset. | Low | Settings has refresh-from-server; audit recommends clearer stale-cache recovery. | Accepted |
@@ -20,6 +17,11 @@
 
 | ID | Risk | Level | Status |
 | --- | --- | --- | --- |
+| R-2026-06-10-07 | Server refresh could overwrite unsynced local work if the guard is incomplete. | High | Closed - global and Settings refresh actions are disabled while pending/offline work exists, and the store retains the existing outbox guard. Targeted e2e passed. |
+| R-2026-06-10-08 | A global refresh affordance could add visual noise to the command shell. | Low | Closed - action is compact inside the existing sync indicator, and browser smoke showed no horizontal overflow. |
+| R-2026-06-10-04 | Schedule-grid visualization could make the daily command surface harder to scan on mobile. | Medium | Closed - compact schedule grid passed targeted e2e plus desktop and 390px mobile browser smoke with no horizontal overflow. |
+| R-2026-06-10-05 | Sharing schedule logic between Dashboard and Today could regress existing task labels or completion behavior. | Medium | Closed - shared component is covered by targeted Dashboard/Today tests, completion-toggle test, and full e2e. |
+| R-2026-06-10-06 | Invalid time ranges could disappear if only valid grid placement is implemented. | Low | Closed - targeted e2e verifies invalid `endTime <= startTime` tasks render in needs-attention and not in the grid. |
 | R-2026-06-10-02 | Normal DB-up auth/bootstrap/sync flows were not rerun end-to-end after outage handling because Docker/Postgres were unavailable. | Medium | Closed - `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed on 2026-06-10 after Docker/Postgres became available. |
 | R-2026-06-10-03 | Postgres outage previously caused auth/API server errors instead of clear user-facing outage states. | Medium | Closed - auth pages show a PostgreSQL outage message and DB-backed APIs return structured `503` JSON under DB-down smoke. |
 | R-2026-06-05-04 | Task time-range schema expansion could desync Prisma, API serialization, offline cache, and sync replay. | Medium | Closed - propagated through schema, migration, types, serialization, sync replay, client normalization, seed, and e2e coverage. |

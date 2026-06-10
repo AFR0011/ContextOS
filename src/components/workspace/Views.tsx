@@ -1440,6 +1440,8 @@ export function ArchiveView() {
 export function SettingsView() {
   const { data, sync, syncNow, forceRefreshFromServer, addDomain, updateDomain, resetDemoData } = useWorkspace();
   const [newDomain, setNewDomain] = useState("");
+  const canRefreshFromServer = Boolean(sync.online && !sync.refreshing && !sync.syncing && sync.pendingCount === 0);
+  const refreshTitle = sync.pendingCount > 0 ? "Sync pending changes before refreshing" : sync.online ? "Refresh workspace from server" : "Refresh unavailable while offline";
 
   return (
     <Page title="Settings" subtitle="Domains, sync state, and demo reset.">
@@ -1457,7 +1459,14 @@ export function SettingsView() {
             <RefreshCw className={`h-4 w-4 ${sync.syncing ? "animate-spin" : ""}`} />
             {sync.syncing ? "Syncing..." : "Sync now"}
           </button>
-          <button onClick={() => void forceRefreshFromServer()} disabled={!sync.online || sync.refreshing || sync.syncing} className="cos-btn cos-btn-secondary px-4 py-2 text-sm disabled:opacity-50">
+          <button
+            type="button"
+            data-testid="settings-refresh-from-server"
+            onClick={() => void forceRefreshFromServer()}
+            disabled={!canRefreshFromServer}
+            title={refreshTitle}
+            className="cos-btn cos-btn-secondary px-4 py-2 text-sm disabled:opacity-50"
+          >
             <Download className="h-4 w-4" />
             {sync.refreshing ? "Refreshing..." : "Refresh from server"}
           </button>

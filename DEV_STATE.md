@@ -2,10 +2,10 @@
 
 ## Active Loop
 
-- Status: EXECUTE IN PROGRESS - Batch v0.2.0 Daily Schedule Grid
+- Status: DONE - Batch v0.2.1 Stale Local Cache Recovery
 - Date: 2026-06-10
-- Active batch: v0.2.0 visual daily schedule grid for Dashboard and Today
-- Source request: Implement the approved plan: close v0.1.12 DB-up verification, then start v0.2 timeline maturity with a schedule grid.
+- Active batch: v0.2.1 stale local cache recovery after external seed/reset
+- Source request: Continue v0.2 work after v0.2.0 Daily Schedule Grid closeout.
 - Canonical product source: `BLUEPRINT.md`
 - Baseline docs: `docs/PROJECT_STATE.md`, `docs/REPO_MAP.md`, `docs/RUN_PROTOCOL.md`
 
@@ -33,46 +33,58 @@ npm run test:e2e   PASSED (22 tests)
 
 `R-2026-06-10-02` is closed.
 
+## Previous Batch Closeout
+
+### v0.2.0 Daily Schedule Grid
+
+Status: DONE.
+
+Verification passed on 2026-06-10:
+
+```text
+npm run typecheck PASSED
+npm run build     PASSED (existing metadataBase warning)
+targeted schedule Playwright PASSED (4 tests)
+npm run test:e2e  PASSED (23 tests)
+desktop/mobile Browser smoke PASSED
+```
+
+Schedule-grid risks `R-2026-06-10-04`, `R-2026-06-10-05`, and `R-2026-06-10-06` are closed.
+
 ## Active Batch Summary
 
 ### Goal
 
-Start v0.2 with a lightweight, reversible Daily Schedule Grid that makes timed work easier to scan without turning ContextOS into a calendar clone.
+Make stale browser-local workspace data recoverable after an external `db:seed` or demo reset without overwriting pending offline mutations.
 
 ### Intended Changes
 
 | Area | Change |
 |------|--------|
-| Versioning | Bump `package.json` and `package-lock.json` to `0.2.0` |
-| Shared schedule UI | Add a reusable Daily Schedule component/helpers using existing `Task.startTime` and `Task.endTime` |
-| Dashboard | Replace the Daily timeline list rendering with the schedule grid plus an unscheduled/needs-attention list |
-| Today | Show the same scheduled/unscheduled split while preserving priorities, deadlines, labels, and completion toggles |
-| Tests | Add targeted Playwright coverage for seeded grid rows, timed task persistence, untimed items, invalid ranges, and Today parity |
+| Versioning | Bump `package.json` and `package-lock.json` to `0.2.1` |
+| Global sync UI | Add a visible guarded server-refresh action to the workspace shell sync area |
+| Pending guard | Disable server refresh while offline, syncing, refreshing, or while local pending mutations exist |
+| Settings | Keep Settings refresh behavior aligned with the same pending guard |
+| Tests | Add targeted Playwright coverage for replacing stale local UI after external reset and preserving pending-work guard behavior |
 
 ### Acceptance Criteria
 
 | Criteria | Status |
 |----------|--------|
-| No Prisma migration, API change, or sync payload shape change | PLANNED |
-| Timed tasks with valid `startTime` render in 30-minute schedule rows | PLANNED |
-| Start-only tasks render as 30-minute blocks | PLANNED |
-| Untimed, overdue, in-progress-without-time, and invalid ranges render below the grid as unscheduled/needs-attention | PLANNED |
-| Dashboard and Today both use the shared schedule behavior | PLANNED |
-| Existing completion toggles and project/domain labels still work | PLANNED |
-| Typecheck, build, targeted schedule tests, and full e2e pass | PLANNED |
+| No Prisma migration, API change, or sync payload shape change | DONE |
+| A normal workspace route exposes a server-refresh action without requiring the user to know Settings exists | DONE |
+| Refresh from server is disabled while offline or pending local mutations exist | DONE |
+| After external demo reset, an open browser can replace stale local UI from the server | DONE |
+| Existing Settings sync metrics and refresh behavior still work | DONE |
+| Typecheck, build, targeted stale-cache tests, full e2e, and browser smoke pass | DONE |
 
 ### Risk Assessment
 
 | ID | Risk | Level | Status |
 |---|------|-------|--------|
-| R-2026-06-10-04 | Schedule-grid visualization could make the daily command surface harder to scan on mobile | Medium | Open; keep compact rows, no drag/drop, verify with e2e and browser smoke |
-| R-2026-06-10-05 | Sharing schedule logic between Dashboard and Today could regress existing task labels or completion behavior | Medium | Open; add targeted tests for both surfaces |
-| R-2026-06-10-06 | Invalid time ranges could disappear if only valid grid placement is implemented | Low | Open; explicitly route invalid ranges to needs-attention list |
+| R-2026-06-10-07 | Server refresh could overwrite unsynced local work if the guard is incomplete | High | Closed; visible refresh actions are disabled with pending/offline work and the store retains the existing outbox guard |
+| R-2026-06-10-08 | A global refresh affordance could add visual noise to the command shell | Low | Closed; action is compact inside the existing sync indicator and browser smoke passed |
 
 ## Next Phase
 
-1. Implement shared schedule helpers/component.
-2. Wire Dashboard and Today to the shared schedule.
-3. Add targeted Playwright coverage.
-4. Run typecheck, build, targeted schedule tests, full e2e, and browser smoke.
-5. Update docs/QA/risk state to close the v0.2.0 batch.
+The v0.2.1 Stale Local Cache Recovery batch is complete. Next useful work should be selected as a new batch from `docs/MIGRATION_BACKLOG.md` or new user feedback.

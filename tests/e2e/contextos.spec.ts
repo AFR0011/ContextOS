@@ -19,6 +19,14 @@ async function expectInputValue(page: Page, selector: string, value: string) {
     .toBe(true);
 }
 
+async function expectNoInputValue(page: Page, selector: string, value: string) {
+  await expect
+    .poll(async () =>
+      page.locator(selector).evaluateAll((inputs, expected) => inputs.every((input) => (input as HTMLInputElement).value !== expected), value)
+    )
+    .toBe(true);
+}
+
 function markdownLine(editor: Locator, index: number) {
   return editor.locator(`[data-testid$="-line-${index}"]`).first();
 }
@@ -434,6 +442,8 @@ test("draft-saved domain edit queues one offline mutation", async ({ page, conte
   await domainInput.blur();
 
   await expect(page.getByText("1 pending").first()).toBeVisible();
+  await expect(page.getByTestId("settings-refresh-from-server")).toBeDisabled();
+  await expect(page.getByTestId("global-refresh-from-server")).toBeDisabled();
   await context.setOffline(false);
   await page.getByRole("button", { name: /sync now/i }).click();
   await expect(page.getByTestId("pending-count")).toHaveText("0");
@@ -446,6 +456,26 @@ test("settings exposes sync visibility and server refresh controls", async ({ pa
   await expect(page.getByTestId("pending-count")).toHaveText("0");
   await expect(page.getByRole("button", { name: /sync now/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /refresh from server/i })).toBeVisible();
+});
+
+test("global server refresh replaces stale local workspace after external reset", async ({ page }) => {
+  await login(page);
+  await page.goto("/settings");
+  const staleDomain = `Stale cache domain ${Date.now()}`;
+  await page.getByPlaceholder("Add domain...").fill(staleDomain);
+  await page.getByPlaceholder("Add domain...").press("Enter");
+  await expectInputValue(page, "input", staleDomain);
+  await expect(page.getByTestId("pending-count")).toHaveText("0");
+
+  const reset = await page.request.post("/api/reset-demo");
+  expect(reset.ok()).toBeTruthy();
+  await expectInputValue(page, "input", staleDomain);
+
+  await expect(page.getByTestId("global-refresh-from-server")).toBeEnabled();
+  await page.getByTestId("global-refresh-from-server").click();
+  await expectNoInputValue(page, "input", staleDomain);
+  await expectInputValue(page, "input", "Research");
+  await expect(page.getByTestId("pending-count")).toHaveText("0");
 });
 
 test("stale sync mutations return conflict warnings", async ({ page }) => {

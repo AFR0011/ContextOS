@@ -1,24 +1,66 @@
 # ContextOS Version Log
 
+## v0.2.1 Stale Local Cache Recovery
+
+Status:
+Implemented locally and verified on 2026-06-10.
+
+Goal:
+Make browser-local stale workspace data recoverable after external seed/reset without overwriting pending offline mutations.
+
+Schema changes:
+None.
+
+Implemented behavior:
+- Bumped package metadata to `0.2.1`.
+- Added a compact guarded `Refresh` action to the workspace shell sync indicator.
+- Kept Settings refresh aligned with the same guard.
+- Refresh from server is disabled while offline, syncing, refreshing, or while pending local mutations exist.
+- Updated shell version label to `MVP v0.2`.
+- Made starter review, dashboard scratchpad, and dashboard preference creation idempotent under reset/bootstrap races.
+
+Verification:
+- `npm run db:seed` - passed.
+- `npx playwright test tests/e2e/contextos.spec.ts -g "draft-saved domain edit|settings exposes sync visibility|global server refresh"` - passed, 3 tests.
+- `npm run typecheck` - passed.
+- `npm run build` - passed with existing `metadataBase` warning.
+- `npm run test:e2e` - passed, 24 tests.
+- In-app Browser Settings smoke - passed.
+
+Known issues:
+- This batch adds explicit recovery, not automatic server/cache generation drift detection.
+- Existing `metadataBase` warning remains.
+
 ## v0.2.0 Daily Schedule Grid
 
 Status:
-In progress on 2026-06-10.
+Implemented locally and verified on 2026-06-10.
 
 Goal:
 Start v0.2 timeline maturity with a visual daily schedule grid for existing task time ranges while preserving the validated v0.1.x Dashboard/Today workflow.
 
 Schema changes:
-None planned.
+None.
 
-Planned behavior:
+Implemented behavior:
 - Reuse existing `Task.startTime` and `Task.endTime`.
-- Show valid timed tasks in 30-minute daily schedule rows.
+- Show valid timed tasks in 30-minute daily schedule rows from `06:00` to `22:00`, extending when timed tasks fall outside that range.
+- Treat start-only tasks as 30-minute blocks.
 - Keep untimed, overdue, in-progress-without-time, and invalid time ranges in an unscheduled/needs-attention list.
-- Share the same schedule behavior between Dashboard and Today.
+- Share the same schedule behavior between Dashboard and Today through `src/components/workspace/DailySchedule.tsx`.
+- Preserve existing Dashboard add-task workflow, Today priorities/deadlines, task completion toggles, and project/domain labels.
 
 Verification:
-Pending.
+- `npm run db:migrate` - passed before v0.2 implementation; schema already in sync.
+- `npm run db:seed` - passed before v0.2 implementation.
+- `npm run typecheck` - passed.
+- `npm run build` - passed with existing `metadataBase` warning.
+- `npx playwright test tests/e2e/contextos.spec.ts -g "seeded demo account|daily timeline task|daily schedule|today tasks"` - passed, 4 tests.
+- `npm run test:e2e` - passed, 23 tests.
+- Desktop and 390px mobile in-app Browser smoke passed for Dashboard and Today schedule grids.
+
+Known issues:
+- No conflict detection, drag/drop scheduling, recurrence, or calendar import is included in this batch by design.
 
 ## v0.1.11 Dashboard Timeline and Schedule Tables
 

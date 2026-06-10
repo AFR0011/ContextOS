@@ -1,5 +1,15 @@
 # Shared History
 
+## 2026-06-10
+
+- User reported one week of successful real ContextOS use; v0.1.x execution-first workflow is treated as product-validated.
+- One supervised dev-loop cycle for v0.1.12 graceful database-unavailable handling.
+- Architect-planner subagent was unavailable due unsupported fixed model, so a local written batch plan was used.
+- Executor implemented DB outage handling for auth pages, auth APIs, bootstrap, sync, reset, and client bootstrap/reset error surfacing.
+- Tester ran typecheck, build, Prisma validate, diff check, targeted classifier test, DB-down auth/API smokes, and in-app Browser login smoke.
+- DB-up migration, seed, and full e2e later passed after Docker/Postgres became available; v0.1.12 DB-up risk closed.
+- Started v0.2.0 Daily Schedule Grid batch.
+
 ## 2026-06-05
 
 - One supervised dev-loop cycle for v0.1.11 dashboard timeline and schedule tables.

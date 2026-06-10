@@ -18,10 +18,10 @@ import {
   NotebookPen,
   Plus,
   SquarePen,
-  Target,
   type LucideIcon
 } from "lucide-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
+import { DailySchedule, type DailyScheduleRow } from "@/components/workspace/DailySchedule";
 import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
 import { normalizeDashboardPreference } from "@/lib/dashboard-preferences";
 import { addDaysToDateKey, dateKeyToLocalDate, localDateKey, localWeekStartKey } from "@/lib/dates";
@@ -58,18 +58,6 @@ function projectName(projects: Project[], projectId: string | null | undefined) 
 
 function compareDateKeys(a: string, b: string) {
   return a.localeCompare(b);
-}
-
-function statusLabel(status: TaskStatus) {
-  const labels: Record<TaskStatus, string> = {
-    todo: "Todo",
-    "in-progress": "In progress",
-    blocked: "Blocked",
-    waiting: "Waiting",
-    done: "Done",
-    dropped: "Dropped"
-  };
-  return labels[status];
 }
 
 function taskTimeLabel(task: Pick<Task, "startTime" | "endTime">) {
@@ -196,86 +184,6 @@ function CheckboxButton({ checked, onClick, label }: { checked: boolean; onClick
     >
       <Check className="h-4 w-4" />
     </button>
-  );
-}
-
-function InlineTaskTitle({ task }: { task: Task }) {
-  const { updateTask } = useWorkspace();
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(task.title);
-
-  useEffect(() => {
-    if (!editing) setDraft(task.title);
-  }, [editing, task.title]);
-
-  function save() {
-    const title = draft.trim();
-    if (title && title !== task.title) updateTask(task.id, { title });
-    setEditing(false);
-  }
-
-  if (editing) {
-    return (
-      <input
-        autoFocus
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={save}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") save();
-          if (event.key === "Escape") {
-            setDraft(task.title);
-            setEditing(false);
-          }
-        }}
-        className="cos-input w-full px-2 py-1.5 text-sm font-medium"
-      />
-    );
-  }
-
-  return (
-    <button type="button" onClick={() => setEditing(true)} className="min-w-0 text-left text-sm font-medium text-[var(--cos-text-strong)] hover:text-[var(--cos-primary-text)]">
-      {task.title}
-    </button>
-  );
-}
-
-function TaskLine({ task, meta, project }: { task: Task; meta?: string; project?: string }) {
-  const { updateTask } = useWorkspace();
-  const done = task.status === "done";
-  return (
-    <div className="cos-row-muted flex items-start gap-3 px-3 py-3">
-      <CheckboxButton checked={done} onClick={() => updateTask(task.id, { status: done ? "todo" : "done" })} label={done ? `Mark ${task.title} todo` : `Mark ${task.title} done`} />
-      <div className="min-w-0 flex-1">
-        <div className={done ? "line-through opacity-50" : ""}>
-          <InlineTaskTitle task={task} />
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-          {taskTimeLabel(task) ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{taskTimeLabel(task)}</span> : null}
-          <span className="cos-pill cos-pill-muted">{statusLabel(task.status)}</span>
-          {meta ? <span className="cos-pill cos-pill-warning">{meta}</span> : null}
-          {task.dueDate ? <span className="cos-pill cos-pill-warning">Due {formatDateKey(task.dueDate)}</span> : null}
-          {task.plannedDate ? <span className="cos-pill cos-pill-primary">Planned {formatDateKey(task.plannedDate)}</span> : null}
-          {project ? <span className="cos-pill cos-pill-muted">{project}</span> : null}
-        </div>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          <input
-            aria-label={`${task.title} start time`}
-            type="time"
-            value={task.startTime ?? ""}
-            onChange={(event) => updateTask(task.id, { startTime: event.target.value || null })}
-            className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-1 text-xs"
-          />
-          <input
-            aria-label={`${task.title} end time`}
-            type="time"
-            value={task.endTime ?? ""}
-            onChange={(event) => updateTask(task.id, { endTime: event.target.value || null })}
-            className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-1 text-xs"
-          />
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -555,7 +463,7 @@ function DailyTimelineSection({ today, showCompleted }: { today: string; showCom
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const projects = activeProjectOptions(data.projects);
-  const rows = useMemo(() => {
+  const rows = useMemo<DailyScheduleRow[]>(() => {
     return data.tasks
       .filter((task) => isTaskVisible(task, showCompleted))
       .filter((task) => task.dueDate === today || task.plannedDate === today || task.status === "in-progress" || (task.dueDate && task.dueDate < today && isTaskOpen(task)))
@@ -569,8 +477,18 @@ function DailyTimelineSection({ today, showCompleted }: { today: string; showCom
         const bTime = b.startTime ?? b.endTime ?? "99:99";
         if (aTime !== bTime) return aTime.localeCompare(bTime);
         return a.createdAt.localeCompare(b.createdAt);
-      });
-  }, [data.tasks, showCompleted, today]);
+      })
+      .map((task) => ({
+        task,
+        labels: [
+          task.dueDate && task.dueDate < today && isTaskOpen(task) ? "Overdue" : "",
+          task.status === "in-progress" ? "In progress" : "",
+          task.dueDate ? `Due ${formatDateKey(task.dueDate)}` : "",
+          task.plannedDate ? `Planned ${formatDateKey(task.plannedDate)}` : "",
+          projectName(data.projects, task.projectId)
+        ].filter(Boolean)
+      }));
+  }, [data.projects, data.tasks, showCompleted, today]);
 
   function createTask() {
     const trimmed = title.trim();
@@ -614,7 +532,7 @@ function DailyTimelineSection({ today, showCompleted }: { today: string; showCom
           </select>
         ) : null}
       </div>
-      {rows.length ? rows.map((task) => <TaskLine key={task.id} task={task} project={projectName(data.projects, task.projectId)} meta={task.dueDate && task.dueDate < today && isTaskOpen(task) ? "Overdue" : task.status === "in-progress" ? "In progress" : undefined} />) : <EmptySmall icon={Target} title="No timeline items" description="Add one small block for today." />}
+      <DailySchedule rows={rows} today={today} />
     </div>
   );
 }

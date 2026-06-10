@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createSession, hashPassword, publicUser } from "@/lib/auth";
 import { createStarterWorkspace } from "@/lib/starter";
+import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
 
 const registerSchema = z.object({
   email: z.string().email().transform((v) => v.toLowerCase()),
@@ -33,6 +34,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ user: publicUser(user) });
   } catch (error) {
+    if (isDatabaseUnavailableError(error)) {
+      return databaseUnavailableResponse();
+    }
     console.error("Registration failed", error);
     return NextResponse.json(
       { error: "Registration server error. Check the deployment database connection and migrations." },

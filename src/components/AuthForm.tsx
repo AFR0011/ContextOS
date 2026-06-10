@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Zap } from "lucide-react";
 import { readJsonResponse, responseErrorMessage } from "@/lib/http-client";
 
-export default function AuthForm({ mode }: { mode: "login" | "register" }) {
+export default function AuthForm({ mode, serviceStatus }: { mode: "login" | "register"; serviceStatus?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState(mode === "login" ? "demo@contextos.local" : "");
   const [password, setPassword] = useState(mode === "login" ? "contextos-demo-v011" : "");
@@ -53,6 +53,12 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               {mode === "login" ? "Use the seeded demo account or your own account." : "New accounts start with the demo workspace data."}
             </p>
           </div>
+
+          {serviceStatus ? (
+            <p data-testid="auth-service-status" className="mt-4 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
+              {serviceStatus}
+            </p>
+          ) : null}
 
           <label className="mt-6 block text-sm font-medium text-[var(--cos-text)]">
             Email

@@ -1,25 +1,23 @@
 # Shared Context
 
-- Phase: QA COMPLETE
-- Active batch: v0.1.11 dashboard timeline, rendered freeform notes, piano schedule resource
-- Owner: Docs-QA
-- Planner handoff: Implement `modificaitons.txt` items 1-3 only, then audit the current app.
-- Latest feedback: Implementation verified; audit recorded in `docs/CURRENT_AUDIT_2026-06-05.md`.
-- Current risks: see `RISK_REGISTER.md` (notably DB-unavailable handling, stale browser cache after external seed/reset, and moderate dependency advisories).
-- Next required action: Pick the next batch from audit priorities, preferably graceful DB-unavailable handling around auth/bootstrap/sync.
+- Phase: EXECUTE IN PROGRESS
+- Active batch: v0.2.0 Daily Schedule Grid
+- Owner: Executor
+- Planner handoff: Add a lightweight shared daily schedule grid to Dashboard and Today using existing task time fields. Preserve current workflow; no schema/API/sync changes.
+- Latest feedback: v0.1.12 DB-up verification passed after Docker/Postgres became available; v0.2.0 implementation is in progress.
+- Current risks: see `RISK_REGISTER.md` (notably schedule-grid mobile scan risk, shared-label regression risk, provider-specific DB outage classification, stale browser cache after external seed/reset, and moderate dependency advisories).
+- Next required action: Implement shared schedule component, wire Dashboard/Today, add targeted tests, then run full verification.
 
 ## Implementation Summary
 
-**Task:** Apply `modificaitons.txt` items 1-3.
-**Status:** QA complete.
+**Task:** v0.2.0 Daily Schedule Grid.
+**Status:** implementation in progress.
 
 **Changes:**
-- Added `Task.startTime` and `Task.endTime` with migration `20260605160000_add_task_time_range`.
-- Propagated task time fields through server serialization, sync replay, client store, seed data, and shared types.
-- Replaced dashboard Tasks label/behavior with Daily timeline.
-- Added live Markdown preview for the dashboard notepad.
-- Added seeded Piano Schedule resource/table and table-aware preview.
-- Added current audit document.
+- Package version bumped to `0.2.0`.
+- Planned shared schedule-grid UI for Dashboard and Today.
+- No planned schema/API/sync changes.
 
 **Verification:**
-- Typecheck, build, Prisma validate, migration, seed, targeted Playwright, and full e2e passed.
+- v0.1.12 closeout passed: migration, seed, typecheck, build, and full e2e with 22 tests.
+- v0.2.0 verification pending.

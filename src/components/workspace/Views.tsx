@@ -37,6 +37,7 @@ import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
 import { MarkdownPreview as SharedMarkdownPreview } from "@/components/workspace/editor/MarkdownPreview";
 import { Dashboard2View } from "@/components/workspace/Dashboard2";
+import { DailySchedule, type DailyScheduleRow } from "@/components/workspace/DailySchedule";
 import { useWorkspace } from "@/lib/client-store";
 import { isDateKeyInLocalWeek, localDateKey, localWeekStartKey } from "@/lib/dates";
 import type { Capture, Deadline, Domain, Note, Priority, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
@@ -423,7 +424,7 @@ export function TodayView() {
   const tasks = executionTasks(data.tasks);
   const overdue = activeTasks(data.tasks).filter(isOverdue);
   const seen = new Set<string>();
-  const rows: { task: Task; labels: string[] }[] = [];
+  const rows: DailyScheduleRow[] = [];
   const add = (task: Task, labels: string[]) => {
     if (!seen.has(task.id)) {
       seen.add(task.id);
@@ -449,7 +450,7 @@ export function TodayView() {
       <div className="mt-3"><PriorityEditor scope="daily" dateKeyValue={today} limit={3} /></div>
       <section className="mt-6">
         <SectionTitle icon={CalendarCheck} title="Tasks" tone="indigo" count={rows.length} />
-        <div className="mt-2"><TaskList rows={rows} /></div>
+        <div className="mt-2"><DailySchedule rows={rows} today={today} emptyTitle="No tasks today" emptyDescription="Timed work and unscheduled items will appear here." /></div>
       </section>
       {deadlines.length ? (
         <section className="mt-6">

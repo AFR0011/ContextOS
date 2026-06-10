@@ -1,20 +1,22 @@
 # Shared Status
 
-- architect-planner: COMPLETE (batch selected)
-- executor: COMPLETE (v0.1.11 implementation done)
-- tester: COMPLETE (typecheck/build/db/e2e/browser smoke complete)
-- docs-qa: COMPLETE (docs, QA, risks, audit updated)
+- architect-planner: COMPLETE WITH TOOLING FALLBACK (v0.2.0 batch selected from approved plan)
+- executor: IN PROGRESS (v0.2.0 schedule grid)
+- tester: PENDING
+- docs-qa: PENDING
 
 ## Summary
 
-The v0.1.11 batch is QA complete:
+The v0.1.12 batch is fully verified and closed:
 
-- Code changes: task time range schema/data path, Dashboard Daily timeline, rendered notepad preview, Piano Schedule resource/table preview.
-- Verification: `npm run test:e2e` passed with 19 tests after Docker/Postgres became available.
-- Audit: `docs/CURRENT_AUDIT_2026-06-05.md`.
+- Product signal: user reports one week of successful real use.
+- Code changes: graceful DB-unavailable handling for auth pages and DB-backed auth/bootstrap/sync/reset APIs.
+- Verification: DB-down API/page smokes, DB-up migration, seed, typecheck, build, and full e2e passed.
+
+The v0.2.0 Daily Schedule Grid batch is now in progress.
 
 ## Remaining Follow-Up
 
-- Fix graceful handling when Postgres is unavailable.
+- Finish and verify v0.2.0 Daily Schedule Grid.
 - Review moderate dependency advisories without forced downgrade fixes.
 - Improve stale-cache recovery after external seed/reset.

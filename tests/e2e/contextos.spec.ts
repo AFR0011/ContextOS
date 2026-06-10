@@ -154,6 +154,9 @@ test("seeded demo account can log in and render dashboard", async ({ page }) => 
   await expect(page.getByRole("button", { name: /Daily timeline/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Projects/ })).toBeVisible();
   await expect(page.getByTestId("dashboard-section-projects").getByRole("button", { name: /ContextOS Demo/ })).toBeVisible();
+  await expect(page.getByTestId("schedule-slot-09:30").getByText("Process inbox captures")).toBeVisible();
+  await expect(page.getByTestId("schedule-slot-10:30").getByText("Write one clean latest-status note")).toBeVisible();
+  await expect(page.getByTestId("schedule-slot-15:00").getByText("Review deadlines and identify risk points")).toBeVisible();
 });
 
 test("quick capture appears in inbox and can convert to a task", async ({ page }) => {
@@ -289,14 +292,33 @@ test("dashboard can add and complete a daily timeline task with a time range", a
   await taskSection.getByLabel("Task end time").fill("10:00");
   await taskSection.getByLabel("Task project").selectOption({ label: "ContextOS Demo" });
   await taskSection.getByRole("button", { name: "Add", exact: true }).click();
-  const timelineRow = taskSection.locator(".cos-row-muted").filter({ hasText: title });
-  await expect(timelineRow.getByRole("button", { name: title, exact: true })).toBeVisible();
-  await expect(timelineRow.getByText("09:15-10:00")).toBeVisible();
-  await expect(timelineRow.getByText("ContextOS Demo")).toBeVisible();
+  const scheduleSlot = taskSection.getByTestId("schedule-slot-09:00");
+  await expect(scheduleSlot.getByRole("button", { name: title, exact: true })).toBeVisible();
+  await expect(scheduleSlot.getByText("09:15-10:00")).toBeVisible();
+  await expect(scheduleSlot.getByText("ContextOS Demo")).toBeVisible();
   await page.reload();
-  await expect(page.getByTestId("dashboard-section-tasks").getByText("09:15-10:00")).toBeVisible();
+  await expect(page.getByTestId("schedule-slot-09:00").getByText("09:15-10:00")).toBeVisible();
   await taskSection.getByRole("button", { name: `Mark ${title} done` }).click();
   await expect(taskSection.getByRole("button", { name: title, exact: true })).not.toBeVisible();
+});
+
+test("dashboard daily schedule keeps untimed and invalid time ranges below the grid", async ({ page }) => {
+  await login(page);
+  const taskSection = page.getByTestId("dashboard-section-tasks");
+  const untimed = `Untimed schedule item ${Date.now()}`;
+  await page.getByTestId("dashboard-add-task-input").fill(untimed);
+  await taskSection.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(taskSection.getByTestId("daily-schedule-unscheduled").getByText(untimed)).toBeVisible();
+  await expect(taskSection.getByTestId("daily-schedule-unscheduled").getByText("Unscheduled", { exact: true })).toBeVisible();
+
+  const invalid = `Invalid schedule item ${Date.now()}`;
+  await page.getByTestId("dashboard-add-task-input").fill(invalid);
+  await taskSection.getByLabel("Task start time").fill("11:00");
+  await taskSection.getByLabel("Task end time").fill("10:30");
+  await taskSection.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(taskSection.getByTestId("daily-schedule-unscheduled").getByText(invalid)).toBeVisible();
+  await expect(taskSection.getByText("Needs attention: end time is before start time")).toBeVisible();
+  await expect(taskSection.getByTestId("daily-schedule-grid").getByText(invalid)).toHaveCount(0);
 });
 
 test("dashboard can add a project-linked deadline with time and location", async ({ page }) => {
@@ -322,14 +344,15 @@ test("today tasks stay visible and interactable after completion", async ({ page
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   const taskTitle = "Process inbox captures";
   const main = page.locator("main");
-  await expect(main.getByText(taskTitle).first()).toBeVisible();
+  await expect(main.getByTestId("schedule-slot-09:30").getByText(taskTitle)).toBeVisible();
+  await expect(main.getByTestId("schedule-slot-10:30").getByText("Write one clean latest-status note")).toBeVisible();
   await main.getByRole("button", { name: `Mark ${taskTitle} done` }).first().click();
-  await expect(main.getByText(taskTitle).first()).toBeVisible();
+  await expect(main.getByTestId("schedule-slot-09:30").getByText(taskTitle)).toBeVisible();
   await expect(main.getByRole("button", { name: `Mark ${taskTitle} todo` }).first()).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
-  await expect(main.getByText(taskTitle).first()).toBeVisible();
+  await expect(main.getByTestId("schedule-slot-09:30").getByText(taskTitle)).toBeVisible();
   await expect(main.getByRole("button", { name: `Mark ${taskTitle} todo` }).first()).toBeVisible();
 });
 

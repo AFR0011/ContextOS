@@ -83,10 +83,22 @@ Use [FRICTION_LOG.md](FRICTION_LOG.md) during the one-day trial.
 - For dev verification, assert cached workspace/outbox durability first, then reconnect and confirm the queued records render and pending sync clears.
 - For full offline reload hydration, use a production build smoke because service worker app-shell and chunk caching are the relevant boundary.
 
+## Database-Unavailable Smoke
+
+When checking graceful DB outage behavior, use a running dev server with Postgres stopped or unavailable.
+
+Expected behavior:
+
+- `/login` renders a clear PostgreSQL-unavailable message and does not show an internal server error.
+- `POST /api/auth/login` returns `503` JSON with `code: "database_unavailable"`.
+- Protected DB-backed APIs such as `/api/bootstrap`, `/api/sync`, `/api/reset-demo`, and `/api/auth/me` return `503` JSON with `code: "database_unavailable"` when a session cookie forces DB lookup.
+
+After DB-down smoke, restart Postgres and rerun the normal DB-up ladder: `npm run db:migrate`, `npm run db:seed`, and `npm run test:e2e`.
+
 ## Local Dev Cache And Server Notes
 - `playwright.config.ts` can reuse an existing server on port 3000. After substantial source/schema changes, confirm the port is serving current code or stop the listener so Playwright starts a fresh dev server.
 - After external `npm run db:seed` or `POST /api/reset-demo`, an already-open browser may keep stale IndexedDB workspace data. Use Settings -> refresh from server when no pending offline mutations exist, or open a clean browser context for verification.
-- If Postgres is unavailable, auth pages and workspace APIs may fail before rendering useful UI. Start Postgres with `docker compose up -d` before DB-backed verification.
+- If Postgres is unavailable, auth pages and workspace APIs should now render/return database-unavailable states. Start Postgres with `docker compose up -d` before DB-up verification.
 
 ## Notes
 - `.env` is ignored and may contain local-only demo values.

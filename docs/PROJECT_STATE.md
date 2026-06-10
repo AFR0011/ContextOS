@@ -1,7 +1,7 @@
 # ContextOS Project State
 
 ## Current Objective
-Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, and Resources.
+Start v0.2.0 with Daily Schedule Grid timeline maturity while preserving the validated v0.1.x execution workflow.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
@@ -23,10 +23,19 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 - Project hierarchy is intentionally lightweight: `parentProjectId` is nullable and user-scoped in app logic, without a strict database foreign key in v0.1.x.
 - Resources are markdown notes, not rich Notion-style databases; formula-heavy resources, routines, rotations, and spaced repetition are deferred.
 - Email verification, password reset, OAuth, semantic search, calendar integration, and external AI suggestions are deferred.
-- PWA icons are not yet added; manifest and service worker are functional placeholders.
+- PWA manifest icons have been generated; manual installability checks on mobile browsers remain optional follow-up.
+- Database-unavailable handling now covers auth pages and core DB-backed APIs with clear user-facing messages.
 - Production credential rotation is partly external: any previously shared Neon/Postgres credential must be rotated in the provider, then copied into deployment environment variables.
 
 ## Latest Verified State
+- The one-week usage trial is successful per user report on 2026-06-10: ContextOS does what it is supposed to do for the current execution-first MVP workflow.
+- v0.1.12 DB-up follow-up verification passed on 2026-06-10: `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed with 22 tests.
+- v0.2.0 Daily Schedule Grid is now the active implementation batch.
+- v0.1.12 graceful database-unavailable handling is implemented locally.
+- Auth pages now render a visible PostgreSQL outage message instead of crashing when Postgres is unavailable.
+- Auth login/register/current-user APIs and workspace bootstrap/sync/reset APIs now return structured `503` JSON with `code: "database_unavailable"` when DB access fails due connectivity.
+- Client bootstrap/reset handling now surfaces the server-provided outage message in sync state.
+- Verification on 2026-06-10: `npm run typecheck`, `npm run build`, `npx prisma validate`, `git diff --check`, targeted classifier Playwright coverage, DB-down auth/API smokes, and in-app Browser `/login` smoke passed.
 - v0.1.11 dashboard timeline and schedule-table changes are implemented locally.
 - Dashboard freeform notepad keeps fast textarea editing and now renders a live Markdown preview, including headings, checklists, and tables.
 - Dashboard `Tasks` is replaced by `Daily timeline`; tasks can carry optional `startTime` and `endTime`, display as time-range pills, and can be project-linked while planned for today.
@@ -95,10 +104,8 @@ Run the v0.1.x PARA foundation trial with Dashboard Canvas, subcontexts, Areas, 
 - Manual draft-save smoke on 2026-06-03: local browser edit of Latest Status while offline showed unsaved state, queued one pending mutation after save, then synced back to zero.
 
 ## Next Useful Work
-- Review `docs/MIGRATION_BACKLOG.md` before selecting the next v0.1.x or v0.2.0 batch.
-- Highest-priority future concern: graceful database-unavailable handling around auth/bootstrap/sync/reset.
+- Finish v0.2.0 Daily Schedule Grid and verify Dashboard/Today behavior.
+- Review `docs/MIGRATION_BACKLOG.md` before selecting the next v0.2.x batch.
 - Also prioritize stale local-cache recovery after external seed/reset and safe review of moderate dependency advisories.
-- Use the v0.1.x PARA foundation for one real workday and record friction in `docs/FRICTION_LOG.md`.
-- During the trial, pay special attention to whether the markdown canvas reduces context-switching and whether slash capture inside the editor feels faster than the old separate capture field.
-- Pay special attention to whether subcontexts solve course/assistantship nesting and whether Dashboard Canvas reduces Notion dashboard use.
-- After the trial, sort friction into bug, UX friction, missing feature, and user discipline problem, then fix only obvious small bugs before v0.2.0 planning.
+- Treat the v0.1.x PARA foundation as product-validated unless new friction appears.
+- Do not make major Dashboard, Today, or command-surface changes without a product checkpoint.

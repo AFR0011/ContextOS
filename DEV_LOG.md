@@ -1,5 +1,72 @@
 # ContextOS Dev Log
 
+## 2026-06-10 - v0.2.0 Daily Schedule Grid
+
+Planner scope: start v0.2 with timeline maturity by adding a shared visual schedule grid for Dashboard and Today. Preserve the current workflow and reuse existing task time fields. No Prisma migration, API change, sync payload change, drag/drop, recurrence, or calendar integration.
+
+Implementation:
+
+- In progress.
+
+Verification:
+
+- Pending.
+
+## 2026-06-10 - v0.1.12 DB-Up Verification Closeout
+
+Planner scope: close the open v0.1.12 DB-up verification risk once Docker/Postgres became available.
+
+Verification:
+
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed with existing `metadataBase` warning.
+- `npm run test:e2e` - passed, 22 tests.
+
+Result:
+
+- Closed `R-2026-06-10-02`.
+- v0.1.x is product-validated by user report and DB-up/DB-down verification.
+
+## 2026-06-10 - v0.1.12 Graceful Database-Unavailable Handling
+
+Planner scope: after the user's one-week successful usage trial, implement the highest-priority audit hardening item: graceful database-unavailable handling around auth, bootstrap, sync, and reset flows.
+
+Implementation:
+
+- Added `src/lib/database-errors.ts` with a pure classifier and shared `database_unavailable` response constants.
+- Added `src/lib/database-health.ts` with a server-only DB ping and structured `503` JSON response helper.
+- Updated login/register pages and `AuthForm` to render a clear PostgreSQL outage message instead of surfacing a server-render failure.
+- Updated auth login/register/current-user APIs and workspace bootstrap/sync/reset APIs to return structured `503` JSON for database connection failures.
+- Updated `destroySession` to clear the local session cookie even when DB-backed session deletion is unavailable.
+- Updated client bootstrap and reset handling to surface server-provided outage messages in sync state.
+- Added targeted Playwright-side classifier coverage in `tests/e2e/database-errors.spec.ts`.
+
+Verification:
+
+- `npm run typecheck` - passed.
+- `npm run build` - passed with existing `metadataBase` warning.
+- `npx prisma validate` - passed.
+- `git diff --check` - passed with line-ending normalization warnings only.
+- `npx playwright test tests/e2e/database-errors.spec.ts` - passed, 1 test.
+- DB-down smoke on local dev server:
+  - `/login` returned 200, showed the PostgreSQL outage message, and did not show internal-error text.
+  - `/api/auth/login` returned `503` with `code: "database_unavailable"`.
+  - `/api/bootstrap`, `/api/sync`, `/api/reset-demo`, and `/api/auth/me` returned `503` with a dummy session cookie.
+  - In-app Browser verified the `/login` outage banner.
+
+Blocked verification:
+
+- `docker compose up -d` failed because Docker Desktop's Linux engine pipe was unavailable.
+- `npm run db:migrate` failed because localhost Postgres was unavailable.
+- `npm run db:seed` and full `npm run test:e2e` were not run because DB-backed verification requires Postgres.
+
+Tooling notes:
+
+- Generic dev-loop helper scripts under `tools/` are absent in this repo.
+- The `architect-planner` subagent failed before planning because its fixed model is unsupported for the current account, so a local written batch plan was used before implementation.
+
 ## 2026-06-05 - v0.1.11 Dashboard Timeline, Rendered Notepad, Piano Schedule
 
 Planner scope: implement the current `modificaitons.txt` items 1-3 in one batch, then audit the current app.

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createSession, publicUser, verifyPassword } from "@/lib/auth";
+import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
 
 const loginSchema = z.object({
   email: z.string().email().transform((v) => v.toLowerCase()),
@@ -23,6 +24,9 @@ export async function POST(request: Request) {
     await createSession(user.id);
     return NextResponse.json({ user: publicUser(user) });
   } catch (error) {
+    if (isDatabaseUnavailableError(error)) {
+      return databaseUnavailableResponse();
+    }
     console.error("Login failed", error);
     return NextResponse.json(
       { error: "Login server error. Check the deployment database connection and migrations." },

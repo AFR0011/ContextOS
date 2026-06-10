@@ -1,5 +1,55 @@
 # ContextOS QA Report
 
+## 2026-06-10 - v0.1.12 Graceful Database-Unavailable Handling
+
+Status: PASS.
+
+Checks run:
+
+- `npm run typecheck` - passed.
+- `npm run build` - passed. Existing warning: `metadataBase` is not set.
+- `npx prisma validate` - passed.
+- `git diff --check` - passed with line-ending normalization warnings only.
+- `npx playwright test tests/e2e/database-errors.spec.ts` - passed, 1 test.
+- `docker compose up -d` - failed/blocked because Docker Desktop's Linux engine pipe was unavailable.
+- `npm run db:migrate` - failed/blocked because localhost Postgres was unavailable.
+
+DB-down smoke:
+
+- `GET /login` returned 200, rendered "ContextOS cannot reach PostgreSQL right now", and did not render internal-error text.
+- `POST /api/auth/login` returned `503` with `code: "database_unavailable"`.
+- `GET /api/bootstrap` with a dummy session cookie returned `503` with `code: "database_unavailable"`.
+- `POST /api/sync` with a dummy session cookie returned `503` with `code: "database_unavailable"`.
+- `POST /api/reset-demo` with a dummy session cookie returned `503` with `code: "database_unavailable"`.
+- `GET /api/auth/me` with a dummy session cookie returned `503` with `code: "database_unavailable"`.
+- In-app Browser smoke at `http://localhost:3000/login` verified the outage banner and no internal-error text.
+
+Not run:
+
+- Earlier in the cycle, `npm run db:seed` and full `npm run test:e2e` were not run because Docker/Postgres were unavailable.
+
+DB-up follow-up after Docker/Postgres became available:
+
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed. Existing warning: `metadataBase` is not set.
+- `npm run test:e2e` - passed, 22 tests.
+
+Verdict: PASS. DB-down and DB-up behavior are both verified.
+
+## 2026-06-10 - v0.2.0 Daily Schedule Grid
+
+Status: EXECUTE IN PROGRESS.
+
+Planned checks:
+
+- `npm run typecheck`
+- `npm run build`
+- targeted Playwright schedule-grid tests
+- `npm run test:e2e`
+- Browser smoke for Dashboard and Today schedule rendering
+
 ## 2026-06-05 - v0.1.11 Dashboard Timeline and Schedule Tables
 
 Status: PASS.

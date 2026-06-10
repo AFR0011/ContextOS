@@ -51,3 +51,27 @@ PASS_WITH_RISKS: typecheck, build, Prisma validate, migration, seed, targeted Pl
 ## docs-qa -> architect-planner (v0.1.11)
 
 Batch complete. Next recommended batch is graceful database-unavailable handling around auth, bootstrap, sync, and reset flows.
+
+## architect-planner -> executor (v0.1.12)
+
+Implement one hardening batch only: graceful database-unavailable handling around auth pages, auth APIs, bootstrap, sync, and reset. Do not change the validated Dashboard/Today command surface.
+
+## executor -> tester (v0.1.12 build complete)
+
+Implementation complete. Auth pages render a DB outage warning, DB-backed APIs return structured `503` JSON, client bootstrap/reset surfaces server messages, and classifier coverage was added.
+
+## tester -> docs-qa (v0.1.12 QA complete with risks)
+
+PASS_WITH_RISKS: typecheck, build, Prisma validate, diff check, targeted classifier test, DB-down auth/API smokes, and in-app Browser login smoke passed. DB-up migration/seed/full e2e are blocked because Docker/Postgres are unavailable.
+
+## docs-qa -> architect-planner (v0.1.12)
+
+Batch complete with DB-up verification risk open. Next required action is rerun migration, seed, and full e2e when Postgres is available; after that, select stale-cache recovery or dependency advisory review.
+
+## tester -> docs-qa (v0.1.12 DB-up closeout)
+
+PASS: `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed after Docker/Postgres became available. Full e2e passed with 22 tests.
+
+## architect-planner -> executor (v0.2.0)
+
+Implement the Daily Schedule Grid batch only: shared grid component/helpers, Dashboard wiring, Today wiring, version bump to 0.2.0, and targeted tests. No schema/API/sync changes, no drag/drop, no recurrence, no calendar import.

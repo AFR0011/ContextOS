@@ -1,5 +1,25 @@
 # ContextOS Version Log
 
+## v0.2.0 Daily Schedule Grid
+
+Status:
+In progress on 2026-06-10.
+
+Goal:
+Start v0.2 timeline maturity with a visual daily schedule grid for existing task time ranges while preserving the validated v0.1.x Dashboard/Today workflow.
+
+Schema changes:
+None planned.
+
+Planned behavior:
+- Reuse existing `Task.startTime` and `Task.endTime`.
+- Show valid timed tasks in 30-minute daily schedule rows.
+- Keep untimed, overdue, in-progress-without-time, and invalid time ranges in an unscheduled/needs-attention list.
+- Share the same schedule behavior between Dashboard and Today.
+
+Verification:
+Pending.
+
 ## v0.1.11 Dashboard Timeline and Schedule Tables
 
 Status:

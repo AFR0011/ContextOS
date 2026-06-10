@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { randomBytes, createHash } from "crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { checkDatabaseAvailability, isDatabaseUnavailableError } from "./database-health";
 import { prisma } from "./prisma";
 
 const SESSION_COOKIE = "contextos_session";
@@ -61,10 +62,15 @@ export async function createSession(userId: string) {
 export async function destroySession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (token) {
-    await prisma.session.deleteMany({ where: { tokenHash: hashToken(token) } });
+  try {
+    if (token) {
+      await prisma.session.deleteMany({ where: { tokenHash: hashToken(token) } });
+    }
+  } catch (error) {
+    if (!isDatabaseUnavailableError(error)) throw error;
+  } finally {
+    cookieStore.delete(SESSION_COOKIE);
   }
-  cookieStore.delete(SESSION_COOKIE);
 }
 
 export async function getCurrentUser() {
@@ -85,6 +91,21 @@ export async function getCurrentUser() {
   }
 
   return publicUser(session.user);
+}
+
+export async function getAuthPageStatus() {
+  try {
+    const user = await getCurrentUser();
+    if (user) return { user, databaseUnavailable: false };
+
+    const databaseAvailable = await checkDatabaseAvailability();
+    return { user: null, databaseUnavailable: !databaseAvailable };
+  } catch (error) {
+    if (isDatabaseUnavailableError(error)) {
+      return { user: null, databaseUnavailable: true };
+    }
+    throw error;
+  }
 }
 
 export async function requireUser() {

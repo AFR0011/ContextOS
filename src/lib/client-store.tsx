@@ -396,16 +396,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             await syncNow();
           } else {
             const response = await fetch("/api/bootstrap");
-            if (response.ok) {
-              const result = await readJsonResponse<{ data: WorkspaceData }>(response);
-              if (result?.data) {
-                await saveWorkspace(result.data);
-                setLastSyncedAt(result.data.serverSyncedAt);
-              }
+            const result = await readJsonResponse<{ data?: WorkspaceData; error?: string }>(response);
+            if (response.ok && result?.data) {
+              await saveWorkspace(result.data);
+              setLastSyncedAt(result.data.serverSyncedAt);
+            } else if (!response.ok) {
+              throw new Error(response.status === 401 ? "Sign in again to load workspace." : responseErrorMessage(response, result, "Server refresh unavailable"));
             }
           }
-        } catch {
-          setError("Loaded cached data. Server refresh is unavailable.");
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Server refresh is unavailable.";
+          setError(cached ? `Loaded cached data. ${message}` : message);
           setLastErrorAt(now());
         }
       }
@@ -460,8 +461,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       forceRefreshFromServer,
       resetDemoData: async () => {
         const response = await fetch("/api/reset-demo", { method: "POST" });
+        const result = await readJsonResponse<{ data?: WorkspaceData; error?: string }>(response);
         if (response.ok) {
-          const result = await readJsonResponse<{ data: WorkspaceData }>(response);
           if (result?.data) {
             await saveWorkspace(result.data);
             setLastSyncedAt(result.data.serverSyncedAt);
@@ -472,7 +473,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             setStaleMutationCount(0);
           }
         } else {
-          setError("Could not reset demo data while offline.");
+          setError(responseErrorMessage(response, result, "Could not reset demo data"));
           setLastErrorAt(now());
         }
         await idbSet(OUTBOX_KEY, []);

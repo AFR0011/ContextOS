@@ -7,8 +7,9 @@ This file captures concerns that should survive beyond the v0.1.11 audit. It is 
 ### Graceful Database-Unavailable Handling
 
 - Current issue: if Postgres is down, server-rendered auth pages can fail before rendering the login form because `getCurrentUser()` queries Prisma directly.
-- Future work: wrap auth/bootstrap/sync/reset database access in user-facing failure states and maintenance-style responses.
-- Acceptance signal: `/login` renders a clear database-unavailable message instead of a server error when Postgres is stopped.
+- Status: implemented in v0.1.12 for auth pages plus auth/bootstrap/sync/reset APIs.
+- Remaining work: expand the classifier only from real provider-specific connection errors.
+- Acceptance signal: `/login` renders a clear database-unavailable message instead of a server error when Postgres is stopped. Verified on 2026-06-10.
 
 ### Stale Local Cache Recovery
 
@@ -27,8 +28,9 @@ This file captures concerns that should survive beyond the v0.1.11 audit. It is 
 ### Daily Timeline Maturity
 
 - Current issue: Daily timeline is list-based with optional task time ranges, not a true schedule grid.
-- Future work: decide whether v0.2 needs duration validation, conflict detection, drag/drop scheduling, calendar import, or recurrence.
-- Acceptance signal: timeline behavior is tested against real workday use rather than expanded by assumption.
+- Status: active v0.2.0 batch is adding a lightweight visual schedule grid with no schema changes, drag/drop, recurrence, or calendar integration.
+- Future work: after the grid is validated, decide whether duration validation, conflict detection, drag/drop scheduling, calendar import, or recurrence are justified.
+- Acceptance signal: Dashboard and Today show timed tasks in schedule rows while keeping unscheduled/needs-attention work visible.
 
 ### Piano Schedule Scope
 

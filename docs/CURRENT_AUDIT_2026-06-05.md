@@ -38,7 +38,7 @@
 
 ## Improvement Priorities
 
-1. Add graceful DB-unavailable handling around `getCurrentUser`, `/api/bootstrap`, `/api/sync`, and reset flows so login/settings can explain the problem instead of crashing.
+1. Implemented in v0.1.12: graceful DB-unavailable handling around `getCurrentUser`, auth pages, `/api/bootstrap`, `/api/sync`, and reset flows. Remaining follow-up is DB-up full e2e once Postgres is available.
 2. Add an obvious stale-cache recovery path after demo reset/seed and document when to use Settings -> refresh from server.
 3. Review dependency advisories and track safe upgrades for Next/PostCSS and Prisma once upstream versions resolve the moderate audit warnings without forced downgrades.
 4. Decide whether Daily timeline should stay list-based for v0.1 or graduate to a true day schedule grid in v0.2.

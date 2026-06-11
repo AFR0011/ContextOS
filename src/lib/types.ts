@@ -7,7 +7,7 @@ export type ViewType =
   | "project-detail"
   | "areas"
   | "resources"
-  | "deadlines"
+  | "dates"
   | "archive"
   | "search"
   | "settings"
@@ -18,8 +18,7 @@ export type TaskStatus = "todo" | "in-progress" | "blocked" | "waiting" | "done"
 export type CaptureStatus = "unprocessed" | "converted" | "attached" | "archived" | "deleted";
 export type CaptureType = "task" | "note" | "project" | "deadline" | "status" | null;
 export type ReviewType = "daily-startup" | "daily-shutdown" | "weekly";
-export type PriorityScope = "daily" | "weekly";
-export type DashboardSectionId = "notepad" | "dates" | "tasks" | "projects";
+export type DashboardSectionId = "notepad" | "dates" | "tasks" | "allTasks" | "projects";
 
 export interface Domain {
   id: string;
@@ -51,8 +50,7 @@ export interface Task {
   title: string;
   plannedDate: string | null;
   dueDate: string | null;
-  startTime: string | null;
-  endTime: string | null;
+  scheduledTime: string | null;
   projectId: string | null;
   domainId: string | null;
   status: TaskStatus;
@@ -127,17 +125,6 @@ export interface DashboardPreference {
   updatedAt: string;
 }
 
-export interface Priority {
-  id: string;
-  scope: PriorityScope;
-  dateKey: string;
-  text: string;
-  taskId: string | null;
-  done: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface WorkspaceData {
   domains: Domain[];
   projects: Project[];
@@ -146,17 +133,17 @@ export interface WorkspaceData {
   notes: Note[];
   deadlines: Deadline[];
   reviews: Review[];
-  priorities: Priority[];
   dashboardScratchpads: DashboardScratchpad[];
   dashboardPreferences: DashboardPreference[];
   serverSyncedAt: string;
 }
 
 export type CollectionName = keyof Omit<WorkspaceData, "serverSyncedAt">;
+export type SyncEntityType = CollectionName | "priorities";
 
 export interface SyncWarning {
   mutationId: string;
-  entityType: CollectionName;
+  entityType: SyncEntityType;
   entityId: string;
   reason: "stale";
   message: string;
@@ -166,9 +153,9 @@ export interface SyncWarning {
 
 export interface QueuedMutation {
   mutationId: string;
-  entityType: CollectionName;
+  entityType: SyncEntityType;
   entityId: string;
   operation: "upsert" | "delete";
-  payload: Domain | Project | Task | Capture | Note | Deadline | Review | Priority | DashboardScratchpad | DashboardPreference | null;
+  payload: Domain | Project | Task | Capture | Note | Deadline | Review | DashboardScratchpad | DashboardPreference | Record<string, unknown> | null;
   createdAt: string;
 }

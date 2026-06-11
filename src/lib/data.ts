@@ -7,7 +7,6 @@ import type {
   Deadline,
   Domain,
   Note,
-  Priority,
   Project,
   Review,
   Task,
@@ -19,7 +18,7 @@ import { utcDateToDateKey } from "./dates";
 const iso = (date: Date | null | undefined) => (date ? date.toISOString() : null);
 
 export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
-  const [domains, projects, tasks, captures, notes, deadlines, reviews, priorities, dashboardScratchpads, dashboardPreferences] = await Promise.all([
+  const [domains, projects, tasks, captures, notes, deadlines, reviews, dashboardScratchpads, dashboardPreferences] = await Promise.all([
     prisma.domain.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
     prisma.project.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.task.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
@@ -27,7 +26,6 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
     prisma.note.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.deadline.findMany({ where: { userId }, orderBy: { date: "asc" } }),
     prisma.review.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
-    prisma.priority.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
     prisma.dashboardScratchpad.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.dashboardPreference.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } })
   ]);
@@ -61,8 +59,7 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       title: t.title,
       plannedDate: utcDateToDateKey(t.plannedDate),
       dueDate: utcDateToDateKey(t.dueDate),
-      startTime: t.startTime,
-      endTime: t.endTime,
+      scheduledTime: t.scheduledTime,
       projectId: t.projectId,
       domainId: t.domainId,
       status: t.status as Task["status"],
@@ -113,16 +110,6 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       responses: r.responses as Record<string, string>,
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString()
-    })),
-    priorities: priorities.map((p): Priority => ({
-      id: p.id,
-      scope: p.scope as Priority["scope"],
-      dateKey: p.dateKey,
-      text: p.text,
-      taskId: p.taskId,
-      done: p.done,
-      createdAt: p.createdAt.toISOString(),
-      updatedAt: p.updatedAt.toISOString()
     })),
     dashboardScratchpads: dashboardScratchpads.map((scratchpad): DashboardScratchpad => ({
       id: scratchpad.id,

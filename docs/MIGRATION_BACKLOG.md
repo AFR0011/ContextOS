@@ -1,6 +1,6 @@
 # ContextOS Future Concerns Backlog
 
-This file captures concerns that should survive beyond the v0.1.11 audit. It is not an active sprint plan; use `BLUEPRINT.md` and `DEV_STATE.md` for active work selection.
+This file captures concerns that should survive beyond v0.2.2. It is not an active sprint plan; use `BLUEPRINT.md` and `DEV_STATE.md` for active work selection.
 
 ## High Priority
 
@@ -28,10 +28,15 @@ This file captures concerns that should survive beyond the v0.1.11 audit. It is 
 
 ### Daily Timeline Maturity
 
-- Current issue: Daily timeline is list-based with optional task time ranges, not a true schedule grid.
-- Status: v0.2.0 implemented a lightweight visual schedule grid with no schema changes, drag/drop, recurrence, or calendar integration.
-- Future work: after the grid is validated, decide whether duration validation, conflict detection, drag/drop scheduling, calendar import, or recurrence are justified.
-- Acceptance signal: Dashboard and Today show timed tasks in schedule rows while keeping unscheduled/needs-attention work visible. Verified on 2026-06-10.
+- Current state: v0.2.2 intentionally replaced the schedule grid with a compact notepad-like list and one optional `scheduledTime`.
+- Future work: add recurrence, calendar import, conflicts, or duration only if real usage proves the simple list insufficient.
+- Acceptance signal: timed, untimed, and same-time tasks remain fast to create and scan without empty calendar slots. Verified by e2e on 2026-06-11.
+
+### Internal Date Naming
+
+- Current state: visible UI and routes use Date/Dates, while the storage/sync collection remains `Deadline`/`deadlines` for offline compatibility.
+- Future work: rename the internal model only in a deliberately compatibility-breaking migration with cache/outbox handling.
+- Acceptance signal: no visible legacy terminology leaks while old clients can still drain queued mutations.
 
 ### Piano Schedule Scope
 
@@ -49,6 +54,5 @@ This file captures concerns that should survive beyond the v0.1.11 audit. It is 
 
 ### Versioning Alignment
 
-- Current issue: docs use v0.1.x batch labels while `package.json` remains `0.1.0`.
-- Future work: define when package version increments and how it maps to docs/version-log entries.
-- Acceptance signal: release labels, package version, and version log tell the same story.
+- Status: aligned in v0.2.2. Package metadata, shell label, active docs, and version log use `0.2.2`.
+- Future work: keep version bumps part of each release batch.

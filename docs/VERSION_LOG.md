@@ -1,5 +1,35 @@
 # ContextOS Version Log
 
+## v0.2.2 Workflow Simplification
+
+Status:
+Implemented and verified locally on 2026-06-11.
+
+Goal:
+Simplify daily execution around one task time, a compact timeline, separate all-task visibility, important Dates, and recovery-first project pages.
+
+Schema and compatibility:
+- Replaced `Task.startTime`/`endTime` with nullable `scheduledTime`, migrating start first and end second.
+- Merged project-linked Notes into `Project.recoveryNotes`, then removed those Note rows.
+- Removed the Priority model and client workspace collection.
+- Retained internal `Deadline` storage plus legacy `/deadline` and `priorities` sync compatibility.
+- Added queued-mutation reconciliation so rapid consecutive offline-first writes are not overwritten by an older sync response.
+
+Implemented behavior:
+- Added Dashboard Quick Capture above all content.
+- Rebuilt Daily timeline as a compact editable list with optional time and persistent cross/uncross completion.
+- Added a separate Dashboard Tasks section with Show completed support.
+- Made Dates important-date records only and added canonical `/dates` navigation.
+- Reordered project detail and removed project Notes / Decisions.
+- Removed daily/weekly priority UI, seeds, state, sync data, and review prompts.
+- Bumped package and shell version to `0.2.2`.
+
+Verification:
+- Prisma validate/generate, migration, and seed passed.
+- Typecheck passed.
+- Full Playwright suite passed with 28 tests.
+- Build and Browser smoke evidence are recorded in `QA_REPORT.md`.
+
 ## v0.2.1 Stale Local Cache Recovery
 
 Status:

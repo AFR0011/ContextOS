@@ -17,6 +17,10 @@
 
 | ID | Risk | Level | Status |
 | --- | --- | --- | --- |
+| R-2026-06-11-01 | Replacing task time ranges could lose existing scheduled information or strand legacy offline mutations. | High | Closed - SQL migration, cache normalization, sync fallback, and legacy payload e2e preserve start-first/end-second behavior. |
+| R-2026-06-11-02 | Project-note consolidation could delete content or duplicate it after offline replay. | High | Closed - migration appends before deletion; marked replay is idempotent through the mutation ledger; e2e verifies no Note recreation. |
+| R-2026-06-11-03 | Removing Priority could prevent old outboxes from draining or leave stale UI/data references. | High | Closed - schema/client Priority data is removed while sync validation records legacy priority mutations as no-ops; e2e passed. |
+| R-2026-06-11-04 | Simplifying the Dashboard could regress the validated daily execution flow on mobile. | Medium | Closed - full e2e and desktop/mobile Browser smoke verify Quick Capture, timeline, all Tasks, completion, preferences, and zero overflow. |
 | R-2026-06-10-07 | Server refresh could overwrite unsynced local work if the guard is incomplete. | High | Closed - global and Settings refresh actions are disabled while pending/offline work exists, and the store retains the existing outbox guard. Targeted e2e passed. |
 | R-2026-06-10-08 | A global refresh affordance could add visual noise to the command shell. | Low | Closed - action is compact inside the existing sync indicator, and browser smoke showed no horizontal overflow. |
 | R-2026-06-10-04 | Schedule-grid visualization could make the daily command surface harder to scan on mobile. | Medium | Closed - compact schedule grid passed targeted e2e plus desktop and 390px mobile browser smoke with no horizontal overflow. |

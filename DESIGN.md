@@ -1,29 +1,44 @@
 ---
-version: 0.1
+version: 0.2.2
 name: ContextOS Design System
 status: active-draft
 product: ContextOS
 primary_mode: mobile-first personal command sheet
-last_updated: 2026-06-04
+last_updated: 2026-06-11
 influences:
   primary_spine: Linear
   editable_workspace: Notion
-  date_deadline_surfaces: Cal.com
+  date_surfaces: Cal.com
   future_command_palette: Raycast
   reflective_reviews: Claude
 ---
 
 # ContextOS DESIGN.md
 
+## v0.2.2 Workflow Amendment
+
+This amendment is authoritative wherever older sections use legacy Deadline, priority, or schedule-grid language.
+
+- Visible product language is **Date/Dates**. Dates are important reference events, not completable tasks.
+- `/dates` is canonical; `/deadlines` is only a compatibility redirect. Capture advertises `/date` and still accepts `/deadline`.
+- The Dashboard starts with reusable Quick Capture above all other content.
+- Daily timeline is a compact notepad-like task list. Show only occupied optional times; never render empty calendar slots.
+- A separate collapsible Tasks section shows active tasks across dates and projects and follows Show completed.
+- Project pages read top to bottom as header, Active Tasks, Dates, Recovery Canvas, Subcontexts, and suggestions/actions.
+- Active Tasks stays expanded and editable. Project Notes / Decisions is not a separate surface; recovery notes hold imported project context.
+- Today, This Week, and reviews do not contain daily or weekly priority editors.
+
+Legacy references to `Deadline` below describe the internal compatibility model or pre-v0.2.2 design history, not current visible terminology.
+
 ## 0. Purpose
 
 ContextOS is a personal context-management system. It is not a generic SaaS dashboard, a Notion clone, a habit toy, or an analytics page with decorative rectangles pretending to be insight.
 
-The product should feel like a **calm personal command sheet**: fast enough for daily capture, structured enough for real tasks/projects/deadlines, and quiet enough that the user can think.
+The product should feel like a **calm personal command sheet**: fast enough for daily capture, structured enough for real tasks/projects/dates, and quiet enough that the user can think.
 
 The central design sentence:
 
-> ContextOS is a mobile-first personal command sheet for capturing, organizing, and recovering context across tasks, projects, deadlines, notes, and reviews.
+> ContextOS is a mobile-first personal command sheet for capturing, organizing, and recovering context across tasks, projects, important dates, notes, and reviews.
 
 The UI should help the user answer:
 

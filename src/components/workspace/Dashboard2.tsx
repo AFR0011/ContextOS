@@ -16,8 +16,12 @@ import {
   FolderKanban,
   MapPin,
   NotebookPen,
+  ListChecks,
   Plus,
+  Send,
   SquarePen,
+  Trash2,
+  Zap,
   type LucideIcon
 } from "lucide-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
@@ -26,21 +30,10 @@ import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
 import { normalizeDashboardPreference } from "@/lib/dashboard-preferences";
 import { addDaysToDateKey, dateKeyToLocalDate, localDateKey, localWeekStartKey } from "@/lib/dates";
 import { useWorkspace } from "@/lib/client-store";
-import type { DashboardPreference, DashboardSectionId, Deadline, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
+import type { DashboardPreference, DashboardSectionId, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
 
 const DONE_TASK_STATUSES: TaskStatus[] = ["done", "dropped"];
 const PROJECT_STALE_DAYS = 14;
-
-type DateDashboardItem = {
-  id: string;
-  kind: "task" | "deadline";
-  title: string;
-  dateKey: string;
-  projectName: string;
-  done: boolean;
-  overdue: boolean;
-  source: Task | Deadline;
-};
 
 function isTaskOpen(task: Task) {
   return !task.trashedAt && !task.archivedAt && !DONE_TASK_STATUSES.includes(task.status);
@@ -54,15 +47,6 @@ function isTaskVisible(task: Task, showCompleted: boolean) {
 function projectName(projects: Project[], projectId: string | null | undefined) {
   if (!projectId) return "";
   return projects.find((project) => project.id === projectId)?.name ?? "";
-}
-
-function compareDateKeys(a: string, b: string) {
-  return a.localeCompare(b);
-}
-
-function taskTimeLabel(task: Pick<Task, "startTime" | "endTime">) {
-  if (task.startTime && task.endTime) return `${task.startTime}-${task.endTime}`;
-  return task.startTime ?? task.endTime ?? "";
 }
 
 function formatDateKey(dateKey: string) {
@@ -172,18 +156,36 @@ function CollapsibleSection({
   );
 }
 
-function CheckboxButton({ checked, onClick, label }: { checked: boolean; onClick: () => void; label: string }) {
+function QuickCapture() {
+  const { addCapture } = useWorkspace();
+  const [text, setText] = useState("");
+  const [captured, setCaptured] = useState(false);
+
+  function submit() {
+    if (!text.trim()) return;
+    addCapture(text);
+    setText("");
+    setCaptured(true);
+    window.setTimeout(() => setCaptured(false), 700);
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg border-2 ${
-        checked ? "border-[var(--cos-success)] bg-[var(--cos-success)] text-white" : "border-[var(--cos-border-strong)] bg-[var(--cos-bg-elevated)] text-transparent hover:border-[var(--cos-primary)]"
-      }`}
-    >
-      <Check className="h-4 w-4" />
-    </button>
+    <div data-testid="dashboard-quick-capture" className={`cos-input flex items-center gap-2 px-4 py-3 ${captured ? "border-[var(--cos-success-border)]" : ""}`}>
+      <Zap className={`h-5 w-5 shrink-0 ${captured ? "text-[var(--cos-success)]" : "text-[var(--cos-primary)]"}`} />
+      <input
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") submit();
+          if (event.key === "Escape") setText("");
+        }}
+        placeholder="Quick capture... try /task, /note, /project, /date, /status"
+        className="min-w-0 flex-1 bg-transparent text-sm text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
+      />
+      <button type="button" onClick={submit} disabled={!text.trim()} aria-label="Capture" className="grid h-9 w-9 place-items-center rounded-lg text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)]">
+        <Send className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 
@@ -252,7 +254,7 @@ function NotepadSection() {
 
 function DatesSection({ today, windowDays, showCompleted }: { today: string; windowDays: number; showCompleted: boolean }) {
   const router = useRouter();
-  const { data, addDeadline, updateTask, updateDeadline } = useWorkspace();
+  const { data, addDeadline, updateDeadline } = useWorkspace();
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(today);
   const [time, setTime] = useState("");
@@ -261,53 +263,18 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
   const windowEnd = addDaysToDateKey(today, windowDays) ?? today;
   const projects = activeProjectOptions(data.projects);
 
-  const items = useMemo<DateDashboardItem[]>(() => {
-    const taskItems: DateDashboardItem[] = [];
-    data.tasks
-      .filter((task) => isTaskVisible(task, showCompleted))
-      .forEach((task) => {
-        const dateKey = task.dueDate ?? task.plannedDate;
-        if (!dateKey) return;
-        taskItems.push({
-          id: `task-${task.id}`,
-          kind: "task",
-          title: task.title,
-          dateKey,
-          projectName: projectName(data.projects, task.projectId),
-          done: task.status === "done",
-          overdue: dateKey < today && isTaskOpen(task),
-          source: task
-        });
-      });
-
-    const deadlineItems: DateDashboardItem[] = data.deadlines
+  const items = useMemo(() => data.deadlines
       .filter((deadline) => !deadline.trashedAt && (showCompleted || !deadline.archivedAt))
-      .map((deadline) => ({
-        id: `deadline-${deadline.id}`,
-        kind: "deadline",
-        title: deadline.title,
-        dateKey: deadline.date,
-        projectName: projectName(data.projects, deadline.projectId),
-        done: Boolean(deadline.archivedAt),
-        overdue: deadline.date < today && !deadline.archivedAt,
-        source: deadline
-      }));
-
-    return [...taskItems, ...deadlineItems]
-      .filter((item) => item.dateKey < today || item.dateKey <= windowEnd)
+      .filter((deadline) => deadline.date < today || deadline.date <= windowEnd)
       .sort((a, b) => {
-        if (a.overdue !== b.overdue) return a.overdue ? -1 : 1;
-        const byDate = compareDateKeys(a.dateKey, b.dateKey);
-        if (byDate !== 0) return byDate;
-        if (a.kind !== b.kind) return a.kind === "deadline" ? -1 : 1;
-        return a.title.localeCompare(b.title);
-      });
-  }, [data.deadlines, data.projects, data.tasks, showCompleted, today, windowEnd]);
+        const byDate = a.date.localeCompare(b.date);
+        return byDate || a.title.localeCompare(b.title);
+      }), [data.deadlines, showCompleted, today, windowEnd]);
 
   if (!items.length) {
     return (
       <div className="space-y-3">
-        <DeadlineComposer
+        <DateComposer
           title={title}
           date={date}
           time={time}
@@ -329,14 +296,14 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
             setProjectId("");
           }}
         />
-        <EmptySmall icon={CalendarDays} title="No dated items in range" description={`Showing overdue plus the next ${windowDays} days.`} />
+        <EmptySmall icon={CalendarDays} title="No important dates in range" description={`Showing past dates plus the next ${windowDays} days.`} />
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      <DeadlineComposer
+      <DateComposer
         title={title}
         date={date}
         time={time}
@@ -358,44 +325,33 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
           setProjectId("");
         }}
       />
-      {items.map((item) => {
-        const isTask = item.kind === "task";
-        const task = isTask ? (item.source as Task) : null;
-        const deadline = !isTask ? (item.source as Deadline) : null;
-        return (
-          <div key={item.id} className="cos-row-muted flex items-start gap-3 px-3 py-3">
-            <CheckboxButton
-              checked={item.done}
-              onClick={() => {
-                if (task) updateTask(task.id, { status: item.done ? "todo" : "done" });
-                if (deadline) updateDeadline(deadline.id, { archivedAt: item.done ? null : new Date().toISOString() });
-              }}
-              label={item.done ? `Reopen ${item.title}` : item.kind === "deadline" ? `Mark ${item.title} handled` : `Mark ${item.title} done`}
-            />
-            <button type="button" onClick={() => (item.kind === "deadline" ? router.push("/deadlines") : undefined)} className="min-w-0 flex-1 text-left">
-              <div className="flex min-w-0 items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className={`text-sm font-semibold ${item.done ? "text-[var(--cos-text-subtle)] line-through" : "text-[var(--cos-text-strong)]"}`}>{item.title}</p>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    <span className={`cos-pill ${item.overdue ? "cos-pill-danger" : item.dateKey === today ? "cos-pill-primary" : "cos-pill-muted"}`}>{dateBadge(item.dateKey, today)}</span>
-                    <span className="cos-pill cos-pill-muted">{item.kind === "deadline" ? "Deadline" : task?.dueDate ? "Task due" : "Task planned"}</span>
-                    {task && taskTimeLabel(task) ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{taskTimeLabel(task)}</span> : null}
-                    {deadline?.time ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{deadline.time}</span> : null}
-                    {deadline?.location ? <span className="cos-pill cos-pill-muted"><MapPin className="h-3 w-3" />{deadline.location}</span> : null}
-                    {item.projectName ? <span className="cos-pill cos-pill-muted">{item.projectName}</span> : null}
-                  </div>
+      {items.map((item) => (
+        <div key={item.id} className={`cos-row-muted flex items-start gap-3 px-3 py-3 ${item.archivedAt ? "opacity-60" : ""}`}>
+          <button type="button" onClick={() => router.push("/dates")} className="min-w-0 flex-1 text-left">
+            <div className="flex min-w-0 items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[var(--cos-text-strong)]">{item.title}</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  <span className={`cos-pill ${item.date < today && !item.archivedAt ? "cos-pill-danger" : item.date === today ? "cos-pill-primary" : "cos-pill-muted"}`}>{dateBadge(item.date, today)}</span>
+                  {item.time ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{item.time}</span> : null}
+                  {item.location ? <span className="cos-pill cos-pill-muted"><MapPin className="h-3 w-3" />{item.location}</span> : null}
+                  {projectName(data.projects, item.projectId) ? <span className="cos-pill cos-pill-muted">{projectName(data.projects, item.projectId)}</span> : null}
+                  {item.archivedAt ? <span className="cos-pill cos-pill-muted">Archived</span> : null}
                 </div>
-                <span className="shrink-0 text-xs font-semibold text-[var(--cos-text-subtle)]">{formatDateKey(item.dateKey)}</span>
               </div>
-            </button>
-          </div>
-        );
-      })}
+              <span className="shrink-0 text-xs font-semibold text-[var(--cos-text-subtle)]">{formatDateKey(item.date)}</span>
+            </div>
+          </button>
+          <button type="button" aria-label={item.archivedAt ? `Restore ${item.title}` : `Archive ${item.title}`} onClick={() => updateDeadline(item.id, { archivedAt: item.archivedAt ? null : new Date().toISOString() })} className="grid h-8 w-8 shrink-0 place-items-center rounded text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)]">
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
 
-function DeadlineComposer({
+function DateComposer({
   title,
   date,
   time,
@@ -434,7 +390,7 @@ function DeadlineComposer({
             if (event.key === "Enter") onCreate();
             if (event.key === "Escape") onTitle("");
           }}
-          placeholder="Add a deadline..."
+          placeholder="Add an important date..."
           className="min-h-10 min-w-0 flex-1 bg-transparent text-base text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
         />
         <button type="button" onClick={onCreate} disabled={!title.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 text-sm disabled:bg-[var(--cos-border)]">
@@ -442,10 +398,10 @@ function DeadlineComposer({
         </button>
       </div>
       <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_0.8fr_1.1fr_1.1fr]">
-        <input aria-label="Deadline date" type="date" value={date} onChange={(event) => onDate(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
-        <input aria-label="Deadline time" type="time" value={time} onChange={(event) => onTime(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
-        <input aria-label="Deadline location" value={location} onChange={(event) => onLocation(event.target.value)} placeholder="Location" className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
-        <select aria-label="Deadline project" value={projectId} onChange={(event) => onProject(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs">
+        <input aria-label="Date" type="date" value={date} onChange={(event) => onDate(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
+        <input aria-label="Date time" type="time" value={time} onChange={(event) => onTime(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
+        <input aria-label="Date location" value={location} onChange={(event) => onLocation(event.target.value)} placeholder="Location" className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
+        <select aria-label="Date project" value={projectId} onChange={(event) => onProject(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs">
           <option value="">No project</option>
           {projects.map((project) => (
             <option key={project.id} value={project.id}>{project.name}</option>
@@ -456,16 +412,15 @@ function DeadlineComposer({
   );
 }
 
-function DailyTimelineSection({ today, showCompleted }: { today: string; showCompleted: boolean }) {
+function DailyTimelineSection({ today }: { today: string }) {
   const { data, addTask } = useWorkspace();
   const [title, setTitle] = useState("");
   const [projectId, setProjectId] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
   const projects = activeProjectOptions(data.projects);
   const rows = useMemo<DailyScheduleRow[]>(() => {
     return data.tasks
-      .filter((task) => isTaskVisible(task, showCompleted))
+      .filter((task) => !task.trashedAt && !task.archivedAt)
       .filter((task) => task.dueDate === today || task.plannedDate === today || task.status === "in-progress" || (task.dueDate && task.dueDate < today && isTaskOpen(task)))
       .sort((a, b) => {
         const aOverdue = Boolean(a.dueDate && a.dueDate < today && isTaskOpen(a));
@@ -473,8 +428,8 @@ function DailyTimelineSection({ today, showCompleted }: { today: string; showCom
         if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
         if (a.status === "done" && b.status !== "done") return 1;
         if (a.status !== "done" && b.status === "done") return -1;
-        const aTime = a.startTime ?? a.endTime ?? "99:99";
-        const bTime = b.startTime ?? b.endTime ?? "99:99";
+        const aTime = a.scheduledTime ?? "99:99";
+        const bTime = b.scheduledTime ?? "99:99";
         if (aTime !== bTime) return aTime.localeCompare(bTime);
         return a.createdAt.localeCompare(b.createdAt);
       })
@@ -488,17 +443,16 @@ function DailyTimelineSection({ today, showCompleted }: { today: string; showCom
           projectName(data.projects, task.projectId)
         ].filter(Boolean)
       }));
-  }, [data.projects, data.tasks, showCompleted, today]);
+  }, [data.projects, data.tasks, today]);
 
   function createTask() {
     const trimmed = title.trim();
     if (!trimmed) return;
     const project = projects.find((item) => item.id === projectId);
-    addTask({ title: trimmed, plannedDate: today, startTime: startTime || null, endTime: endTime || null, projectId: projectId || null, domainId: project?.domainId ?? null });
+    addTask({ title: trimmed, plannedDate: today, scheduledTime: scheduledTime || null, projectId: projectId || null, domainId: project?.domainId ?? null });
     setTitle("");
     setProjectId("");
-    setStartTime("");
-    setEndTime("");
+    setScheduledTime("");
   }
 
   return (
@@ -520,9 +474,8 @@ function DailyTimelineSection({ today, showCompleted }: { today: string; showCom
           Add
         </button>
       </div>
-      <div className="grid gap-2 sm:grid-cols-[0.7fr_0.7fr_1.4fr]">
-        <input aria-label="Task start time" type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="cos-input bg-[var(--cos-bg-soft)] px-3 py-2 text-xs" />
-        <input aria-label="Task end time" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} className="cos-input bg-[var(--cos-bg-soft)] px-3 py-2 text-xs" />
+      <div className="grid gap-2 sm:grid-cols-[0.7fr_1.4fr]">
+        <input aria-label="Task scheduled time" type="time" value={scheduledTime} onChange={(event) => setScheduledTime(event.target.value)} className="cos-input bg-[var(--cos-bg-soft)] px-3 py-2 text-xs" />
         {projects.length ? (
           <select aria-label="Task project" value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input w-full bg-[var(--cos-bg-soft)] px-3 py-2 text-xs">
             <option value="">No project</option>
@@ -535,6 +488,22 @@ function DailyTimelineSection({ today, showCompleted }: { today: string; showCom
       <DailySchedule rows={rows} today={today} />
     </div>
   );
+}
+
+function AllTasksSection({ showCompleted }: { showCompleted: boolean }) {
+  const { data } = useWorkspace();
+  const rows = data.tasks
+    .filter((task) => isTaskVisible(task, showCompleted))
+    .map((task) => ({
+      task,
+      labels: [
+        task.dueDate ? `Due ${formatDateKey(task.dueDate)}` : "",
+        task.plannedDate ? `Planned ${formatDateKey(task.plannedDate)}` : "",
+        projectName(data.projects, task.projectId)
+      ].filter(Boolean)
+    }));
+
+  return <DailySchedule rows={rows} today={localDateKey()} emptyTitle="No active tasks" emptyDescription="Tasks from every date and project will appear here." />;
 }
 
 function ProjectsSection() {
@@ -638,9 +607,9 @@ export function Dashboard2View() {
   const preferences = sectionDefaults(data.dashboardPreferences[0]);
   const collapsed = new Set(preferences.collapsedSections);
   const activeDateWindowEnd = addDaysToDateKey(today, preferences.dateWindowDays) ?? today;
-  const datesCount = data.tasks.filter((task) => isTaskVisible(task, preferences.showCompleted) && (task.dueDate ?? task.plannedDate) && ((task.dueDate ?? task.plannedDate)! < today || (task.dueDate ?? task.plannedDate)! <= activeDateWindowEnd)).length +
-    data.deadlines.filter((deadline) => !deadline.trashedAt && (preferences.showCompleted || !deadline.archivedAt) && (deadline.date < today || deadline.date <= activeDateWindowEnd)).length;
-  const tasksCount = data.tasks.filter((task) => isTaskVisible(task, preferences.showCompleted) && (task.dueDate === today || task.plannedDate === today || task.status === "in-progress" || (task.dueDate && task.dueDate < today && isTaskOpen(task)))).length;
+  const datesCount = data.deadlines.filter((deadline) => !deadline.trashedAt && (preferences.showCompleted || !deadline.archivedAt) && (deadline.date < today || deadline.date <= activeDateWindowEnd)).length;
+  const tasksCount = data.tasks.filter((task) => !task.trashedAt && !task.archivedAt && (task.dueDate === today || task.plannedDate === today || task.status === "in-progress" || (task.dueDate && task.dueDate < today && isTaskOpen(task)))).length;
+  const allTasksCount = data.tasks.filter((task) => isTaskVisible(task, preferences.showCompleted)).length;
   const projectsCount = data.projects.filter((project) => !project.trashedAt && !project.archivedAt && project.status === "active").length;
 
   function toggleSection(id: DashboardSectionId) {
@@ -669,7 +638,12 @@ export function Dashboard2View() {
     ),
     tasks: (
       <CollapsibleSection id="tasks" title="Daily timeline" icon={SquarePen} count={tasksCount} collapsed={collapsed.has("tasks")} onToggle={toggleSection}>
-        <DailyTimelineSection today={today} showCompleted={preferences.showCompleted} />
+        <DailyTimelineSection today={today} />
+      </CollapsibleSection>
+    ),
+    allTasks: (
+      <CollapsibleSection id="allTasks" title="Tasks" icon={ListChecks} count={allTasksCount} collapsed={collapsed.has("allTasks")} onToggle={toggleSection}>
+        <AllTasksSection showCompleted={preferences.showCompleted} />
       </CollapsibleSection>
     ),
     projects: (
@@ -682,11 +656,29 @@ export function Dashboard2View() {
   return (
     <DashboardPageShell loading={loading}>
       {loading ? <div className="cos-surface p-4 text-sm text-[var(--cos-text-muted)]">Loading cached command sheet...</div> : null}
+      <QuickCapture />
       <div className="rounded-lg border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] px-4 py-3 text-sm text-[var(--cos-primary-text)]">
         <div className="flex items-start gap-2">
           <Circle className="mt-1 h-3 w-3 fill-[var(--cos-primary)] text-[var(--cos-primary)]" />
-          <p><span className="font-semibold">Today:</span> recover notes, dated pressure, executable tasks, and active projects in one pass.</p>
+          <p><span className="font-semibold">Today:</span> capture quickly, write the day as a task list, and keep important dates separate.</p>
         </div>
+      </div>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          aria-pressed={preferences.showCompleted}
+          onClick={() => updateDashboardPreferences({
+            sectionOrder: preferences.sectionOrder,
+            collapsedSections: preferences.collapsedSections,
+            dateWindowDays: preferences.dateWindowDays,
+            reviewPromptDismissals: preferences.reviewPromptDismissals,
+            showCompleted: !preferences.showCompleted
+          })}
+          className={`cos-btn px-3 py-1.5 text-xs ${preferences.showCompleted ? "cos-btn-primary" : "cos-btn-ghost"}`}
+        >
+          {preferences.showCompleted ? <Check className="h-3.5 w-3.5" /> : null}
+          Show completed
+        </button>
       </div>
       <ReviewPrompt preferences={preferences} />
       {preferences.sectionOrder.map((id) => (

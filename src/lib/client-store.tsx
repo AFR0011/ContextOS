@@ -10,7 +10,6 @@ import type {
   Deadline,
   Domain,
   Note,
-  Priority,
   Project,
   ProjectStatus,
   QueuedMutation,
@@ -37,7 +36,6 @@ export const emptyWorkspace = (): WorkspaceData => ({
   notes: [],
   deadlines: [],
   reviews: [],
-  priorities: [],
   dashboardScratchpads: [],
   dashboardPreferences: [],
   serverSyncedAt: ""
@@ -57,19 +55,19 @@ function normalizeWorkspace(value: Partial<WorkspaceData> | null | undefined): W
     time: deadline.time ?? null,
     location: deadline.location ?? ""
   }));
-  const tasks = (value?.tasks ?? []).map((task) => ({
-    ...task,
-    startTime: task.startTime ?? null,
-    endTime: task.endTime ?? null
-  }));
+  const tasks = (value?.tasks ?? []).map((task) => {
+    const legacy = task as Task & { startTime?: string | null; endTime?: string | null };
+    return {
+      ...task,
+      scheduledTime: task.scheduledTime ?? legacy.startTime ?? legacy.endTime ?? null
+    };
+  });
   const dashboardPreferences = (value?.dashboardPreferences ?? []).map((preference) => ({
     ...preference,
     reviewPromptDismissals: preference.reviewPromptDismissals ?? []
   }));
 
   return {
-    ...emptyWorkspace(),
-    ...(value ?? {}),
     domains: value?.domains ?? [],
     projects,
     tasks,
@@ -77,7 +75,6 @@ function normalizeWorkspace(value: Partial<WorkspaceData> | null | undefined): W
     notes: value?.notes ?? [],
     deadlines,
     reviews: value?.reviews ?? [],
-    priorities: value?.priorities ?? [],
     dashboardScratchpads: value?.dashboardScratchpads ?? [],
     dashboardPreferences,
     serverSyncedAt: value?.serverSyncedAt ?? ""
@@ -96,7 +93,7 @@ function parseCaptureType(text: string): CaptureType {
   if (t.startsWith("/task")) return "task";
   if (t.startsWith("/note")) return "note";
   if (t.startsWith("/project")) return "project";
-  if (t.startsWith("/deadline")) return "deadline";
+  if (t.startsWith("/date") || t.startsWith("/deadline")) return "deadline";
   if (t.startsWith("/status")) return "status";
   return null;
 }
@@ -174,6 +171,20 @@ function replaceIn<T extends { id: string }>(items: T[], record: T) {
   return exists ? items.map((item) => (item.id === record.id ? record : item)) : [record, ...items];
 }
 
+function overlayPendingMutations(workspace: WorkspaceData, mutations: QueuedMutation[]) {
+  return mutations.reduce((current, mutation) => {
+    if (mutation.entityType === "priorities" || !(mutation.entityType in current)) return current;
+    const collection = mutation.entityType as CollectionName;
+    const records = current[collection] as { id: string }[];
+    if (mutation.operation === "delete") {
+      return { ...current, [collection]: records.filter((record) => record.id !== mutation.entityId) } as WorkspaceData;
+    }
+    const payload = mutation.payload as { id?: string } | null;
+    if (!payload?.id) return current;
+    return { ...current, [collection]: replaceIn(records, payload as { id: string }) } as WorkspaceData;
+  }, workspace);
+}
+
 function byId<T extends { id: string }>(items: T[], id: string) {
   return items.find((item) => item.id === id);
 }
@@ -216,9 +227,6 @@ interface StoreApi {
   addNote: (data: { title: string; content?: string; projectId?: string | null; domainId: string }) => string;
   updateNote: (id: string, updates: Partial<Note>) => void;
   addReview: (type: ReviewType, responses: Record<string, string>) => void;
-  addPriority: (scope: "daily" | "weekly", dateKey: string, text: string) => void;
-  updatePriority: (id: string, updates: Partial<Priority>) => void;
-  removePriority: (id: string) => void;
   addDomain: (name: string) => void;
   updateDomain: (id: string, updates: Partial<Domain>) => void;
   updateDashboardScratchpad: (content: string) => void;
@@ -243,6 +251,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [lastWarningAt, setLastWarningAt] = useState<string | null>(null);
   const [staleMutationCount, setStaleMutationCount] = useState(0);
   const syncInFlight = useRef(false);
+  const outboxWrite = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     dataRef.current = data;
@@ -273,6 +282,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setSyncing(true);
     setError(null);
     try {
+      await outboxWrite.current;
       const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
       const response = await fetch("/api/sync", {
         method: "POST",
@@ -284,11 +294,18 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         throw new Error(response.status === 401 ? "Sign in again to sync." : responseErrorMessage(response, result, "Sync failed"));
       }
       const applied = new Set(result.appliedMutationIds);
-      const remaining = outbox.filter((mutation) => !applied.has(mutation.mutationId));
-      await idbSet(OUTBOX_KEY, remaining);
-      await saveWorkspace(result.data);
+      const reconcile = outboxWrite.current.then(async () => {
+        const latestOutbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+        const remaining = latestOutbox.filter((mutation) => !applied.has(mutation.mutationId));
+        await idbSet(OUTBOX_KEY, remaining);
+        return remaining;
+      });
+      outboxWrite.current = reconcile.then(() => undefined, () => undefined);
+      const remaining = await reconcile;
+      await saveWorkspace(remaining.length ? overlayPendingMutations(result.data, remaining) : result.data);
       setPendingCount(remaining.length);
       setLastSyncedAt(result.data.serverSyncedAt);
+      if (remaining.length) window.setTimeout(() => void syncNow(), 80);
       const warnings = result.warnings ?? [];
       if (warnings.length) {
         setLastWarning(warningSummary(warnings));
@@ -314,6 +331,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
     setOnline(true);
 
+    await outboxWrite.current;
     const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
     if (outbox.length > 0) {
       setError("Sync pending changes before refreshing from server.");
@@ -347,9 +365,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         mutationId: newId("mut"),
         createdAt: now()
       };
-      const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
-      await idbSet(OUTBOX_KEY, [...outbox, queued]);
-      setPendingCount(outbox.length + 1);
+      const write = outboxWrite.current.then(async () => {
+        const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+        const next = [...outbox, queued];
+        await idbSet(OUTBOX_KEY, next);
+        setPendingCount(next.length);
+      });
+      outboxWrite.current = write.catch(() => undefined);
+      await write;
       window.setTimeout(() => void syncNow(), 80);
     },
     [syncNow]
@@ -502,7 +525,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         const capture = byId(dataRef.current.captures, id);
         if (!capture) return;
         const ts = now();
-        const rawTitle = capture.type ? stripCommand(capture.text, capture.type) : capture.text;
+        const rawTitle = capture.type === "deadline"
+          ? capture.text.replace(/^\/(?:date|deadline)\s+/i, "").trim()
+          : capture.type
+            ? stripCommand(capture.text, capture.type)
+            : capture.text;
         const title = rawTitle || capture.text;
         let convertedToId = "";
         if (target === "task") {
@@ -512,8 +539,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             title,
             plannedDate: null,
             dueDate: null,
-            startTime: null,
-            endTime: null,
+            scheduledTime: null,
             projectId: null,
             domainId: null,
             status: "todo",
@@ -582,8 +608,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           title: input.title,
           plannedDate: input.plannedDate ?? null,
           dueDate: input.dueDate ?? null,
-          startTime: input.startTime ?? null,
-          endTime: input.endTime ?? null,
+          scheduledTime: input.scheduledTime ?? null,
           projectId: input.projectId ?? null,
           domainId: input.domainId ?? null,
           status: (input.status as TaskStatus) ?? "todo",
@@ -677,38 +702,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           createdAt: ts,
           updatedAt: ts
         } satisfies Review);
-      },
-      addPriority: (scope, dateKeyValue, text) => {
-        const ts = now();
-        mutate("priorities", {
-          id: newId("priority"),
-          scope,
-          dateKey: dateKeyValue,
-          text,
-          taskId: null,
-          done: false,
-          createdAt: ts,
-          updatedAt: ts
-        } satisfies Priority);
-      },
-      updatePriority: (id, updates) => {
-        const priority = byId(dataRef.current.priorities, id);
-        if (priority) mutate("priorities", { ...priority, ...updates });
-      },
-      removePriority: (id) => {
-        const next = {
-          ...dataRef.current,
-          priorities: dataRef.current.priorities.filter((priority) => priority.id !== id)
-        };
-        void (async () => {
-          await saveWorkspace(next);
-          await queueMutation({
-            entityType: "priorities",
-            entityId: id,
-            operation: "delete",
-            payload: null
-          });
-        })();
       },
       addDomain: (name) => {
         const ts = now();

@@ -1,5 +1,42 @@
 # ContextOS QA Report
 
+## 2026-06-11 - v0.2.2 Workflow Simplification
+
+Status: PASS.
+
+Checks run:
+
+- `npx prisma validate` - passed.
+- `npx prisma generate` - passed.
+- `npm run db:migrate` - passed; no pending migrations after `20260611130000_workflow_simplification` was applied.
+- `npm run db:seed` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed. Existing warning: `metadataBase` is not set.
+- `npm run test:e2e -- --workers=1` - passed, 29 tests.
+- `git diff --check -- . ':(exclude)modificaitons.txt'` - passed with line-ending normalization warnings only; the user-owned file remains untouched and retains its pre-existing trailing space.
+
+Coverage highlights:
+
+- Legacy task times choose `scheduledTime`, then `startTime`, then `endTime`.
+- Legacy project-note replay imports exactly one marked recovery-note block and does not recreate a Note.
+- Legacy Priority mutations are acknowledged no-ops.
+- Daily timeline covers timed, untimed, same-time, rename, delete, cross/reopen, reload persistence, and absence of empty grid slots.
+- Dashboard Tasks includes future tasks and follows Show completed.
+- Dates excludes task due dates and covers metadata, archive behavior, and `/deadlines` redirect compatibility.
+- Project ordering, expanded task editing, removed Notes / Decisions, and recovery-note persistence are covered.
+- Today and This Week contain no priority editor terminology.
+
+Browser smoke:
+
+- Desktop Dashboard showed Quick Capture above `Notepad`, `Dates`, `Daily timeline`, `Tasks`, and `Projects`; no empty schedule grid or horizontal overflow.
+- Desktop Dates used only Date terminology, excluded a task due title, and `/deadlines` redirected to `/dates`.
+- Desktop project detail order was `Active Tasks`, `Dates`, `Recovery Canvas`, `Subcontexts`; task editing was visible and Notes / Decisions was absent.
+- Desktop Today/This Week contained no priority terminology.
+- Mobile `390x844` Dashboard, Dates, and Today had `0px` horizontal overflow; timeline list and Tasks section remained present.
+- Browser console error log was empty.
+
+Verdict: PASS. v0.2.2 is complete and verified.
+
 ## 2026-06-10 - v0.2.1 Stale Local Cache Recovery
 
 Status: PASS.

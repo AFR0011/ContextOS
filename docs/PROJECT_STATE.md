@@ -1,119 +1,59 @@
 # ContextOS Project State
 
 ## Current Objective
-Select the next v0.2.x batch after completing Daily Schedule Grid and stale local cache recovery while preserving the validated execution-first workflow.
+Validate v0.2.2 Workflow Simplification in real daily use before selecting another blueprint batch.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
-- Prisma 7 + PostgreSQL for server persistence.
+- Prisma 7 + PostgreSQL for canonical user-scoped persistence.
 - Local email/password auth with hashed passwords and HTTP-only sessions.
-- IndexedDB stores cached workspace data and an outbox of idempotent sync mutations.
-- Service worker caches the app shell and visited static assets/routes for offline loading.
+- IndexedDB workspace cache plus an idempotent queued mutation outbox.
+- Service worker app-shell caching for visited routes and static assets.
 
-## Implemented Surfaces
-- Auth: login, register, logout, current user endpoint.
-- Data APIs: bootstrap, sync, reset demo data.
-- Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Areas, Resources, Deadlines, Reviews, Search, Archive, Settings.
-- PARA foundation: Domains act as Areas, standalone Notes act as Resources, and Projects can be nested with `parentProjectId`.
-- Demo seed: default domains, nested ContextOS Demo subcontexts, dashboard canvas resource, projects, tasks, captures, deadlines, notes, review, daily and weekly priorities.
+## Current Product State
+- Package and shell version: `0.2.2`.
+- Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Areas, Resources, Dates, Reviews, Search, Archive, and Settings.
+- `/dates` is canonical. `/deadlines` redirects to `/dates`.
+- `/date` is the advertised capture command. `/deadline` remains an accepted compatibility alias.
+- The internal `Deadline` collection remains in storage and sync payloads for offline compatibility, but visible product terminology is Date/Dates.
+- Tasks have one optional `scheduledTime`. Legacy cached and queued tasks normalize from `scheduledTime ?? startTime ?? endTime`.
+- Dashboard begins with reusable Quick Capture, then Notepad, Dates, Daily timeline, Tasks, and Projects.
+- Daily timeline is a compact editable task list with optional time, inline deletion, and persistent cross/uncross completion. It does not render empty calendar slots.
+- Dashboard Tasks contains active tasks from all dates/projects. Completed tasks appear when Show completed is enabled.
+- Dates contains only important-date records. Task due dates remain on task surfaces.
+- Project detail order is header, Active Tasks, Dates, Recovery Canvas, Subcontexts, and suggestions/actions.
+- Project Active Tasks is expanded and directly editable.
+- Project Notes / Decisions was removed. Existing project-linked notes migrate into `Project.recoveryNotes`; standalone Resources remain Notes.
+- Daily and weekly Priority records, editors, seed data, and client state are removed.
+- Legacy queued Priority mutations are acknowledged no-ops so old outboxes can drain.
+- Sync reconciliation preserves mutations queued while another sync request is in flight.
+
+## Data Migration
+- Migration `20260611130000_workflow_simplification` adds and populates `Task.scheduledTime`, then removes `startTime` and `endTime`.
+- Existing non-trashed project Notes are appended under `## Imported project notes` with stable note markers, then deleted from the Note table.
+- The Priority table is dropped.
+- Legacy queued project-note upserts append or replace one marked recovery-note block through the mutation ledger and do not recreate hidden Note records.
 
 ## Known Boundaries
-- Offline support covers cached core views and queued CRUD-style mutations, not full collaborative conflict resolution or merge UI.
-- Conflict policy is server-canonical, last-write-wins by `updatedAt`, with visible stale-mutation warnings when older offline changes are skipped.
-- Project hierarchy is intentionally lightweight: `parentProjectId` is nullable and user-scoped in app logic, without a strict database foreign key in v0.1.x.
-- Resources are markdown notes, not rich Notion-style databases; formula-heavy resources, routines, rotations, and spaced repetition are deferred.
-- Email verification, password reset, OAuth, semantic search, calendar integration, and external AI suggestions are deferred.
-- PWA manifest icons have been generated; manual installability checks on mobile browsers remain optional follow-up.
-- Database-unavailable handling now covers auth pages and core DB-backed APIs with clear user-facing messages.
-- Production credential rotation is partly external: any previously shared Neon/Postgres credential must be rotated in the provider, then copied into deployment environment variables.
+- Offline support covers cached core views and queued CRUD-style mutations, not collaborative merge UI.
+- Server data is canonical after sync; stale incoming updates produce visible warnings.
+- `Deadline` remains an internal model name until a later compatibility-breaking storage migration is justified.
+- Project hierarchy remains lightweight through nullable, user-scoped `parentProjectId`.
+- Resources are Markdown notes, not arbitrary Notion databases.
+- Email verification, password reset, OAuth, semantic search, calendar integration, recurrence, and external AI suggestions remain deferred.
+- Moderate dependency advisories still require a safe upstream upgrade review.
 
-## Latest Verified State
-- The one-week usage trial is successful per user report on 2026-06-10: ContextOS does what it is supposed to do for the current execution-first MVP workflow.
-- v0.1.12 DB-up follow-up verification passed on 2026-06-10: `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed with 22 tests.
-- v0.2.0 Daily Schedule Grid is implemented and verified locally.
-- Dashboard and Today now share a `DailySchedule` component that places valid timed tasks in 30-minute schedule rows, treats start-only tasks as 30-minute blocks, and keeps untimed/overdue/in-progress-without-time/invalid-range tasks in an unscheduled/needs-attention list.
-- No Prisma migration, API contract change, or sync payload change was made for v0.2.0.
-- Verification on 2026-06-10: `npm run typecheck`, `npm run build`, targeted schedule Playwright tests, `npm run test:e2e` with 23 tests, and desktop/mobile in-app Browser smoke passed.
-- v0.2.1 Stale Local Cache Recovery is implemented and verified locally.
-- The workspace shell now exposes a compact guarded Refresh action next to sync state; Settings uses the same refresh guard.
-- Refresh from server is disabled while offline, syncing, refreshing, or while pending local mutations exist.
-- External demo reset/reseed recovery is covered: an already-open browser can replace stale local workspace state from the server without clearing pending offline work.
-- Starter workspace singleton records are now created idempotently to tolerate reset/bootstrap races.
-- Verification on 2026-06-10: `npm run db:seed`, targeted stale-cache Playwright tests, `npm run typecheck`, `npm run build`, `npm run test:e2e` with 24 tests, and in-app Browser Settings smoke passed.
-- v0.1.12 graceful database-unavailable handling is implemented locally.
-- Auth pages now render a visible PostgreSQL outage message instead of crashing when Postgres is unavailable.
-- Auth login/register/current-user APIs and workspace bootstrap/sync/reset APIs now return structured `503` JSON with `code: "database_unavailable"` when DB access fails due connectivity.
-- Client bootstrap/reset handling now surfaces the server-provided outage message in sync state.
-- Verification on 2026-06-10: `npm run typecheck`, `npm run build`, `npx prisma validate`, `git diff --check`, targeted classifier Playwright coverage, DB-down auth/API smokes, and in-app Browser `/login` smoke passed.
-- v0.1.11 dashboard timeline and schedule-table changes are implemented locally.
-- Dashboard freeform notepad keeps fast textarea editing and now renders a live Markdown preview, including headings, checklists, and tables.
-- Dashboard `Tasks` is replaced by `Daily timeline`; tasks can carry optional `startTime` and `endTime`, display as time-range pills, and can be project-linked while planned for today.
-- `Task.startTime` and `Task.endTime` are propagated through Prisma, bootstrap serialization, sync replay, IndexedDB normalization, seed data, and shared types.
-- A seeded `Piano Schedule` Resource under `Piano / Content` mirrors the Notion schedule-table shape with `Index`, `Song`, `Today?`, and `Status` columns.
-- Current audit saved to `docs/CURRENT_AUDIT_2026-06-05.md`.
-- Verification on 2026-06-05: `npx prisma generate`, `npm run typecheck`, `npm run build`, `npx prisma validate`, `git diff --check`, `docker compose up -d`, `npm run db:migrate`, `npm run db:seed`, targeted Playwright, and `npm run test:e2e` passed; e2e has 19 passing tests.
-- Residual audit risks: database outage handling is brittle, already-open browser IndexedDB cache can drift after external seed/reset, and `npm audit --audit-level=moderate` reports 5 moderate advisories requiring safe dependency review.
-- v0.1.9 dashboard deadlines and recovery-note changes are implemented locally.
-- Dashboard Dates can create project-linked deadlines with optional local time and location; dashboard tasks can optionally select a project.
-- Deadlines now store optional `time` and `location` fields and expose them across creation/edit surfaces.
-- Projects now show top-level root projects first with expandable subcontexts.
-- Expanded Areas can create root projects and soft-delete projects into Archive/Trash.
-- Dashboard shows dismissible in-app review prompts for due daily/weekly reviews.
-- Project recovery pages now keep fixed fields structured while adding freeform markdown `recoveryNotes`.
-- Verification on 2026-06-04: `npx prisma generate`, `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed; e2e now has 19 passing tests.
-- DESIGN.md visual design-system alignment is implemented locally as a visual-only pass.
-- Shared ContextOS tokens now define app backgrounds, text, borders, primary accent, status colors, focus rings, radii, shadows, and light/dark aliases.
-- Auth, shell/navigation, Dashboard, Inbox, Today, This Week, Projects, Project Detail, Deadlines, Reviews, Search, Archive, Settings, markdown editor surfaces, cards, rows, badges, buttons, inputs, and empty states now use the calmer operational styling direction from `DESIGN.md`.
-- No functionality, data flow, database schema, Prisma model, API contract, auth/session behavior, offline sync semantics, route behavior, or business logic was intentionally changed in the design pass.
-- Verification on 2026-06-04: `npx prisma generate`, `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed; e2e now has 18 passing tests.
-- Browser/mobile visual smoke on 2026-06-04: desktop Dashboard/Today/Projects/Search/Settings navigation passed, mobile 390x844 Dashboard plus drawer navigation to Today passed with 0px horizontal overflow; screenshots saved to `test-results/contextos-design-desktop.png` and `test-results/contextos-design-mobile.png`.
-- v0.1.7 workspace markdown canvas changes are implemented locally.
-- Dashboard quick capture is now integrated into the Dashboard Canvas markdown editor; slash captures such as `/task`, `/note`, `/project`, `/deadline`, and `/status` still enter the existing capture/inbox flow.
-- The shared markdown editor renders editable headings, subheadings, bullets, checkboxes, quotes, and code fences while preserving markdown storage.
-- Dashboard and Today keep completed scheduled tasks visible as crossed-off, interactable rows.
-- Areas can be opened in place to reveal project and subcontext trees.
-- Project detail pages now use one recovery markdown editor for current objective, next action, latest status, and open loops.
-- Workspace dark mode is available from the shell and persists locally.
-- Verification on 2026-06-04: `npm run typecheck`, `npm run build`, and `npm run test:e2e` passed; e2e now has 16 passing tests. Manual visual smoke captured the dark dashboard at `test-results/dashboard-dark-smoke.png`.
-- v0.1.x PARA foundation is implemented locally.
-- `BLUEPRINT.md` now defines ContextOS as an execution-first PARA system: Projects/subcontexts, Areas, Resources, Archives, Dashboard Canvas, and deferred personal-system engines.
-- Project schema now includes nullable `parentProjectId`; sync, serialization, local IndexedDB/outbox mutation payloads, and seed data carry it.
-- Projects page now shows root projects with subcontext previews and rollup counts.
-- Project detail pages now show subcontexts and roll up descendant tasks/deadlines with child labels.
-- Dashboard now has a persisted markdown Dashboard Canvas backed by a standalone Resource note.
-- Sidebar now groups navigation into Execution, PARA, and Review sections, with new Areas and Resources routes.
-- Verification on 2026-06-04: `npm run db:migrate`, `npm run db:seed`, `npm run typecheck`, `npm run build`, and `npm run test:e2e` all passed; e2e now has 14 passing tests.
-- Browser smoke on 2026-06-04: demo login reached Dashboard, and Dashboard Canvas, Projects/subcontexts, Areas, and Resources rendered at `http://localhost:3000`.
-- v0.1.5 trial preparation is implemented locally, but the real usage trial is not complete.
-- `docs/FRICTION_LOG.md` now provides the trial rules, acceptance tracker, checkpoint table, friction entry template, ranked friction list, and closeout fields.
-- `docs/RUN_PROTOCOL.md` now includes the v0.1.5 trial procedure and clarifies local-dev offline reload verification boundaries.
-- Trial-readiness verification on 2026-06-03: `npm run typecheck`, `npm run build`, `npm run test:e2e`, and a login-to-Dashboard browser smoke all passed.
-- v0.1.4 offline sync visibility and conflict warnings are implemented locally.
-- The global shell now shows online/offline, syncing, pending, error, and stale-warning sync state.
-- Settings now exposes pending count, last successful sync, last server refresh, stale warning count, retry sync, and guarded refresh-from-server controls.
-- Draft-save fields warn while editing offline so users know saves will queue locally.
-- Sync API responses now include stale warnings while still acknowledging stale mutations so the outbox can clear.
-- Offline persistence was tightened: workspace cache writes complete before outbox mutations are queued, IndexedDB helper connections close after transactions, and e2e verifies cached offline work survives a browser reload before syncing when online.
-- v0.1.3 mutation hygiene and draft-save behavior is implemented locally.
-- High-churn text edits now use local drafts and commit intentionally instead of creating one sync mutation per keystroke.
-- Project recovery fields, domain names, note title/content, deadline title, and deadline notes use draft-save controls with unsaved/saved status.
-- Offline draft-save behavior was verified: a 30+ character project field edit queued one mutation and synced back to zero pending changes.
-- v0.1.2 local date/time correctness is implemented locally.
-- Date-only UI keys now use local calendar dates instead of UTC slicing.
-- Task/deadline date-only fields are parsed from `YYYY-MM-DD`, stored as canonical UTC-midnight dates, and serialized back to date keys without timezone shifts.
-- Today and This Week priorities use shared local date/week helpers.
-- `.env.example` is intended to be committed; real `.env` remains ignored.
-- The local ignored `.env` was reset to localhost Postgres defaults with a fresh `AUTH_SECRET`.
-- `ContextOS v0.1.zip` was sanitized to remove `.env`.
-- Vercel build no longer runs `npm run db:seed`.
-- `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is explicitly set.
-- Verification on 2026-06-03: `npm run typecheck`, `npm run build`, `npm run db:migrate`, `npm run db:seed`, and `npm run test:e2e` all passed against local Postgres.
-- v0.1.4 verification on 2026-06-03: `npm run typecheck`, `npm run build`, `npm run db:seed`, and `npm run test:e2e` all passed against local Postgres; `npm run db:migrate` was already in sync with no schema changes.
-- Manual browser smoke on 2026-06-03: local app opened at `http://localhost:3000`; Today rendered; Deadlines rendered hydrated `YYYY-MM-DD` date inputs.
-- Manual draft-save smoke on 2026-06-03: local browser edit of Latest Status while offline showed unsaved state, queued one pending mutation after save, then synced back to zero.
+## Latest Verification
+- `npx prisma validate` and `npx prisma generate` passed.
+- `npm run db:migrate` applied `20260611130000_workflow_simplification`.
+- `npm run db:seed` passed.
+- `npm run typecheck` passed.
+- Full sequential Playwright coverage passed with 28 tests on 2026-06-11.
+- `npm run build` passed with the existing `metadataBase` warning.
+- `npm run test:e2e -- --workers=1` passed with 29 tests.
+- Desktop/mobile in-app Browser smoke passed with no horizontal overflow or console errors.
 
 ## Next Useful Work
-- Review `docs/MIGRATION_BACKLOG.md` before selecting the next v0.2.x batch.
-- Also prioritize safe review of moderate dependency advisories.
-- Treat the v0.1.x PARA foundation as product-validated unless new friction appears.
-- Do not make major Dashboard, Today, or command-surface changes without a product checkpoint.
+- Run the simplified workflow in real use before broadening scope.
+- Treat regressions in capture speed, timeline scanning, Dates separation, project recovery, or offline replay as v0.2.2 fixes.
+- Review dependency advisories only through deliberate non-breaking upgrades.

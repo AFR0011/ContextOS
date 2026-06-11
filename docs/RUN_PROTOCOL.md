@@ -49,15 +49,21 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    npm run test:e2e
    ```
 5. Manual checks:
-   - Log in with the demo account.
-   - Add a slash capture from the Dashboard Canvas editor.
+   - Log in with the demo account and confirm Dashboard Quick Capture is above all sections.
+   - Add `/task` and `/date` captures from Dashboard Quick Capture and confirm they reach Inbox.
    - Convert an inbox capture to a task.
-   - Check a Today task done and confirm it remains visible and can be unchecked.
-   - Edit project recovery context through the project markdown editor.
-   - Create a project subcontext and confirm the parent rolls up child tasks/deadlines.
-   - Edit the Dashboard Canvas and confirm it appears in Resources.
+   - Add timed and untimed Daily timeline tasks, create two tasks at the same time, and confirm no empty calendar slots appear.
+   - Cross a Daily timeline or Today task, reload, and confirm it remains visible and can be reopened.
+   - Confirm Dashboard Tasks includes a future task and follows Show completed.
+   - Create, edit, archive, restore, and delete an important Date; confirm task due dates do not appear in Dates.
+   - Confirm `/deadlines` redirects to `/dates`.
+   - Open a project and confirm section order: Active Tasks, Dates, Recovery Canvas, Subcontexts.
+   - Confirm project Notes / Decisions is absent and recovery notes persist.
+   - Create a project subcontext and confirm the parent rolls up child tasks/dates.
+   - Edit the Dashboard Notepad and confirm it persists.
    - Open an Area and confirm projects/subcontexts appear inside it.
    - Open Areas and Resources from the PARA nav group.
+   - Confirm Today and This Week contain no priority editor terminology.
    - Toggle dark mode and reload to confirm it persists.
    - Go offline, add a capture, reload a visited route, return online, and confirm pending sync clears.
 

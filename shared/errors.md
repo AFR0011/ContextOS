@@ -1,5 +1,7 @@
 # Shared Errors
 
+- 2026-06-11: The fixed-model `dev-loop-orchestrator` subagent is unsupported for the current ChatGPT account. Continued under the existing local phase-artifact fallback and recorded the complete v0.2.2 batch in `DEV_STATE.md` before implementation.
+- 2026-06-11: Generic dev-loop helper scripts under `tools/` remain absent, so helper initialization and syntax checks are unavailable. Existing `shared/` files are being maintained directly.
 - 2026-06-10: Generic dev-loop helper scripts under `tools/` are absent in this repo, so `python tools/context_manager.py init --root .` and helper `py_compile` preflight failed. Continued with existing `shared/` files and recorded the limitation.
 - 2026-06-10: The `architect-planner` subagent failed before planning because its fixed model is unsupported for the current account. Continued with a local written batch plan before implementation.
 - 2026-06-10: `docker compose up -d` initially failed because Docker Desktop's Linux engine pipe was unavailable; `npm run db:migrate` then failed because localhost Postgres was unavailable. Later resolved after Docker/Postgres became available; DB-up migration, seed, and full e2e passed.

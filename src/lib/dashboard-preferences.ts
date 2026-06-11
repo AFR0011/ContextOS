@@ -1,6 +1,6 @@
 import type { DashboardPreference, DashboardSectionId } from "@/lib/types";
 
-export const DASHBOARD_SECTION_ORDER: DashboardSectionId[] = ["notepad", "dates", "tasks", "projects"];
+export const DASHBOARD_SECTION_ORDER: DashboardSectionId[] = ["notepad", "dates", "tasks", "allTasks", "projects"];
 
 const DASHBOARD_SECTION_IDS = new Set<DashboardSectionId>(DASHBOARD_SECTION_ORDER);
 

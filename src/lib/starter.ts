@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { addDaysToDateKey, dateKeyToUtcDate, localDateKey, localWeekStartKey } from "./dates";
+import { addDaysToDateKey, dateKeyToUtcDate, localDateKey } from "./dates";
 
 type Tx = PrismaClient | Prisma.TransactionClient;
 
@@ -27,7 +27,6 @@ export async function clearWorkspace(tx: Tx, userId: string) {
   await tx.syncMutation.deleteMany({ where: { userId } });
   await tx.dashboardPreference.deleteMany({ where: { userId } });
   await tx.dashboardScratchpad.deleteMany({ where: { userId } });
-  await tx.priority.deleteMany({ where: { userId } });
   await tx.review.deleteMany({ where: { userId } });
   await tx.deadline.deleteMany({ where: { userId } });
   await tx.note.deleteMany({ where: { userId } });
@@ -77,7 +76,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         currentObjective: "Turn the blueprint into a daily-use system for capture, execution, and recovery.",
         nextAction: "Run one real workday through Dashboard, Inbox, Today, and project recovery.",
         latestStatus: "Next/Postgres direction chosen. Offline core views and local auth are part of v0.1.",
-        recoveryNotes: "## Working notes\n- Keep dashboard capture fast.\n- Keep project recovery structured but editable.",
+        recoveryNotes: "## Working notes\n- Keep dashboard capture fast.\n- Keep project recovery structured but editable.\n\n## Demo handoff\n- Auth should feel real locally\n- Offline capture should not lose anything\n- Project pages should answer what to do next",
         openLoops: ["Verify offline sync after reconnect", "Replace demo notes with real project context"]
       },
       {
@@ -116,7 +115,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         currentObjective: "Keep experiments and handoffs recoverable after breaks.",
         nextAction: "Write the next verifiable experiment packet.",
         latestStatus: "Protocol B support audit is complete. RF baseline still needs rerun with corrected threshold logic.",
-        recoveryNotes: "",
+        recoveryNotes: "## Experiment recovery note\nLast useful context: compare calibration tables after the RF rerun finishes.",
         openLoops: ["Confirm corrected threshold logic", "Decide whether calibration table belongs in appendix"]
       },
       {
@@ -127,8 +126,8 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         parentProjectId: null,
         status: "paused",
         currentObjective: "Keep application materials ready without letting them invade daily execution.",
-        nextAction: "Review one application deadline and update the checklist.",
-        latestStatus: "Draft materials exist; next useful move is to identify deadline risk.",
+        nextAction: "Review one application date and update the checklist.",
+        latestStatus: "Draft materials exist; next useful move is to identify date risk.",
         recoveryNotes: "",
         openLoops: []
       }
@@ -144,8 +143,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         title: "Process inbox captures",
         plannedDate: dateOnly(0),
         dueDate: null,
-        startTime: "09:30",
-        endTime: "10:00",
+        scheduledTime: "09:30",
         projectId: contextProjectId,
         domainId: domains.dev,
         status: "todo"
@@ -156,8 +154,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         title: "Write one clean latest-status note",
         plannedDate: dateOnly(0),
         dueDate: dateOnly(1),
-        startTime: "10:30",
-        endTime: "11:15",
+        scheduledTime: "10:30",
         projectId: contextDashboardProjectId,
         domainId: domains.dev,
         status: "in-progress"
@@ -168,8 +165,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         title: "Rerun RF baseline with corrected threshold logic",
         plannedDate: dateOnly(1),
         dueDate: dateOnly(3),
-        startTime: null,
-        endTime: null,
+        scheduledTime: null,
         projectId: thesisProjectId,
         domainId: domains.research,
         status: "blocked"
@@ -177,11 +173,10 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
       {
         id: idFor(userId, "task-deadlines"),
         userId,
-        title: "Review deadlines and identify risk points",
+        title: "Review important dates and identify risk points",
         plannedDate: null,
         dueDate: dateOnly(0),
-        startTime: "15:00",
-        endTime: null,
+        scheduledTime: "15:00",
         projectId: careerProjectId,
         domainId: domains.career,
         status: "todo"
@@ -246,25 +241,9 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         id: idFor(userId, "note-dashboard-canvas"),
         userId,
         title: "Dashboard Canvas",
-        content: "## Notepad\n- Try using this as the Dashboard 2.0 scratch layer.\n- Keep widgets for execution; keep loose thoughts here.\n\n## Dates\n- [ ] Add one real deadline or checkpoint\n\n## Goals\n- [ ] Decide whether this canvas reduces Notion dashboard use",
+        content: "## Notepad\n- Try using this as the Dashboard 2.0 scratch layer.\n- Keep widgets for execution; keep loose thoughts here.\n\n## Dates\n- Add one real exam, flight, event, or final milestone\n\n## Goals\n- [ ] Decide whether this canvas reduces Notion dashboard use",
         projectId: null,
         domainId: domains.notes
-      },
-      {
-        id: idFor(userId, "note-contextos"),
-        userId,
-        title: "Demo handoff",
-        content: "- Auth should feel real locally\n- Offline capture should not lose anything\n- Project pages should answer what to do next",
-        projectId: contextProjectId,
-        domainId: domains.dev
-      },
-      {
-        id: idFor(userId, "note-thesis"),
-        userId,
-        title: "Experiment recovery note",
-        content: "Last useful context: compare calibration tables after the RF rerun finishes.",
-        projectId: thesisProjectId,
-        domainId: domains.research
       },
       {
         id: idFor(userId, "note-piano-schedule"),
@@ -298,7 +277,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         type: "daily-startup",
         date: new Date(),
         responses: {
-          priorities: "1. Verify the ContextOS core loop\n2. Process stale captures\n3. Update one project status"
+          focus: "Verify the ContextOS core loop, process stale captures, and update one project status."
         }
       }
     ],
@@ -321,7 +300,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
       {
         id: idFor(userId, "dashboard-preferences"),
         userId,
-        sectionOrder: ["notepad", "dates", "tasks", "projects"],
+        sectionOrder: ["notepad", "dates", "tasks", "allTasks", "projects"],
         collapsedSections: [],
         reviewPromptDismissals: [],
         dateWindowDays: 14,
@@ -331,25 +310,4 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
     skipDuplicates: true
   });
 
-  await tx.priority.createMany({
-    data: [
-      {
-        id: idFor(userId, "priority-today-1"),
-        userId,
-        scope: "daily",
-        dateKey: localDateKey(),
-        text: "Use ContextOS for today's real captures",
-        done: false
-      },
-      {
-        id: idFor(userId, "priority-week-1"),
-        userId,
-        scope: "weekly",
-        dateKey: localWeekStartKey(),
-        text: "Validate whether the demo replaces phone notes for one week",
-        done: false
-      }
-    ],
-    skipDuplicates: true
-  });
 }

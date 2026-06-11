@@ -21,7 +21,6 @@ model User {
   notes         Note[]
   deadlines     Deadline[]
   reviews       Review[]
-  priorities            Priority[]
   dashboardScratchpads  DashboardScratchpad[]
   dashboardPreferences  DashboardPreference[]
   syncMutations         SyncMutation[]
@@ -84,8 +83,7 @@ model Task {
   title       String
   plannedDate DateTime?
   dueDate     DateTime?
-  startTime   String?
-  endTime     String?
+  scheduledTime String?
   projectId   String?
   domainId    String?
   status      String    @default("todo")
@@ -173,23 +171,6 @@ model Review {
   @@index([userId])
   @@index([userId, type])
   @@index([userId, date])
-}
-
-model Priority {
-  id        String   @id
-  userId    String
-  scope     String
-  dateKey   String
-  text      String
-  taskId    String?
-  done      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([userId, scope, dateKey])
 }
 
 model DashboardScratchpad {

@@ -33,6 +33,32 @@ function shouldApplyOrWarn(
   return false;
 }
 
+function importedProjectNoteBlock(payload: any) {
+  const title = String(payload.title || "Untitled note").trim() || "Untitled note";
+  const content = String(payload.content || "").trim();
+  return [
+    `<!-- imported-project-note:${payload.id} -->`,
+    `### ${title}`,
+    content,
+    `<!-- /imported-project-note:${payload.id} -->`
+  ].filter(Boolean).join("\n\n");
+}
+
+function mergeImportedProjectNote(recoveryNotes: string, payload: any) {
+  const block = importedProjectNoteBlock(payload);
+  const startMarker = `<!-- imported-project-note:${payload.id} -->`;
+  const endMarker = `<!-- /imported-project-note:${payload.id} -->`;
+  const start = recoveryNotes.indexOf(startMarker);
+  const end = recoveryNotes.indexOf(endMarker);
+
+  if (start >= 0 && end >= start) {
+    return `${recoveryNotes.slice(0, start).trimEnd()}\n\n${block}${recoveryNotes.slice(end + endMarker.length)}`.trim();
+  }
+
+  const heading = recoveryNotes.includes("## Imported project notes") ? "" : "## Imported project notes\n\n";
+  return `${recoveryNotes.trim()}${recoveryNotes.trim() ? "\n\n" : ""}${heading}${block}`.trim();
+}
+
 export async function applySyncMutations(userId: string, mutations: QueuedMutation[]) {
   const applied: string[] = [];
   const warnings: SyncWarning[] = [];
@@ -48,9 +74,6 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
       }
 
       if (mutation.operation === "delete") {
-        if (mutation.entityType === "priorities") {
-          await tx.priority.deleteMany({ where: { id: mutation.entityId, userId } });
-        }
         await tx.syncMutation.create({
           data: {
             mutationId: mutation.mutationId,
@@ -142,8 +165,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
                 title: payload.title,
                 plannedDate: toDateOnly(payload.plannedDate),
                 dueDate: toDateOnly(payload.dueDate),
-                startTime: payload.startTime ?? null,
-                endTime: payload.endTime ?? null,
+                scheduledTime: payload.scheduledTime ?? payload.startTime ?? payload.endTime ?? null,
                 projectId: payload.projectId,
                 domainId: payload.domainId,
                 status: payload.status,
@@ -157,8 +179,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
                 title: payload.title,
                 plannedDate: toDateOnly(payload.plannedDate),
                 dueDate: toDateOnly(payload.dueDate),
-                startTime: payload.startTime ?? null,
-                endTime: payload.endTime ?? null,
+                scheduledTime: payload.scheduledTime ?? payload.startTime ?? payload.endTime ?? null,
                 projectId: payload.projectId,
                 domainId: payload.domainId,
                 status: payload.status ?? "todo",
@@ -200,6 +221,18 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           break;
         }
         case "notes": {
+          if (payload.projectId) {
+            const project = await tx.project.findFirst({ where: { id: payload.projectId, userId } });
+            if (project && !payload.trashedAt) {
+              await tx.project.update({
+                where: { id: project.id },
+                data: {
+                  recoveryNotes: mergeImportedProjectNote(project.recoveryNotes, payload)
+                }
+              });
+            }
+            break;
+          }
           const existing = await tx.note.findFirst({ where: { id: payload.id, userId } });
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
             await tx.note.upsert({
@@ -339,31 +372,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           break;
         }
         case "priorities": {
-          const existing = await tx.priority.findFirst({ where: { id: payload.id, userId } });
-          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            await tx.priority.upsert({
-              where: { id: payload.id },
-              update: {
-                scope: payload.scope,
-                dateKey: payload.dateKey,
-                text: payload.text,
-                taskId: payload.taskId,
-                done: Boolean(payload.done),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              },
-              create: {
-                id: payload.id,
-                userId,
-                scope: payload.scope,
-                dateKey: payload.dateKey,
-                text: payload.text,
-                taskId: payload.taskId,
-                done: Boolean(payload.done),
-                createdAt: toDate(payload.createdAt) ?? new Date(),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              }
-            });
-          }
+          // Compatibility no-op: old clients may still have Priority mutations queued.
           break;
         }
       }

@@ -1,5 +1,41 @@
 # ContextOS Dev Log
 
+## 2026-06-11 - v0.2.2 Workflow Simplification
+
+Planner scope: implement all approved workflow simplifications as one coordinated dev-loop batch.
+
+Implementation:
+
+- Updated `BLUEPRINT.md` before source implementation.
+- Added the `20260611130000_workflow_simplification` Prisma migration for task time consolidation, project-note import/delete, and Priority removal.
+- Added legacy cache/outbox normalization for task times, project-note replay, Priority no-op acknowledgements, and Date command aliases.
+- Rebuilt Dashboard Daily timeline as a compact editable list and added the separate all Tasks section plus Show completed control.
+- Added top-level Dashboard Quick Capture and canonical `/dates` navigation with `/deadlines` redirect.
+- Reordered project detail, expanded Active Tasks, and removed project Notes / Decisions.
+- Removed daily/weekly priority behavior from schema, seed, state, reviews, Today, and This Week.
+- Fixed overlapping outbox-write and sync-response races discovered by same-time task coverage.
+- Bumped package and shell version to `0.2.2`.
+
+Verification:
+
+- `npx prisma validate` - passed.
+- `npx prisma generate` - passed.
+- `npm run db:migrate` - passed; schema already in sync after applying the migration earlier in the cycle.
+- `npm run db:seed` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed with the existing `metadataBase` warning.
+- `npm run test:e2e -- --workers=1` - passed, 29 tests.
+- In-app Browser desktop/mobile smoke passed with no horizontal overflow or console errors.
+
+Operational notes:
+
+- The configured fixed-model dev-loop orchestrator was unavailable, so the documented local phase-artifact fallback was used.
+- `modificaitons.txt` was preserved without agent edits.
+
+Result:
+
+- Batch complete. Risks `R-2026-06-11-01` through `R-2026-06-11-04` are closed.
+
 ## 2026-06-10 - v0.2.1 Stale Local Cache Recovery
 
 Planner scope: make an already-open browser recover from stale IndexedDB/in-memory workspace data after external seed/reset without risking pending offline mutations. Keep the batch small: global guarded server-refresh action, Settings guard alignment, targeted tests, no schema/API/sync payload changes.

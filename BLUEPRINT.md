@@ -2,7 +2,7 @@
 
 ## Status
 
-**Version:** v1.0  
+**Version:** v1.0 (implementation batch v0.2.2)
 **Product Type:** Execution-first context recovery system  
 **Primary User:** Single-user MVP  
 **Platform:** Online-first PWA, offline capture later  
@@ -13,7 +13,7 @@
 
 ## 1. Product Definition
 
-ContextOS is an execution-first context recovery system for managing tasks, open loops, projects, deadlines, lightweight notes, and review-based recovery.
+ContextOS is an execution-first context recovery system for managing tasks, open loops, projects, important dates, lightweight notes, and review-based recovery.
 
 Its core promise is:
 
@@ -118,7 +118,7 @@ PARA is used to make execution context recoverable. It should not add capture fr
 - Project subcontexts / nested projects.
 - Areas.
 - Resources.
-- Deadlines.
+- Dates.
 - Archive.
 - Search.
 - Settings.
@@ -160,7 +160,7 @@ Projects
 Areas
 Resources
 Archive
-Deadlines
+Dates
 Reviews
 Search
 Settings
@@ -178,7 +178,7 @@ Agent suggestions appear only inside project pages and a collapsed dashboard sec
 
 Areas are ongoing responsibilities, skills, and systems. In v0.1.x, the existing `Domain` object acts as the lightweight Area model.
 
-Domains/Areas are default organizational groupings. They are visible through the Areas page and are also used for filtering and grouping projects, notes, tasks, deadlines, and resources.
+Domains/Areas are default organizational groupings. They are visible through the Areas page and are also used for filtering and grouping projects, notes, tasks, dates, and resources.
 
 Default domains:
 
@@ -195,13 +195,13 @@ Notes
 
 ### 6.1 Area / Domain Behavior
 
-- Domains are used for filtering and grouping projects, notes, tasks, deadlines, and resources.
+- Domains are used for filtering and grouping projects, notes, tasks, dates, and resources.
 - Defaults are provided.
 - User can rename domains.
 - User can add domains.
 - User can archive domains.
 - Domains should not become mandatory friction during quick capture.
-- The Areas page should summarize each domain's projects, open tasks, resources, and deadlines.
+- The Areas page should summarize each domain's projects, open tasks, resources, and important dates.
 
 ### 6.2 Resources
 
@@ -221,7 +221,7 @@ Rules:
 ```text
 Resources are searchable.
 Resources can contain Markdown and checklists.
-Resources do not surface in Today unless converted into tasks, deadlines, or project context.
+Resources do not surface in Today unless converted into tasks, dates, or project context.
 Resources live under an Area/Domain.
 ```
 
@@ -237,7 +237,7 @@ Project
 Task
 Capture
 Note
-Deadline
+Date
 Review
 ```
 
@@ -275,7 +275,7 @@ Orbit Wars Week 4
 Semester 12-3 Assistantship
 ```
 
-Smaller work items belong as tasks, not separate projects. However, large projects may contain subcontexts when the child has its own recovery context, next action, notes, deadlines, or open loops.
+Smaller work items belong as tasks, not separate projects. However, large projects may contain subcontexts when the child has its own recovery context, next action, recovery notes, dates, or open loops.
 
 Examples of valid subcontexts:
 
@@ -298,9 +298,9 @@ Current objective
 
 ```text
 Status
-Deadline
+Date
 Next action
-Notes
+Freeform recovery notes
 Parent project
 ```
 
@@ -322,15 +322,12 @@ Recommended order:
 ```text
 Header
 Status
-Current Objective
-Next Action
-Open Loops / Blockers
-Deadlines
-Latest Status
-Active Tasks, collapsed by default
-Notes / Decisions
-Agent Handoff
+Active Tasks, expanded
+Dates
+Recovery Canvas: Next Action, Latest Status, Current Objective, Open Loops, Freeform Recovery Notes
+Subcontexts
 Agent Suggestions
+Project actions
 ```
 
 ### 8.6 Subcontexts / Nested Projects
@@ -343,9 +340,9 @@ Rules:
 Root projects appear on the Projects page.
 Child projects appear as subcontexts under their parent.
 Child projects use the same recovery fields as root projects.
-Parent project pages roll up non-archived, non-trashed descendant tasks and deadlines.
-Rolled-up child tasks/deadlines must be labeled with their subcontext.
-Adding a task or deadline from a parent page creates it directly on the parent unless the user navigates into a child.
+Parent project pages roll up non-archived, non-trashed descendant tasks and dates.
+Rolled-up child tasks/dates must be labeled with their subcontext.
+Adding a task or date from a parent page creates it directly on the parent unless the user navigates into a child.
 Archiving/trashing a parent does not automatically archive/trash children.
 If a parent is hidden or missing, visible children should be promoted to root visibility.
 ```
@@ -391,6 +388,7 @@ Title
 ```text
 Planned date
 Due date
+Scheduled time
 Project/context
 ```
 
@@ -416,22 +414,21 @@ Due date = when the task must be completed.
 
 A task can be planned today without being due today. A task can be due today without being manually planned.
 
-### 9.5 Priority
+### 9.5 Scheduled Time
+
+A task may have one optional `scheduledTime` value. It represents when the task is intended to happen, not a start/finish range or duration.
+
+Daily task surfaces show only occupied times plus untimed tasks. They do not render a full empty-day grid.
+
+### 9.6 No Priority Subsystem
 
 There is no global task priority field in MVP.
 
-Priority is handled through:
-
-```text
-Daily Top 1-3 Priorities
-Weekly pinned priorities
-```
-
-This avoids priority inflation and unnecessary metadata.
+There is no separate daily or weekly priority object. Today selection is expressed through planned dates, due dates, task state, and the dedicated Daily Timeline.
 
 ---
 
-## 10. Deadline Model
+## 10. Date Model
 
 ### 10.1 Required Fields
 
@@ -448,16 +445,18 @@ Related tasks
 Notes
 ```
 
-### 10.3 Deadline Behavior
+### 10.3 Date Behavior
 
-Deadlines are separate objects from task due dates.
+Dates are separate objects from task due dates.
 
-A deadline can govern multiple related tasks.
+A Date records an important real-world date such as an exam, flight, appointment, event, or final milestone. It is not a task and is not completed with a checkbox.
+
+A Date can govern multiple related tasks.
 
 Example:
 
 ```text
-Deadline: Submit thesis proposal
+Date: Submit thesis proposal
 Date: June 10
 Related project: MSc Thesis
 Related tasks:
@@ -465,6 +464,8 @@ Related tasks:
 - Proofread
 - Send to advisor
 ```
+
+Dates can be edited, archived, restored, or deleted. Visible UI uses `Date`/`Dates`; the internal `Deadline` storage and `/deadline` capture command remain compatibility aliases during v0.2.x.
 
 ---
 
@@ -488,7 +489,8 @@ MVP slash commands:
 /task
 /note
 /project
-/deadline
+/date
+/deadline (compatibility alias)
 /status
 ```
 
@@ -498,7 +500,7 @@ Examples:
 /task finish RF baseline rerun
 /note dashboard should show overdue before inbox
 /project ContextOS
-/deadline submit thesis draft June 10
+/date final exam June 10
 /status MSc Thesis: RF rerun done, next action is compare calibration tables
 ```
 
@@ -509,7 +511,7 @@ MVP supports basic date parsing only.
 Example:
 
 ```text
-/deadline submit report June 10
+/date submit report June 10
 ```
 
 Should create:
@@ -538,7 +540,7 @@ Convert to Task
 Convert to Project
 Convert to Note
 Attach to Existing Project
-Set Deadline
+Set Date
 Archive
 Delete
 ```
@@ -571,19 +573,16 @@ What needs recovery?
 
 ```text
 Quick Capture
-Dashboard Canvas
-Today’s Top 1-3 Priorities
-Today
-Overdue
-Inbox
-Recent Contexts
+Notepad
+Dates
+Daily Timeline
+Tasks
+Projects
 ```
 
 ### 12.3 Collapsed by Default
 
 ```text
-This Week
-Deadlines
 Agent Suggestions
 ```
 
@@ -591,8 +590,8 @@ Agent Suggestions
 
 When opening the dashboard:
 
-- Today’s priorities should be shown first.
 - Quick capture should always be visible at the top.
+- Daily Timeline should remain a fast, notepad-like task-writing surface.
 
 The dashboard should orient the user before asking for more input.
 
@@ -616,7 +615,7 @@ Quick Capture remains above the canvas.
 The canvas is stored as a standalone Resource note titled "Dashboard Canvas".
 The canvas supports Markdown/checklist text.
 Checkboxes inside the canvas stay local unless explicitly converted into structured tasks.
-The canvas should sit beside or near Today's Priorities on desktop and stack below Quick Capture on mobile.
+The canvas should sit below Quick Capture and before structured execution sections.
 Fixed widgets remain responsible for execution surfacing.
 ```
 
@@ -634,8 +633,7 @@ Tasks manually planned for today
 Overdue tasks
 In-progress tasks
 Tasks from active projects
-Daily priority list
-Deadlines
+Dates occurring today
 ```
 
 ### 13.2 Deduplication
@@ -659,24 +657,17 @@ Labels: Planned Today, Due Today, MSc Thesis
 
 ## 14. This Week View
 
-This Week uses a hybrid model:
-
-```text
-Automatic rollup + manually pinned weekly priorities
-```
+This Week is an automatic rollup of dated work and active project context.
 
 ### 14.1 This Week Includes
 
 ```text
-Pinned weekly priorities
 Tasks due this week
-Deadlines this week
+Dates this week
 Active projects
 Overdue tasks
 Tasks planned for the week
 ```
-
-Manual pinning should remain available because the system should support, not replace, user judgment.
 
 ---
 
@@ -689,7 +680,7 @@ Reviews are stored and searchable. They support context recovery.
 Daily startup asks only:
 
 ```text
-What are today’s top 1-3 priorities?
+What needs focus today?
 ```
 
 ### 15.2 Daily Shutdown
@@ -708,10 +699,10 @@ Any inbox items to triage?
 Weekly review asks:
 
 ```text
-What are this week’s top outcomes?
+What outcomes matter this week?
 Which projects are active?
 Which projects are stale?
-What deadlines are coming?
+What important dates are coming?
 What should be dropped, deferred, or blocked?
 What should be planned for this week?
 ```
@@ -794,7 +785,7 @@ Tasks
 Captures
 Notes
 Resources
-Deadlines
+Dates
 Reviews
 ```
 
@@ -892,7 +883,7 @@ Suggested tasks
 Suggested next actions
 Suggested project status updates
 Suggested inbox triage
-Suggested deadline extraction
+Suggested important-date extraction
 Suggested handoff summaries
 Suggested stale project review
 ```
@@ -918,7 +909,7 @@ Markdown export should support:
 Project summaries
 Notes
 Tasks
-Deadlines
+Dates
 Daily reviews
 Weekly reviews
 Agent handoff summaries
@@ -981,7 +972,7 @@ The app should surface:
 ```text
 Overdue tasks
 Recent contexts
-Upcoming deadlines
+Upcoming important dates
 Daily planning prompts
 Weekly planning/review prompts
 Agent-suggested actions
@@ -1076,7 +1067,7 @@ Recommended implementation order:
 7. Dashboard + Dashboard Canvas
 8. Inbox + quick capture
 9. Today view
-10. Deadlines
+10. Dates
 11. Reviews
 12. Notes / Resources editor
 13. Search

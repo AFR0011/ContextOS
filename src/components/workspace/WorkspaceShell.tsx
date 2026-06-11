@@ -8,7 +8,6 @@ import {
   Boxes,
   BookOpen,
   CalendarDays,
-  CheckCircle2,
   Download,
   FileText,
   FolderKanban,
@@ -51,7 +50,7 @@ const navSections = [
   {
     label: "Review",
     items: [
-      { href: "/deadlines", label: "Deadlines", icon: CheckCircle2 },
+      { href: "/dates", label: "Dates", icon: CalendarDays },
       { href: "/reviews", label: "Reviews", icon: BookOpen },
       { href: "/search", label: "Search", icon: Search },
       { href: "/settings", label: "Settings", icon: Settings }
@@ -164,7 +163,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </div>
           <div>
             <p className="text-sm font-bold tracking-tight text-[var(--cos-text-strong)]">ContextOS</p>
-            <p className="text-[11px] font-medium text-[var(--cos-text-subtle)]">MVP v0.2</p>
+            <p className="text-[11px] font-medium text-[var(--cos-text-subtle)]">MVP v0.2.2</p>
           </div>
           <button
             className="cos-btn-ghost ml-auto grid h-9 w-9 place-items-center rounded-md text-[var(--cos-text-muted)]"

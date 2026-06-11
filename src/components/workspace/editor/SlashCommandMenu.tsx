@@ -180,9 +180,9 @@ export const CAPTURE_COMMANDS: CommandItem[] = [
     capture: "project"
   },
   {
-    command: "/deadline",
-    label: "Deadline",
-    description: "Capture a dated item",
+    command: "/date",
+    label: "Date",
+    description: "Capture an important date",
     searchKeys: ["deadline", "date", "calendar", "capture"],
     icon: Calendar,
     kind: "capture",

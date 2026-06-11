@@ -1,5 +1,5 @@
-import { DeadlinesView } from "@/components/workspace/Views";
+import { redirect } from "next/navigation";
 
-export default function DeadlinesPage() {
-  return <DeadlinesView />;
+export default function DeadlinesCompatibilityPage() {
+  redirect("/dates");
 }

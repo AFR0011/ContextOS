@@ -1,5 +1,54 @@
 # ContextOS Dev Log
 
+## 2026-06-16 - v0.2.3 Deployment Gate 1 Plan
+
+Planner scope: implement the first deployment-hardening gate from the 2026-06-15 audit while incorporating the user's UX notes about visible text wrapping and stable task/date ordering.
+
+Planned implementation:
+
+- Replace global-ID sync upserts with user-owned update/create paths and make sync mutation identity user-scoped.
+- Add sync request bounds and owned-reference validation.
+- Close production registration by default behind an explicit opt-in.
+- Fix Search task and standalone-note destinations.
+- Remove completion-state reordering from task lists and make task titles wrap in editable rows and read rows.
+- Add targeted regression tests for sync isolation, sync bounds, registration closure, search destinations, wrapping, and stable completion order.
+
+Planned verification:
+
+- `npx prisma validate`
+- `npx prisma migrate status`
+- targeted Playwright for sync/search/task ordering
+- `npm run typecheck`
+- `npm run build`
+- `npm run test:e2e -- --workers=1`
+
+Implementation:
+
+- Added migration `20260616090000_user_scoped_sync_mutations` and changed `SyncMutation` uniqueness to `(userId, mutationId)`.
+- Replaced sync global-ID upserts with user-owned update/create paths and owned-reference validation.
+- Added sync request bounds for content length, mutation count, ID/key lengths, and per-mutation payload size.
+- Closed public registration by default in production behind `ALLOW_PUBLIC_REGISTRATION=true`; `ALLOW_PUBLIC_REGISTRATION=false` disables it in any environment.
+- Routed task search results to their project when available and standalone notes to Resources.
+- Converted task title rows to wrapping textareas and removed completion-status sorting from task lists.
+- Added targeted e2e coverage for cross-user sync rejection, oversized sync payloads, search destinations, long-title wrapping, and stable completion ordering.
+- Bumped package and shell version to `0.2.3`.
+
+Verification:
+
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed.
+- `npx prisma generate` - passed.
+- `npm run typecheck` - passed.
+- `npm run test:e2e -- --workers=1 -g "dashboard daily timeline supports one time|long task titles wrap|search results open surfaces|sync rejects oversized"` - passed, 4 tests.
+- `npm run build` - passed with the existing `metadataBase` warning.
+- Production registration-closed smoke with `ALLOW_PUBLIC_REGISTRATION=false` - passed, 403 response.
+- `npm run test:e2e -- --workers=1` - passed, 32 tests.
+- In-app Browser production smoke passed: mobile Dashboard has no horizontal overflow, task titles render as wrapping textareas, task search opens the visible project task, and console warnings/errors were empty.
+
+Result:
+
+- Batch complete. Risks `R-2026-06-15-01`, `R-2026-06-15-02`, `R-2026-06-15-04`, and `R-2026-06-15-06` are closed. Remaining deployment risks move to the next hardening gate.
+
 ## 2026-06-11 - v0.2.2 Workflow Simplification
 
 Planner scope: implement all approved workflow simplifications as one coordinated dev-loop batch.

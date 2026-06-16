@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Zap } from "lucide-react";
 import { readJsonResponse, responseErrorMessage } from "@/lib/http-client";
 
-export default function AuthForm({ mode, serviceStatus }: { mode: "login" | "register"; serviceStatus?: string }) {
+export default function AuthForm({ mode, serviceStatus, registrationEnabled = true }: { mode: "login" | "register"; serviceStatus?: string; registrationEnabled?: boolean }) {
   const router = useRouter();
   const [email, setEmail] = useState(mode === "login" ? "demo@contextos.local" : "");
   const [password, setPassword] = useState(mode === "login" ? "contextos-demo-v011" : "");
@@ -15,6 +15,10 @@ export default function AuthForm({ mode, serviceStatus }: { mode: "login" | "reg
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
+    if (mode === "register" && !registrationEnabled) {
+      setError("Registration is closed for this deployment.");
+      return;
+    }
     setLoading(true);
     try {
       const response = await fetch(`/api/auth/${mode}`, {
@@ -50,7 +54,9 @@ export default function AuthForm({ mode, serviceStatus }: { mode: "login" | "reg
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">{mode === "login" ? "Sign in" : "Create account"}</h2>
             <p className="mt-1 text-sm text-[var(--cos-text-muted)]">
-              {mode === "login" ? "Use the seeded demo account or your own account." : "New accounts start with the demo workspace data."}
+              {mode === "login"
+                ? registrationEnabled ? "Use the seeded demo account or your own account." : "Sign in to your private workspace."
+                : registrationEnabled ? "New accounts start with the demo workspace data." : "Registration is closed for this deployment."}
             </p>
           </div>
 
@@ -86,20 +92,22 @@ export default function AuthForm({ mode, serviceStatus }: { mode: "login" | "reg
           {error ? <p className="mt-4 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
 
           <button
-            disabled={loading}
+            disabled={loading || Boolean(serviceStatus) || (mode === "register" && !registrationEnabled)}
             className="cos-btn cos-btn-primary mt-6 w-full px-4 py-2.5 text-sm disabled:opacity-60"
           >
             {loading ? "Working..." : mode === "login" ? "Sign in" : "Create account"}
             <ArrowRight className="h-4 w-4" />
           </button>
 
-          <button
-            type="button"
-            onClick={() => router.push(mode === "login" ? "/register" : "/login")}
-            className="mt-4 w-full rounded-lg px-3 py-2 text-center text-sm font-medium text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-primary-text)]"
-          >
-            {mode === "login" ? "Create a new account" : "I already have an account"}
-          </button>
+          {mode === "login" && !registrationEnabled ? null : (
+            <button
+              type="button"
+              onClick={() => router.push(mode === "login" ? "/register" : "/login")}
+              className="mt-4 w-full rounded-lg px-3 py-2 text-center text-sm font-medium text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-primary-text)]"
+            >
+              {mode === "login" ? "Create a new account" : "I already have an account"}
+            </button>
+          )}
         </form>
       </div>
     </div>

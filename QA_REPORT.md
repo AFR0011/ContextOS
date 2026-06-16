@@ -1,5 +1,63 @@
 # ContextOS QA Report
 
+## 2026-06-16 - v0.2.3 Deployment Gate 1
+
+### Verdict
+
+- Local functional verification: PASS.
+- First deployment-hardening gate: PASS.
+- Public production: still NO-GO until remaining auth abuse controls, security headers/metadata, CI, PWA cache migration, monitoring, backup/restore, and rollback evidence are complete.
+
+### Commands And Evidence
+
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; applied `20260616090000_user_scoped_sync_mutations`.
+- `npx prisma generate` - passed.
+- `npm run typecheck` - passed.
+- `npm run test:e2e -- --workers=1 -g "dashboard daily timeline supports one time|long task titles wrap|search results open surfaces|sync rejects oversized"` - passed, 4 tests.
+- `npm run build` - passed with the existing `metadataBase` warning.
+- Production registration-closed smoke with `ALLOW_PUBLIC_REGISTRATION=false` - passed; `POST /api/auth/register` returned `403`.
+- `npm run test:e2e -- --workers=1` - passed, 32 tests.
+- In-app Browser production smoke - passed; mobile Dashboard had no horizontal overflow, bottom nav was visible, task title controls were wrapping textareas, task search opened the project with the task visible, and browser logs were empty.
+
+### Coverage Added
+
+- Cross-user sync payload attempting to update another user's project is rejected with `403` and does not modify the source record.
+- Oversized sync mutation payload is rejected with `400`.
+- Task search results open project surfaces where project tasks are visible.
+- Standalone note search results open Resources instead of rendering inert buttons.
+- Long mobile task titles wrap.
+- Completion toggling does not reorder the daily timeline solely because the task is done.
+
+## 2026-06-15 - Full App And Deployment Audit
+
+### Verdict
+
+- Local functional verification: PASS.
+- Private hosted preview: NO-GO pending sync ownership and closed-registration fixes.
+- Public production: NO-GO pending all P0/P1 gates in `docs/AUDIT_2026-06-15.md`.
+
+### Commands And Evidence
+
+- `npm ci` - passed; restored the missing local Prisma CLI package.
+- `npx prisma validate` - passed.
+- `npx prisma migrate status` - passed; six migrations found and database up to date.
+- `npm run typecheck` - passed.
+- `npm run build` - passed with the existing `metadataBase` warning.
+- `npm run test:e2e -- --workers=1` - passed, 29 tests.
+- `npm audit --audit-level=moderate --json` - seven advisories: five moderate, two high.
+- Desktop/mobile in-app browser audit - no horizontal overflow or console errors.
+- Live search audit - task result routed to Today without the task; standalone note button did not navigate.
+- Mobile editor audit at 390x844 - focused block controls measured 20x20 and one began partially off-screen.
+- Production-header check - no configured CSP/security header set and `X-Powered-By` is exposed.
+
+### Coverage Gaps
+
+- No current two-user sync isolation test.
+- No tests for search result destination correctness.
+- No service-worker upgrade test from the legacy cache/route set.
+- No CI, backup/restore rehearsal, health check, monitoring, or production rollback evidence.
+
 ## 2026-06-11 - v0.2.2 Workflow Simplification
 
 Status: PASS.

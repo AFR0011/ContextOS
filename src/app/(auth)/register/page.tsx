@@ -2,9 +2,10 @@ import { redirect } from "next/navigation";
 import AuthForm from "@/components/AuthForm";
 import { getAuthPageStatus } from "@/lib/auth";
 import { DATABASE_UNAVAILABLE_MESSAGE } from "@/lib/database-health";
+import { isPublicRegistrationEnabled } from "@/lib/registration";
 
 export default async function RegisterPage() {
   const { user, databaseUnavailable } = await getAuthPageStatus();
   if (user) redirect("/dashboard");
-  return <AuthForm mode="register" serviceStatus={databaseUnavailable ? DATABASE_UNAVAILABLE_MESSAGE : undefined} />;
+  return <AuthForm mode="register" serviceStatus={databaseUnavailable ? DATABASE_UNAVAILABLE_MESSAGE : undefined} registrationEnabled={isPublicRegistrationEnabled()} />;
 }

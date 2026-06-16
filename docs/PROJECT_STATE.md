@@ -1,7 +1,7 @@
 # ContextOS Project State
 
 ## Current Objective
-Validate v0.2.2 Workflow Simplification in real daily use before selecting another blueprint batch.
+Complete deployment hardening after v0.2.3 Gate 1 before any public production release.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
@@ -11,7 +11,7 @@ Validate v0.2.2 Workflow Simplification in real daily use before selecting anoth
 - Service worker app-shell caching for visited routes and static assets.
 
 ## Current Product State
-- Package and shell version: `0.2.2`.
+- Package and shell version: `0.2.3`.
 - Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Areas, Resources, Dates, Reviews, Search, Archive, and Settings.
 - `/dates` is canonical. `/deadlines` redirects to `/dates`.
 - `/date` is the advertised capture command. `/deadline` remains an accepted compatibility alias.
@@ -27,9 +27,14 @@ Validate v0.2.2 Workflow Simplification in real daily use before selecting anoth
 - Daily and weekly Priority records, editors, seed data, and client state are removed.
 - Legacy queued Priority mutations are acknowledged no-ops so old outboxes can drain.
 - Sync reconciliation preserves mutations queued while another sync request is in flight.
+- Sync replay now rejects cross-user record IDs, scopes mutation IDs per user, validates owned references, and bounds payload size/count.
+- Public registration is closed by default in production unless `ALLOW_PUBLIC_REGISTRATION=true`.
+- Search task results open a surface where the task is visible, and standalone note results open Resources.
+- Task titles wrap in task surfaces, and completion toggles no longer reorder tasks solely by status.
 
 ## Data Migration
 - Migration `20260611130000_workflow_simplification` adds and populates `Task.scheduledTime`, then removes `startTime` and `endTime`.
+- Migration `20260616090000_user_scoped_sync_mutations` changes sync mutation uniqueness from global `mutationId` to `(userId, mutationId)`.
 - Existing non-trashed project Notes are appended under `## Imported project notes` with stable note markers, then deleted from the Note table.
 - The Priority table is dropped.
 - Legacy queued project-note upserts append or replace one marked recovery-note block through the mutation ledger and do not recreate hidden Note records.
@@ -44,16 +49,18 @@ Validate v0.2.2 Workflow Simplification in real daily use before selecting anoth
 - Moderate dependency advisories still require a safe upstream upgrade review.
 
 ## Latest Verification
-- `npx prisma validate` and `npx prisma generate` passed.
-- `npm run db:migrate` applied `20260611130000_workflow_simplification`.
-- `npm run db:seed` passed.
+
+- `npx prisma validate`, `npm run db:migrate`, and `npx prisma generate` passed on 2026-06-16.
 - `npm run typecheck` passed.
-- Full sequential Playwright coverage passed with 28 tests on 2026-06-11.
+- Targeted Playwright for sync/search/task wrapping/order passed with 4 tests.
 - `npm run build` passed with the existing `metadataBase` warning.
-- `npm run test:e2e -- --workers=1` passed with 29 tests.
-- Desktop/mobile in-app Browser smoke passed with no horizontal overflow or console errors.
+- Production registration-closed smoke with `ALLOW_PUBLIC_REGISTRATION=false` passed with a 403 response.
+- `npm run test:e2e -- --workers=1` passed with 32 tests.
+- Desktop/mobile in-app Browser production smoke passed with no horizontal overflow or console warnings/errors.
 
 ## Next Useful Work
+- Treat v0.2.3 as deployment Gate 1 complete.
+- Add auth abuse controls, security headers, corrected PWA caching, CI, and operational recovery evidence before public production.
 - Run the simplified workflow in real use before broadening scope.
 - Treat regressions in capture speed, timeline scanning, Dates separation, project recovery, or offline replay as v0.2.2 fixes.
 - Review dependency advisories only through deliberate non-breaking upgrades.

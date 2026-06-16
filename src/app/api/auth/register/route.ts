@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createSession, hashPassword, publicUser } from "@/lib/auth";
 import { createStarterWorkspace } from "@/lib/starter";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
+import { isPublicRegistrationEnabled } from "@/lib/registration";
 
 const registerSchema = z.object({
   email: z.string().email().transform((v) => v.toLowerCase()),
@@ -12,6 +13,10 @@ const registerSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    if (!isPublicRegistrationEnabled()) {
+      return NextResponse.json({ error: "Registration is closed for this deployment." }, { status: 403 });
+    }
+
     const parsed = registerSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json({ error: "Use a valid email and a password of at least 8 characters." }, { status: 400 });

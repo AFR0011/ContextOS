@@ -1,5 +1,20 @@
 # ContextOS Deployment
 
+## Current Release Gate
+
+As of v0.2.3 on 2026-06-16, deployment Gate 1 is complete, but public production is still blocked until the remaining gates are verified:
+
+1. Sync writes and mutation-ledger lookups are user-scoped and pass two-user isolation tests. DONE in v0.2.3.
+2. Production registration is closed or invitation-controlled; demo credentials and reset actions are not presented as normal production UX. CLOSED BY DEFAULT in v0.2.3.
+3. Sync requests have request-size, mutation-count, entity, and field-length limits. DONE in v0.2.3.
+4. Login/register have rate limiting or equivalent provider protection.
+5. Security headers, `metadataBase`, and the corrected service-worker cache/routes are verified.
+6. CI passes Prisma validation/generation, typecheck, build, and sequential Playwright against disposable PostgreSQL.
+7. A production-like preview passes auth, capture, offline/reconnect, search, project recovery, Dates, mobile, and installed-PWA smoke.
+8. Database backup/restore, monitoring/health checks, migration handling, and application/database rollback are rehearsed and recorded.
+
+See `docs/AUDIT_2026-06-15.md` for evidence and priorities.
+
 ## Production Environment
 
 Set these variables in the deployment provider before building:
@@ -54,8 +69,12 @@ Before the first deploy:
 1. Create or select the production PostgreSQL database.
 2. Add the production environment variables in Vercel.
 3. Ensure `ALLOW_DEMO_RESET` is unset or `false`.
-4. Deploy.
-5. Confirm login/register and a basic capture work against the production database.
+4. Complete the Current Release Gate above.
+5. Deploy to a preview environment first.
+6. Confirm the full critical workflow and operational checks against the preview database.
+7. Promote the verified preview to production.
+
+Do not treat application rollback as a database rollback. Before any destructive migration, take and verify a provider backup and document the compatible application/database rollback pair.
 
 ## Manual Migration
 

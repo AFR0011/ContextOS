@@ -129,12 +129,6 @@ function executionTasks(tasks: Task[]) {
   return tasks.filter((task) => !task.trashedAt && !task.archivedAt && task.status !== "dropped");
 }
 
-function sortDoneLast(a: Task, b: Task) {
-  if (a.status === "done" && b.status !== "done") return 1;
-  if (a.status !== "done" && b.status === "done") return -1;
-  return a.createdAt.localeCompare(b.createdAt);
-}
-
 function Page({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="cos-page">
@@ -223,7 +217,7 @@ function TaskRow({ task, labels = [] }: { task: Task; labels?: string[] }) {
         {done ? <Check className="h-3 w-3 text-white" /> : null}
       </button>
       <div className="min-w-0 flex-1">
-        <p className={`text-sm ${done ? "text-[var(--cos-text-subtle)] line-through" : "text-[var(--cos-text-strong)]"}`}>{task.title}</p>
+        <p className={`break-words text-sm ${done ? "text-[var(--cos-text-subtle)] line-through" : "text-[var(--cos-text-strong)]"}`}>{task.title}</p>
         {labels.length ? (
           <div className="mt-1 flex flex-wrap gap-1.5">
           {labels.map((label) => (
@@ -335,11 +329,10 @@ export function TodayView() {
   tasks.filter((task) => task.plannedDate === today && !isOverdue(task)).forEach((task) => add(task, ["Planned Today"]));
   tasks.filter((task) => task.status === "in-progress").forEach((task) => add(task, ["In Progress"]));
   rows.sort((a, b) => {
-    const doneSort = sortDoneLast(a.task, b.task);
-    if (doneSort !== 0) return doneSort;
     const aTime = a.task.scheduledTime ?? "99:99";
     const bTime = b.task.scheduledTime ?? "99:99";
-    return aTime.localeCompare(bTime);
+    if (aTime !== bTime) return aTime.localeCompare(bTime);
+    return a.task.createdAt.localeCompare(b.task.createdAt);
   });
   const deadlines = data.deadlines.filter((deadline) => !deadline.trashedAt && deadline.date === today);
 
@@ -1296,15 +1289,15 @@ export function SearchView() {
     if (!q.trim()) return [];
     const items: { id: string; type: string; title: string; subtitle?: string; onClick: () => void }[] = [];
     data.projects.filter((p) => !p.trashedAt && [p.name, p.currentObjective, p.nextAction, p.latestStatus].join(" ").toLowerCase().includes(q)).forEach((p) => items.push({ id: p.id, type: "Project", title: p.name, subtitle: domainName(data.domains, p.domainId), onClick: () => router.push(`/projects/${p.id}`) }));
-    data.tasks.filter((t) => !t.trashedAt && t.title.toLowerCase().includes(q)).forEach((t) => items.push({ id: t.id, type: "Task", title: t.title, subtitle: projectName(data.projects, t.projectId), onClick: () => undefined }));
-    data.notes.filter((n) => !n.trashedAt && `${n.title} ${n.content}`.toLowerCase().includes(q)).forEach((n) => items.push({ id: n.id, type: "Note", title: n.title, subtitle: n.content.slice(0, 80), onClick: () => n.projectId ? router.push(`/projects/${n.projectId}`) : undefined }));
+    data.tasks.filter((t) => !t.trashedAt && t.title.toLowerCase().includes(q)).forEach((t) => items.push({ id: t.id, type: "Task", title: t.title, subtitle: projectName(data.projects, t.projectId), onClick: () => t.projectId ? router.push(`/projects/${t.projectId}`) : router.push("/dashboard") }));
+    data.notes.filter((n) => !n.trashedAt && `${n.title} ${n.content}`.toLowerCase().includes(q)).forEach((n) => items.push({ id: n.id, type: "Note", title: n.title, subtitle: n.content.slice(0, 80), onClick: () => n.projectId ? router.push(`/projects/${n.projectId}`) : router.push("/resources") }));
     data.deadlines.filter((d) => !d.trashedAt && d.title.toLowerCase().includes(q)).forEach((d) => items.push({ id: d.id, type: "Date", title: d.title, subtitle: d.date, onClick: () => router.push("/dates") }));
     data.captures.filter((c) => c.status !== "deleted" && c.text.toLowerCase().includes(q)).forEach((c) => items.push({ id: c.id, type: "Capture", title: c.text, onClick: () => router.push("/inbox") }));
     data.reviews.filter((r) => JSON.stringify(r.responses).toLowerCase().includes(q)).forEach((r) => items.push({ id: r.id, type: "Review", title: r.type, subtitle: format(parseISO(r.date), "MMM d, yyyy"), onClick: () => router.push("/reviews") }));
     return items.slice(0, 60);
   }, [data, q, router]);
 
-  return <Page title="Search" subtitle="Find projects, tasks, captures, notes, dates, and reviews."><div className="relative"><Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--cos-text-subtle)]" /><input value={query} onChange={(event) => setQuery(event.target.value)} autoFocus placeholder="Search workspace..." className="cos-input w-full py-3 pl-10 pr-4 text-sm" /></div><div className="mt-4 space-y-1">{results.map((result) => <button key={`${result.type}-${result.id}`} onClick={result.onClick} className="flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-[var(--cos-bg-elevated)]"><span className="cos-pill cos-pill-muted">{result.type}</span><div className="min-w-0 flex-1"><p className="truncate text-sm text-[var(--cos-text-strong)]">{result.title}</p>{result.subtitle ? <p className="truncate text-xs text-[var(--cos-text-subtle)]">{result.subtitle}</p> : null}</div></button>)}{query && !results.length ? <EmptyState icon={Search} title={`No results for "${query}"`} /> : null}</div></Page>;
+  return <Page title="Search" subtitle="Find projects, tasks, captures, notes, dates, and reviews."><div className="relative"><Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--cos-text-subtle)]" /><input value={query} onChange={(event) => setQuery(event.target.value)} autoFocus placeholder="Search workspace..." className="cos-input w-full py-3 pl-10 pr-4 text-sm" /></div><div className="mt-4 space-y-1">{results.map((result) => <button key={`${result.type}-${result.id}`} onClick={result.onClick} className="flex w-full items-start gap-3 rounded-lg p-3 text-left hover:bg-[var(--cos-bg-elevated)]"><span className="cos-pill cos-pill-muted shrink-0">{result.type}</span><div className="min-w-0 flex-1"><p className="break-words text-sm text-[var(--cos-text-strong)]">{result.title}</p>{result.subtitle ? <p className="break-words text-xs text-[var(--cos-text-subtle)]">{result.subtitle}</p> : null}</div></button>)}{query && !results.length ? <EmptyState icon={Search} title={`No results for "${query}"`} /> : null}</div></Page>;
 }
 
 export function ArchiveView() {

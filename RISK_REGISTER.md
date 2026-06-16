@@ -4,6 +4,10 @@
 
 | ID | Risk | Level | Mitigation | Status |
 | --- | --- | --- | --- | --- |
+| R-2026-06-15-03 | Login/register lack rate limiting or other abuse controls. | High | Add application/provider rate limits and production monitoring before public exposure. | Open |
+| R-2026-06-15-05 | Security headers, CI gates, health monitoring, and rehearsed backup/restore/rollback are incomplete. | High | Complete and verify the deployment checklist in a production-like preview. | Open |
+| R-2026-06-15-07 | Mobile editor controls are undersized, partly clipped, and some icon-only controls lack accessible names/menu semantics. | Medium | Raise touch targets, keep controls in viewport, add names/roles/focus behavior, and test keyboard/mobile flows. | Open |
+| R-2026-06-15-08 | Service worker cache version and route list are stale after the Dates rename. | Medium | Bump cache, replace `/deadlines` with `/dates`, and test upgrade from an older installed worker. | Open |
 | R-2026-06-10-01 | Database-outage classifier could miss provider-specific connection errors or overclassify unusual Prisma failures. | Medium | Centralized classifier with targeted coverage; expand patterns only from real provider errors. | Open |
 | R-2026-06-05-05 | Markdown table rendering could make the freeform editor heavier or less mobile-friendly. | Medium | Kept the editor as textarea plus lightweight preview; e2e covers rendered headings/checklist preview. | Accepted |
 | R-2026-06-05-06 | Piano schedule table could overfit one Notion database and become a general Notion clone. | Low | Kept it as a Markdown-backed Resource/table pattern, not formulas/relations. | Accepted |
@@ -17,6 +21,10 @@
 
 | ID | Risk | Level | Status |
 | --- | --- | --- | --- |
+| R-2026-06-15-01 | Sync records were checked with `id + userId` but updated through global-ID upserts, allowing cross-user overwrite if a foreign ID was known. | Critical | Closed - v0.2.3 replaced global upserts with owned update/create paths, user-scoped mutation IDs, owned-reference validation, and two-user e2e coverage. |
+| R-2026-06-15-02 | Public registration exposed a multi-user surface even though the Blueprint defines a single-user MVP. | High | Closed - v0.2.3 closes production registration by default behind `ALLOW_PUBLIC_REGISTRATION=true`; production smoke returned 403 when disabled. |
+| R-2026-06-15-04 | Sync accepted unbounded mutation arrays and arbitrary payload records. | High | Closed - v0.2.3 adds request-size, mutation-count, ID/key-length, payload-size, and owned-reference validation with regression coverage. |
+| R-2026-06-15-06 | Task and standalone-note search results could lead to missing content or no action. | Medium | Closed - v0.2.3 routes task results to visible project/dashboard surfaces and standalone notes to Resources with e2e coverage. |
 | R-2026-06-11-01 | Replacing task time ranges could lose existing scheduled information or strand legacy offline mutations. | High | Closed - SQL migration, cache normalization, sync fallback, and legacy payload e2e preserve start-first/end-second behavior. |
 | R-2026-06-11-02 | Project-note consolidation could delete content or duplicate it after offline replay. | High | Closed - migration appends before deletion; marked replay is idempotent through the mutation ledger; e2e verifies no Note recreation. |
 | R-2026-06-11-03 | Removing Priority could prevent old outboxes from draining or leave stale UI/data references. | High | Closed - schema/client Priority data is removed while sync validation records legacy priority mutations as no-ops; e2e passed. |

@@ -95,6 +95,12 @@ async function dashboardScratchpadContent(page: Page) {
   });
 }
 
+async function taskTitleOrder(container: Locator) {
+  return container.locator('[aria-label^="Task title "]').evaluateAll((fields) =>
+    fields.map((field) => field.getAttribute("aria-label")?.replace(/^Task title /, "") ?? "")
+  );
+}
+
 async function warmOfflineShell(page: Page) {
   await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) return;
@@ -318,14 +324,32 @@ test("dashboard daily timeline supports one time, inline editing, crossing, and 
   const titleInput = taskSection.getByLabel(`Task title ${title}`);
   await titleInput.fill(renamed);
   await titleInput.blur();
+  await expect(taskSection.getByLabel(`Task title ${renamed}`)).toBeVisible();
+  const beforeDoneOrder = await taskTitleOrder(taskSection);
   await taskSection.getByRole("button", { name: `Mark ${renamed} done` }).click();
   await expect(taskSection.getByLabel(`Task title ${renamed}`)).toBeVisible();
   await expect(taskSection.getByRole("button", { name: `Reopen ${renamed}` })).toBeVisible();
+  const afterDoneOrder = await taskTitleOrder(taskSection);
+  expect(afterDoneOrder).toEqual(beforeDoneOrder);
   await page.reload();
   await expect(page.getByTestId("dashboard-section-tasks").getByLabel(`Task title ${renamed}`)).toBeVisible();
   await page.getByTestId("dashboard-section-tasks").getByRole("button", { name: `Reopen ${renamed}` }).click();
   await page.getByTestId("dashboard-section-tasks").getByRole("button", { name: `Delete ${renamed}` }).click();
   await expect(page.getByTestId("dashboard-section-tasks").getByLabel(`Task title ${renamed}`)).toHaveCount(0);
+});
+
+test("long task titles wrap on mobile instead of truncating", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  const taskSection = page.getByTestId("dashboard-section-tasks");
+  const title = `This is a deliberately long task title that should stay fully visible on narrow mobile screens ${Date.now()}`;
+  await page.getByTestId("dashboard-add-task-input").fill(title);
+  await taskSection.getByRole("button", { name: "Add", exact: true }).click();
+  const titleField = taskSection.getByLabel(`Task title ${title}`);
+  await expect(titleField).toBeVisible();
+  await expect
+    .poll(async () => titleField.evaluate((field) => field.getBoundingClientRect().height))
+    .toBeGreaterThan(24);
 });
 
 test("dashboard daily timeline supports untimed and same-time tasks without an empty-day grid", async ({ page }) => {
@@ -397,6 +421,23 @@ test("dashboard Tasks includes future tasks and follows Show completed", async (
   await page.getByRole("button", { name: "Show completed" }).click();
   await expect(section.getByLabel(`Task title ${title}`)).toBeVisible();
   await expect(section.getByRole("button", { name: `Reopen ${title}` })).toBeVisible();
+});
+
+test("search results open surfaces where task and standalone note records are visible", async ({ page }) => {
+  await login(page);
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+
+  const taskTitle = "Rerun RF baseline with corrected threshold logic";
+  await page.getByPlaceholder("Search workspace...").fill(taskTitle);
+  await page.getByRole("button", { name: new RegExp(`Task ${taskTitle}`) }).click();
+  await expect(page).toHaveURL(/\/projects\//);
+  await expect(page.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
+
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByPlaceholder("Search workspace...").fill("Piano Schedule");
+  await page.getByRole("button", { name: /Note Piano Schedule/ }).click();
+  await expect(page).toHaveURL(/\/resources$/);
+  await expect(page.getByText("Piano Schedule")).toBeVisible();
 });
 
 test("areas and resources expose PARA navigation", async ({ page }) => {
@@ -557,6 +598,76 @@ test("stale sync mutations return conflict warnings", async ({ page }) => {
       })
     ])
   );
+});
+
+test("sync rejects oversized payloads and cross-user record ids", async ({ page }) => {
+  await login(page);
+  const bootstrap = await page.request.get("/api/bootstrap");
+  expect(bootstrap.ok()).toBeTruthy();
+  const workspace = await bootstrap.json();
+  const project = workspace.data.projects[0];
+  const now = new Date().toISOString();
+
+  const oversized = await page.request.post("/api/sync", {
+    data: {
+      mutations: [
+        {
+          mutationId: `oversized-${Date.now()}`,
+          entityType: "captures",
+          entityId: `oversized-capture-${Date.now()}`,
+          operation: "upsert",
+          payload: {
+            id: `oversized-capture-${Date.now()}`,
+            text: "x".repeat(21_000),
+            status: "unprocessed",
+            type: null,
+            parsedData: null,
+            convertedToId: null,
+            createdAt: now,
+            updatedAt: now
+          },
+          createdAt: now
+        }
+      ]
+    }
+  });
+  expect(oversized.status()).toBe(400);
+
+  await page.request.post("/api/auth/logout");
+  const secondEmail = `sync-owner-${Date.now()}@example.com`;
+  const registered = await page.request.post("/api/auth/register", {
+    data: { email: secondEmail, password: "contextos-demo-v011" }
+  });
+  expect(registered.ok()).toBeTruthy();
+
+  const foreignUpdate = await page.request.post("/api/sync", {
+    data: {
+      mutations: [
+        {
+          mutationId: `foreign-project-${Date.now()}`,
+          entityType: "projects",
+          entityId: project.id,
+          operation: "upsert",
+          payload: {
+            ...project,
+            name: "Foreign overwrite should be rejected",
+            updatedAt: now
+          },
+          createdAt: now
+        }
+      ]
+    }
+  });
+  expect(foreignUpdate.status()).toBe(403);
+
+  await page.request.post("/api/auth/logout");
+  const loginResponse = await page.request.post("/api/auth/login", {
+    data: { email: "demo@contextos.local", password: "contextos-demo-v011" }
+  });
+  expect(loginResponse.ok()).toBeTruthy();
+  const after = await page.request.get("/api/bootstrap");
+  const afterWorkspace = await after.json();
+  expect(afterWorkspace.data.projects.find((item: { id: string }) => item.id === project.id)?.name).toBe(project.name);
 });
 
 test("legacy task, project-note, and priority mutations drain compatibly", async ({ page }) => {

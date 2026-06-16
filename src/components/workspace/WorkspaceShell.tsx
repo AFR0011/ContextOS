@@ -28,6 +28,14 @@ import {
 import type { PublicUser } from "@/lib/auth";
 import { useWorkspace } from "@/lib/client-store";
 
+const mobileBottomNav = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/today", label: "Today", icon: Sun },
+  { href: "/projects", label: "Projects", icon: FolderKanban },
+  { href: "/search", label: "Search", icon: Search }
+] as const;
+
 const navSections = [
   {
     label: "Execution",
@@ -163,7 +171,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </div>
           <div>
             <p className="text-sm font-bold tracking-tight text-[var(--cos-text-strong)]">ContextOS</p>
-            <p className="text-[11px] font-medium text-[var(--cos-text-subtle)]">MVP v0.2.2</p>
+            <p className="text-[11px] font-medium text-[var(--cos-text-subtle)]">MVP v0.2.3</p>
           </div>
           <button
             className="cos-btn-ghost ml-auto grid h-9 w-9 place-items-center rounded-md text-[var(--cos-text-muted)]"
@@ -226,7 +234,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1">
+      <main className="min-w-0 flex-1 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
         <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-[var(--cos-border)] bg-[var(--cos-bg-elevated)]/95 px-4 py-3 backdrop-blur lg:hidden">
           <button className="cos-btn-ghost grid h-9 w-9 place-items-center rounded-md text-[var(--cos-text)]" onClick={() => setOpen(true)}>
             <Menu className="h-5 w-5" />
@@ -246,6 +254,42 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           <SyncIndicator sync={sync} compact />
         </div>
         {children}
+
+        <nav
+          aria-label="Primary navigation"
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--cos-border)] bg-[var(--cos-bg-elevated)]/95 backdrop-blur lg:hidden"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div className="grid grid-cols-5">
+            {mobileBottomNav.map((item) => {
+              const Icon = item.icon;
+              const active =
+                currentPath === item.href ||
+                (item.href === "/projects" && currentPath.startsWith("/projects"));
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => router.push(item.href)}
+                  aria-current={active ? "page" : undefined}
+                  className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium ${
+                    active
+                      ? "text-[var(--cos-primary-text)]"
+                      : "text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]"
+                  }`}
+                >
+                  <Icon className={`h-5 w-5 ${active ? "text-[var(--cos-primary)]" : ""}`} />
+                  <span className="truncate">{item.label}</span>
+                  {item.href === "/inbox" && inboxCount > 0 ? (
+                    <span className="absolute right-2 top-1.5 min-w-4 rounded-full bg-[var(--cos-primary)] px-1 py-0.5 text-center text-[9px] font-semibold leading-none text-white">
+                      {inboxCount > 9 ? "9+" : inboxCount}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
       </main>
     </div>
   );

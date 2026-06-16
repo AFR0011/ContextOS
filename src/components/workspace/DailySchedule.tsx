@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock3, Trash2 } from "lucide-react";
 import { useWorkspace } from "@/lib/client-store";
 import type { Task } from "@/lib/types";
@@ -13,8 +13,15 @@ export interface DailyScheduleRow {
 function TaskTitle({ task }: { task: Task }) {
   const { updateTask } = useWorkspace();
   const [title, setTitle] = useState(task.title);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => setTitle(task.title), [task.title]);
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "0px";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [title]);
 
   function commit() {
     const next = title.trim();
@@ -26,19 +33,24 @@ function TaskTitle({ task }: { task: Task }) {
   }
 
   return (
-    <input
+    <textarea
+      ref={textareaRef}
       aria-label={`Task title ${task.title}`}
       value={title}
       onChange={(event) => setTitle(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => {
-        if (event.key === "Enter") event.currentTarget.blur();
+        if (event.key === "Enter") {
+          event.preventDefault();
+          event.currentTarget.blur();
+        }
         if (event.key === "Escape") {
           setTitle(task.title);
           event.currentTarget.blur();
         }
       }}
-      className={`min-w-0 w-full bg-transparent text-sm outline-none ${task.status === "done" ? "text-[var(--cos-text-subtle)] line-through" : "font-medium text-[var(--cos-text-strong)]"}`}
+      rows={1}
+      className={`min-w-0 w-full resize-none overflow-hidden bg-transparent text-sm leading-5 outline-none ${task.status === "done" ? "text-[var(--cos-text-subtle)] line-through" : "font-medium text-[var(--cos-text-strong)]"}`}
     />
   );
 }
@@ -102,8 +114,6 @@ export function DailySchedule({
   emptyDescription?: string;
 }) {
   const ordered = useMemo(() => [...rows].sort((a, b) => {
-    const doneSort = Number(a.task.status === "done") - Number(b.task.status === "done");
-    if (doneSort !== 0) return doneSort;
     const aTime = a.task.scheduledTime ?? "99:99";
     const bTime = b.task.scheduledTime ?? "99:99";
     if (aTime !== bTime) return aTime.localeCompare(bTime);

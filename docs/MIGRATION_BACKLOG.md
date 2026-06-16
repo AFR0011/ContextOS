@@ -1,8 +1,15 @@
 # ContextOS Future Concerns Backlog
 
-This file captures concerns that should survive beyond v0.2.2. It is not an active sprint plan; use `BLUEPRINT.md` and `DEV_STATE.md` for active work selection.
+This file captures concerns that should survive beyond v0.2.3. It is not an active sprint plan; use `BLUEPRINT.md` and `DEV_STATE.md` for active work selection.
 
 ## High Priority
+
+### Deployment Hardening
+
+- Current issue: the 2026-06-15 audit found user-ownership gaps in sync upserts, public registration in a single-user MVP, unbounded sync payloads, missing abuse controls/security headers/CI, stale PWA cache routes, and incomplete operational recovery.
+- Status: v0.2.3 completed Gate 1: user-owned sync writes, user-scoped mutation IDs, bounded sync payloads, closed production registration, and search/task regressions.
+- Future work: implement auth abuse controls, security headers/metadata, CI, corrected service-worker cache routes, production-like preview smoke, backup/restore, monitoring, and rollback evidence.
+- Acceptance signal: remaining deployment gates in `docs/DEPLOYMENT.md` all pass.
 
 ### Graceful Database-Unavailable Handling
 
@@ -54,5 +61,5 @@ This file captures concerns that should survive beyond v0.2.2. It is not an acti
 
 ### Versioning Alignment
 
-- Status: aligned in v0.2.2. Package metadata, shell label, active docs, and version log use `0.2.2`.
+- Status: aligned in v0.2.3. Package metadata, shell label, active docs, and version log use `0.2.3`.
 - Future work: keep version bumps part of each release batch.

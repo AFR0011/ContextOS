@@ -203,7 +203,7 @@ model DashboardPreference {
 
 model SyncMutation {
   id         String    @id @default(cuid())
-  mutationId String    @unique
+  mutationId String
   userId     String
   entityType String
   entityId   String
@@ -216,4 +216,5 @@ model SyncMutation {
 
   @@index([userId])
   @@index([userId, entityType])
+  @@unique([userId, mutationId])
 }

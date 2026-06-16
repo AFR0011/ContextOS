@@ -426,8 +426,6 @@ function DailyTimelineSection({ today }: { today: string }) {
         const aOverdue = Boolean(a.dueDate && a.dueDate < today && isTaskOpen(a));
         const bOverdue = Boolean(b.dueDate && b.dueDate < today && isTaskOpen(b));
         if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
-        if (a.status === "done" && b.status !== "done") return 1;
-        if (a.status !== "done" && b.status === "done") return -1;
         const aTime = a.scheduledTime ?? "99:99";
         const bTime = b.scheduledTime ?? "99:99";
         if (aTime !== bTime) return aTime.localeCompare(bTime);

@@ -8,6 +8,22 @@ import { dateKeyToUtcDate, localDateKey } from "./dates";
 const toDate = (value: string | null | undefined) => (value ? new Date(value) : null);
 const toDateOnly = (value: string | null | undefined) => (value ? dateKeyToUtcDate(value) : null);
 const defaultDateOnly = () => dateKeyToUtcDate(localDateKey()) ?? new Date();
+type Tx = Prisma.TransactionClient;
+type OwnedModel = "domain" | "project" | "task" | "capture" | "note" | "deadline" | "review" | "dashboardScratchpad" | "dashboardPreference";
+
+export class SyncOwnershipError extends Error {
+  constructor(message = "Sync payload references a record outside this workspace.") {
+    super(message);
+    this.name = "SyncOwnershipError";
+  }
+}
+
+export class SyncPayloadError extends Error {
+  constructor(message = "Invalid sync payload.") {
+    super(message);
+    this.name = "SyncPayloadError";
+  }
+}
 
 function shouldApply(existingUpdatedAt: Date | null | undefined, incomingUpdatedAt: string | undefined) {
   if (!existingUpdatedAt || !incomingUpdatedAt) return true;
@@ -59,6 +75,69 @@ function mergeImportedProjectNote(recoveryNotes: string, payload: any) {
   return `${recoveryNotes.trim()}${recoveryNotes.trim() ? "\n\n" : ""}${heading}${block}`.trim();
 }
 
+function requirePayloadId(payload: any) {
+  if (typeof payload?.id !== "string" || !payload.id.trim()) {
+    throw new SyncPayloadError("Sync payload is missing an id.");
+  }
+  return payload.id;
+}
+
+async function ownedRecord(tx: Tx, model: OwnedModel, id: string, userId: string) {
+  const record = await (tx[model] as any).findUnique({
+    where: { id },
+    select: { id: true, userId: true, updatedAt: true }
+  });
+  if (record && record.userId !== userId) {
+    throw new SyncOwnershipError();
+  }
+  return record as { id: string; userId: string; updatedAt?: Date | null } | null;
+}
+
+async function optionalOwnedReference(tx: Tx, model: OwnedModel, id: unknown, userId: string, field: string) {
+  if (id === null || id === undefined || id === "") return null;
+  if (typeof id !== "string") throw new SyncPayloadError(`Invalid ${field}.`);
+  const record = await (tx[model] as any).findUnique({
+    where: { id },
+    select: { id: true, userId: true }
+  });
+  if (!record) return null;
+  if (record.userId !== userId) {
+    throw new SyncOwnershipError(`Sync payload references an unavailable ${field}.`);
+  }
+  return id;
+}
+
+async function requireOwnedReference(tx: Tx, model: OwnedModel, id: unknown, userId: string, field: string) {
+  const ownedId = await optionalOwnedReference(tx, model, id, userId, field);
+  if (!ownedId) throw new SyncPayloadError(`Sync payload is missing ${field}.`);
+  return ownedId;
+}
+
+async function requireOwnedReferences(tx: Tx, model: OwnedModel, ids: unknown, userId: string, field: string) {
+  if (!Array.isArray(ids)) return [];
+  const owned: string[] = [];
+  for (const id of ids) {
+    const ownedId = await optionalOwnedReference(tx, model, id, userId, field);
+    if (ownedId) owned.push(ownedId);
+  }
+  return owned;
+}
+
+async function recordMutation(tx: Tx, userId: string, mutation: QueuedMutation) {
+  await tx.syncMutation.create({
+    data: {
+      mutationId: mutation.mutationId,
+      userId,
+      entityType: mutation.entityType,
+      entityId: mutation.entityId,
+      operation: mutation.operation,
+      payload: (mutation.payload ?? {}) as Prisma.InputJsonValue,
+      createdAt: toDate(mutation.createdAt) ?? new Date(),
+      appliedAt: new Date()
+    }
+  });
+}
+
 export async function applySyncMutations(userId: string, mutations: QueuedMutation[]) {
   const applied: string[] = [];
   const warnings: SyncWarning[] = [];
@@ -66,7 +145,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
   for (const mutation of mutations) {
     await prisma.$transaction(async (tx) => {
       const existingMutation = await tx.syncMutation.findUnique({
-        where: { mutationId: mutation.mutationId }
+        where: { userId_mutationId: { userId, mutationId: mutation.mutationId } }
       });
       if (existingMutation) {
         applied.push(mutation.mutationId);
@@ -74,155 +153,108 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
       }
 
       if (mutation.operation === "delete") {
-        await tx.syncMutation.create({
-          data: {
-            mutationId: mutation.mutationId,
-            userId,
-            entityType: mutation.entityType,
-            entityId: mutation.entityId,
-            operation: mutation.operation,
-            payload: (mutation.payload ?? {}) as Prisma.InputJsonValue,
-            createdAt: toDate(mutation.createdAt) ?? new Date(),
-            appliedAt: new Date()
-          }
-        });
+        await recordMutation(tx, userId, mutation);
         applied.push(mutation.mutationId);
         return;
       }
 
       const payload = mutation.payload as any;
+      const id = requirePayloadId(payload);
       const updatedAt = payload.updatedAt || new Date().toISOString();
 
       switch (mutation.entityType) {
         case "domains": {
-          const existing = await tx.domain.findFirst({ where: { id: payload.id, userId } });
+          const existing = await ownedRecord(tx, "domain", id, userId);
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            await tx.domain.upsert({
-              where: { id: payload.id },
-              update: {
-                name: payload.name,
-                archived: Boolean(payload.archived),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              },
-              create: {
-                id: payload.id,
-                userId,
-                name: payload.name,
-                archived: Boolean(payload.archived),
-                createdAt: toDate(payload.createdAt) ?? new Date(),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              }
-            });
+            const data = {
+              name: payload.name,
+              archived: Boolean(payload.archived),
+              updatedAt: toDate(updatedAt) ?? new Date()
+            };
+            if (existing) {
+              await tx.domain.update({ where: { id }, data });
+            } else {
+              await tx.domain.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
           }
           break;
         }
         case "projects": {
-          const existing = await tx.project.findFirst({ where: { id: payload.id, userId } });
+          const existing = await ownedRecord(tx, "project", id, userId);
+          const domainId = await requireOwnedReference(tx, "domain", payload.domainId, userId, "domainId");
+          const parentProjectId = await optionalOwnedReference(tx, "project", payload.parentProjectId, userId, "parentProjectId");
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            await tx.project.upsert({
-              where: { id: payload.id },
-              update: {
-                name: payload.name,
-                domainId: payload.domainId,
-                parentProjectId: payload.parentProjectId ?? null,
-                status: payload.status,
-                currentObjective: payload.currentObjective ?? "",
-                nextAction: payload.nextAction ?? "",
-                latestStatus: payload.latestStatus ?? "",
-                recoveryNotes: payload.recoveryNotes ?? "",
-                openLoops: payload.openLoops ?? [],
-                archivedAt: toDate(payload.archivedAt),
-                trashedAt: toDate(payload.trashedAt),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              },
-              create: {
-                id: payload.id,
-                userId,
-                name: payload.name,
-                domainId: payload.domainId,
-                parentProjectId: payload.parentProjectId ?? null,
-                status: payload.status ?? "active",
-                currentObjective: payload.currentObjective ?? "",
-                nextAction: payload.nextAction ?? "",
-                latestStatus: payload.latestStatus ?? "",
-                recoveryNotes: payload.recoveryNotes ?? "",
-                openLoops: payload.openLoops ?? [],
-                createdAt: toDate(payload.createdAt) ?? new Date(),
-                updatedAt: toDate(updatedAt) ?? new Date(),
-                archivedAt: toDate(payload.archivedAt),
-                trashedAt: toDate(payload.trashedAt)
-              }
-            });
+            const data = {
+              name: payload.name,
+              domainId,
+              parentProjectId,
+              status: payload.status ?? "active",
+              currentObjective: payload.currentObjective ?? "",
+              nextAction: payload.nextAction ?? "",
+              latestStatus: payload.latestStatus ?? "",
+              recoveryNotes: payload.recoveryNotes ?? "",
+              openLoops: payload.openLoops ?? [],
+              archivedAt: toDate(payload.archivedAt),
+              trashedAt: toDate(payload.trashedAt),
+              updatedAt: toDate(updatedAt) ?? new Date()
+            };
+            if (existing) {
+              await tx.project.update({ where: { id }, data });
+            } else {
+              await tx.project.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
           }
           break;
         }
         case "tasks": {
-          const existing = await tx.task.findFirst({ where: { id: payload.id, userId } });
+          const existing = await ownedRecord(tx, "task", id, userId);
+          const projectId = await optionalOwnedReference(tx, "project", payload.projectId, userId, "projectId");
+          const domainId = await optionalOwnedReference(tx, "domain", payload.domainId, userId, "domainId");
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            await tx.task.upsert({
-              where: { id: payload.id },
-              update: {
-                title: payload.title,
-                plannedDate: toDateOnly(payload.plannedDate),
-                dueDate: toDateOnly(payload.dueDate),
-                scheduledTime: payload.scheduledTime ?? payload.startTime ?? payload.endTime ?? null,
-                projectId: payload.projectId,
-                domainId: payload.domainId,
-                status: payload.status,
-                archivedAt: toDate(payload.archivedAt),
-                trashedAt: toDate(payload.trashedAt),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              },
-              create: {
-                id: payload.id,
-                userId,
-                title: payload.title,
-                plannedDate: toDateOnly(payload.plannedDate),
-                dueDate: toDateOnly(payload.dueDate),
-                scheduledTime: payload.scheduledTime ?? payload.startTime ?? payload.endTime ?? null,
-                projectId: payload.projectId,
-                domainId: payload.domainId,
-                status: payload.status ?? "todo",
-                createdAt: toDate(payload.createdAt) ?? new Date(),
-                updatedAt: toDate(updatedAt) ?? new Date(),
-                archivedAt: toDate(payload.archivedAt),
-                trashedAt: toDate(payload.trashedAt)
-              }
-            });
+            const data = {
+              title: payload.title,
+              plannedDate: toDateOnly(payload.plannedDate),
+              dueDate: toDateOnly(payload.dueDate),
+              scheduledTime: payload.scheduledTime ?? payload.startTime ?? payload.endTime ?? null,
+              projectId,
+              domainId,
+              status: payload.status ?? "todo",
+              archivedAt: toDate(payload.archivedAt),
+              trashedAt: toDate(payload.trashedAt),
+              updatedAt: toDate(updatedAt) ?? new Date()
+            };
+            if (existing) {
+              await tx.task.update({ where: { id }, data });
+            } else {
+              await tx.task.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
           }
           break;
         }
         case "captures": {
-          const existing = await tx.capture.findFirst({ where: { id: payload.id, userId } });
+          const existing = await ownedRecord(tx, "capture", id, userId);
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            await tx.capture.upsert({
-              where: { id: payload.id },
-              update: {
-                text: payload.text,
-                status: payload.status,
-                type: payload.type,
-                parsedData: payload.parsedData as Prisma.InputJsonValue,
-                convertedToId: payload.convertedToId,
-                updatedAt: toDate(updatedAt) ?? new Date()
-              },
-              create: {
-                id: payload.id,
-                userId,
-                text: payload.text,
-                status: payload.status ?? "unprocessed",
-                type: payload.type,
-                parsedData: payload.parsedData as Prisma.InputJsonValue,
-                convertedToId: payload.convertedToId,
-                createdAt: toDate(payload.createdAt) ?? new Date(),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              }
-            });
+            const data = {
+              text: payload.text,
+              status: payload.status ?? "unprocessed",
+              type: payload.type,
+              parsedData: payload.parsedData as Prisma.InputJsonValue,
+              convertedToId: payload.convertedToId,
+              updatedAt: toDate(updatedAt) ?? new Date()
+            };
+            if (existing) {
+              await tx.capture.update({ where: { id }, data });
+            } else {
+              await tx.capture.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
           }
           break;
         }
         case "notes": {
+          await ownedRecord(tx, "note", id, userId);
           if (payload.projectId) {
-            const project = await tx.project.findFirst({ where: { id: payload.projectId, userId } });
+            const projectRecord = typeof payload.projectId === "string" ? await ownedRecord(tx, "project", payload.projectId, userId) : null;
+            const project = projectRecord ? await tx.project.findUnique({ where: { id: projectRecord.id } }) : null;
             if (project && !payload.trashedAt) {
               await tx.project.update({
                 where: { id: project.id },
@@ -233,141 +265,100 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
             }
             break;
           }
-          const existing = await tx.note.findFirst({ where: { id: payload.id, userId } });
+          const existing = await ownedRecord(tx, "note", id, userId);
+          const domainId = await requireOwnedReference(tx, "domain", payload.domainId, userId, "domainId");
+          if (!domainId) throw new SyncPayloadError("Note sync payload is missing domainId.");
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            await tx.note.upsert({
-              where: { id: payload.id },
-              update: {
-                title: payload.title,
-                content: payload.content ?? "",
-                projectId: payload.projectId,
-                domainId: payload.domainId,
-                archivedAt: toDate(payload.archivedAt),
-                trashedAt: toDate(payload.trashedAt),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              },
-              create: {
-                id: payload.id,
-                userId,
-                title: payload.title,
-                content: payload.content ?? "",
-                projectId: payload.projectId,
-                domainId: payload.domainId,
-                createdAt: toDate(payload.createdAt) ?? new Date(),
-                updatedAt: toDate(updatedAt) ?? new Date(),
-                archivedAt: toDate(payload.archivedAt),
-                trashedAt: toDate(payload.trashedAt)
-              }
-            });
+            const data = {
+              title: payload.title,
+              content: payload.content ?? "",
+              projectId: null,
+              domainId,
+              archivedAt: toDate(payload.archivedAt),
+              trashedAt: toDate(payload.trashedAt),
+              updatedAt: toDate(updatedAt) ?? new Date()
+            };
+            if (existing) {
+              await tx.note.update({ where: { id }, data });
+            } else {
+              await tx.note.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
           }
           break;
         }
         case "deadlines": {
-          const existing = await tx.deadline.findFirst({ where: { id: payload.id, userId } });
+          const existing = await ownedRecord(tx, "deadline", id, userId);
+          const projectId = await optionalOwnedReference(tx, "project", payload.projectId, userId, "projectId");
+          const taskIds = await requireOwnedReferences(tx, "task", payload.taskIds, userId, "taskIds");
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            await tx.deadline.upsert({
-              where: { id: payload.id },
-              update: {
-                title: payload.title,
-                date: toDateOnly(payload.date) ?? defaultDateOnly(),
-                time: payload.time ?? null,
-                location: payload.location ?? "",
-                projectId: payload.projectId,
-                taskIds: payload.taskIds ?? [],
-                notes: payload.notes ?? "",
-                archivedAt: toDate(payload.archivedAt),
-                trashedAt: toDate(payload.trashedAt),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              },
-              create: {
-                id: payload.id,
-                userId,
-                title: payload.title,
-                date: toDateOnly(payload.date) ?? defaultDateOnly(),
-                time: payload.time ?? null,
-                location: payload.location ?? "",
-                projectId: payload.projectId,
-                taskIds: payload.taskIds ?? [],
-                notes: payload.notes ?? "",
-                createdAt: toDate(payload.createdAt) ?? new Date(),
-                updatedAt: toDate(updatedAt) ?? new Date(),
-                archivedAt: toDate(payload.archivedAt),
-                trashedAt: toDate(payload.trashedAt)
-              }
-            });
+            const data = {
+              title: payload.title,
+              date: toDateOnly(payload.date) ?? defaultDateOnly(),
+              time: payload.time ?? null,
+              location: payload.location ?? "",
+              projectId,
+              taskIds,
+              notes: payload.notes ?? "",
+              archivedAt: toDate(payload.archivedAt),
+              trashedAt: toDate(payload.trashedAt),
+              updatedAt: toDate(updatedAt) ?? new Date()
+            };
+            if (existing) {
+              await tx.deadline.update({ where: { id }, data });
+            } else {
+              await tx.deadline.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
           }
           break;
         }
 
         case "dashboardScratchpads": {
-          const existing = await tx.dashboardScratchpad.findFirst({ where: { id: payload.id, userId } });
+          await ownedRecord(tx, "dashboardScratchpad", id, userId);
+          const existing = await tx.dashboardScratchpad.findFirst({ where: { userId } });
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            await tx.dashboardScratchpad.upsert({
-              where: { id: payload.id },
-              update: {
-                content: payload.content ?? "",
-                updatedAt: toDate(updatedAt) ?? new Date()
-              },
-              create: {
-                id: payload.id,
-                userId,
-                content: payload.content ?? "",
-                createdAt: toDate(payload.createdAt) ?? new Date(),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              }
-            });
+            const data = { content: payload.content ?? "", updatedAt: toDate(updatedAt) ?? new Date() };
+            if (existing) {
+              await tx.dashboardScratchpad.update({ where: { userId }, data });
+            } else {
+              await tx.dashboardScratchpad.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
           }
           break;
         }
         case "dashboardPreferences": {
-          const existing = await tx.dashboardPreference.findFirst({ where: { id: payload.id, userId } });
+          await ownedRecord(tx, "dashboardPreference", id, userId);
+          const existing = await tx.dashboardPreference.findFirst({ where: { userId } });
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            await tx.dashboardPreference.upsert({
-              where: { id: payload.id },
-              update: {
-                sectionOrder: payload.sectionOrder ?? [],
-                collapsedSections: payload.collapsedSections ?? [],
-                reviewPromptDismissals: payload.reviewPromptDismissals ?? [],
-                dateWindowDays: Number(payload.dateWindowDays ?? 14),
-                showCompleted: Boolean(payload.showCompleted),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              },
-              create: {
-                id: payload.id,
-                userId,
-                sectionOrder: payload.sectionOrder ?? [],
-                collapsedSections: payload.collapsedSections ?? [],
-                reviewPromptDismissals: payload.reviewPromptDismissals ?? [],
-                dateWindowDays: Number(payload.dateWindowDays ?? 14),
-                showCompleted: Boolean(payload.showCompleted),
-                createdAt: toDate(payload.createdAt) ?? new Date(),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              }
-            });
+            const data = {
+              sectionOrder: payload.sectionOrder ?? [],
+              collapsedSections: payload.collapsedSections ?? [],
+              reviewPromptDismissals: payload.reviewPromptDismissals ?? [],
+              dateWindowDays: Number(payload.dateWindowDays ?? 14),
+              showCompleted: Boolean(payload.showCompleted),
+              updatedAt: toDate(updatedAt) ?? new Date()
+            };
+            if (existing) {
+              await tx.dashboardPreference.update({ where: { userId }, data });
+            } else {
+              await tx.dashboardPreference.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
           }
           break;
         }
         case "reviews": {
-          const existing = await tx.review.findFirst({ where: { id: payload.id, userId } });
+          const existing = await ownedRecord(tx, "review", id, userId);
           if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            await tx.review.upsert({
-              where: { id: payload.id },
-              update: {
-                type: payload.type,
-                date: toDate(payload.date) ?? new Date(),
-                responses: payload.responses as Prisma.InputJsonValue,
-                updatedAt: toDate(updatedAt) ?? new Date()
-              },
-              create: {
-                id: payload.id,
-                userId,
-                type: payload.type,
-                date: toDate(payload.date) ?? new Date(),
-                responses: payload.responses as Prisma.InputJsonValue,
-                createdAt: toDate(payload.createdAt) ?? new Date(),
-                updatedAt: toDate(updatedAt) ?? new Date()
-              }
-            });
+            const data = {
+              type: payload.type,
+              date: toDate(payload.date) ?? new Date(),
+              responses: payload.responses as Prisma.InputJsonValue,
+              updatedAt: toDate(updatedAt) ?? new Date()
+            };
+            if (existing) {
+              await tx.review.update({ where: { id }, data });
+            } else {
+              await tx.review.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
           }
           break;
         }
@@ -377,18 +368,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
         }
       }
 
-      await tx.syncMutation.create({
-        data: {
-          mutationId: mutation.mutationId,
-          userId,
-          entityType: mutation.entityType,
-          entityId: mutation.entityId,
-          operation: mutation.operation,
-          payload: mutation.payload as unknown as Prisma.InputJsonValue,
-          createdAt: toDate(mutation.createdAt) ?? new Date(),
-          appliedAt: new Date()
-        }
-      });
+      await recordMutation(tx, userId, mutation);
       applied.push(mutation.mutationId);
     });
   }

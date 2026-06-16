@@ -54,6 +54,8 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    - Convert an inbox capture to a task.
    - Add timed and untimed Daily timeline tasks, create two tasks at the same time, and confirm no empty calendar slots appear.
    - Cross a Daily timeline or Today task, reload, and confirm it remains visible and can be reopened.
+   - Confirm crossing/reopening a task does not reorder it solely because it is completed.
+   - Confirm long task titles wrap on mobile instead of truncating.
    - Confirm Dashboard Tasks includes a future task and follows Show completed.
    - Create, edit, archive, restore, and delete an important Date; confirm task due dates do not appear in Dates.
    - Confirm `/deadlines` redirects to `/dates`.
@@ -63,6 +65,7 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    - Edit the Dashboard Notepad and confirm it persists.
    - Open an Area and confirm projects/subcontexts appear inside it.
    - Open Areas and Resources from the PARA nav group.
+   - Search for a project task and confirm the result opens a surface where that task is visible; search for a standalone Resource note and confirm it opens Resources.
    - Confirm Today and This Week contain no priority editor terminology.
    - Toggle dark mode and reload to confirm it persists.
    - Go offline, add a capture, reload a visited route, return online, and confirm pending sync clears.

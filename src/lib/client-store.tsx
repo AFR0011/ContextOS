@@ -64,7 +64,8 @@ function normalizeWorkspace(value: Partial<WorkspaceData> | null | undefined): W
   });
   const dashboardPreferences = (value?.dashboardPreferences ?? []).map((preference) => ({
     ...preference,
-    reviewPromptDismissals: preference.reviewPromptDismissals ?? []
+    reviewPromptDismissals: preference.reviewPromptDismissals ?? [],
+    taskSortMode: preference.taskSortMode ?? "recent"
   }));
 
   return {
@@ -742,6 +743,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
               reviewPromptDismissals: [],
               dateWindowDays: 14,
               showCompleted: false,
+              taskSortMode: "recent",
               createdAt: ts,
               updatedAt: ts,
               ...updates

@@ -1,5 +1,64 @@
 # ContextOS QA Report
 
+## 2026-06-16 - v0.2.5 Security Headers and PWA Cache
+
+### Verdict
+
+- Local functional verification: PASS.
+- Deployment headers, production metadata, and service-worker route/cache hardening: PASS.
+- Public production: still NO-GO until auth abuse controls, CI/preview gates, monitoring, backup/restore, rollback evidence, and deeper installed-PWA upgrade testing are complete.
+
+### Commands And Evidence
+
+- `npm run typecheck` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "deployment headers" --workers=1` - passed, 1 test.
+- `npm run build` - passed without the previous `metadataBase` warning.
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 33 tests.
+- In-app Browser smoke on `http://localhost:3001/dashboard` - passed; authenticated Dashboard rendered `MVP v0.2.5`, Dates and Tasks were visible, horizontal overflow was false at the default desktop viewport, and browser console errors were empty.
+
+### Coverage Added
+
+- `/login` responses include CSP, frame protection, content-type sniffing protection, referrer policy, and permissions policy.
+- `X-Powered-By` is absent from responses.
+- Social metadata resolves against an explicit `metadataBase` instead of implicit localhost build defaults.
+- `public/sw.js` uses `contextos-shell-v2`, precaches `/dates`, and no longer precaches `/deadlines`.
+
+### Recovery Notes
+
+- Browser automation reported unsupported `networkidle` despite listing it in documentation. The smoke recovered with supported URL/load-state, visible content, overflow, and console-log checks.
+
+## 2026-06-16 - v0.2.4 Dashboard Task/Date Cleanup
+
+### Verdict
+
+- Local functional verification: PASS.
+- Dashboard task/date cleanup: PASS.
+- Public production: still NO-GO until remaining auth abuse controls, security headers/metadata, CI, PWA cache migration, monitoring, backup/restore, and rollback evidence are complete.
+
+### Commands And Evidence
+
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; applied `20260616133000_dashboard_task_sort_mode`.
+- `npx prisma generate` - passed.
+- `npm run typecheck` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard preferences|dashboard daily timeline supports one time|dashboard can add a project-linked important date|dashboard Tasks includes future tasks" --workers=1` - passed, 4 tests.
+- `npm run db:seed` - passed.
+- `npm run build` - passed with the existing `metadataBase` warning.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 32 tests.
+- In-app Browser smoke on `http://localhost:3001/dashboard` - passed; Dashboard rendered `MVP v0.2.4`, Dashboard Tasks sort value was `recent`, desktop and 390px mobile horizontal overflow were `0`, and the only browser warning was the existing `metadataBase` warning.
+
+### Coverage Added
+
+- Legacy dashboard preferences normalize to the full section set and default invalid task sort modes to `recent`.
+- Dashboard Tasks newest-first ordering puts newly created tasks above older tasks.
+- Dashboard Tasks sort preference persists after reload.
+- Completion toggling does not reorder Dashboard Tasks solely because a task is completed.
+- Dashboard Tasks bulk cleanup moves finished tasks to Trash.
+- Dashboard Dates bulk cleanup moves archived dates to Trash.
+
 ## 2026-06-16 - v0.2.3 Deployment Gate 1
 
 ### Verdict

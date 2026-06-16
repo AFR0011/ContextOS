@@ -1,7 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+function appUrl() {
+  const localPort = process.env.PORT || process.env.PLAYWRIGHT_PORT || "3000";
+  const candidate = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${localPort}`);
+  try {
+    return new URL(candidate);
+  } catch {
+    return new URL("http://localhost:3000");
+  }
+}
+
 export const metadata: Metadata = {
+  metadataBase: appUrl(),
   title: "ContextOS",
   description: "Execution-first context recovery system",
   applicationName: "ContextOS",
@@ -14,6 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "ContextOS",
+    url: "/",
     description: "Execution-first context recovery system",
     images: [
       {

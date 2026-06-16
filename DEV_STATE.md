@@ -2,71 +2,75 @@
 
 ## Active Loop
 
-- Status: DONE - Batch v0.2.3 Deployment Gate 1
+- Status: CLOSE - Batch v0.2.5 Security headers and PWA cache
 - Date: 2026-06-16
 - Active batch: none
-- Completed batch: v0.2.3 deployment gate 1
+- Completed batch: v0.2.5 security headers and PWA cache
 - Canonical product source: `BLUEPRINT.md`
-- Tooling fallback: the fixed-model `dev-loop-orchestrator` role was unavailable; the cycle used the documented local phase-artifact fallback.
+- Tooling fallback: dev-loop specialist tools are policy-gated unless the user explicitly requests delegation, so this cycle is using the documented local phase-artifact fallback.
 
 ## Active Batch Plan
 
-Scope this cycle to one independently testable hardening batch:
+Scope this cycle to one independently testable deployment-hardening batch:
 
-1. Server sync ownership: user-scope the mutation ledger, prevent global-ID cross-user updates, validate owned project/domain references, and bound sync payloads.
-2. Production registration: close registration by default in production while keeping local/demo development registration available.
-3. UX regressions from the audit and user notes: route task and standalone note search results to visible destinations, make task text wrap instead of truncating, and keep tasks/dates stable when completion state changes.
-4. Verification/docs: add targeted regression tests, run the documented ladder, and update QA/state/risk docs from evidence.
+1. Add baseline application security headers through Next config and disable the `X-Powered-By` header.
+2. Set `metadataBase` from deployment/local environment so production builds stop resolving social metadata against localhost implicitly.
+3. Bump the service-worker cache version and replace the stale `/deadlines` precache route with canonical `/dates`.
+4. Add targeted regression coverage for headers, metadata, and service-worker cache/routes.
+5. Bump package and shell version to `0.2.5`.
 
-Out of scope for this batch: full rate limiting, security headers, CI, backup/restore rehearsal, service-worker cache migration, broad Dashboard redesign, and component splitting.
+Out of scope for this batch: login/register rate limiting, CI, health checks, monitoring, backup/restore rehearsal, dependency upgrades, service-worker installed-upgrade browser automation beyond static/HTTP evidence, and UI/accessibility refinements.
 
 Acceptance criteria:
 
-- A sync mutation cannot overwrite or reference another user's records; mutation IDs are scoped per user.
-- Oversized or malformed sync payloads are rejected before application.
-- Production registration returns a clear closed-registration response unless explicitly enabled.
-- Search task results open a surface where the task is visible; standalone note results open Resources.
-- Long task titles wrap in task surfaces.
-- Checking/reopening tasks does not move them solely because they are completed.
-- Targeted e2e coverage plus typecheck/build and migration validation pass.
+- Responses include CSP, frame protection, content-type sniffing protection, referrer policy, and permissions policy.
+- `X-Powered-By` is disabled.
+- `metadataBase` is explicit and accepts `NEXT_PUBLIC_APP_URL`, `APP_URL`, or `VERCEL_URL` with a local fallback.
+- Service-worker cache name changes from `contextos-shell-v1` and precaches `/dates`, not `/deadlines`.
+- Targeted coverage, `npm run typecheck`, and `npm run build` pass.
 
 ## Outcome
 
-v0.2.3 closes the first deployment-hardening gate. Sync writes no longer use global-ID upserts, mutation IDs are unique per user, owned references are validated, sync payloads are bounded, production registration is closed by default unless explicitly enabled, task/note search destinations lead to visible records, task titles wrap, and checking/reopening tasks no longer reorders them solely by completion state.
+Batch complete.
+
+Implemented baseline deployment hardening in one scoped batch:
+
+- Added application-wide security headers in `next.config.ts`: CSP, frame protection, content-type sniffing protection, referrer policy, and permissions policy.
+- Disabled Next's `X-Powered-By` response header.
+- Added explicit environment-aware `metadataBase` in `src/app/layout.tsx`, using `NEXT_PUBLIC_APP_URL`, `APP_URL`, `VERCEL_URL`, or a local development fallback.
+- Bumped the service-worker shell cache to `contextos-shell-v2`, precached `/dates`, and removed the stale `/deadlines` precache route.
+- Added targeted Playwright coverage for deployment headers, metadata output, and service-worker cache/routes.
+- Bumped package metadata and shell label to `0.2.5`.
 
 ## Acceptance Evidence
 
 | Criteria | Status |
 | --- | --- |
-| User-scoped sync writes and mutation ledger | DONE |
-| Owned project/domain/task references validated during sync replay | DONE |
-| Oversized/malformed sync payloads rejected | DONE |
-| Production registration closed by default | DONE |
-| Search task and standalone note destinations are visible/honest | DONE |
-| Long task titles wrap in task surfaces | DONE |
-| Checking/reopening tasks does not move them solely because completed | DONE |
-| Prisma validation/generation, migration, typecheck, build, full e2e, production registration smoke, and browser smoke pass | DONE |
+| Security headers are configured and verified | DONE |
+| `X-Powered-By` is disabled | DONE |
+| `metadataBase` is explicit and environment-aware | DONE |
+| Service-worker cache version and routes are corrected | DONE |
+| Targeted coverage, typecheck, and build pass | DONE |
 
 ## Verification
 
-- `npx prisma validate` - passed.
-- `npm run db:migrate` - passed; applied `20260616090000_user_scoped_sync_mutations`.
-- `npx prisma generate` - passed.
 - `npm run typecheck` - passed.
-- Targeted Playwright for sync/search/task wrapping/order - passed, 4 tests.
-- `npm run build` - passed with the existing `metadataBase` warning.
-- Production registration-closed smoke with `ALLOW_PUBLIC_REGISTRATION=false` - passed, 403 response.
-- `npm run test:e2e -- --workers=1` - passed, 32 tests.
-- In-app Browser production smoke - passed: mobile Dashboard wraps task textareas, bottom nav visible, search task opens project, no console warnings/errors.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "deployment headers" --workers=1` - passed, 1 test.
+- `npm run build` - passed without the previous `metadataBase` warning.
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 33 tests.
+- In-app Browser smoke at `http://localhost:3001/dashboard` - passed; authenticated Dashboard rendered `MVP v0.2.5`, Dates and Tasks were visible, horizontal overflow was false at the default desktop viewport, and browser console errors were empty.
 
 ## Remaining Risks
 
-- P1: auth abuse controls, security headers, CI, metadataBase, service-worker cache migration, and operational recovery are still missing.
-- Mobile editor/action accessibility work remains broader than the task-title wrapping fixed in v0.2.3.
-- Seven dependency advisories remain a separate maintenance concern.
+- P1: auth abuse controls, CI, production-like preview evidence, monitoring/health checks, and backup/restore/rollback rehearsal are still missing.
+- Deeper installed-PWA upgrade testing remains deferred; this batch verifies the script/cache text and local app-shell behavior, not an already-installed legacy worker upgrade path.
+- Drag-and-drop or arbitrary manual task ordering remains deferred; v0.2.4 only adds explicit sort modes.
 - Internal `Deadline` naming remains intentionally for compatibility and should only change in a dedicated migration.
-- Real-use validation should confirm the simplified list remains preferable to a schedule grid.
+- Real-use validation should confirm newest-first Dashboard Tasks and cleanup actions reduce clutter without making the daily command sheet noisy.
 
 ## Next Action
 
-Plan the next supervised deployment-hardening batch around auth abuse controls, security headers/metadata, service-worker cache route migration, CI, and production-like backup/rollback/monitoring evidence.
+Plan the next deployment-hardening batch around auth abuse controls, CI/preview gates, operational recovery evidence, or mobile editor accessibility.

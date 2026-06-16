@@ -1,7 +1,7 @@
 # ContextOS Project State
 
 ## Current Objective
-Complete deployment hardening after v0.2.3 Gate 1 before any public production release.
+Complete remaining deployment hardening after v0.2.5 security headers and PWA cache hardening before any public production release.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
@@ -9,9 +9,11 @@ Complete deployment hardening after v0.2.3 Gate 1 before any public production r
 - Local email/password auth with hashed passwords and HTTP-only sessions.
 - IndexedDB workspace cache plus an idempotent queued mutation outbox.
 - Service worker app-shell caching for visited routes and static assets.
+- Next config now applies baseline security headers and disables `X-Powered-By`.
+- Metadata uses an explicit deployment/local `metadataBase` instead of implicit localhost build defaults.
 
 ## Current Product State
-- Package and shell version: `0.2.3`.
+- Package and shell version: `0.2.5`.
 - Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Areas, Resources, Dates, Reviews, Search, Archive, and Settings.
 - `/dates` is canonical. `/deadlines` redirects to `/dates`.
 - `/date` is the advertised capture command. `/deadline` remains an accepted compatibility alias.
@@ -19,7 +21,9 @@ Complete deployment hardening after v0.2.3 Gate 1 before any public production r
 - Tasks have one optional `scheduledTime`. Legacy cached and queued tasks normalize from `scheduledTime ?? startTime ?? endTime`.
 - Dashboard begins with reusable Quick Capture, then Notepad, Dates, Daily timeline, Tasks, and Projects.
 - Daily timeline is a compact editable task list with optional time, inline deletion, and persistent cross/uncross completion. It does not render empty calendar slots.
-- Dashboard Tasks contains active tasks from all dates/projects. Completed tasks appear when Show completed is enabled.
+- Dashboard Tasks contains active tasks from all dates/projects. It defaults to newest-created sorting, offers persisted sort modes, and completed tasks appear when Show completed is enabled.
+- Dashboard cleanup actions can move finished tasks and archived dates to Trash without hard-deleting records.
+- Service-worker shell cache is `contextos-shell-v2` and precaches `/dates`, not the legacy `/deadlines` route.
 - Dates contains only important-date records. Task due dates remain on task surfaces.
 - Project detail order is header, Active Tasks, Dates, Recovery Canvas, Subcontexts, and suggestions/actions.
 - Project Active Tasks is expanded and directly editable.
@@ -35,6 +39,7 @@ Complete deployment hardening after v0.2.3 Gate 1 before any public production r
 ## Data Migration
 - Migration `20260611130000_workflow_simplification` adds and populates `Task.scheduledTime`, then removes `startTime` and `endTime`.
 - Migration `20260616090000_user_scoped_sync_mutations` changes sync mutation uniqueness from global `mutationId` to `(userId, mutationId)`.
+- Migration `20260616133000_dashboard_task_sort_mode` adds persisted Dashboard Tasks sort mode.
 - Existing non-trashed project Notes are appended under `## Imported project notes` with stable note markers, then deleted from the Note table.
 - The Priority table is dropped.
 - Legacy queued project-note upserts append or replace one marked recovery-note block through the mutation ledger and do not recreate hidden Note records.
@@ -50,17 +55,17 @@ Complete deployment hardening after v0.2.3 Gate 1 before any public production r
 
 ## Latest Verification
 
-- `npx prisma validate`, `npm run db:migrate`, and `npx prisma generate` passed on 2026-06-16.
+- `npx prisma validate`, `npm run db:migrate`, and `npm run db:seed` passed on 2026-06-16.
 - `npm run typecheck` passed.
-- Targeted Playwright for sync/search/task wrapping/order passed with 4 tests.
-- `npm run build` passed with the existing `metadataBase` warning.
-- Production registration-closed smoke with `ALLOW_PUBLIC_REGISTRATION=false` passed with a 403 response.
-- `npm run test:e2e -- --workers=1` passed with 32 tests.
-- Desktop/mobile in-app Browser production smoke passed with no horizontal overflow or console warnings/errors.
+- Targeted Playwright for deployment headers, metadata, and service-worker cache/routes passed with 1 test.
+- `npm run build` passed without the previous `metadataBase` warning.
+- Previous v0.2.3 production registration-closed smoke with `ALLOW_PUBLIC_REGISTRATION=false` passed with a 403 response.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 33 tests.
+- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.5`, Dates and Tasks visible, no horizontal overflow, and no console errors.
 
 ## Next Useful Work
-- Treat v0.2.3 as deployment Gate 1 complete.
-- Add auth abuse controls, security headers, corrected PWA caching, CI, and operational recovery evidence before public production.
+- Treat v0.2.5 security headers and PWA cache hardening as complete.
+- Add auth abuse controls, CI/preview gates, operational recovery evidence, and deeper installed-PWA upgrade smoke before public production.
 - Run the simplified workflow in real use before broadening scope.
 - Treat regressions in capture speed, timeline scanning, Dates separation, project recovery, or offline replay as v0.2.2 fixes.
 - Review dependency advisories only through deliberate non-breaking upgrades.

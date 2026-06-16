@@ -70,6 +70,13 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    - Toggle dark mode and reload to confirm it persists.
    - Go offline, add a capture, reload a visited route, return online, and confirm pending sync clears.
 
+## Deployment Hardening Checks
+- Confirm a representative page such as `/login` returns CSP, frame protection, content-type sniffing protection, referrer policy, and permissions policy headers.
+- Confirm `X-Powered-By` is absent.
+- Confirm `npm run build` does not emit the old implicit `metadataBase` localhost warning.
+- Confirm `/sw.js` uses the current shell cache version and precaches `/dates`, not `/deadlines`.
+- Before public production, also run an installed-PWA upgrade smoke from an older cached worker.
+
 ## v0.1.x Usage Trial
 Use [FRICTION_LOG.md](FRICTION_LOG.md) during the one-day trial.
 
@@ -105,7 +112,7 @@ Expected behavior:
 After DB-down smoke, restart Postgres and rerun the normal DB-up ladder: `npm run db:migrate`, `npm run db:seed`, and `npm run test:e2e`.
 
 ## Local Dev Cache And Server Notes
-- `playwright.config.ts` can reuse an existing server on port 3000. After substantial source/schema changes, confirm the port is serving current code or stop the listener so Playwright starts a fresh dev server.
+- `playwright.config.ts` defaults to port 3000 and can reuse an existing server. After substantial source/schema changes, confirm the port is serving current code or run tests on another free port with `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1`.
 - After external `npm run db:seed` or `POST /api/reset-demo`, an already-open browser may keep stale IndexedDB workspace data. Use the shell sync indicator's Refresh action or Settings -> refresh from server when no pending offline mutations exist, or open a clean browser context for verification.
 - If Postgres is unavailable, auth pages and workspace APIs should now render/return database-unavailable states. Start Postgres with `docker compose up -d` before DB-up verification.
 

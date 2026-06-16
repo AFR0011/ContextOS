@@ -19,6 +19,7 @@ export type CaptureStatus = "unprocessed" | "converted" | "attached" | "archived
 export type CaptureType = "task" | "note" | "project" | "deadline" | "status" | null;
 export type ReviewType = "daily-startup" | "daily-shutdown" | "weekly";
 export type DashboardSectionId = "notepad" | "dates" | "tasks" | "allTasks" | "projects";
+export type DashboardTaskSortMode = "recent" | "oldest" | "schedule" | "date";
 
 export interface Domain {
   id: string;
@@ -121,6 +122,7 @@ export interface DashboardPreference {
   reviewPromptDismissals: string[];
   dateWindowDays: number;
   showCompleted: boolean;
+  taskSortMode: DashboardTaskSortMode;
   createdAt: string;
   updatedAt: string;
 }

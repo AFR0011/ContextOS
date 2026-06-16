@@ -1,5 +1,8 @@
 # Shared Errors
 
+- 2026-06-16: Browser automation listed `networkidle` in documentation but the active browser runtime rejected it during v0.2.5 smoke. Classified as low-severity tool mismatch; recovered with supported `load`, URL, visible-content, overflow, and console-log checks. Browser smoke passed.
+- 2026-06-16: Generic dev-loop helper scripts under `tools/` remain absent, so `python tools/context_manager.py init --root .` and helper `py_compile` preflight failed. Continued with existing `shared/` files and direct doc updates.
+- 2026-06-16: The first Browser smoke evaluate used `instanceof HTMLSelectElement`, but the browser evaluate sandbox did not expose that constructor. Retried with plain tag/value reads; Browser smoke passed.
 - 2026-06-11: The fixed-model `dev-loop-orchestrator` subagent is unsupported for the current ChatGPT account. Continued under the existing local phase-artifact fallback and recorded the complete v0.2.2 batch in `DEV_STATE.md` before implementation.
 - 2026-06-11: Generic dev-loop helper scripts under `tools/` remain absent, so helper initialization and syntax checks are unavailable. Existing `shared/` files are being maintained directly.
 - 2026-06-10: Generic dev-loop helper scripts under `tools/` are absent in this repo, so `python tools/context_manager.py init --root .` and helper `py_compile` preflight failed. Continued with existing `shared/` files and recorded the limitation.

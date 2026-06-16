@@ -1,5 +1,102 @@
 # ContextOS Dev Log
 
+## 2026-06-16 - v0.2.5 Security Headers and PWA Cache Plan
+
+Planner scope: implement one deployment-hardening batch for security headers, production metadata, and stale service-worker cache/routes.
+
+Planned changes:
+
+- Add baseline security headers through `next.config.ts` and disable `X-Powered-By`.
+- Add explicit environment-aware `metadataBase` in `src/app/layout.tsx`.
+- Bump `public/sw.js` cache version and precache `/dates` instead of `/deadlines`.
+- Add targeted Playwright coverage for HTTP headers and service-worker route/cache text.
+- Bump package and shell version to `0.2.5`.
+
+Out of scope: auth rate limiting, CI, health/monitoring, backup/restore rehearsal, dependency upgrades, and full installed-PWA upgrade automation.
+
+Verification plan:
+
+- Targeted deployment/header/service-worker Playwright test.
+- `npm run typecheck`
+- `npm run build`
+- Full e2e if targeted checks and build pass.
+
+Implementation:
+
+- Added global deployment security headers in `next.config.ts`: CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy`.
+- Disabled the Next `X-Powered-By` response header.
+- Added environment-aware `metadataBase` in `src/app/layout.tsx`, accepting `NEXT_PUBLIC_APP_URL`, `APP_URL`, `VERCEL_URL`, and a local fallback.
+- Bumped `public/sw.js` to `contextos-shell-v2`, precached `/dates`, removed `/deadlines` from precache, and limited route cache writes to successful responses.
+- Added targeted Playwright assertions for deployment headers, metadata image output, and service-worker cache/routes.
+- Bumped package metadata and shell label to `0.2.5`.
+
+Verification:
+
+- `npm run typecheck` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "deployment headers" --workers=1` - passed, 1 test.
+- `npm run build` - passed without the previous `metadataBase` warning.
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 33 tests.
+- In-app Browser smoke at `http://localhost:3001/dashboard` passed with authenticated Dashboard rendering `MVP v0.2.5`, Dates and Tasks visible, no horizontal overflow at the default desktop viewport, and no browser console errors.
+
+Recovery note:
+
+- Browser automation's documented `networkidle` load state was unavailable in this runtime, so the smoke recovered with supported `load`, URL, visible-content, overflow, and console-log checks.
+
+Result:
+
+- Batch complete. Deployment headers, metadata, and service-worker cache/route risks are mitigated locally. Public production remains blocked on auth abuse controls, CI/preview gates, operational recovery evidence, and deeper installed-PWA upgrade testing.
+
+## 2026-06-16 - v0.2.4 Dashboard Task/Date Cleanup Plan
+
+Planner scope: implement one focused dashboard ergonomics batch from the user's request to reduce completed/finished clutter and make recent tasks easier to see.
+
+Planned changes:
+
+- Add explicit Dashboard Tasks sorting with newest-first default and persisted user preference.
+- Preserve schedule-first order in Daily Timeline and Today.
+- Add confirm-gated soft-delete cleanup for completed/dropped Dashboard tasks.
+- Add confirm-gated soft-delete cleanup for archived Dashboard dates.
+- Add targeted coverage for preference normalization, task sorting, completion-stable order, and bulk cleanup.
+
+Out of scope: arbitrary drag-and-drop/manual task ordering, hard deletion, broad Dashboard redesign, auth/deployment hardening, and dependency upgrades.
+
+Verification plan:
+
+- Preference normalization/unit-style Playwright test.
+- Targeted Dashboard Playwright coverage for sorting and cleanup.
+- `npm run typecheck`
+- `npm run build`
+
+Implementation:
+
+- Added `DashboardPreference.taskSortMode` with migration `20260616133000_dashboard_task_sort_mode`.
+- Normalized legacy dashboard preferences to default task sorting to `recent`.
+- Threaded the persisted sort mode through starter data, bootstrap serialization, sync replay, IndexedDB normalization, and dashboard preference updates.
+- Added a Dashboard Tasks sort selector with newest-created default plus oldest, scheduled, and date-based modes.
+- Kept Daily Timeline and Today schedule-first by adding a preserve-order option to the shared `DailySchedule` renderer for Dashboard all-task sorting.
+- Added confirm-gated Dashboard cleanup actions that move completed/dropped tasks and archived dates to Trash.
+- Made Playwright's port configurable through `PLAYWRIGHT_PORT` so tests can avoid stale or unrelated listeners on port 3000.
+- Bumped package metadata and shell label to `0.2.4`.
+
+Verification:
+
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; applied `20260616133000_dashboard_task_sort_mode`.
+- `npx prisma generate` - passed.
+- `npm run typecheck` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard preferences|dashboard daily timeline supports one time|dashboard can add a project-linked important date|dashboard Tasks includes future tasks" --workers=1` - passed, 4 tests.
+- `npm run db:seed` - passed.
+- `npm run build` - passed with the existing `metadataBase` warning.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 32 tests.
+- In-app Browser smoke at `http://localhost:3001/dashboard` passed with `MVP v0.2.4`, Tasks sort `recent`, no desktop/mobile horizontal overflow, and only the existing `metadataBase` warning.
+
+Result:
+
+- Batch complete. New cleanup affordances use soft-delete semantics and sort behavior is covered by targeted and full e2e tests.
+
 ## 2026-06-16 - v0.2.3 Deployment Gate 1 Plan
 
 Planner scope: implement the first deployment-hardening gate from the 2026-06-15 audit while incorporating the user's UX notes about visible text wrapping and stable task/date ordering.

@@ -1,5 +1,21 @@
 # Audit
 
+## 2026-06-16 - v0.2.5 Security Headers and PWA Cache
+
+- Added baseline response security headers and disabled `X-Powered-By`.
+- Added explicit environment-aware `metadataBase`.
+- Bumped the service-worker shell cache to `contextos-shell-v2`, precached `/dates`, and removed `/deadlines` from precache.
+- Added targeted Playwright coverage for headers, metadata, and service-worker cache/routes.
+- Verification passed: typecheck, targeted deployment Playwright, build without the previous metadata warning, Prisma validate/migrate/seed, full e2e, and Browser smoke.
+
+## 2026-06-16 - v0.2.4 Dashboard Task/Date Cleanup
+
+- Added persisted Dashboard Tasks sort preference and newest-first default.
+- Added confirm-gated soft-delete cleanup for finished tasks and archived dates.
+- Kept Daily Timeline and Today schedule-first.
+- Added Playwright alternate-port support for stale/occupied port recovery.
+- Verification passed: Prisma validate/migrate/generate, seed, typecheck, build, targeted dashboard Playwright, full e2e, and Browser smoke.
+
 ## 2026-06-05 - v0.1.10 PWA Polish Batch
 
 - Executed PWA polish implementation per Item 9 in modificaitons.txt

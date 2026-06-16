@@ -103,3 +103,35 @@ PASS: db seed, targeted stale-cache Playwright tests, typecheck, build, full e2e
 ## docs-qa -> architect-planner (v0.2.1)
 
 Batch complete. Next work should be selected as a separate v0.2.x batch; dependency advisory review remains a good candidate.
+
+## architect-planner -> executor (v0.2.4)
+
+Implement one dashboard ergonomics batch only: persisted Dashboard Tasks sort mode with newest-first default, confirm-gated soft-delete cleanup for finished tasks and archived dates, targeted tests, and no drag/drop/manual task ordering.
+
+## executor -> tester (v0.2.4 build complete)
+
+Implementation complete. Added `DashboardPreference.taskSortMode`, dashboard sort controls, cleanup actions, Playwright alternate-port support, version bump, and targeted test coverage.
+
+## tester -> docs-qa (v0.2.4 QA complete)
+
+PASS: Prisma validate/migrate/generate, seed, typecheck, build, targeted dashboard Playwright, full e2e, and Browser smoke passed. Only the known `metadataBase` warning remains.
+
+## docs-qa -> architect-planner (v0.2.4)
+
+Batch complete. Next recommended batch returns to deployment hardening: auth abuse controls, security headers/metadata, service-worker cache migration, CI, and operational recovery evidence.
+
+## architect-planner -> executor (v0.2.5)
+
+Implement one deployment-hardening batch only: baseline security headers, disabled `X-Powered-By`, explicit environment-aware `metadataBase`, corrected service-worker cache/routes, version bump, and targeted coverage. Do not include auth rate limiting, CI, monitoring, backup/restore, dependency upgrades, or full installed-PWA upgrade automation.
+
+## executor -> tester (v0.2.5 build complete)
+
+Implementation complete. Added security headers in Next config, metadata base handling in app layout, `contextos-shell-v2` service-worker cache with `/dates` precache, package/shell version `0.2.5`, and targeted Playwright coverage.
+
+## tester -> docs-qa (v0.2.5 QA complete)
+
+PASS: typecheck, targeted deployment Playwright, build, Prisma validate/migrate/seed, full e2e with 33 tests, and Browser smoke passed. The previous `metadataBase` warning is gone.
+
+## docs-qa -> architect-planner (v0.2.5)
+
+Batch complete. Next recommended work remains deployment hardening: auth abuse controls, CI/preview gates, installed-PWA upgrade smoke, operational recovery evidence, or mobile editor accessibility.

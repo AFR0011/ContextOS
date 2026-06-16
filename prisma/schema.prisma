@@ -193,6 +193,7 @@ model DashboardPreference {
   reviewPromptDismissals String[] @default([])
   dateWindowDays    Int      @default(14)
   showCompleted     Boolean  @default(false)
+  taskSortMode      String   @default("recent")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

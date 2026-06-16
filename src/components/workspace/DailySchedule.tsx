@@ -10,6 +10,8 @@ export interface DailyScheduleRow {
   labels?: string[];
 }
 
+type DailyScheduleOrder = "schedule" | "preserve";
+
 function TaskTitle({ task }: { task: Task }) {
   const { updateTask } = useWorkspace();
   const [title, setTitle] = useState(task.title);
@@ -106,19 +108,24 @@ export function DailySchedule({
   rows,
   today: _today,
   emptyTitle = "No timeline items",
-  emptyDescription = "Add one task for today."
+  emptyDescription = "Add one task for today.",
+  order = "schedule"
 }: {
   rows: DailyScheduleRow[];
   today: string;
   emptyTitle?: string;
   emptyDescription?: string;
+  order?: DailyScheduleOrder;
 }) {
-  const ordered = useMemo(() => [...rows].sort((a, b) => {
-    const aTime = a.task.scheduledTime ?? "99:99";
-    const bTime = b.task.scheduledTime ?? "99:99";
-    if (aTime !== bTime) return aTime.localeCompare(bTime);
-    return a.task.createdAt.localeCompare(b.task.createdAt);
-  }), [rows]);
+  const ordered = useMemo(() => {
+    if (order === "preserve") return rows;
+    return [...rows].sort((a, b) => {
+      const aTime = a.task.scheduledTime ?? "99:99";
+      const bTime = b.task.scheduledTime ?? "99:99";
+      if (aTime !== bTime) return aTime.localeCompare(bTime);
+      return a.task.createdAt.localeCompare(b.task.createdAt);
+    });
+  }, [order, rows]);
 
   if (!ordered.length) {
     return (

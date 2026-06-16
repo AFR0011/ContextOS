@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
+  ArrowDownUp,
   Bell,
   BookOpen,
   CalendarClock,
@@ -30,10 +31,16 @@ import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
 import { normalizeDashboardPreference } from "@/lib/dashboard-preferences";
 import { addDaysToDateKey, dateKeyToLocalDate, localDateKey, localWeekStartKey } from "@/lib/dates";
 import { useWorkspace } from "@/lib/client-store";
-import type { DashboardPreference, DashboardSectionId, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
+import type { DashboardPreference, DashboardSectionId, DashboardTaskSortMode, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
 
 const DONE_TASK_STATUSES: TaskStatus[] = ["done", "dropped"];
 const PROJECT_STALE_DAYS = 14;
+const DASHBOARD_TASK_SORT_LABELS: Record<DashboardTaskSortMode, string> = {
+  recent: "Newest",
+  oldest: "Oldest",
+  schedule: "Scheduled",
+  date: "Date"
+};
 
 function isTaskOpen(task: Task) {
   return !task.trashedAt && !task.archivedAt && !DONE_TASK_STATUSES.includes(task.status);
@@ -73,6 +80,26 @@ function dateBadge(dateKey: string, today: string) {
   const days = daysBetween(today, dateKey);
   if (days === 1) return "Tomorrow";
   return `In ${days} days`;
+}
+
+function taskDateKey(task: Task) {
+  return task.dueDate ?? task.plannedDate ?? "9999-12-31";
+}
+
+function compareDashboardTasks(a: Task, b: Task, mode: DashboardTaskSortMode) {
+  if (mode === "oldest") return a.createdAt.localeCompare(b.createdAt);
+  if (mode === "schedule") {
+    const aTime = a.scheduledTime ?? "99:99";
+    const bTime = b.scheduledTime ?? "99:99";
+    if (aTime !== bTime) return aTime.localeCompare(bTime);
+    return b.createdAt.localeCompare(a.createdAt);
+  }
+  if (mode === "date") {
+    const byDate = taskDateKey(a).localeCompare(taskDateKey(b));
+    if (byDate) return byDate;
+    return b.createdAt.localeCompare(a.createdAt);
+  }
+  return b.createdAt.localeCompare(a.createdAt);
 }
 
 function sectionDefaults(preference?: DashboardPreference) {
@@ -270,6 +297,14 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
         const byDate = a.date.localeCompare(b.date);
         return byDate || a.title.localeCompare(b.title);
       }), [data.deadlines, showCompleted, today, windowEnd]);
+  const archivedItems = items.filter((item) => item.archivedAt);
+
+  function clearArchivedDates() {
+    if (!archivedItems.length) return;
+    if (!window.confirm(`Move ${archivedItems.length} archived date${archivedItems.length === 1 ? "" : "s"} to Trash?`)) return;
+    const trashedAt = new Date().toISOString();
+    archivedItems.forEach((item) => updateDeadline(item.id, { trashedAt }));
+  }
 
   if (!items.length) {
     return (
@@ -325,6 +360,19 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
           setProjectId("");
         }}
       />
+      {showCompleted && archivedItems.length ? (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            data-testid="dashboard-clear-archived-dates"
+            onClick={clearArchivedDates}
+            className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"
+          >
+            <Trash2 className="h-4 w-4" />
+            Clear archived
+          </button>
+        </div>
+      ) : null}
       {items.map((item) => (
         <div key={item.id} className={`cos-row-muted flex items-start gap-3 px-3 py-3 ${item.archivedAt ? "opacity-60" : ""}`}>
           <button type="button" onClick={() => router.push("/dates")} className="min-w-0 flex-1 text-left">
@@ -488,10 +536,20 @@ function DailyTimelineSection({ today }: { today: string }) {
   );
 }
 
-function AllTasksSection({ showCompleted }: { showCompleted: boolean }) {
-  const { data } = useWorkspace();
+function AllTasksSection({
+  showCompleted,
+  taskSortMode,
+  onTaskSortMode
+}: {
+  showCompleted: boolean;
+  taskSortMode: DashboardTaskSortMode;
+  onTaskSortMode: (mode: DashboardTaskSortMode) => void;
+}) {
+  const { data, updateTask } = useWorkspace();
+  const finishedTasks = data.tasks.filter((task) => isTaskVisible(task, true) && DONE_TASK_STATUSES.includes(task.status));
   const rows = data.tasks
     .filter((task) => isTaskVisible(task, showCompleted))
+    .sort((a, b) => compareDashboardTasks(a, b, taskSortMode))
     .map((task) => ({
       task,
       labels: [
@@ -501,7 +559,46 @@ function AllTasksSection({ showCompleted }: { showCompleted: boolean }) {
       ].filter(Boolean)
     }));
 
-  return <DailySchedule rows={rows} today={localDateKey()} emptyTitle="No active tasks" emptyDescription="Tasks from every date and project will appear here." />;
+  function clearFinishedTasks() {
+    if (!finishedTasks.length) return;
+    if (!window.confirm(`Move ${finishedTasks.length} finished task${finishedTasks.length === 1 ? "" : "s"} to Trash?`)) return;
+    const trashedAt = new Date().toISOString();
+    finishedTasks.forEach((task) => updateTask(task.id, { trashedAt }));
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label className="cos-input flex min-h-9 items-center gap-2 bg-[var(--cos-bg-soft)] px-2 py-1 text-xs text-[var(--cos-text-muted)]">
+          <ArrowDownUp className="h-3.5 w-3.5" />
+          <span className="font-medium">Sort</span>
+          <select
+            aria-label="Task sort"
+            data-testid="dashboard-task-sort"
+            value={taskSortMode}
+            onChange={(event) => onTaskSortMode(event.target.value as DashboardTaskSortMode)}
+            className="bg-transparent text-xs font-semibold text-[var(--cos-text-strong)] outline-none"
+          >
+            {(Object.keys(DASHBOARD_TASK_SORT_LABELS) as DashboardTaskSortMode[]).map((mode) => (
+              <option key={mode} value={mode}>{DASHBOARD_TASK_SORT_LABELS[mode]}</option>
+            ))}
+          </select>
+        </label>
+        {showCompleted && finishedTasks.length ? (
+          <button
+            type="button"
+            data-testid="dashboard-clear-finished-tasks"
+            onClick={clearFinishedTasks}
+            className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"
+          >
+            <Trash2 className="h-4 w-4" />
+            Clear finished
+          </button>
+        ) : null}
+      </div>
+      <DailySchedule rows={rows} today={localDateKey()} order="preserve" emptyTitle="No active tasks" emptyDescription="Tasks from every date and project will appear here." />
+    </div>
+  );
 }
 
 function ProjectsSection() {
@@ -575,7 +672,8 @@ function ReviewPrompt({ preferences }: { preferences: ReturnType<typeof sectionD
       collapsedSections: preferences.collapsedSections,
       dateWindowDays: preferences.dateWindowDays,
       reviewPromptDismissals: [...preferences.reviewPromptDismissals, due.key],
-      showCompleted: preferences.showCompleted
+      showCompleted: preferences.showCompleted,
+      taskSortMode: preferences.taskSortMode
     });
   }
 
@@ -619,7 +717,8 @@ export function Dashboard2View() {
       collapsedSections: Array.from(next),
       dateWindowDays: preferences.dateWindowDays,
       reviewPromptDismissals: preferences.reviewPromptDismissals,
-      showCompleted: preferences.showCompleted
+      showCompleted: preferences.showCompleted,
+      taskSortMode: preferences.taskSortMode
     });
   }
 
@@ -641,7 +740,18 @@ export function Dashboard2View() {
     ),
     allTasks: (
       <CollapsibleSection id="allTasks" title="Tasks" icon={ListChecks} count={allTasksCount} collapsed={collapsed.has("allTasks")} onToggle={toggleSection}>
-        <AllTasksSection showCompleted={preferences.showCompleted} />
+        <AllTasksSection
+          showCompleted={preferences.showCompleted}
+          taskSortMode={preferences.taskSortMode}
+          onTaskSortMode={(taskSortMode) => updateDashboardPreferences({
+            sectionOrder: preferences.sectionOrder,
+            collapsedSections: preferences.collapsedSections,
+            dateWindowDays: preferences.dateWindowDays,
+            reviewPromptDismissals: preferences.reviewPromptDismissals,
+            showCompleted: preferences.showCompleted,
+            taskSortMode
+          })}
+        />
       </CollapsibleSection>
     ),
     projects: (
@@ -670,7 +780,8 @@ export function Dashboard2View() {
             collapsedSections: preferences.collapsedSections,
             dateWindowDays: preferences.dateWindowDays,
             reviewPromptDismissals: preferences.reviewPromptDismissals,
-            showCompleted: !preferences.showCompleted
+            showCompleted: !preferences.showCompleted,
+            taskSortMode: preferences.taskSortMode
           })}
           className={`cos-btn px-3 py-1.5 text-xs ${preferences.showCompleted ? "cos-btn-primary" : "cos-btn-ghost"}`}
         >

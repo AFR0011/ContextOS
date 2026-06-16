@@ -304,7 +304,8 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         collapsedSections: [],
         reviewPromptDismissals: [],
         dateWindowDays: 14,
-        showCompleted: false
+        showCompleted: false,
+        taskSortMode: "recent"
       }
     ],
     skipDuplicates: true

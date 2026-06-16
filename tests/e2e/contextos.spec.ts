@@ -150,7 +150,8 @@ test("dashboard preferences restore default sections when legacy order is missin
     collapsedSections: ["projects", "legacy", "projects"],
     dateWindowDays: 7,
     reviewPromptDismissals: ["daily-startup:2026-06-09"],
-    showCompleted: true
+    showCompleted: true,
+    taskSortMode: "oldest"
   });
 
   expect(preference.sectionOrder).toEqual(["notepad", "dates", "tasks", "allTasks", "projects"]);
@@ -158,6 +159,32 @@ test("dashboard preferences restore default sections when legacy order is missin
   expect(preference.dateWindowDays).toBe(7);
   expect(preference.reviewPromptDismissals).toEqual(["daily-startup:2026-06-09"]);
   expect(preference.showCompleted).toBe(true);
+  expect(preference.taskSortMode).toBe("oldest");
+  expect(normalizeDashboardPreference({ taskSortMode: "manual" as any }).taskSortMode).toBe("recent");
+});
+
+test("deployment headers, metadata, and service worker cache routes are configured", async ({ page }) => {
+  const response = await page.request.get("/login");
+  const headers = response.headers();
+
+  expect(headers["content-security-policy"]).toContain("default-src 'self'");
+  expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(headers["x-frame-options"]).toBe("DENY");
+  expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  expect(headers["permissions-policy"]).toContain("camera=()");
+  expect(headers["x-powered-by"]).toBeUndefined();
+
+  const html = await response.text();
+  const origin = new URL(response.url()).origin;
+  expect(html).toContain('property="og:image"');
+  expect(html).toContain(`${origin}/icon-512.png`);
+
+  const swResponse = await page.request.get("/sw.js");
+  const serviceWorker = await swResponse.text();
+  expect(serviceWorker).toContain('const CACHE_NAME = "contextos-shell-v2"');
+  expect(serviceWorker).toContain('"/dates"');
+  expect(serviceWorker).not.toContain('"/deadlines"');
 });
 
 test("seeded demo account can log in and render dashboard", async ({ page }) => {
@@ -390,6 +417,13 @@ test("dashboard can add a project-linked important date with time and location",
   await expect(datesSection.getByText("Write one clean latest-status note")).toHaveCount(0);
   await page.reload();
   await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toBeVisible();
+  await page.getByTestId("dashboard-section-dates").getByRole("button", { name: `Archive ${title}` }).click();
+  await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toHaveCount(0);
+  await page.getByRole("button", { name: "Show completed" }).click();
+  await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByTestId("dashboard-section-dates").getByTestId("dashboard-clear-archived-dates").click();
+  await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toHaveCount(0);
 });
 
 test("today tasks stay visible and interactable after completion", async ({ page }) => {
@@ -414,13 +448,36 @@ test("today tasks stay visible and interactable after completion", async ({ page
 test("dashboard Tasks includes future tasks and follows Show completed", async ({ page }) => {
   await login(page);
   const section = page.getByTestId("dashboard-section-allTasks");
+  const timeline = page.getByTestId("dashboard-section-tasks");
+  const firstCreated = `Older dashboard task ${Date.now()}`;
+  await page.getByTestId("dashboard-add-task-input").fill(firstCreated);
+  await timeline.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(section.getByLabel(`Task title ${firstCreated}`)).toBeVisible();
+  const secondCreated = `Newer dashboard task ${Date.now()}`;
+  await page.getByTestId("dashboard-add-task-input").fill(secondCreated);
+  await timeline.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(section.getByLabel(`Task title ${secondCreated}`)).toBeVisible();
+  await expect(section.getByLabel("Task sort")).toHaveValue("recent");
+  const newestOrder = await taskTitleOrder(section);
+  expect(newestOrder.indexOf(secondCreated)).toBeLessThan(newestOrder.indexOf(firstCreated));
+  await section.getByLabel("Task sort").selectOption("oldest");
+  await expect(section.getByLabel("Task sort")).toHaveValue("oldest");
+  await page.waitForTimeout(250);
+  await page.reload();
+  await expect(page.getByTestId("dashboard-section-allTasks").getByLabel("Task sort")).toHaveValue("oldest");
+
   const title = "Rerun RF baseline with corrected threshold logic";
   await expect(section.getByLabel(`Task title ${title}`)).toBeVisible();
-  await section.getByRole("button", { name: `Mark ${title} done` }).click();
-  await expect(section.getByLabel(`Task title ${title}`)).not.toBeVisible();
   await page.getByRole("button", { name: "Show completed" }).click();
+  const beforeDoneOrder = await taskTitleOrder(section);
+  await section.getByRole("button", { name: `Mark ${title} done` }).click();
   await expect(section.getByLabel(`Task title ${title}`)).toBeVisible();
   await expect(section.getByRole("button", { name: `Reopen ${title}` })).toBeVisible();
+  const afterDoneOrder = await taskTitleOrder(section);
+  expect(afterDoneOrder).toEqual(beforeDoneOrder);
+  page.once("dialog", (dialog) => dialog.accept());
+  await section.getByTestId("dashboard-clear-finished-tasks").click();
+  await expect(section.getByLabel(`Task title ${title}`)).toHaveCount(0);
 });
 
 test("search results open surfaces where task and standalone note records are visible", async ({ page }) => {

@@ -1,5 +1,63 @@
 # ContextOS Version Log
 
+## v0.2.5 Security Headers and PWA Cache
+
+Status:
+Implemented and verified locally on 2026-06-16.
+
+Goal:
+Close the next deployment-hardening slice by adding baseline response protections, explicit metadata origin handling, and corrected service-worker cache/routes.
+
+Schema and compatibility:
+- No Prisma schema changes.
+- Service worker cache version changed to `contextos-shell-v2`.
+- `/dates` is precached and `/deadlines` is no longer precached; `/deadlines` still redirects for route compatibility.
+
+Implemented behavior:
+- Added CSP, frame protection, content-type sniffing protection, referrer policy, and permissions policy through Next config.
+- Disabled the Next `X-Powered-By` response header.
+- Added environment-aware `metadataBase` using `NEXT_PUBLIC_APP_URL`, `APP_URL`, `VERCEL_URL`, or a local fallback.
+- Limited service-worker route cache writes to successful responses.
+- Added targeted Playwright coverage for headers, metadata, and service-worker cache/routes.
+- Bumped package and shell version to `0.2.5`.
+
+Verification:
+- Typecheck passed.
+- Targeted deployment Playwright coverage passed.
+- Build passed without the previous `metadataBase` warning.
+- Prisma validate/migrate and seed passed.
+- Full Playwright suite passed with 33 tests.
+- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.5`, Dates and Tasks visible, no horizontal overflow, and no console errors.
+
+## v0.2.4 Dashboard Task/Date Cleanup
+
+Status:
+Implemented and verified locally on 2026-06-16.
+
+Goal:
+Reduce Dashboard task/date clutter and make recent tasks easier to scan without changing completion into a hidden reorder trigger.
+
+Schema and compatibility:
+- Added `DashboardPreference.taskSortMode` with default `recent`.
+- Existing dashboard preferences normalize missing or invalid sort modes to `recent`.
+- Sync replay and IndexedDB normalization preserve the new preference while remaining compatible with older cached preferences.
+
+Implemented behavior:
+- Dashboard Tasks defaults to newest-created sorting.
+- Dashboard Tasks includes persisted sort modes for newest, oldest, scheduled, and date order.
+- Daily Timeline and Today remain schedule-first.
+- Dashboard Tasks can move completed/dropped tasks to Trash in one confirm-gated action.
+- Dashboard Dates can move archived dates to Trash in one confirm-gated action.
+- Playwright can run on alternate ports via `PLAYWRIGHT_PORT`.
+- Bumped package and shell version to `0.2.4`.
+
+Verification:
+- Prisma validate/migrate/generate and seed passed.
+- Typecheck and build passed.
+- Targeted dashboard Playwright coverage passed.
+- Full Playwright suite passed with 32 tests.
+- In-app Browser smoke passed on desktop and 390px mobile with no horizontal overflow.
+
 ## v0.2.2 Workflow Simplification
 
 Status:

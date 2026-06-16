@@ -3,11 +3,13 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import type { QueuedMutation, SyncWarning } from "./types";
+import { DASHBOARD_TASK_SORT_MODES } from "./dashboard-preferences";
 import { dateKeyToUtcDate, localDateKey } from "./dates";
 
 const toDate = (value: string | null | undefined) => (value ? new Date(value) : null);
 const toDateOnly = (value: string | null | undefined) => (value ? dateKeyToUtcDate(value) : null);
 const defaultDateOnly = () => dateKeyToUtcDate(localDateKey()) ?? new Date();
+const dashboardTaskSortModes = new Set<string>(DASHBOARD_TASK_SORT_MODES);
 type Tx = Prisma.TransactionClient;
 type OwnedModel = "domain" | "project" | "task" | "capture" | "note" | "deadline" | "review" | "dashboardScratchpad" | "dashboardPreference";
 
@@ -335,6 +337,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               reviewPromptDismissals: payload.reviewPromptDismissals ?? [],
               dateWindowDays: Number(payload.dateWindowDays ?? 14),
               showCompleted: Boolean(payload.showCompleted),
+              taskSortMode: dashboardTaskSortModes.has(payload.taskSortMode) ? payload.taskSortMode : "recent",
               updatedAt: toDate(updatedAt) ?? new Date()
             };
             if (existing) {

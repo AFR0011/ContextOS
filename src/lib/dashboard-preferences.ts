@@ -1,10 +1,12 @@
-import type { DashboardPreference, DashboardSectionId } from "@/lib/types";
+import type { DashboardPreference, DashboardSectionId, DashboardTaskSortMode } from "@/lib/types";
 
 export const DASHBOARD_SECTION_ORDER: DashboardSectionId[] = ["notepad", "dates", "tasks", "allTasks", "projects"];
+export const DASHBOARD_TASK_SORT_MODES: DashboardTaskSortMode[] = ["recent", "oldest", "schedule", "date"];
 
 const DASHBOARD_SECTION_IDS = new Set<DashboardSectionId>(DASHBOARD_SECTION_ORDER);
+const DASHBOARD_TASK_SORT_IDS = new Set<DashboardTaskSortMode>(DASHBOARD_TASK_SORT_MODES);
 
-type DashboardPreferenceInput = Pick<Partial<DashboardPreference>, "dateWindowDays" | "reviewPromptDismissals" | "showCompleted"> & {
+type DashboardPreferenceInput = Pick<Partial<DashboardPreference>, "dateWindowDays" | "reviewPromptDismissals" | "showCompleted" | "taskSortMode"> & {
   collapsedSections?: readonly string[];
   sectionOrder?: readonly string[];
 };
@@ -23,6 +25,11 @@ function validUniqueSections(values: readonly string[] | undefined) {
   return sections;
 }
 
+function validTaskSortMode(value: string | undefined) {
+  const mode = value as DashboardTaskSortMode | undefined;
+  return mode && DASHBOARD_TASK_SORT_IDS.has(mode) ? mode : "recent";
+}
+
 export function normalizeDashboardPreference(preference?: DashboardPreferenceInput | null) {
   const storedOrder = validUniqueSections(preference?.sectionOrder);
   const sectionOrder = DASHBOARD_SECTION_ORDER.every((section) => storedOrder.includes(section)) ? storedOrder : [...DASHBOARD_SECTION_ORDER];
@@ -32,6 +39,7 @@ export function normalizeDashboardPreference(preference?: DashboardPreferenceInp
     dateWindowDays: preference?.dateWindowDays ?? 14,
     reviewPromptDismissals: preference?.reviewPromptDismissals ?? [],
     showCompleted: preference?.showCompleted ?? false,
+    taskSortMode: validTaskSortMode(preference?.taskSortMode),
     sectionOrder
   };
 }

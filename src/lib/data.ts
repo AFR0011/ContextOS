@@ -124,6 +124,7 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       reviewPromptDismissals: preference.reviewPromptDismissals,
       dateWindowDays: preference.dateWindowDays,
       showCompleted: preference.showCompleted,
+      taskSortMode: preference.taskSortMode as DashboardPreference["taskSortMode"],
       createdAt: preference.createdAt.toISOString(),
       updatedAt: preference.updatedAt.toISOString()
     })),

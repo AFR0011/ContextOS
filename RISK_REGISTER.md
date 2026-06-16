@@ -4,7 +4,6 @@
 
 | ID | Risk | Level | Mitigation | Status |
 | --- | --- | --- | --- | --- |
-| R-2026-06-15-03 | Login/register lack rate limiting or other abuse controls. | High | Add application/provider rate limits and production monitoring before public exposure. | Open |
 | R-2026-06-15-05 | CI gates, health monitoring, and rehearsed backup/restore/rollback are incomplete. | High | Security headers and metadata were implemented in v0.2.5; complete and verify the remaining deployment checklist in a production-like preview. | Open |
 | R-2026-06-15-07 | Mobile editor controls are undersized, partly clipped, and some icon-only controls lack accessible names/menu semantics. | Medium | Raise touch targets, keep controls in viewport, add names/roles/focus behavior, and test keyboard/mobile flows. | Open |
 | R-2026-06-10-01 | Database-outage classifier could miss provider-specific connection errors or overclassify unusual Prisma failures. | Medium | Centralized classifier with targeted coverage; expand patterns only from real provider errors. | Open |
@@ -22,6 +21,7 @@
 | --- | --- | --- | --- |
 | R-2026-06-15-01 | Sync records were checked with `id + userId` but updated through global-ID upserts, allowing cross-user overwrite if a foreign ID was known. | Critical | Closed - v0.2.3 replaced global upserts with owned update/create paths, user-scoped mutation IDs, owned-reference validation, and two-user e2e coverage. |
 | R-2026-06-15-02 | Public registration exposed a multi-user surface even though the Blueprint defines a single-user MVP. | High | Closed - v0.2.3 closes production registration by default behind `ALLOW_PUBLIC_REGISTRATION=true`; production smoke returned 403 when disabled. |
+| R-2026-06-15-03 | Login/register lacked rate limiting or other abuse controls. | High | Closed - v0.2.6 adds app-level fixed-window throttling for failed login and registration attempts with `429`, `Retry-After`, configurable thresholds, success reset for login, and targeted/full e2e coverage. Provider/WAF-level protection remains recommended as defense in depth. |
 | R-2026-06-15-04 | Sync accepted unbounded mutation arrays and arbitrary payload records. | High | Closed - v0.2.3 adds request-size, mutation-count, ID/key-length, payload-size, and owned-reference validation with regression coverage. |
 | R-2026-06-15-06 | Task and standalone-note search results could lead to missing content or no action. | Medium | Closed - v0.2.3 routes task results to visible project/dashboard surfaces and standalone notes to Resources with e2e coverage. |
 | R-2026-06-15-08 | Service worker cache version and route list were stale after the Dates rename. | Medium | Closed - v0.2.5 bumps the shell cache to `contextos-shell-v2`, precaches `/dates`, removes `/deadlines` from precache, and verifies the worker script in targeted coverage. Deeper installed legacy-worker upgrade smoke remains a deployment gate. |

@@ -2,7 +2,7 @@
 
 ## Status
 
-**Version:** v1.0 (implementation batch v0.2.5)
+**Version:** v1.0 (implementation batch v0.2.6)
 **Product Type:** Execution-first context recovery system  
 **Primary User:** Single-user MVP  
 **Platform:** Online-first PWA, offline capture later  
@@ -11,12 +11,12 @@
 
 ### Deployment Readiness - 2026-06-15 Audit
 
-v0.2.5 keeps the v0.2.4 Dashboard cleanup ergonomics complete and adds the next deployment-hardening slice: baseline security headers, disabled `X-Powered-By`, explicit production/local metadata base handling, and corrected service-worker cache/routes for `/dates`.
+v0.2.6 keeps the v0.2.5 deployment-hardening slice complete and adds app-level auth abuse controls: failed-login throttling, registration attempt throttling, `429` responses, and `Retry-After` headers.
 
 Remaining deployment-hardening work:
 
-1. Add login/register rate limiting or equivalent provider-level abuse controls.
-2. Add CI plus a production-like preview, migration, backup/restore, monitoring, and rollback rehearsal.
+1. Add CI plus a production-like preview, migration, backup/restore, monitoring, and rollback rehearsal.
+2. Decide whether provider/WAF-level auth protection is needed in addition to the v0.2.6 app-level limiter.
 3. Run deeper installed-PWA upgrade smoke from an older cached worker.
 4. Finish mobile editor/action accessibility work outside the task-title wrapping fixed in v0.2.3.
 

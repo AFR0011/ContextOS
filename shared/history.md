@@ -2,6 +2,8 @@
 
 ## 2026-06-16
 
+- Completed v0.2.6 Auth Abuse Controls: app-level fixed-window failed-login and registration throttling, `429` plus `Retry-After`, successful-login bucket reset, targeted coverage, and package/shell version `0.2.6`.
+- Verification passed: typecheck, targeted auth throttling Playwright, build, Prisma validate/migrate/seed, full e2e with 34 tests, and Browser smoke.
 - Completed v0.2.5 Security Headers and PWA Cache: baseline response security headers, disabled `X-Powered-By`, explicit metadata base handling, service-worker cache `contextos-shell-v2`, `/dates` precache, and package/shell version `0.2.5`.
 - Verification passed: typecheck, targeted deployment Playwright, build without the previous metadata warning, Prisma validate/migrate/seed, full e2e with 33 tests, and Browser smoke.
 - Completed v0.2.4 Dashboard Task/Date Cleanup: persisted task sort mode, newest-first Dashboard Tasks, confirm-gated finished-task cleanup, confirm-gated archived-date cleanup, Playwright alternate-port support, and package/shell version `0.2.4`.

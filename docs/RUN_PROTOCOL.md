@@ -71,6 +71,8 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    - Go offline, add a capture, reload a visited route, return online, and confirm pending sync clears.
 
 ## Deployment Hardening Checks
+- Confirm repeated failed `/api/auth/login` requests eventually return `429` with `Retry-After`, and that a successful login resets the failed-attempt bucket for that identity.
+- Confirm repeated `/api/auth/register` attempts eventually return `429` with `Retry-After` when public registration is enabled.
 - Confirm a representative page such as `/login` returns CSP, frame protection, content-type sniffing protection, referrer policy, and permissions policy headers.
 - Confirm `X-Powered-By` is absent.
 - Confirm `npm run build` does not emit the old implicit `metadataBase` localhost warning.

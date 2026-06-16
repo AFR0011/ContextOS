@@ -2,12 +2,12 @@
 
 ## Current Release Gate
 
-As of v0.2.5 on 2026-06-16, the first deployment-hardening slices are complete, but public production is still blocked until the remaining gates are verified:
+As of v0.2.6 on 2026-06-16, the first deployment-hardening slices are complete, but public production is still blocked until the remaining gates are verified:
 
 1. Sync writes and mutation-ledger lookups are user-scoped and pass two-user isolation tests. DONE in v0.2.3.
 2. Production registration is closed or invitation-controlled; demo credentials and reset actions are not presented as normal production UX. CLOSED BY DEFAULT in v0.2.3.
 3. Sync requests have request-size, mutation-count, entity, and field-length limits. DONE in v0.2.3.
-4. Login/register have rate limiting or equivalent provider protection.
+4. Login/register have rate limiting or equivalent provider protection. APP-LEVEL DONE in v0.2.6; provider/WAF defense in depth still recommended for public production.
 5. Security headers, `metadataBase`, and the corrected service-worker cache/routes are verified. DONE in v0.2.5.
 6. CI passes Prisma validation/generation, typecheck, build, and sequential Playwright against disposable PostgreSQL.
 7. A production-like preview passes auth, capture, offline/reconnect, search, project recovery, Dates, mobile, and installed-PWA smoke.
@@ -22,6 +22,9 @@ Set these variables in the deployment provider before building:
 - `DATABASE_URL`: production PostgreSQL connection string.
 - `AUTH_SECRET`: fresh random secret with at least 32 bytes of entropy.
 - `NEXT_PUBLIC_APP_URL` or `APP_URL`: canonical public origin used for metadata. `VERCEL_URL` is accepted as a platform fallback.
+- `AUTH_RATE_LIMIT_WINDOW_MS`: optional auth limiter window override; default is 10 minutes.
+- `AUTH_LOGIN_MAX_FAILURES`: optional failed-login limit override; default is 5 per window.
+- `AUTH_REGISTER_MAX_ATTEMPTS`: optional registration attempt limit override; default is 3 per window.
 - `SEED_DEMO_EMAIL`: optional demo account email for intentional seeding.
 - `SEED_DEMO_PASSWORD`: optional demo account password for intentional seeding.
 - `ALLOW_DEMO_RESET`: keep unset or `false` in production unless an explicit demo reset endpoint is intended.

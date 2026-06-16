@@ -5,6 +5,7 @@ import { createSession, hashPassword, publicUser } from "@/lib/auth";
 import { createStarterWorkspace } from "@/lib/starter";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
 import { isPublicRegistrationEnabled } from "@/lib/registration";
+import { authRateLimitResponse, checkAuthRateLimit, recordAuthRateLimitAttempt } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   email: z.string().email().transform((v) => v.toLowerCase()),
@@ -18,6 +19,13 @@ export async function POST(request: Request) {
     }
 
     const parsed = registerSchema.safeParse(await request.json().catch(() => null));
+    const identity = parsed.success ? parsed.data.email : undefined;
+    const rateLimit = checkAuthRateLimit(request, "register", identity);
+    if (rateLimit.limited) {
+      return authRateLimitResponse(rateLimit);
+    }
+    recordAuthRateLimitAttempt(request, "register", identity);
+
     if (!parsed.success) {
       return NextResponse.json({ error: "Use a valid email and a password of at least 8 characters." }, { status: 400 });
     }

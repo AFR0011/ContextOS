@@ -1,5 +1,31 @@
 # ContextOS QA Report
 
+## 2026-06-16 - v0.2.6 Auth Abuse Controls
+
+### Verdict
+
+- Local functional verification: PASS.
+- App-level login/register abuse controls: PASS.
+- Public production: still NO-GO until CI/preview gates, monitoring, backup/restore, rollback evidence, installed-PWA upgrade smoke, and provider/WAF defense-in-depth decisions are complete.
+
+### Commands And Evidence
+
+- `npm run typecheck` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "auth endpoints throttle" --workers=1` - passed, 1 test.
+- `npm run build` - passed.
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 34 tests.
+- In-app Browser smoke on `http://localhost:3001/dashboard` - passed; authenticated Dashboard rendered `MVP v0.2.6`, Dates and Tasks were visible, horizontal overflow was false at the default desktop viewport, and browser console errors were empty.
+
+### Coverage Added
+
+- Repeated failed login attempts return `429` with `Retry-After`.
+- Successful login resets failed-attempt buckets for that identity.
+- Registration attempts are throttled when public registration is enabled.
+- The new auth throttling coverage uses synthetic forwarded IPs so it does not poison the seeded demo account.
+
 ## 2026-06-16 - v0.2.5 Security Headers and PWA Cache
 
 ### Verdict

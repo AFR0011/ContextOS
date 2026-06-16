@@ -1,19 +1,20 @@
 # ContextOS Project State
 
 ## Current Objective
-Complete remaining deployment hardening after v0.2.5 security headers and PWA cache hardening before any public production release.
+Complete remaining deployment hardening after v0.2.6 auth abuse controls before any public production release.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
 - Prisma 7 + PostgreSQL for canonical user-scoped persistence.
 - Local email/password auth with hashed passwords and HTTP-only sessions.
+- App-level fixed-window throttling for failed login and registration attempts.
 - IndexedDB workspace cache plus an idempotent queued mutation outbox.
 - Service worker app-shell caching for visited routes and static assets.
 - Next config now applies baseline security headers and disables `X-Powered-By`.
 - Metadata uses an explicit deployment/local `metadataBase` instead of implicit localhost build defaults.
 
 ## Current Product State
-- Package and shell version: `0.2.5`.
+- Package and shell version: `0.2.6`.
 - Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Areas, Resources, Dates, Reviews, Search, Archive, and Settings.
 - `/dates` is canonical. `/deadlines` redirects to `/dates`.
 - `/date` is the advertised capture command. `/deadline` remains an accepted compatibility alias.
@@ -33,6 +34,7 @@ Complete remaining deployment hardening after v0.2.5 security headers and PWA ca
 - Sync reconciliation preserves mutations queued while another sync request is in flight.
 - Sync replay now rejects cross-user record IDs, scopes mutation IDs per user, validates owned references, and bounds payload size/count.
 - Public registration is closed by default in production unless `ALLOW_PUBLIC_REGISTRATION=true`.
+- Login/register APIs return `429` plus `Retry-After` after repeated abuse attempts.
 - Search task results open a surface where the task is visible, and standalone note results open Resources.
 - Task titles wrap in task surfaces, and completion toggles no longer reorder tasks solely by status.
 
@@ -57,15 +59,15 @@ Complete remaining deployment hardening after v0.2.5 security headers and PWA ca
 
 - `npx prisma validate`, `npm run db:migrate`, and `npm run db:seed` passed on 2026-06-16.
 - `npm run typecheck` passed.
-- Targeted Playwright for deployment headers, metadata, and service-worker cache/routes passed with 1 test.
+- Targeted Playwright for auth abuse controls passed with 1 test.
 - `npm run build` passed without the previous `metadataBase` warning.
 - Previous v0.2.3 production registration-closed smoke with `ALLOW_PUBLIC_REGISTRATION=false` passed with a 403 response.
-- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 33 tests.
-- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.5`, Dates and Tasks visible, no horizontal overflow, and no console errors.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 34 tests.
+- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.6`, Dates and Tasks visible, no horizontal overflow, and no console errors.
 
 ## Next Useful Work
-- Treat v0.2.5 security headers and PWA cache hardening as complete.
-- Add auth abuse controls, CI/preview gates, operational recovery evidence, and deeper installed-PWA upgrade smoke before public production.
+- Treat v0.2.6 auth abuse controls as complete.
+- Add CI/preview gates, operational recovery evidence, deeper installed-PWA upgrade smoke, and provider/WAF defense-in-depth decisions before public production.
 - Run the simplified workflow in real use before broadening scope.
 - Treat regressions in capture speed, timeline scanning, Dates separation, project recovery, or offline replay as v0.2.2 fixes.
 - Review dependency advisories only through deliberate non-breaking upgrades.

@@ -135,3 +135,19 @@ PASS: typecheck, targeted deployment Playwright, build, Prisma validate/migrate/
 ## docs-qa -> architect-planner (v0.2.5)
 
 Batch complete. Next recommended work remains deployment hardening: auth abuse controls, CI/preview gates, installed-PWA upgrade smoke, operational recovery evidence, or mobile editor accessibility.
+
+## architect-planner -> executor (v0.2.6)
+
+Implement one auth-hardening batch only: fixed-window login/register abuse controls, `429` plus `Retry-After`, targeted coverage, and version bump. Do not include provider/WAF setup, CAPTCHA, CI, monitoring, backup/restore, cleanup deletion, or UI/accessibility work.
+
+## executor -> tester (v0.2.6 build complete)
+
+Implementation complete. Added server-only auth rate-limit helpers, wired login and registration APIs, added targeted Playwright coverage, and bumped package/shell version to `0.2.6`.
+
+## tester -> docs-qa (v0.2.6 QA complete)
+
+PASS: typecheck, targeted auth throttling Playwright, build, Prisma validate/migrate/seed, full e2e with 34 tests, and Browser smoke passed.
+
+## docs-qa -> architect-planner (v0.2.6)
+
+Batch complete. Next work is the requested read-only cleanup audit/future-options report, then remaining production gates: CI/preview, installed-PWA upgrade smoke, operational recovery, and provider/WAF defense-in-depth decisions.

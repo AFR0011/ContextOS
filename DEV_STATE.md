@@ -2,70 +2,71 @@
 
 ## Active Loop
 
-- Status: CLOSE - Batch v0.2.5 Security headers and PWA cache
+- Status: CLOSE - Batch v0.2.6 Auth abuse controls
 - Date: 2026-06-16
 - Active batch: none
-- Completed batch: v0.2.5 security headers and PWA cache
+- Completed batch: v0.2.6 auth abuse controls
 - Canonical product source: `BLUEPRINT.md`
 - Tooling fallback: dev-loop specialist tools are policy-gated unless the user explicitly requests delegation, so this cycle is using the documented local phase-artifact fallback.
 
 ## Active Batch Plan
 
-Scope this cycle to one independently testable deployment-hardening batch:
+Scope this cycle to one independently testable auth-hardening batch:
 
-1. Add baseline application security headers through Next config and disable the `X-Powered-By` header.
-2. Set `metadataBase` from deployment/local environment so production builds stop resolving social metadata against localhost implicitly.
-3. Bump the service-worker cache version and replace the stale `/deadlines` precache route with canonical `/dates`.
-4. Add targeted regression coverage for headers, metadata, and service-worker cache/routes.
-5. Bump package and shell version to `0.2.5`.
+1. Add shared server-only auth rate-limit utilities with fixed-window buckets, forwarded-IP awareness, `Retry-After` responses, and environment-configurable thresholds.
+2. Apply failed-login throttling to `/api/auth/login` without counting successful demo logins against the limit.
+3. Apply registration attempt throttling to `/api/auth/register` when public registration is enabled.
+4. Add targeted Playwright API coverage for login throttling and retry headers using isolated synthetic client IPs.
+5. Bump package and shell version to `0.2.6`.
 
-Out of scope for this batch: login/register rate limiting, CI, health checks, monitoring, backup/restore rehearsal, dependency upgrades, service-worker installed-upgrade browser automation beyond static/HTTP evidence, and UI/accessibility refinements.
+Out of scope for this batch: provider/WAF configuration, CAPTCHA, account lockout email flows, password reset, CI, monitoring, backup/restore rehearsal, installed-PWA upgrade automation, dependency upgrades, cleanup file deletion, and UI/accessibility refinements.
 
 Acceptance criteria:
 
-- Responses include CSP, frame protection, content-type sniffing protection, referrer policy, and permissions policy.
-- `X-Powered-By` is disabled.
-- `metadataBase` is explicit and accepts `NEXT_PUBLIC_APP_URL`, `APP_URL`, or `VERCEL_URL` with a local fallback.
-- Service-worker cache name changes from `contextos-shell-v1` and precaches `/dates`, not `/deadlines`.
+- Repeated failed login attempts return `429` with a clear error and `Retry-After`.
+- Successful login resets failed-attempt buckets for that identity and does not count as abuse.
+- Registration attempts are rate-limited when registration is open.
+- Existing DB-unavailable handling remains intact.
 - Targeted coverage, `npm run typecheck`, and `npm run build` pass.
 
 ## Outcome
 
 Batch complete.
 
-Implemented baseline deployment hardening in one scoped batch:
+Implemented app-level auth abuse controls in one scoped batch:
 
-- Added application-wide security headers in `next.config.ts`: CSP, frame protection, content-type sniffing protection, referrer policy, and permissions policy.
-- Disabled Next's `X-Powered-By` response header.
-- Added explicit environment-aware `metadataBase` in `src/app/layout.tsx`, using `NEXT_PUBLIC_APP_URL`, `APP_URL`, `VERCEL_URL`, or a local development fallback.
-- Bumped the service-worker shell cache to `contextos-shell-v2`, precached `/dates`, and removed the stale `/deadlines` precache route.
-- Added targeted Playwright coverage for deployment headers, metadata output, and service-worker cache/routes.
-- Bumped package metadata and shell label to `0.2.5`.
+- Added server-only fixed-window auth rate-limit helpers with forwarded-IP awareness, configurable thresholds, and `Retry-After` responses.
+- Applied failed-attempt throttling to `/api/auth/login` without counting successful logins against the limit.
+- Reset failed-login buckets on successful login for that identity.
+- Applied registration attempt throttling to `/api/auth/register` when public registration is enabled.
+- Added targeted Playwright API coverage for login throttling, success reset, registration throttling, `429`, and `Retry-After`.
+- Bumped package metadata and shell label to `0.2.6`.
 
 ## Acceptance Evidence
 
 | Criteria | Status |
 | --- | --- |
-| Security headers are configured and verified | DONE |
-| `X-Powered-By` is disabled | DONE |
-| `metadataBase` is explicit and environment-aware | DONE |
-| Service-worker cache version and routes are corrected | DONE |
+| Login failures are rate-limited with `429` and `Retry-After` | DONE |
+| Successful login resets failed-attempt buckets | DONE |
+| Registration attempts are rate-limited when registration is open | DONE |
+| Existing DB-unavailable handling remains intact | DONE |
 | Targeted coverage, typecheck, and build pass | DONE |
 
 ## Verification
 
 - `npm run typecheck` - passed.
-- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "deployment headers" --workers=1` - passed, 1 test.
-- `npm run build` - passed without the previous `metadataBase` warning.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "auth endpoints throttle" --workers=1` - passed, 1 test.
+- `npm run build` - passed.
 - `npx prisma validate` - passed.
 - `npm run db:migrate` - passed; schema already in sync.
 - `npm run db:seed` - passed.
-- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 33 tests.
-- In-app Browser smoke at `http://localhost:3001/dashboard` - passed; authenticated Dashboard rendered `MVP v0.2.5`, Dates and Tasks were visible, horizontal overflow was false at the default desktop viewport, and browser console errors were empty.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 34 tests.
+- In-app Browser smoke at `http://localhost:3001/dashboard` - passed; authenticated Dashboard rendered `MVP v0.2.6`, Dates and Tasks were visible, horizontal overflow was false at the default desktop viewport, and browser console errors were empty.
 
 ## Remaining Risks
 
-- P1: auth abuse controls, CI, production-like preview evidence, monitoring/health checks, and backup/restore/rollback rehearsal are still missing.
+- P1: CI, production-like preview evidence, monitoring/health checks, and backup/restore/rollback rehearsal are still missing.
+- App-level auth abuse controls are implemented in v0.2.6; provider/WAF-level protection remains recommended as production defense in depth.
 - Deeper installed-PWA upgrade testing remains deferred; this batch verifies the script/cache text and local app-shell behavior, not an already-installed legacy worker upgrade path.
 - Drag-and-drop or arbitrary manual task ordering remains deferred; v0.2.4 only adds explicit sort modes.
 - Internal `Deadline` naming remains intentionally for compatibility and should only change in a dedicated migration.
@@ -73,4 +74,4 @@ Implemented baseline deployment hardening in one scoped batch:
 
 ## Next Action
 
-Plan the next deployment-hardening batch around auth abuse controls, CI/preview gates, operational recovery evidence, or mobile editor accessibility.
+Perform the requested read-only repo cleanup audit and future-options report, then choose the next production-readiness batch.

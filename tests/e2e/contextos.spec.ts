@@ -187,6 +187,66 @@ test("deployment headers, metadata, and service worker cache routes are configur
   expect(serviceWorker).not.toContain('"/deadlines"');
 });
 
+test("auth endpoints throttle repeated failed attempts", async ({ page }) => {
+  const password = "contextos-demo-v011";
+  const loginIp = `rate-login-${Date.now()}`;
+  const email = `rate-login-${Date.now()}@example.com`;
+
+  const registered = await page.request.post("/api/auth/register", {
+    data: { email, password },
+    headers: { "x-forwarded-for": loginIp }
+  });
+  expect(registered.ok()).toBeTruthy();
+  await page.request.post("/api/auth/logout", { headers: { "x-forwarded-for": loginIp } });
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const failed = await page.request.post("/api/auth/login", {
+      data: { email, password: "wrong-password" },
+      headers: { "x-forwarded-for": loginIp }
+    });
+    expect(failed.status()).toBe(401);
+  }
+
+  const success = await page.request.post("/api/auth/login", {
+    data: { email, password },
+    headers: { "x-forwarded-for": loginIp }
+  });
+  expect(success.ok()).toBeTruthy();
+  await page.request.post("/api/auth/logout", { headers: { "x-forwarded-for": loginIp } });
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const failed = await page.request.post("/api/auth/login", {
+      data: { email, password: "wrong-password" },
+      headers: { "x-forwarded-for": loginIp }
+    });
+    expect(failed.status()).toBe(401);
+  }
+
+  const blockedLogin = await page.request.post("/api/auth/login", {
+    data: { email, password: "wrong-password" },
+    headers: { "x-forwarded-for": loginIp }
+  });
+  expect(blockedLogin.status()).toBe(429);
+  expect(blockedLogin.headers()["retry-after"]).toMatch(/^\d+$/);
+  await expect(blockedLogin.json()).resolves.toMatchObject({ error: "Too many attempts. Try again later." });
+
+  const registerIp = `rate-register-${Date.now()}`;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const failedRegister = await page.request.post("/api/auth/register", {
+      data: { email: "not-an-email", password: "short" },
+      headers: { "x-forwarded-for": registerIp }
+    });
+    expect(failedRegister.status()).toBe(400);
+  }
+
+  const blockedRegister = await page.request.post("/api/auth/register", {
+    data: { email: "not-an-email", password: "short" },
+    headers: { "x-forwarded-for": registerIp }
+  });
+  expect(blockedRegister.status()).toBe(429);
+  expect(blockedRegister.headers()["retry-after"]).toMatch(/^\d+$/);
+});
+
 test("seeded demo account can log in and render dashboard", async ({ page }) => {
   await login(page);
   await expect(page.getByText("Mobile Command Sheet")).toBeVisible();

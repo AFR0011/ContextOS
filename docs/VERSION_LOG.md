@@ -1,5 +1,33 @@
 # ContextOS Version Log
 
+## v0.2.6 Auth Abuse Controls
+
+Status:
+Implemented and verified locally on 2026-06-16.
+
+Goal:
+Close the auth abuse-control deployment gate with app-level throttling while keeping provider/WAF protection as production defense in depth.
+
+Schema and compatibility:
+- No Prisma schema changes.
+- Rate-limit state is server-local and fixed-window.
+- Limits are configurable with `AUTH_RATE_LIMIT_WINDOW_MS`, `AUTH_LOGIN_MAX_FAILURES`, and `AUTH_REGISTER_MAX_ATTEMPTS`.
+
+Implemented behavior:
+- Added server-only auth rate-limit helpers with forwarded-IP awareness.
+- Failed login attempts are throttled and return `429` with `Retry-After`.
+- Successful login resets failed-attempt buckets for that identity.
+- Registration attempts are throttled when public registration is enabled.
+- Bumped package and shell version to `0.2.6`.
+
+Verification:
+- Typecheck passed.
+- Targeted auth throttling Playwright coverage passed.
+- Build passed.
+- Prisma validate/migrate and seed passed.
+- Full Playwright suite passed with 34 tests.
+- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.6`, Dates and Tasks visible, no horizontal overflow, and no console errors.
+
 ## v0.2.5 Security Headers and PWA Cache
 
 Status:

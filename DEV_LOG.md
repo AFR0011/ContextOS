@@ -1,5 +1,51 @@
 # ContextOS Dev Log
 
+## 2026-06-16 - v0.2.6 Auth Abuse Controls Plan
+
+Planner scope: implement one auth-hardening batch for login/register abuse controls, then run the requested cleanup audit as a read-only report.
+
+Planned changes:
+
+- Add shared server-only fixed-window auth rate-limit helpers.
+- Throttle repeated failed `/api/auth/login` attempts by forwarded client IP plus email/generic identity.
+- Reset failed-login buckets on successful login so normal demo usage and e2e flows do not accumulate against the limit.
+- Throttle `/api/auth/register` attempts when registration is open.
+- Return `429` JSON with `Retry-After` when a limit is exceeded.
+- Add targeted Playwright API coverage using isolated synthetic forwarded IPs.
+- Bump package and shell version to `0.2.6`.
+
+Out of scope: provider/WAF configuration, CAPTCHA, password reset/verification flows, account email lockout flows, CI, monitoring, backup/restore rehearsal, dependency upgrades, source cleanup deletion, and UI redesign.
+
+Verification plan:
+
+- Targeted Playwright auth throttling test.
+- `npm run typecheck`
+- `npm run build`
+- Full e2e if targeted checks and build pass.
+
+Implementation:
+
+- Added `src/lib/rate-limit.ts` with server-only fixed-window buckets, forwarded-IP awareness, configurable auth thresholds, and `Retry-After` response support.
+- Wired `/api/auth/login` to throttle repeated failed attempts and reset failed-attempt buckets after a successful login.
+- Wired `/api/auth/register` to throttle registration attempts while public registration is enabled.
+- Added targeted Playwright API coverage for failed-login throttling, success reset, registration throttling, `429`, and `Retry-After`.
+- Bumped package metadata and shell label to `0.2.6`.
+
+Verification:
+
+- `npm run typecheck` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "auth endpoints throttle" --workers=1` - passed, 1 test.
+- `npm run build` - passed.
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 34 tests.
+- In-app Browser smoke at `http://localhost:3001/dashboard` passed with authenticated Dashboard rendering `MVP v0.2.6`, Dates and Tasks visible, no horizontal overflow at the default desktop viewport, and no browser console errors.
+
+Result:
+
+- Batch complete. App-level auth abuse controls are implemented and verified locally. Provider/WAF-level protection remains recommended as defense in depth before public production.
+
 ## 2026-06-16 - v0.2.5 Security Headers and PWA Cache Plan
 
 Planner scope: implement one deployment-hardening batch for security headers, production metadata, and stale service-worker cache/routes.

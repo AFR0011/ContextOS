@@ -1,5 +1,13 @@
 # Audit
 
+## 2026-06-16 - v0.2.6 Auth Abuse Controls
+
+- Added server-only fixed-window auth throttling for failed login and registration attempts.
+- Added `429` plus `Retry-After` responses for exceeded auth limits.
+- Kept successful login from counting as abuse by resetting failed-attempt buckets for that identity.
+- Added targeted Playwright API coverage.
+- Verification passed: typecheck, targeted auth throttling Playwright, build, Prisma validate/migrate/seed, full e2e, and Browser smoke.
+
 ## 2026-06-16 - v0.2.5 Security Headers and PWA Cache
 
 - Added baseline response security headers and disabled `X-Powered-By`.

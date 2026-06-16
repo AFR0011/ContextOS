@@ -1,14 +1,14 @@
 # ContextOS Future Concerns Backlog
 
-This file captures concerns that should survive beyond v0.2.5. It is not an active sprint plan; use `BLUEPRINT.md` and `DEV_STATE.md` for active work selection.
+This file captures concerns that should survive beyond v0.2.6. It is not an active sprint plan; use `BLUEPRINT.md` and `DEV_STATE.md` for active work selection.
 
 ## High Priority
 
 ### Deployment Hardening
 
 - Current issue: the 2026-06-15 audit found user-ownership gaps in sync upserts, public registration in a single-user MVP, unbounded sync payloads, missing abuse controls/security headers/CI, stale PWA cache routes, and incomplete operational recovery.
-- Status: v0.2.3 completed Gate 1 user/data isolation work, v0.2.4 completed Dashboard cleanup ergonomics, and v0.2.5 completed baseline security headers, explicit metadata base handling, and corrected service-worker cache/routes.
-- Future work: implement auth abuse controls, CI, production-like preview smoke, deeper installed-PWA upgrade smoke, backup/restore, monitoring, and rollback evidence.
+- Status: v0.2.3 completed Gate 1 user/data isolation work, v0.2.4 completed Dashboard cleanup ergonomics, v0.2.5 completed baseline security headers, explicit metadata base handling, and corrected service-worker cache/routes, and v0.2.6 completed app-level auth abuse controls.
+- Future work: implement CI, production-like preview smoke, deeper installed-PWA upgrade smoke, backup/restore, monitoring, rollback evidence, and any provider/WAF auth protection needed for public production.
 - Acceptance signal: remaining deployment gates in `docs/DEPLOYMENT.md` all pass.
 
 ### Graceful Database-Unavailable Handling
@@ -61,5 +61,5 @@ This file captures concerns that should survive beyond v0.2.5. It is not an acti
 
 ### Versioning Alignment
 
-- Status: aligned in v0.2.5. Package metadata, shell label, active docs, and version log use `0.2.5`.
+- Status: aligned in v0.2.6. Package metadata, shell label, active docs, and version log use `0.2.6`.
 - Future work: keep version bumps part of each release batch.

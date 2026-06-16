@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createSession, publicUser, verifyPassword } from "@/lib/auth";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
+import { authRateLimitResponse, checkAuthRateLimit, recordAuthRateLimitAttempt, resetAuthRateLimit } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.string().email().transform((v) => v.toLowerCase()),
@@ -12,15 +13,24 @@ const loginSchema = z.object({
 export async function POST(request: Request) {
   try {
     const parsed = loginSchema.safeParse(await request.json().catch(() => null));
+    const identity = parsed.success ? parsed.data.email : undefined;
+    const rateLimit = checkAuthRateLimit(request, "login", identity);
+    if (rateLimit.limited) {
+      return authRateLimitResponse(rateLimit);
+    }
+
     if (!parsed.success) {
+      recordAuthRateLimitAttempt(request, "login");
       return NextResponse.json({ error: "Enter your email and password." }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
     if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
+      recordAuthRateLimitAttempt(request, "login", parsed.data.email);
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
+    resetAuthRateLimit(request, "login", parsed.data.email);
     await createSession(user.id);
     return NextResponse.json({ user: publicUser(user) });
   } catch (error) {

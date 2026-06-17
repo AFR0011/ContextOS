@@ -178,8 +178,8 @@ Implementation complete locally. Block editor command transforms use live textar
 
 ## tester -> docs-qa (v0.2.8 local QA complete)
 
-PASS: Prisma validate, migration, seed, repeated toggle-heading Playwright 5/5, targeted mobile/menu Playwright, typecheck, build, full e2e with 36 tests, desktop/mobile Browser smoke, and branch GitHub Actions run `27676974625` passed.
+PASS: Prisma validate, migration, seed, repeated toggle-heading Playwright 5/5, targeted mobile/menu Playwright, typecheck, build, full e2e with 36 tests, desktop/mobile Browser smoke, and branch GitHub Actions run `27678139692` passed.
 
 ## docs-qa -> architect-planner (v0.2.8)
 
-Batch complete. Branch GitHub Actions passed in run `27676974625`. Next work can be v0.2.9 Dashboard hierarchy polish or another production gate such as preview smoke, backup/restore, rollback, monitoring, provider/WAF, or installed-PWA upgrade.
+Batch complete. Branch GitHub Actions passed in run `27678139692`. Next work can be v0.2.9 Dashboard hierarchy polish or another production gate such as preview smoke, backup/restore, rollback, monitoring, provider/WAF, or installed-PWA upgrade.

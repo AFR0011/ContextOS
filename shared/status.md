@@ -18,7 +18,7 @@
 - Targeted mobile/menu coverage: passed.
 - Full e2e: 36 passed.
 - Browser smoke: passed with `MVP v0.2.8`, Dashboard/Dates/Tasks visible, no horizontal overflow, no console errors, and touched mobile controls at 40x40.
-- Branch GitHub Actions CI: passed in run `27676974625`.
+- Branch GitHub Actions CI: passed in run `27678139692`.
 
 ## Remaining Follow-Up
 

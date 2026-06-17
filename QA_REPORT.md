@@ -20,7 +20,7 @@
 - `npm run build` - passed.
 - `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 36 tests.
 - In-app Browser smoke on `http://localhost:3001/dashboard` - passed on desktop and 390px mobile; authenticated Dashboard rendered `MVP v0.2.8`, Dashboard/Dates/Tasks were visible, horizontal overflow was false, browser console errors were empty, and touched mobile controls measured 40x40.
-- GitHub Actions CI on `codex/v0.2.8-ci-a11y-foundation` - passed; run `27676974625`, `https://github.com/AFR0011/ContextOS/actions/runs/27676974625`.
+- GitHub Actions CI on `codex/v0.2.8-ci-a11y-foundation` - passed after the e2e harness fix; run `27678139692`, `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
 
 ### Coverage Added
 
@@ -34,6 +34,7 @@
 - Parallel targeted Playwright runs attempted to start two Next dev servers in the same repo and one failed with Next's "another dev server is already running" guard. Recovered by running targeted checks sequentially.
 - The first Browser dev-server start used the Windows `npm` shim and failed; recovered with `npm.cmd`.
 - The first in-app Browser login wait used an exact navigation wait that timed out even though the page later reached Dashboard; recovered with Dashboard heading and DOM-state checks.
+- Intermediate branch CI run `27677465248` failed on Playwright after a docs evidence commit. The failure was not the Dashboard Notepad bug; it exposed a reset-demo `ECONNRESET` and two immediate order assertions that sampled before task UI state settled. Fixed with reset retries and polling order assertions, then local full e2e and branch CI passed.
 
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation
 

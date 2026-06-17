@@ -73,7 +73,7 @@ Continue remaining deployment hardening before any public production release.
 - `npm run build` passed.
 - `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 36 tests.
 - In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.8` on desktop and 390px mobile, Dashboard/Dates/Tasks visible, no horizontal overflow, no console errors, and touched mobile controls at 40x40.
-- GitHub Actions CI passed on `codex/v0.2.8-ci-a11y-foundation`: `https://github.com/AFR0011/ContextOS/actions/runs/27676974625`.
+- GitHub Actions CI passed on `codex/v0.2.8-ci-a11y-foundation`: `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
 
 ## Next Useful Work
 - Treat v0.2.8 CI repair and touched-control mobile accessibility foundation as complete.

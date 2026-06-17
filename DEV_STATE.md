@@ -70,7 +70,9 @@ Implemented the CI repair and mobile accessibility foundation in one scoped batc
 - `npm run build` - passed.
 - `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 36 tests.
 - In-app Browser smoke at `http://localhost:3001/dashboard` - passed on desktop and 390px mobile; authenticated Dashboard rendered `MVP v0.2.8`, Dashboard/Dates/Tasks were visible, horizontal overflow was false, browser console errors were empty, and touched mobile controls measured 40x40.
-- Branch GitHub Actions CI passed on `codex/v0.2.8-ci-a11y-foundation`: `https://github.com/AFR0011/ContextOS/actions/runs/27676974625`.
+- Intermediate branch CI run `27677465248` failed on Playwright harness flake: `/api/reset-demo` `ECONNRESET` plus immediate order assertions after task mutations.
+- Hardened the e2e reset helper with retries and changed order checks to poll for settled UI state; targeted local rerun and full e2e passed.
+- Branch GitHub Actions CI passed on `codex/v0.2.8-ci-a11y-foundation` after the harness fix: `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
 
 ## Remaining Risks
 

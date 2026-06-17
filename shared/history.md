@@ -3,7 +3,7 @@
 ## 2026-06-17
 
 - Completed v0.2.8 CI Repair and Mobile Accessibility Foundation: fixed block editor live-value command transforms, guarded Dashboard Notepad dirty drafts from late hydration, added mobile-safe hit targets for touched Daily Timeline/editor controls, added block/slash menu semantics, and bumped package/shell version to `0.2.8`.
-- Verification passed: Prisma validate, migration, seed, repeated toggle-heading Playwright 5/5, targeted mobile/menu Playwright, typecheck, build, full e2e with 36 tests, desktop/mobile Browser smoke, and branch GitHub Actions run `27676974625`.
+- Verification passed: Prisma validate, migration, seed, repeated toggle-heading Playwright 5/5, targeted mobile/menu Playwright, typecheck, build, full e2e with 36 tests, desktop/mobile Browser smoke, and branch GitHub Actions run `27678139692`.
 - Completed v0.2.7 Cleanup and Production-Readiness Foundation: approved generated artifact cleanup, historical archive moves, UI/UX backlog extraction, no-store `/api/health`, GitHub Actions CI workflow scaffold, archive TypeScript exclusion, and package/shell version `0.2.7`.
 - Verification passed: Prisma validate, migration retry after starting Docker/Postgres, seed, typecheck after excluding `docs/archive`, build, targeted health Playwright, full e2e with 35 tests, and Browser smoke.
 - Remaining production gates: production-like preview, backup/restore, rollback, monitoring, provider/WAF decision, and installed-PWA upgrade smoke.

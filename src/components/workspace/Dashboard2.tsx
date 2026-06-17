@@ -223,8 +223,14 @@ function NotepadSection() {
   const [draft, setDraft] = useState(savedContent);
   const [saveState, setSaveState] = useState<"idle" | "dirty" | "saved">("idle");
   const lastSavedRef = useRef(savedContent);
+  const dirtyRef = useRef(false);
 
   useEffect(() => {
+    dirtyRef.current = draft !== lastSavedRef.current;
+  }, [draft]);
+
+  useEffect(() => {
+    if (dirtyRef.current) return;
     lastSavedRef.current = savedContent;
     setDraft(savedContent);
     setSaveState("idle");

@@ -1,5 +1,39 @@
 # ContextOS QA Report
 
+## 2026-06-17 - v0.2.8 CI Repair and Mobile Accessibility Foundation
+
+### Verdict
+
+- Local CI repair: PASS.
+- Mobile/editor accessibility foundation: PASS for touched controls.
+- Remote branch CI: PENDING until `codex/v0.2.8-ci-a11y-foundation` is pushed and GitHub Actions completes.
+- Public production: still NO-GO until branch CI evidence, production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
+
+### Commands And Evidence
+
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard notepad supports toggle headings" --workers=1 --repeat-each=5` - initially failed once after the live-value fix, exposing a Dashboard Notepad dirty-draft hydration clobber; after the guard fix, rerun passed 5/5.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "mobile editor and task controls" --workers=1` - passed, 1 test.
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 36 tests.
+- In-app Browser smoke on `http://localhost:3001/dashboard` - passed on desktop and 390px mobile; authenticated Dashboard rendered `MVP v0.2.8`, Dashboard/Dates/Tasks were visible, horizontal overflow was false, browser console errors were empty, and touched mobile controls measured 40x40.
+
+### Coverage Added
+
+- Repeated toggle-heading coverage now protects the previous remote CI failure path.
+- Dashboard Notepad no longer overwrites dirty local editor state when saved content hydrates late.
+- Mobile task completion/delete and block editor add/action controls are covered for 40px hit targets.
+- Block action and slash-command menus expose roles, expanded/selected state, accessible names, and keyboard selection behavior.
+
+### Recovery Notes
+
+- Parallel targeted Playwright runs attempted to start two Next dev servers in the same repo and one failed with Next's "another dev server is already running" guard. Recovered by running targeted checks sequentially.
+- The first Browser dev-server start used the Windows `npm` shim and failed; recovered with `npm.cmd`.
+- The first in-app Browser login wait used an exact navigation wait that timed out even though the page later reached Dashboard; recovered with Dashboard heading and DOM-state checks.
+
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation
 
 ### Verdict

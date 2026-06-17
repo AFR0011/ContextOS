@@ -1,7 +1,7 @@
 # ContextOS Project State
 
 ## Current Objective
-Complete remaining deployment hardening after v0.2.7 cleanup, health endpoint, and CI workflow foundation before any public production release.
+Complete branch CI evidence after v0.2.8, then continue remaining deployment hardening before any public production release.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
@@ -16,14 +16,17 @@ Complete remaining deployment hardening after v0.2.7 cleanup, health endpoint, a
 - Metadata uses an explicit deployment/local `metadataBase` instead of implicit localhost build defaults.
 
 ## Current Product State
-- Package and shell version: `0.2.7`.
+- Package and shell version: `0.2.8`.
 - Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Areas, Resources, Dates, Reviews, Search, Archive, and Settings.
 - `/dates` is canonical. `/deadlines` redirects to `/dates`.
 - `/date` is the advertised capture command. `/deadline` remains an accepted compatibility alias.
 - The internal `Deadline` collection remains in storage and sync payloads for offline compatibility, but visible product terminology is Date/Dates.
 - Tasks have one optional `scheduledTime`. Legacy cached and queued tasks normalize from `scheduledTime ?? startTime ?? endTime`.
 - Dashboard begins with reusable Quick Capture, then Notepad, Dates, Daily timeline, Tasks, and Projects.
+- Dashboard Notepad protects dirty local editor drafts from late saved-content hydration overwrites.
 - Daily timeline is a compact editable task list with optional time, inline deletion, and persistent cross/uncross completion. It does not render empty calendar slots.
+- Daily Timeline task completion/delete controls and block editor add/action controls have mobile-safe 40px hit targets where touched in v0.2.8.
+- Block editor slash-command and block-action menus expose roles, expanded/selected state, and accessible names for the covered flows.
 - Dashboard Tasks contains active tasks from all dates/projects. It defaults to newest-created sorting, offers persisted sort modes, and completed tasks appear when Show completed is enabled.
 - Dashboard cleanup actions can move finished tasks and archived dates to Trash without hard-deleting records.
 - Service-worker shell cache is `contextos-shell-v2` and precaches `/dates`, not the legacy `/deadlines` route.
@@ -62,18 +65,20 @@ Complete remaining deployment hardening after v0.2.7 cleanup, health endpoint, a
 ## Latest Verification
 
 - `npx prisma validate` passed on 2026-06-17.
-- `npm run db:migrate` initially failed because Docker/Postgres was unavailable; after starting Docker Desktop and `docker compose up -d`, retry passed with schema already in sync.
+- `npm run db:migrate` passed; schema already in sync.
 - `npm run db:seed` passed.
-- `npm run typecheck` initially failed because archived prototype TypeScript files were included; after excluding `docs/archive`, retry passed. A final rerun after docs updates also passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard notepad supports toggle headings" --workers=1 --repeat-each=5` passed after the dirty-draft hydration guard.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "mobile editor and task controls" --workers=1` passed.
+- `npm run typecheck` passed.
 - `npm run build` passed.
-- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "health endpoint" --workers=1` passed with 1 test.
-- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 35 tests.
-- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.7`, Dashboard/Dates/Tasks visible, no horizontal overflow, and no console errors.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 36 tests.
+- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.8` on desktop and 390px mobile, Dashboard/Dates/Tasks visible, no horizontal overflow, no console errors, and touched mobile controls at 40x40.
 
 ## Next Useful Work
-- Treat v0.2.7 cleanup, health endpoint, and CI workflow foundation as complete locally.
-- Push and observe the GitHub Actions workflow, then fix any remote-only CI issues.
+- Treat v0.2.8 CI repair and touched-control mobile accessibility foundation as locally complete.
+- Push `codex/v0.2.8-ci-a11y-foundation`, observe GitHub Actions, and record the branch CI evidence.
 - Add production-like preview evidence, operational recovery evidence, deeper installed-PWA upgrade smoke, and provider/WAF defense-in-depth decisions before public production.
 - Run the simplified workflow in real use before broadening scope.
 - Treat regressions in capture speed, timeline scanning, Dates separation, project recovery, or offline replay as v0.2.2 fixes.
+- Plan v0.2.9 around Dashboard hierarchy polish only after branch CI passes.
 - Review dependency advisories only through deliberate non-breaking upgrades.

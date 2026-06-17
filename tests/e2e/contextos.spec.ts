@@ -101,6 +101,14 @@ async function taskTitleOrder(container: Locator) {
   );
 }
 
+async function expectMinTouchTarget(locator: Locator, min = 40) {
+  await expect(locator).toBeVisible();
+  const box = await locator.boundingBox();
+  expect(box, "Expected visible element to have a bounding box").not.toBeNull();
+  expect(Math.floor(box!.width)).toBeGreaterThanOrEqual(min);
+  expect(Math.floor(box!.height)).toBeGreaterThanOrEqual(min);
+}
+
 async function warmOfflineShell(page: Page) {
   await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) return;
@@ -195,7 +203,7 @@ test("health endpoint reports database availability", async ({ page }) => {
     status: "ok",
     service: "contextos",
     database: "ok",
-    version: "0.2.7"
+    version: "0.2.8"
   });
 });
 
@@ -449,6 +457,44 @@ test("long task titles wrap on mobile instead of truncating", async ({ page }) =
   await expect
     .poll(async () => titleField.evaluate((field) => field.getBoundingClientRect().height))
     .toBeGreaterThan(24);
+});
+
+test("mobile editor and task controls expose accessible hit targets and menus", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+
+  const taskSection = page.getByTestId("dashboard-section-tasks");
+  await expectMinTouchTarget(taskSection.getByRole("button", { name: "Mark Process inbox captures done" }));
+  await expectMinTouchTarget(taskSection.getByRole("button", { name: "Delete Process inbox captures" }));
+
+  const scratchpad = page.getByTestId("dashboard-scratchpad");
+  const firstLine = markdownLine(scratchpad, 0);
+  await firstLine.click();
+
+  const addBlock = scratchpad.getByTestId("block-action-add").first();
+  const blockActions = scratchpad.getByTestId("block-action-menu-trigger").first();
+  await expectMinTouchTarget(addBlock);
+  await expectMinTouchTarget(blockActions);
+
+  await blockActions.click();
+  await expect(blockActions).toHaveAttribute("aria-expanded", "true");
+  const menu = scratchpad.getByRole("menu", { name: "Block actions" });
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Duplicate" })).toBeVisible();
+  await blockActions.click();
+  await expect(blockActions).toHaveAttribute("aria-expanded", "false");
+
+  await firstLine.fill("/toggle");
+  const listbox = scratchpad.getByRole("listbox", { name: "Block commands" });
+  await expect(listbox).toBeVisible();
+  await expect(firstLine).toHaveAttribute("aria-expanded", "true");
+  await expect(listbox.locator('[role="option"][aria-selected="true"]')).toContainText("Toggle Heading 1");
+  await firstLine.press("ArrowDown");
+  await expect(listbox.locator('[role="option"][aria-selected="true"]')).toContainText("Toggle Heading 2");
+  await firstLine.press("Escape");
+  await expect(listbox).not.toBeVisible();
+
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });
 
 test("dashboard daily timeline supports untimed and same-time tasks without an empty-day grid", async ({ page }) => {

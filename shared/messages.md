@@ -167,3 +167,19 @@ PASS: Prisma validate, migration retry after Docker/Postgres startup, seed, type
 ## docs-qa -> architect-planner (v0.2.7)
 
 Batch complete locally. Next work is collecting remote GitHub Actions evidence after push, then production-like preview, backup/restore, rollback, monitoring, provider/WAF decision, or installed-PWA upgrade smoke.
+
+## architect-planner -> executor (v0.2.8)
+
+Implement one CI repair and mobile accessibility foundation batch only: fix Dashboard Notepad/block editor command timing, preserve markdown/offline semantics, raise touched task/editor controls to mobile-safe targets, add block/slash menu semantics, bump to `0.2.8`, and collect branch CI evidence. Do not broaden into Dashboard hierarchy polish or provider gates.
+
+## executor -> tester (v0.2.8 build complete)
+
+Implementation complete locally. Block editor command transforms use live textarea value and selection, Dashboard Notepad protects dirty drafts from late hydration, touched Daily Timeline/editor controls have mobile-safe targets, covered menus expose accessible semantics, and version metadata is `0.2.8`.
+
+## tester -> docs-qa (v0.2.8 local QA complete)
+
+PASS_LOCALLY_WITH_REMOTE_PENDING: Prisma validate, migration, seed, repeated toggle-heading Playwright 5/5, targeted mobile/menu Playwright, typecheck, build, full e2e with 36 tests, and desktop/mobile Browser smoke passed. Branch GitHub Actions still needs to run after push.
+
+## docs-qa -> architect-planner (v0.2.8)
+
+Batch is locally complete. Next action is commit, push `codex/v0.2.8-ci-a11y-foundation`, observe GitHub Actions, fix any same-bug/implementation fallout, then record the passing run evidence.

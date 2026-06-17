@@ -6,9 +6,25 @@ async function login(page: Page) {
   await page.getByLabel("Password").fill("contextos-demo-v011");
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard/);
-  await page.request.post("/api/reset-demo");
+  await resetDemo(page);
   await page.reload();
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+}
+
+async function resetDemo(page: Page) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await page.request.post("/api/reset-demo", { timeout: 15_000 });
+      if (response.ok()) return;
+      lastError = new Error(`/api/reset-demo returned ${response.status()}`);
+    } catch (error) {
+      lastError = error;
+    }
+    await page.waitForTimeout(500);
+  }
+  if (lastError instanceof Error) throw lastError;
+  throw new Error("/api/reset-demo failed");
 }
 
 async function expectInputValue(page: Page, selector: string, value: string) {
@@ -99,6 +115,10 @@ async function taskTitleOrder(container: Locator) {
   return container.locator('[aria-label^="Task title "]').evaluateAll((fields) =>
     fields.map((field) => field.getAttribute("aria-label")?.replace(/^Task title /, "") ?? "")
   );
+}
+
+async function expectTaskTitleOrder(container: Locator, expectedOrder: string[]) {
+  await expect.poll(() => taskTitleOrder(container)).toEqual(expectedOrder);
 }
 
 async function expectMinTouchTarget(locator: Locator, min = 40) {
@@ -432,12 +452,12 @@ test("dashboard daily timeline supports one time, inline editing, crossing, and 
   await titleInput.fill(renamed);
   await titleInput.blur();
   await expect(taskSection.getByLabel(`Task title ${renamed}`)).toBeVisible();
+  await expect.poll(() => taskTitleOrder(taskSection)).toContain(renamed);
   const beforeDoneOrder = await taskTitleOrder(taskSection);
   await taskSection.getByRole("button", { name: `Mark ${renamed} done` }).click();
   await expect(taskSection.getByLabel(`Task title ${renamed}`)).toBeVisible();
   await expect(taskSection.getByRole("button", { name: `Reopen ${renamed}` })).toBeVisible();
-  const afterDoneOrder = await taskTitleOrder(taskSection);
-  expect(afterDoneOrder).toEqual(beforeDoneOrder);
+  await expectTaskTitleOrder(taskSection, beforeDoneOrder);
   await page.reload();
   await expect(page.getByTestId("dashboard-section-tasks").getByLabel(`Task title ${renamed}`)).toBeVisible();
   await page.getByTestId("dashboard-section-tasks").getByRole("button", { name: `Reopen ${renamed}` }).click();
@@ -591,8 +611,7 @@ test("dashboard Tasks includes future tasks and follows Show completed", async (
   await section.getByRole("button", { name: `Mark ${title} done` }).click();
   await expect(section.getByLabel(`Task title ${title}`)).toBeVisible();
   await expect(section.getByRole("button", { name: `Reopen ${title}` })).toBeVisible();
-  const afterDoneOrder = await taskTitleOrder(section);
-  expect(afterDoneOrder).toEqual(beforeDoneOrder);
+  await expectTaskTitleOrder(section, beforeDoneOrder);
   page.once("dialog", (dialog) => dialog.accept());
   await section.getByTestId("dashboard-clear-finished-tasks").click();
   await expect(section.getByLabel(`Task title ${title}`)).toHaveCount(0);
@@ -723,8 +742,7 @@ test("global server refresh replaces stale local workspace after external reset"
   }).toBe(true);
   await expect(page.getByTestId("pending-count")).toHaveText("0");
 
-  const reset = await page.request.post("/api/reset-demo");
-  expect(reset.ok()).toBeTruthy();
+  await resetDemo(page);
   await expectInputValue(page, "input", staleDomain);
 
   await expect(page.getByTestId("global-refresh-from-server")).toBeEnabled();

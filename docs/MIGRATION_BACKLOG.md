@@ -7,8 +7,8 @@ This file captures concerns that should survive beyond v0.2.8. It is not an acti
 ### Deployment Hardening
 
 - Current issue: the 2026-06-15 audit found user-ownership gaps in sync upserts, public registration in a single-user MVP, unbounded sync payloads, missing abuse controls/security headers/CI, stale PWA cache routes, and incomplete operational recovery.
-- Status: v0.2.3 completed Gate 1 user/data isolation work, v0.2.4 completed Dashboard cleanup ergonomics, v0.2.5 completed baseline security headers, explicit metadata base handling, and corrected service-worker cache/routes, v0.2.6 completed app-level auth abuse controls, v0.2.7 added the health endpoint plus GitHub Actions CI workflow scaffold, and v0.2.8 locally repairs the first remote CI failure path.
-- Future work: observe/fix the v0.2.8 branch CI run after push, run production-like preview smoke, deeper installed-PWA upgrade smoke, backup/restore, monitoring, rollback evidence, and any provider/WAF auth protection needed for public production.
+- Status: v0.2.3 completed Gate 1 user/data isolation work, v0.2.4 completed Dashboard cleanup ergonomics, v0.2.5 completed baseline security headers, explicit metadata base handling, and corrected service-worker cache/routes, v0.2.6 completed app-level auth abuse controls, v0.2.7 added the health endpoint plus GitHub Actions CI workflow scaffold, and v0.2.8 repaired the first remote CI failure path with passing branch CI.
+- Future work: run production-like preview smoke, deeper installed-PWA upgrade smoke, backup/restore, monitoring, rollback evidence, and any provider/WAF auth protection needed for public production.
 - Acceptance signal: remaining deployment gates in `docs/DEPLOYMENT.md` all pass.
 
 ### Graceful Database-Unavailable Handling

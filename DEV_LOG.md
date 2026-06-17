@@ -45,8 +45,9 @@ Verification so far:
 
 Result:
 
-- Local implementation and verification are complete.
-- First push to `codex/v0.2.8-ci-a11y-foundation` is pending; remote branch CI evidence will be recorded after the run completes.
+- Batch complete.
+- Branch `codex/v0.2.8-ci-a11y-foundation` was pushed.
+- GitHub Actions CI passed in run `27676974625`: `https://github.com/AFR0011/ContextOS/actions/runs/27676974625`.
 
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation Plan
 
@@ -99,7 +100,7 @@ Verification:
 
 Result:
 
-- Batch complete locally. Cleanup, health endpoint, CI workflow scaffold, docs, and local verification evidence are done. Public production remains blocked on remote CI evidence, production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke.
+- Batch complete locally. Cleanup, health endpoint, CI workflow scaffold, docs, and local verification evidence are done. Public production remains blocked on production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke. The first remote CI failure was repaired in v0.2.8.
 
 ## 2026-06-16 - Cleanup Audit and Stale Route Test Fix
 

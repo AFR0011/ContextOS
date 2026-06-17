@@ -2,14 +2,14 @@
 
 ## Current Release Gate
 
-As of v0.2.8 on 2026-06-17, the first deployment-hardening slices are complete locally, but public production is still blocked until the remaining gates are verified:
+As of v0.2.8 on 2026-06-17, the first deployment-hardening slices and branch CI are complete, but public production is still blocked until the remaining gates are verified:
 
 1. Sync writes and mutation-ledger lookups are user-scoped and pass two-user isolation tests. DONE in v0.2.3.
 2. Production registration is closed or invitation-controlled; demo credentials and reset actions are not presented as normal production UX. CLOSED BY DEFAULT in v0.2.3.
 3. Sync requests have request-size, mutation-count, entity, and field-length limits. DONE in v0.2.3.
 4. Login/register have rate limiting or equivalent provider protection. APP-LEVEL DONE in v0.2.6; provider/WAF defense in depth still recommended for public production.
 5. Security headers, `metadataBase`, and the corrected service-worker cache/routes are verified. DONE in v0.2.5.
-6. CI workflow exists for Prisma validation/generation, migration deploy, seed, typecheck, build, and sequential Playwright against disposable PostgreSQL. The first `main` run failed on a Dashboard Notepad editor timing path; v0.2.8 fixes that path locally and branch CI evidence is pending.
+6. CI workflow exists for Prisma validation/generation, migration deploy, seed, typecheck, build, and sequential Playwright against disposable PostgreSQL. The first `main` run failed on a Dashboard Notepad editor timing path; v0.2.8 fixed that path and branch CI passed: `https://github.com/AFR0011/ContextOS/actions/runs/27676974625`.
 7. A production-like preview passes auth, capture, offline/reconnect, search, project recovery, Dates, mobile, and installed-PWA smoke.
 8. Database backup/restore, monitoring/health checks, migration handling, and application/database rollback are rehearsed and recorded.
 

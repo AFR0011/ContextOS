@@ -2,10 +2,10 @@
 
 ## Active Loop
 
-- Status: EXECUTE - Batch v0.2.8 CI repair and mobile accessibility foundation
+- Status: CLOSE - Batch v0.2.8 CI repair and mobile accessibility foundation
 - Date: 2026-06-17
-- Active batch: v0.2.8 CI repair and mobile accessibility foundation
-- Completed batch: v0.2.7 cleanup and production-readiness foundation
+- Active batch: none
+- Completed batch: v0.2.8 CI repair and mobile accessibility foundation
 - Post-batch cleanup: repo cleanup audit executed
 - Canonical product source: `BLUEPRINT.md`
 - Tooling fallback: dev-loop specialist tools are policy-gated unless the user explicitly requests delegation, so this cycle is using the documented local phase-artifact fallback.
@@ -34,7 +34,7 @@ Acceptance criteria:
 
 ## Outcome
 
-Batch locally complete; remote branch CI evidence pending after first push.
+Batch complete.
 
 Implemented the CI repair and mobile accessibility foundation in one scoped batch:
 
@@ -55,7 +55,7 @@ Implemented the CI repair and mobile accessibility foundation in one scoped batc
 | Touched mobile editor/task controls expose at least 40px interactive boxes | DONE |
 | Slash and block action menus expose roles, selected state, and accessible labels | DONE |
 | Sequential Prisma, migration, seed, typecheck, build, targeted e2e, full e2e, and Browser smoke pass locally | DONE |
-| Remote branch CI passes | PENDING |
+| Remote branch CI passes | DONE |
 
 ## Verification
 
@@ -70,16 +70,17 @@ Implemented the CI repair and mobile accessibility foundation in one scoped batc
 - `npm run build` - passed.
 - `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 36 tests.
 - In-app Browser smoke at `http://localhost:3001/dashboard` - passed on desktop and 390px mobile; authenticated Dashboard rendered `MVP v0.2.8`, Dashboard/Dates/Tasks were visible, horizontal overflow was false, browser console errors were empty, and touched mobile controls measured 40x40.
+- Branch GitHub Actions CI passed on `codex/v0.2.8-ci-a11y-foundation`: `https://github.com/AFR0011/ContextOS/actions/runs/27676974625`.
 
 ## Remaining Risks
 
-- P1: Branch GitHub Actions evidence is pending after push; production-like preview evidence, monitoring setup, backup/restore rehearsal, and rollback rehearsal are still missing.
+- P1: Production-like preview evidence, monitoring setup, backup/restore rehearsal, and rollback rehearsal are still missing.
 - App-level auth abuse controls are implemented in v0.2.6; provider/WAF-level protection remains recommended as production defense in depth.
 - Deeper installed-PWA upgrade testing remains deferred; this batch verifies the script/cache text and local app-shell behavior, not an already-installed legacy worker upgrade path.
 - Drag-and-drop or arbitrary manual task ordering remains deferred; v0.2.4 only adds explicit sort modes.
 - Internal `Deadline` naming remains intentionally for compatibility and should only change in a dedicated migration.
-- Broader Dashboard hierarchy UX polish is deferred to v0.2.9 after branch CI passes.
+- Broader Dashboard hierarchy UX polish is now eligible for v0.2.9 or later.
 
 ## Next Action
 
-Commit and push `codex/v0.2.8-ci-a11y-foundation`, watch branch GitHub Actions, then record the remote CI evidence.
+Proceed to the next selected batch: v0.2.9 Dashboard hierarchy polish or another production gate such as preview smoke, backup/restore, rollback, monitoring, provider/WAF, or installed-PWA upgrade.

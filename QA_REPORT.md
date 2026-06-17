@@ -6,8 +6,8 @@
 
 - Local CI repair: PASS.
 - Mobile/editor accessibility foundation: PASS for touched controls.
-- Remote branch CI: PENDING until `codex/v0.2.8-ci-a11y-foundation` is pushed and GitHub Actions completes.
-- Public production: still NO-GO until branch CI evidence, production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
+- Remote branch CI: PASS on `codex/v0.2.8-ci-a11y-foundation`.
+- Public production: still NO-GO until production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
 
 ### Commands And Evidence
 
@@ -20,6 +20,7 @@
 - `npm run build` - passed.
 - `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 36 tests.
 - In-app Browser smoke on `http://localhost:3001/dashboard` - passed on desktop and 390px mobile; authenticated Dashboard rendered `MVP v0.2.8`, Dashboard/Dates/Tasks were visible, horizontal overflow was false, browser console errors were empty, and touched mobile controls measured 40x40.
+- GitHub Actions CI on `codex/v0.2.8-ci-a11y-foundation` - passed; run `27676974625`, `https://github.com/AFR0011/ContextOS/actions/runs/27676974625`.
 
 ### Coverage Added
 
@@ -40,8 +41,8 @@
 
 - Local cleanup verification: PASS.
 - Health endpoint: PASS.
-- CI workflow scaffold: PASS, remote run pending until push.
-- Public production: still NO-GO until remote CI evidence, production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
+- CI workflow scaffold: PASS; first remote failure later repaired and branch CI passed in v0.2.8.
+- Public production: still NO-GO until production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
 
 ### Commands And Evidence
 

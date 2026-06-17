@@ -3,7 +3,7 @@
 ## v0.2.8 CI Repair and Mobile Accessibility Foundation
 
 Status:
-Implemented and verified locally on 2026-06-17. Branch CI evidence is pending until `codex/v0.2.8-ci-a11y-foundation` is pushed.
+Implemented and verified on 2026-06-17. Branch CI passed on `codex/v0.2.8-ci-a11y-foundation`: `https://github.com/AFR0011/ContextOS/actions/runs/27676974625`.
 
 Goal:
 Repair the first remote GitHub Actions failure and harden the concrete mobile/editor accessibility gaps found in the deployment audit.
@@ -28,6 +28,7 @@ Verification:
 - Typecheck and build passed.
 - Full Playwright suite passed with 36 tests.
 - In-app Browser smoke passed on desktop and 390px mobile with `MVP v0.2.8`, Dashboard/Dates/Tasks visible, no overflow, no console errors, and touched mobile controls at 40x40.
+- GitHub Actions CI passed on the pushed branch.
 
 ## v0.2.7 Cleanup and Production-Readiness Foundation
 

@@ -1,7 +1,7 @@
 # ContextOS Project State
 
 ## Current Objective
-Complete branch CI evidence after v0.2.8, then continue remaining deployment hardening before any public production release.
+Continue remaining deployment hardening before any public production release.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
@@ -73,12 +73,12 @@ Complete branch CI evidence after v0.2.8, then continue remaining deployment har
 - `npm run build` passed.
 - `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 36 tests.
 - In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.8` on desktop and 390px mobile, Dashboard/Dates/Tasks visible, no horizontal overflow, no console errors, and touched mobile controls at 40x40.
+- GitHub Actions CI passed on `codex/v0.2.8-ci-a11y-foundation`: `https://github.com/AFR0011/ContextOS/actions/runs/27676974625`.
 
 ## Next Useful Work
-- Treat v0.2.8 CI repair and touched-control mobile accessibility foundation as locally complete.
-- Push `codex/v0.2.8-ci-a11y-foundation`, observe GitHub Actions, and record the branch CI evidence.
+- Treat v0.2.8 CI repair and touched-control mobile accessibility foundation as complete.
 - Add production-like preview evidence, operational recovery evidence, deeper installed-PWA upgrade smoke, and provider/WAF defense-in-depth decisions before public production.
 - Run the simplified workflow in real use before broadening scope.
 - Treat regressions in capture speed, timeline scanning, Dates separation, project recovery, or offline replay as v0.2.2 fixes.
-- Plan v0.2.9 around Dashboard hierarchy polish only after branch CI passes.
+- Plan v0.2.9 around Dashboard hierarchy polish or choose the next production gate.
 - Review dependency advisories only through deliberate non-breaking upgrades.

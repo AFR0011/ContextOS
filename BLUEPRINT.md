@@ -15,11 +15,11 @@ v0.2.8 keeps the v0.2.7 production-readiness foundation and repairs the first re
 
 Remaining deployment-hardening work:
 
-1. Push and observe the `codex/v0.2.8-ci-a11y-foundation` GitHub Actions workflow, then record the remote branch CI evidence.
-2. Run a production-like preview plus migration, backup/restore, monitoring, and rollback rehearsal.
-3. Decide whether provider/WAF-level auth protection is needed in addition to the v0.2.6 app-level limiter.
-4. Run deeper installed-PWA upgrade smoke from an older cached worker.
-5. Finish broader mobile editor/action accessibility work outside the task-title wrapping fixed in v0.2.3 and touched controls fixed in v0.2.8.
+1. Run a production-like preview plus migration, backup/restore, monitoring, and rollback rehearsal.
+2. Decide whether provider/WAF-level auth protection is needed in addition to the v0.2.6 app-level limiter.
+3. Run deeper installed-PWA upgrade smoke from an older cached worker.
+4. Finish broader mobile editor/action accessibility work outside the task-title wrapping fixed in v0.2.3 and touched controls fixed in v0.2.8.
+5. Polish Dashboard hierarchy so Quick Capture, Notepad, Today pressure, and project recovery read with clearer priority.
 
 Deployment acceptance requires two-user isolation tests, sequential Prisma/typecheck/build/e2e checks, desktop/mobile browser smoke, and documented recovery evidence. The detailed audit is in `docs/AUDIT_2026-06-15.md`.
 

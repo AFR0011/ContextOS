@@ -1,14 +1,13 @@
 # Shared Context
 
-- Phase: REMOTE_CI_PENDING
-- Active batch: v0.2.8 CI Repair and Mobile Accessibility Foundation
-- Completed local batch: v0.2.8 CI Repair and Mobile Accessibility Foundation
+- Phase: CLOSE
+- Completed batch: v0.2.8 CI Repair and Mobile Accessibility Foundation
 - Owner: Main executor using local dev-loop fallback
 - Product source: `BLUEPRINT.md`
 - Canonical state: `DEV_STATE.md`
 - Verification evidence: `QA_REPORT.md`
 - Risk evidence: `RISK_REGISTER.md`
-- Next action: commit and push `codex/v0.2.8-ci-a11y-foundation`, watch GitHub Actions, then record the branch run URL/conclusion.
+- Next action: choose the next batch, likely v0.2.9 Dashboard hierarchy polish or the next production gate.
 
 ## Implementation Summary
 
@@ -19,6 +18,7 @@
 - Added menu/listbox roles, accessible labels, expanded state, and selected option state for covered block/slash command surfaces.
 - Added targeted Playwright coverage for the previous remote CI failure path, mobile hit targets, 390px overflow, and menu keyboard semantics.
 - Bumped package and shell version to `0.2.8`.
+- Pushed `codex/v0.2.8-ci-a11y-foundation` and confirmed branch GitHub Actions passed.
 
 ## Verification
 
@@ -27,4 +27,4 @@
 - Targeted mobile editor/task controls Playwright passed: 1 test.
 - Full e2e passed: 36 tests.
 - Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.8` on desktop and 390px mobile, Dashboard/Dates/Tasks visible, no horizontal overflow, no console errors, and touched mobile controls measuring 40x40.
-- Remote GitHub Actions evidence is pending until the branch is pushed.
+- GitHub Actions CI passed: `https://github.com/AFR0011/ContextOS/actions/runs/27676974625`.

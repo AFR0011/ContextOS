@@ -51,6 +51,7 @@ Result:
 - The docs evidence commit triggered run `27677465248`, which failed on Playwright harness issues unrelated to the notepad bug: reset-demo `ECONNRESET` and immediate order assertions after task mutations.
 - Hardened `tests/e2e/contextos.spec.ts` with reset retries and polling order checks; local targeted rerun, typecheck, build, and full e2e passed.
 - Hardened branch GitHub Actions CI passed in run `27678139692`: `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
+- Later docs-only run `27678991414` exposed one more Playwright selector flake: the quick-capture conversion test clicked the first generic `Capture actions` button instead of the card containing the unique capture text. Added a stable `capture-card` test id, scoped the test to that card, and reran targeted quick-capture coverage, typecheck, build, and full e2e locally.
 
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation Plan
 

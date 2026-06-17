@@ -310,8 +310,9 @@ test("quick capture appears in inbox and can convert to a task", async ({ page }
   await page.getByPlaceholder(/Quick capture/i).fill(`/task ${text}`);
   await page.getByPlaceholder(/Quick capture/i).press("Enter");
   await expect(page.getByText(`/task ${text}`)).toBeVisible();
-  await page.getByRole("button", { name: "Capture actions" }).first().click();
-  await page.getByRole("button", { name: "Convert to task" }).click();
+  const captureCard = page.getByTestId("capture-card").filter({ hasText: `/task ${text}` });
+  await captureCard.getByRole("button", { name: "Capture actions" }).click();
+  await captureCard.getByRole("button", { name: "Convert to task" }).click();
   await expect(page.getByText("converted")).toBeVisible();
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.getByPlaceholder("Search workspace...").fill(text);

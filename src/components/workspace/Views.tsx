@@ -285,7 +285,7 @@ export function InboxView() {
 function CaptureCard({ capture, onConvert, onArchive, onDelete }: { capture: Capture; onConvert: (id: string, target: "task" | "project" | "note" | "deadline") => void; onArchive: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="cos-surface p-4">
+    <div data-testid="capture-card" className="cos-surface p-4">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <p className="whitespace-pre-wrap text-sm text-[var(--cos-text-strong)]">{capture.text}</p>

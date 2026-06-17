@@ -36,6 +36,7 @@
 - The first in-app Browser login wait used an exact navigation wait that timed out even though the page later reached Dashboard; recovered with Dashboard heading and DOM-state checks.
 - Intermediate branch CI run `27677465248` failed on Playwright after a docs evidence commit. The failure was not the Dashboard Notepad bug; it exposed a reset-demo `ECONNRESET` and two immediate order assertions that sampled before task UI state settled. Fixed with reset retries and polling order assertions, then local full e2e and branch CI passed.
 - Later branch run `27678991414` failed on a quick-capture test selector that clicked the first generic `Capture actions` button instead of the capture card containing the unique text. Fixed by adding a stable `capture-card` test id and scoping the conversion action to that row; targeted quick-capture coverage, typecheck, build, and full e2e passed locally.
+- Later branch run `27679579719` failed on Dashboard Tasks completion-order stability for equal-created seeded tasks. Fixed by adding deterministic sort tie-breakers, then targeted Dashboard Tasks coverage, typecheck, build, and full e2e passed locally.
 
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation
 

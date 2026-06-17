@@ -28,6 +28,7 @@ Continue remaining deployment hardening before any public production release.
 - Daily Timeline task completion/delete controls and block editor add/action controls have mobile-safe 40px hit targets where touched in v0.2.8.
 - Block editor slash-command and block-action menus expose roles, expanded/selected state, and accessible names for the covered flows.
 - Dashboard Tasks contains active tasks from all dates/projects. It defaults to newest-created sorting, offers persisted sort modes, and completed tasks appear when Show completed is enabled.
+- Dashboard task sorting uses deterministic tie-breaks so equal-created tasks do not reorder after completion mutations.
 - Dashboard cleanup actions can move finished tasks and archived dates to Trash without hard-deleting records.
 - Service-worker shell cache is `contextos-shell-v2` and precaches `/dates`, not the legacy `/deadlines` route.
 - Dates contains only important-date records. Task due dates remain on task surfaces.

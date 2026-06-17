@@ -50,7 +50,7 @@ Result:
 - GitHub Actions run `27676974625` passed on the implementation commit.
 - The docs evidence commit triggered run `27677465248`, which failed on Playwright harness issues unrelated to the notepad bug: reset-demo `ECONNRESET` and immediate order assertions after task mutations.
 - Hardened `tests/e2e/contextos.spec.ts` with reset retries and polling order checks; local targeted rerun, typecheck, build, and full e2e passed.
-- Final branch-head GitHub Actions CI passed in run `27678139692`: `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
+- Hardened branch GitHub Actions CI passed in run `27678139692`: `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
 
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation Plan
 

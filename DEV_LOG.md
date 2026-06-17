@@ -1,5 +1,19 @@
 # ContextOS Dev Log
 
+## 2026-06-16 - Cleanup Audit and Stale Route Test Fix
+
+Scope: perform the requested repo cleanup audit after v0.2.6 and fix one non-destructive test cleanup issue found during the audit.
+
+Implementation:
+
+- Added `docs/REPO_CLEANUP_AUDIT_2026-06-16.md` with delete/archive/keep recommendations and future version options.
+- Updated `README.md` environment-variable notes during the cleanup pass to include the v0.2.6 auth limiter knobs.
+- Fixed the Today/This Week E2E terminology test so it navigates to `/this-week` instead of stale `/week` and asserts the actual page headings.
+
+Verification:
+
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "Today and This Week contain no priority" --workers=1` - initially failed on an ambiguous `This Week` heading locator, then passed after using an exact page-heading match.
+
 ## 2026-06-16 - v0.2.6 Auth Abuse Controls Plan
 
 Planner scope: implement one auth-hardening batch for login/register abuse controls, then run the requested cleanup audit as a read-only report.

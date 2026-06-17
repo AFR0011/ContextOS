@@ -49,8 +49,16 @@ Required variables:
 
 - `DATABASE_URL`
 - `AUTH_SECRET`
+
+Optional deployment/local controls:
+
+- `NEXT_PUBLIC_APP_URL` or `APP_URL`
+- `AUTH_RATE_LIMIT_WINDOW_MS`
+- `AUTH_LOGIN_MAX_FAILURES`
+- `AUTH_REGISTER_MAX_ATTEMPTS`
 - `SEED_DEMO_EMAIL`
 - `SEED_DEMO_PASSWORD`
+- `ALLOW_PUBLIC_REGISTRATION`
 - `ALLOW_DEMO_RESET`
 
 Generate a fresh `AUTH_SECRET` for every deployed environment. Never reuse a secret from a shared archive, chat transcript, or local demo file.

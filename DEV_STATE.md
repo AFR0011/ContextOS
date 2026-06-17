@@ -6,6 +6,7 @@
 - Date: 2026-06-16
 - Active batch: none
 - Completed batch: v0.2.6 auth abuse controls
+- Post-batch cleanup: repo cleanup audit produced; one stale E2E route check fixed and verified
 - Canonical product source: `BLUEPRINT.md`
 - Tooling fallback: dev-loop specialist tools are policy-gated unless the user explicitly requests delegation, so this cycle is using the documented local phase-artifact fallback.
 
@@ -42,6 +43,12 @@ Implemented app-level auth abuse controls in one scoped batch:
 - Added targeted Playwright API coverage for login throttling, success reset, registration throttling, `429`, and `Retry-After`.
 - Bumped package metadata and shell label to `0.2.6`.
 
+Post-batch cleanup audit:
+
+- Added a repo cleanup audit with delete/archive/keep recommendations and future version options.
+- Updated README environment-variable notes for the v0.2.6 auth limiter settings.
+- Fixed one stale E2E route target from `/week` to `/this-week` and added exact page-heading assertions.
+
 ## Acceptance Evidence
 
 | Criteria | Status |
@@ -62,6 +69,7 @@ Implemented app-level auth abuse controls in one scoped batch:
 - `npm run db:seed` - passed.
 - `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 34 tests.
 - In-app Browser smoke at `http://localhost:3001/dashboard` - passed; authenticated Dashboard rendered `MVP v0.2.6`, Dates and Tasks were visible, horizontal overflow was false at the default desktop viewport, and browser console errors were empty.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "Today and This Week contain no priority" --workers=1` - passed after tightening an ambiguous `This Week` heading locator.
 
 ## Remaining Risks
 
@@ -74,4 +82,4 @@ Implemented app-level auth abuse controls in one scoped batch:
 
 ## Next Action
 
-Perform the requested read-only repo cleanup audit and future-options report, then choose the next production-readiness batch.
+Review and approve desired cleanup delete/archive actions, then choose the next production-readiness batch.

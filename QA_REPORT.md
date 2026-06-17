@@ -1,5 +1,22 @@
 # ContextOS QA Report
 
+## 2026-06-16 - Cleanup Audit Follow-up
+
+### Verdict
+
+- Repo cleanup audit: PASS.
+- Non-destructive stale test cleanup: PASS.
+- Delete/archive operations: NOT RUN; awaiting user approval for the cleanup proposal.
+
+### Commands And Evidence
+
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "Today and This Week contain no priority" --workers=1` - initially failed on an ambiguous `This Week` heading locator, then passed after tightening the assertion with `exact: true`.
+
+### Outputs
+
+- Added `docs/REPO_CLEANUP_AUDIT_2026-06-16.md`.
+- Updated the stale `/week` E2E route check to `/this-week`.
+
 ## 2026-06-16 - v0.2.6 Auth Abuse Controls
 
 ### Verdict

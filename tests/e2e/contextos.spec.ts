@@ -922,8 +922,10 @@ test("project sections follow the simplified order", async ({ page }) => {
 test("Today and This Week contain no priority editor terminology", async ({ page }) => {
   await login(page);
   await page.goto("/today");
+  await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
   await expect(page.getByText(/priorit/i)).toHaveCount(0);
-  await page.goto("/week");
+  await page.goto("/this-week");
+  await expect(page.getByRole("heading", { name: "This Week", exact: true })).toBeVisible();
   await expect(page.getByText(/priorit/i)).toHaveCount(0);
 });
 

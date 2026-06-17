@@ -1,5 +1,7 @@
 # Shared Errors
 
+- 2026-06-16: The first cleanup-audit Playwright rerun for the Today/This Week terminology test failed because the new `This Week` heading locator also matched `Tasks This Week` and `Dates This Week`. Classified as low-severity validation failure; tightened the locator with `exact: true` and reran the focused test.
+- 2026-06-16: A cleanup-audit path inspection command failed because PowerShell interpreted the `(workspace)` route-group path without quoting. Classified as low-severity tool syntax error; retried with `-LiteralPath` and confirmed the `/this-week` route.
 - 2026-06-16: Browser automation listed `networkidle` in documentation but the active browser runtime rejected it during v0.2.5 smoke. Classified as low-severity tool mismatch; recovered with supported `load`, URL, visible-content, overflow, and console-log checks. Browser smoke passed.
 - 2026-06-16: Generic dev-loop helper scripts under `tools/` remain absent, so `python tools/context_manager.py init --root .` and helper `py_compile` preflight failed. Continued with existing `shared/` files and direct doc updates.
 - 2026-06-16: The first Browser smoke evaluate used `instanceof HTMLSelectElement`, but the browser evaluate sandbox did not expose that constructor. Retried with plain tag/value reads; Browser smoke passed.

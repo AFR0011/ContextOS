@@ -1,20 +1,22 @@
 # ContextOS Project State
 
 ## Current Objective
-Complete remaining deployment hardening after v0.2.6 auth abuse controls before any public production release.
+Complete remaining deployment hardening after v0.2.7 cleanup, health endpoint, and CI workflow foundation before any public production release.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
 - Prisma 7 + PostgreSQL for canonical user-scoped persistence.
 - Local email/password auth with hashed passwords and HTTP-only sessions.
 - App-level fixed-window throttling for failed login and registration attempts.
+- Unauthenticated `/api/health` route for DB availability checks.
+- GitHub Actions CI workflow scaffold using Node 22 and disposable PostgreSQL.
 - IndexedDB workspace cache plus an idempotent queued mutation outbox.
 - Service worker app-shell caching for visited routes and static assets.
 - Next config now applies baseline security headers and disables `X-Powered-By`.
 - Metadata uses an explicit deployment/local `metadataBase` instead of implicit localhost build defaults.
 
 ## Current Product State
-- Package and shell version: `0.2.6`.
+- Package and shell version: `0.2.7`.
 - Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Areas, Resources, Dates, Reviews, Search, Archive, and Settings.
 - `/dates` is canonical. `/deadlines` redirects to `/dates`.
 - `/date` is the advertised capture command. `/deadline` remains an accepted compatibility alias.
@@ -35,6 +37,8 @@ Complete remaining deployment hardening after v0.2.6 auth abuse controls before 
 - Sync replay now rejects cross-user record IDs, scopes mutation IDs per user, validates owned references, and bounds payload size/count.
 - Public registration is closed by default in production unless `ALLOW_PUBLIC_REGISTRATION=true`.
 - Login/register APIs return `429` plus `Retry-After` after repeated abuse attempts.
+- `/api/health` returns no-store `200` when PostgreSQL is reachable and structured `503` when the database is unavailable.
+- Historical prototype/planning files have been archived under `docs/archive/`; active TypeScript excludes that archive.
 - Search task results open a surface where the task is visible, and standalone note results open Resources.
 - Task titles wrap in task surfaces, and completion toggles no longer reorder tasks solely by status.
 
@@ -57,17 +61,19 @@ Complete remaining deployment hardening after v0.2.6 auth abuse controls before 
 
 ## Latest Verification
 
-- `npx prisma validate`, `npm run db:migrate`, and `npm run db:seed` passed on 2026-06-16.
-- `npm run typecheck` passed.
-- Targeted Playwright for auth abuse controls passed with 1 test.
-- `npm run build` passed without the previous `metadataBase` warning.
-- Previous v0.2.3 production registration-closed smoke with `ALLOW_PUBLIC_REGISTRATION=false` passed with a 403 response.
-- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 34 tests.
-- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.6`, Dates and Tasks visible, no horizontal overflow, and no console errors.
+- `npx prisma validate` passed on 2026-06-17.
+- `npm run db:migrate` initially failed because Docker/Postgres was unavailable; after starting Docker Desktop and `docker compose up -d`, retry passed with schema already in sync.
+- `npm run db:seed` passed.
+- `npm run typecheck` initially failed because archived prototype TypeScript files were included; after excluding `docs/archive`, retry passed. A final rerun after docs updates also passed.
+- `npm run build` passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "health endpoint" --workers=1` passed with 1 test.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 35 tests.
+- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.7`, Dashboard/Dates/Tasks visible, no horizontal overflow, and no console errors.
 
 ## Next Useful Work
-- Treat v0.2.6 auth abuse controls as complete.
-- Add CI/preview gates, operational recovery evidence, deeper installed-PWA upgrade smoke, and provider/WAF defense-in-depth decisions before public production.
+- Treat v0.2.7 cleanup, health endpoint, and CI workflow foundation as complete locally.
+- Push and observe the GitHub Actions workflow, then fix any remote-only CI issues.
+- Add production-like preview evidence, operational recovery evidence, deeper installed-PWA upgrade smoke, and provider/WAF defense-in-depth decisions before public production.
 - Run the simplified workflow in real use before broadening scope.
 - Treat regressions in capture speed, timeline scanning, Dates separation, project recovery, or offline replay as v0.2.2 fixes.
 - Review dependency advisories only through deliberate non-breaking upgrades.

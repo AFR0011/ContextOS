@@ -2,14 +2,14 @@
 
 ## Current Release Gate
 
-As of v0.2.6 on 2026-06-16, the first deployment-hardening slices are complete, but public production is still blocked until the remaining gates are verified:
+As of v0.2.7 on 2026-06-17, the first deployment-hardening slices are complete, but public production is still blocked until the remaining gates are verified:
 
 1. Sync writes and mutation-ledger lookups are user-scoped and pass two-user isolation tests. DONE in v0.2.3.
 2. Production registration is closed or invitation-controlled; demo credentials and reset actions are not presented as normal production UX. CLOSED BY DEFAULT in v0.2.3.
 3. Sync requests have request-size, mutation-count, entity, and field-length limits. DONE in v0.2.3.
 4. Login/register have rate limiting or equivalent provider protection. APP-LEVEL DONE in v0.2.6; provider/WAF defense in depth still recommended for public production.
 5. Security headers, `metadataBase`, and the corrected service-worker cache/routes are verified. DONE in v0.2.5.
-6. CI passes Prisma validation/generation, typecheck, build, and sequential Playwright against disposable PostgreSQL.
+6. CI workflow exists for Prisma validation/generation, migration deploy, seed, typecheck, build, and sequential Playwright against disposable PostgreSQL. LOCAL EQUIVALENT PASSED in v0.2.7; remote GitHub Actions evidence is pending until the branch is pushed.
 7. A production-like preview passes auth, capture, offline/reconnect, search, project recovery, Dates, mobile, and installed-PWA smoke.
 8. Database backup/restore, monitoring/health checks, migration handling, and application/database rollback are rehearsed and recorded.
 
@@ -77,6 +77,28 @@ Before the first deploy:
 5. Deploy to a preview environment first.
 6. Confirm the full critical workflow and operational checks against the preview database.
 7. Promote the verified preview to production.
+
+## Health Check
+
+ContextOS exposes:
+
+```bash
+GET /api/health
+```
+
+Expected DB-up response:
+
+```json
+{ "status": "ok", "service": "contextos", "database": "ok", "version": "0.2.7" }
+```
+
+Expected DB-unavailable response:
+
+```json
+{ "status": "unavailable", "service": "contextos", "database": "unavailable", "code": "database_unavailable" }
+```
+
+The route returns `Cache-Control: no-store` and does not require authentication. Use it for preview smoke and uptime checks, but do not treat it as a backup/restore or migration rehearsal substitute.
 
 Do not treat application rollback as a database rollback. Before any destructive migration, take and verify a provider backup and document the compatible application/database rollback pair.
 

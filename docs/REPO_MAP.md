@@ -6,12 +6,14 @@
 - `docker-compose.yml`: local PostgreSQL service.
 - `.env.example`: required local environment variables.
 - `prisma.config.ts`: Prisma 7 CLI datasource configuration.
+- `.github/workflows/ci.yml`: GitHub Actions verification workflow using Node 22 and PostgreSQL 16.
+- `docs/archive/`: historical prototypes, superseded plans, old audits, and archived operational artifacts excluded from app typecheck.
 
 ## App
 - `src/app`: Next App Router routes.
 - `src/app/(auth)`: login and register pages.
 - `src/app/(workspace)`: protected application routes, including canonical `/dates` and compatibility `/deadlines` redirect.
-- `src/app/api`: auth, bootstrap, sync, and reset route handlers.
+- `src/app/api`: auth, health, bootstrap, sync, and reset route handlers.
 - `src/app/globals.css`: Tailwind import and global CSS.
 
 ## Product UI
@@ -37,4 +39,5 @@
 - `public/manifest.webmanifest`: installable app manifest.
 
 ## Legacy
-The previous Vite entrypoints and dormant Vite page files were removed during the Next migration.
+- The previous Vite entrypoints and dormant Vite page files were removed during the Next migration.
+- The standalone Markdown editor Vite prototype is archived under `docs/archive/prototypes/markdown-editor-sample-demo/` and is not part of the active app.

@@ -151,3 +151,19 @@ PASS: typecheck, targeted auth throttling Playwright, build, Prisma validate/mig
 ## docs-qa -> architect-planner (v0.2.6)
 
 Batch complete. Next work is the requested read-only cleanup audit/future-options report, then remaining production gates: CI/preview, installed-PWA upgrade smoke, operational recovery, and provider/WAF defense-in-depth decisions.
+
+## architect-planner -> executor (v0.2.7)
+
+Implement the approved cleanup and production-readiness foundation batch only: archive historical files, delete approved generated artifacts/duplicate script, add no-store `/api/health`, add GitHub Actions CI, bump to `0.2.7`, and update docs. Do not commit, push, deploy, configure provider/WAF, rehearse backup/rollback, or redesign UI.
+
+## executor -> tester (v0.2.7 build complete)
+
+Implementation complete. Cleanup/archive done, UI/UX backlog extracted, health endpoint and CI workflow added, version bumped, and archive TypeScript boundary fixed.
+
+## tester -> docs-qa (v0.2.7 QA complete)
+
+PASS: Prisma validate, migration retry after Docker/Postgres startup, seed, typecheck, build, targeted health Playwright, full e2e with 35 tests, and Browser smoke passed.
+
+## docs-qa -> architect-planner (v0.2.7)
+
+Batch complete locally. Next work is collecting remote GitHub Actions evidence after push, then production-like preview, backup/restore, rollback, monitoring, provider/WAF decision, or installed-PWA upgrade smoke.

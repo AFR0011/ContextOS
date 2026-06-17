@@ -1,5 +1,37 @@
 # ContextOS Version Log
 
+## v0.2.7 Cleanup and Production-Readiness Foundation
+
+Status:
+Implemented and verified locally on 2026-06-17.
+
+Goal:
+Execute the approved repo cleanup and add the first production-readiness foundation: an app health endpoint and a GitHub Actions CI workflow.
+
+Schema and compatibility:
+- No Prisma schema changes.
+- Archived historical prototype/planning files under `docs/archive/`.
+- Main app TypeScript excludes `docs/archive` so archived standalone prototypes do not affect app typecheck.
+
+Implemented behavior:
+- Deleted approved generated artifacts and duplicate `scripts/generate-icons.js`; kept `scripts/generate-icons.cjs`.
+- Removed the stray `.gitignore` `a` rule.
+- Archived the standalone Markdown editor prototype, superseded planning/audit files, original user input file, and stale shared JSONL messages.
+- Extracted still-relevant UI/UX backlog themes into `docs/MIGRATION_BACKLOG.md`.
+- Added unauthenticated `GET /api/health` with `Cache-Control: no-store`.
+- Added `.github/workflows/ci.yml` using Node 22 and PostgreSQL 16.
+- Bumped package and shell version to `0.2.7`.
+
+Verification:
+- Prisma validate passed.
+- Migration retry passed after starting Docker Desktop/Postgres; schema was already in sync.
+- Seed passed.
+- Typecheck passed after excluding `docs/archive`.
+- Build passed.
+- Targeted health endpoint Playwright coverage passed.
+- Full Playwright suite passed with 35 tests.
+- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.7`, Dashboard/Dates/Tasks visible, no horizontal overflow, and no console errors.
+
 ## v0.2.6 Auth Abuse Controls
 
 Status:

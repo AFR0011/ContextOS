@@ -2,13 +2,13 @@
 
 ## Scope
 
-This is a cleanup proposal produced after v0.2.6. No delete/archive operations were performed during this pass.
+This cleanup proposal was executed during v0.2.7 on 2026-06-17. The approved generated artifacts were deleted, historical files were archived under `docs/archive/`, and active backlog items from the UI/UX planning file were extracted into `docs/MIGRATION_BACKLOG.md`.
 
 The audit looked at tracked files, ignored local artifacts, active docs, app routes, tests, duplicate scripts, and historical planning files.
 
 ## Proposed Delete
 
-These are safe delete candidates after approval.
+These approved delete candidates were handled in v0.2.7.
 
 ### Local ignored artifacts
 
@@ -43,7 +43,7 @@ Why: it is not a meaningful ignore rule and makes the file look accidentally edi
 
 ## Proposed Archive
 
-These files are useful history but should not sit at the active repo root forever.
+These files were archived in v0.2.7 because they are useful history but should not sit at the active repo root forever.
 
 - `Markdown Editor Sample Demo/`
   - Archive to `docs/archive/prototypes/markdown-editor-sample-demo/`.
@@ -69,7 +69,7 @@ These files are useful history but should not sit at the active repo root foreve
 
 - `UIUX Design Modifications.md`
 
-Why: still contains useful UX backlog ideas, but also contains stale or conflicting instructions, such as task search routing guidance that no longer matches v0.2.3 behavior. Extract the still-relevant items into `docs/MIGRATION_BACKLOG.md` or a future `docs/UX_BACKLOG.md`, then archive the original.
+Why: still contained useful UX backlog ideas, but also contained stale or conflicting instructions, such as task search routing guidance that no longer matches v0.2.3 behavior. The still-relevant themes were extracted into `docs/MIGRATION_BACKLOG.md`, then the original was archived under `docs/archive/planning/`.
 
 ## Keep
 
@@ -188,8 +188,8 @@ Best after the deterministic workflow is stable.
 ## Recommended Order
 
 1. Done: fix the `/week` test target to `/this-week`.
-2. Delete ignored local artifacts.
-3. Remove `scripts/generate-icons.js` and the stray `.gitignore` line.
-4. Archive the standalone editor demo and superseded planning/audit files.
-5. Run production-readiness work next: CI/preview plus backup/rollback/health evidence.
+2. Done: delete approved ignored local artifacts.
+3. Done: remove `scripts/generate-icons.js` and the stray `.gitignore` line.
+4. Done: archive the standalone editor demo and superseded planning/audit files.
+5. Done: start production-readiness foundation with CI workflow and health endpoint.
 6. Then choose either Mobile Command Surface or Dashboard Clarity based on real-use friction.

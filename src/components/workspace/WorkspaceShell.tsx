@@ -171,7 +171,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </div>
           <div>
             <p className="text-sm font-bold tracking-tight text-[var(--cos-text-strong)]">ContextOS</p>
-            <p className="text-[11px] font-medium text-[var(--cos-text-subtle)]">MVP v0.2.6</p>
+            <p className="text-[11px] font-medium text-[var(--cos-text-subtle)]">MVP v0.2.7</p>
           </div>
           <button
             className="cos-btn-ghost ml-auto grid h-9 w-9 place-items-center rounded-md text-[var(--cos-text-muted)]"

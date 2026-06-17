@@ -39,6 +39,6 @@
   ],
   "exclude": [
     "node_modules",
-    "Markdown Editor Sample Demo"
+    "docs/archive"
   ]
 }

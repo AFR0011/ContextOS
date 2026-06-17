@@ -187,6 +187,18 @@ test("deployment headers, metadata, and service worker cache routes are configur
   expect(serviceWorker).not.toContain('"/deadlines"');
 });
 
+test("health endpoint reports database availability", async ({ page }) => {
+  const response = await page.request.get("/api/health");
+  expect(response.status()).toBe(200);
+  expect(response.headers()["cache-control"]).toContain("no-store");
+  await expect(response.json()).resolves.toMatchObject({
+    status: "ok",
+    service: "contextos",
+    database: "ok",
+    version: "0.2.7"
+  });
+});
+
 test("auth endpoints throttle repeated failed attempts", async ({ page }) => {
   const password = "contextos-demo-v011";
   const loginIp = `rate-login-${Date.now()}`;

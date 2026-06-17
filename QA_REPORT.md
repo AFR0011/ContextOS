@@ -1,12 +1,44 @@
 # ContextOS QA Report
 
+## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation
+
+### Verdict
+
+- Local cleanup verification: PASS.
+- Health endpoint: PASS.
+- CI workflow scaffold: PASS, remote run pending until push.
+- Public production: still NO-GO until remote CI evidence, production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
+
+### Commands And Evidence
+
+- `git status --short --ignored` - checked before cleanup; only approved ignored artifacts plus protected local files were present.
+- `git ls-files` cleanup target check - confirmed tracked cleanup/archive candidates before moving them.
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - initially failed because Docker Desktop/Postgres was unavailable; after starting Docker Desktop and `docker compose up -d`, retry passed with schema already in sync.
+- `npm run db:seed` - passed.
+- `npm run typecheck` - initially failed because archived prototype TypeScript files were still included; after excluding `docs/archive`, retry passed.
+- `npm run build` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "health endpoint" --workers=1` - passed, 1 test.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 35 tests.
+- In-app Browser smoke on `http://localhost:3001/dashboard` - passed; authenticated Dashboard rendered `MVP v0.2.7`, Dashboard/Dates/Tasks were visible, horizontal overflow was false, and browser console errors were empty.
+
+### Coverage Added
+
+- `/api/health` returns `200`, `Cache-Control: no-store`, `database: "ok"`, and version `0.2.7` while Postgres is available.
+- GitHub Actions workflow covers Prisma validation/generation, migration deploy, seed, typecheck, build, and Playwright e2e against PostgreSQL 16.
+
+### Recovery Notes
+
+- Docker/Postgres was unavailable at first; recovered by starting Docker Desktop and the compose service.
+- Archiving the standalone prototype exposed a TypeScript include boundary; recovered by excluding `docs/archive` from the app `tsconfig.json`.
+
 ## 2026-06-16 - Cleanup Audit Follow-up
 
 ### Verdict
 
 - Repo cleanup audit: PASS.
 - Non-destructive stale test cleanup: PASS.
-- Delete/archive operations: NOT RUN; awaiting user approval for the cleanup proposal.
+- Delete/archive operations: NOT RUN during this 2026-06-16 audit pass; later executed in v0.2.7 on 2026-06-17.
 
 ### Commands And Evidence
 

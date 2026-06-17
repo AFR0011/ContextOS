@@ -1,5 +1,7 @@
 # Shared Errors
 
+- 2026-06-17: After archiving the standalone Markdown editor prototype under `docs/archive/`, `npm run typecheck` included the archived Vite `.ts/.tsx` files and failed on prototype-only dependencies. Classified as low-severity cleanup boundary issue; fixed by excluding `docs/archive` in `tsconfig.json` and rerunning typecheck.
+- 2026-06-17: The first `npm run db:migrate` attempt in the v0.2.7 batch failed because Docker Desktop/Postgres was not running (`dockerDesktopLinuxEngine` pipe unavailable and no listener on port 5432). Classified as recoverable local infrastructure issue; started Docker Desktop, ran `docker compose up -d`, and migration retry passed.
 - 2026-06-16: The first cleanup-audit Playwright rerun for the Today/This Week terminology test failed because the new `This Week` heading locator also matched `Tasks This Week` and `Dates This Week`. Classified as low-severity validation failure; tightened the locator with `exact: true` and reran the focused test.
 - 2026-06-16: A cleanup-audit path inspection command failed because PowerShell interpreted the `(workspace)` route-group path without quoting. Classified as low-severity tool syntax error; retried with `-LiteralPath` and confirmed the `/this-week` route.
 - 2026-06-16: Browser automation listed `networkidle` in documentation but the active browser runtime rejected it during v0.2.5 smoke. Classified as low-severity tool mismatch; recovered with supported `load`, URL, visible-content, overflow, and console-log checks. Browser smoke passed.

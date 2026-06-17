@@ -49,6 +49,7 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    npm run test:e2e
    ```
 5. Manual checks:
+   - Confirm `GET /api/health` returns `200`, `Cache-Control: no-store`, `database: "ok"`, and the current package version while Postgres is available.
    - Log in with the demo account and confirm Dashboard Quick Capture is above all sections.
    - Add `/task` and `/date` captures from Dashboard Quick Capture and confirm they reach Inbox.
    - Convert an inbox capture to a task.
@@ -71,6 +72,8 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    - Go offline, add a capture, reload a visited route, return online, and confirm pending sync clears.
 
 ## Deployment Hardening Checks
+- Confirm `.github/workflows/ci.yml` is present and follows the same sequential verification ladder against disposable PostgreSQL.
+- Confirm `GET /api/health` returns `200` plus `Cache-Control: no-store` when PostgreSQL is reachable, and `503` with `code: "database_unavailable"` when PostgreSQL is unavailable.
 - Confirm repeated failed `/api/auth/login` requests eventually return `429` with `Retry-After`, and that a successful login resets the failed-attempt bucket for that identity.
 - Confirm repeated `/api/auth/register` attempts eventually return `429` with `Retry-After` when public registration is enabled.
 - Confirm a representative page such as `/login` returns CSP, frame protection, content-type sniffing protection, referrer policy, and permissions policy headers.

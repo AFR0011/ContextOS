@@ -1,5 +1,11 @@
 # Shared History
 
+## 2026-06-17
+
+- Completed v0.2.7 Cleanup and Production-Readiness Foundation: approved generated artifact cleanup, historical archive moves, UI/UX backlog extraction, no-store `/api/health`, GitHub Actions CI workflow scaffold, archive TypeScript exclusion, and package/shell version `0.2.7`.
+- Verification passed: Prisma validate, migration retry after starting Docker/Postgres, seed, typecheck after excluding `docs/archive`, build, targeted health Playwright, full e2e with 35 tests, and Browser smoke.
+- Remaining production gates: remote CI evidence, production-like preview, backup/restore, rollback, monitoring, provider/WAF decision, and installed-PWA upgrade smoke.
+
 ## 2026-06-16
 
 - Completed v0.2.6 Auth Abuse Controls: app-level fixed-window failed-login and registration throttling, `429` plus `Retry-After`, successful-login bucket reset, targeted coverage, and package/shell version `0.2.6`.
@@ -29,7 +35,7 @@
 - Architect-planner selected current `modificaitons.txt` items 1-3.
 - Executor implemented task time ranges, Daily timeline, rendered notepad preview, and Piano Schedule resource/table preview.
 - Tester ran typecheck, build, Prisma validate, migration, seed, targeted Playwright, full e2e, and browser smoke.
-- Docs-QA recorded current audit in `docs/CURRENT_AUDIT_2026-06-05.md`.
+- Docs-QA recorded the then-current audit in `docs/CURRENT_AUDIT_2026-06-05.md`, later archived to `docs/archive/audits/CURRENT_AUDIT_2026-06-05.md` in v0.2.7.
 - One supervised dev-loop cycle for v0.1.10 PWA polish batch.
 - Architect-planner selected Item 9 (PWA polish) from modificaitons.txt.
 - Executor implemented: manifest update, icon generation script, PNG icons, layout.tsx enhancements.

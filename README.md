@@ -73,6 +73,12 @@ The Vercel build command builds the app only. Run `npm run db:deploy` deliberate
 
 Core workspace data is cached in IndexedDB. Edits are written locally first, queued as idempotent mutations, and synced to `/api/sync` when online. Settings shows online/offline status, pending changes, last sync time, and sync errors.
 
+## Health And CI
+
+`GET /api/health` reports app/database availability and returns `Cache-Control: no-store`.
+
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs Prisma validation/generation, migration deploy, seed, typecheck, build, and Playwright e2e against PostgreSQL 16.
+
 ## Docs
 
 - `BLUEPRINT.md`: product specification

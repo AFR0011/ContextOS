@@ -1,5 +1,58 @@
 # ContextOS Dev Log
 
+## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation Plan
+
+Planner scope: implement the approved cleanup proposal and the first production-readiness foundation batch in one bounded cycle.
+
+Planned changes:
+
+- Delete approved generated ignored artifacts without touching `.env`, `node_modules`, `.vercel`, `.remember`, or `.codex-observer`.
+- Archive the standalone markdown editor prototype, superseded planning docs, stale shared JSONL messages, and original user input files under `docs/archive/`.
+- Remove the duplicate `scripts/generate-icons.js`, keep `scripts/generate-icons.cjs`, and remove the stray `.gitignore` `a` rule.
+- Extract still-relevant UI/UX themes into `docs/MIGRATION_BACKLOG.md`, then archive `UIUX Design Modifications.md`.
+- Add unauthenticated `GET /api/health` with structured DB availability responses and no-store caching.
+- Add GitHub Actions CI using Node 22 plus PostgreSQL 16.
+- Bump package metadata, shell label, and docs to `0.2.7`.
+
+Out of scope: commits, pushes, PRs, live provider preview, provider/WAF configuration, backup/restore rehearsal, rollback rehearsal, monitoring setup, installed-PWA upgrade from an older cached worker, dependency upgrades, and UI/accessibility redesign.
+
+Verification plan:
+
+- Cleanup sanity checks with `git status --short --ignored`, tracked-file checks, and `git diff --check`.
+- `npx prisma validate`
+- `npm run db:migrate`
+- `npm run db:seed`
+- `npm run typecheck`
+- `npm run build`
+- Targeted Playwright health endpoint coverage.
+- Full `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1`.
+- In-app Browser smoke on Dashboard confirming `MVP v0.2.7`, Dates/Tasks visibility, no console errors, and no horizontal overflow.
+
+Implementation:
+
+- Executed the approved cleanup: deleted generated ignored artifacts, removed `scripts/generate-icons.js`, removed the stray `.gitignore` rule, and archived historical prototype/planning/audit/shared-message files under `docs/archive/`.
+- Extracted still-relevant UI/UX backlog themes into `docs/MIGRATION_BACKLOG.md` before archiving the original UI/UX planning file.
+- Added `src/app/api/health/route.ts` with no-store `200`, `503`, and `500` responses.
+- Added `.github/workflows/ci.yml` for Node 22 plus PostgreSQL 16 verification.
+- Added targeted Playwright coverage for the DB-up health endpoint response.
+- Bumped package metadata and shell label to `0.2.7`.
+- Excluded `docs/archive` from the app TypeScript project so archived prototypes remain historical only.
+
+Verification:
+
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - initially failed because Docker Desktop/Postgres was unavailable; after starting Docker Desktop and `docker compose up -d`, retry passed with schema already in sync.
+- `npm run db:seed` - passed.
+- `npm run typecheck` - initially failed because archived prototype TypeScript files were included; after excluding `docs/archive`, retry passed.
+- `npm run build` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "health endpoint" --workers=1` - passed, 1 test.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 35 tests.
+- In-app Browser smoke at `http://localhost:3001/dashboard` passed with authenticated Dashboard rendering `MVP v0.2.7`, Dashboard/Dates/Tasks visible, no horizontal overflow, and no console errors.
+
+Result:
+
+- Batch complete locally. Cleanup, health endpoint, CI workflow scaffold, docs, and local verification evidence are done. Public production remains blocked on remote CI evidence, production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke.
+
 ## 2026-06-16 - Cleanup Audit and Stale Route Test Fix
 
 Scope: perform the requested repo cleanup audit after v0.2.6 and fix one non-destructive test cleanup issue found during the audit.
@@ -366,7 +419,7 @@ Implementation:
 - Added a seeded Piano Schedule resource under `Piano / Content` with `Index`, `Song`, `Today?`, and `Status` table columns inspired by the Notion database schema.
 - Added table-aware resource preview for the Piano Schedule.
 - Updated e2e coverage for rendered dashboard Markdown, Daily timeline task time ranges, and the Piano Schedule table.
-- Added `docs/CURRENT_AUDIT_2026-06-05.md` with the current product/code audit.
+- Added `docs/CURRENT_AUDIT_2026-06-05.md` with the current product/code audit. This file was later archived to `docs/archive/audits/CURRENT_AUDIT_2026-06-05.md` in v0.2.7.
 
 Verification:
 
@@ -384,7 +437,7 @@ Verification:
 
 Audit:
 
-- See `docs/CURRENT_AUDIT_2026-06-05.md`.
+- See `docs/archive/audits/CURRENT_AUDIT_2026-06-05.md`.
 
 ## 2026-06-05 - v0.1.10 PWA Polish (Icons, Manifest)
 

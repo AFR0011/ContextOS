@@ -1,5 +1,14 @@
 # Audit
 
+## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation
+
+- Executed approved cleanup and archived historical prototype/planning/audit/shared-message files under `docs/archive/`.
+- Extracted still-relevant UI/UX backlog themes into `docs/MIGRATION_BACKLOG.md`.
+- Added no-store `/api/health` with structured DB availability responses.
+- Added GitHub Actions CI workflow scaffold for Node 22 plus PostgreSQL 16.
+- Bumped package and shell version to `0.2.7`.
+- Verification passed: Prisma validate, migration retry, seed, typecheck, build, targeted health Playwright, full e2e, and Browser smoke.
+
 ## 2026-06-16 - v0.2.6 Auth Abuse Controls
 
 - Added server-only fixed-window auth throttling for failed login and registration attempts.

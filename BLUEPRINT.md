@@ -2,7 +2,7 @@
 
 ## Status
 
-**Version:** v1.0 (implementation batch v0.2.6)
+**Version:** v1.0 (implementation batch v0.2.7)
 **Product Type:** Execution-first context recovery system  
 **Primary User:** Single-user MVP  
 **Platform:** Online-first PWA, offline capture later  
@@ -11,14 +11,15 @@
 
 ### Deployment Readiness - 2026-06-15 Audit
 
-v0.2.6 keeps the v0.2.5 deployment-hardening slice complete and adds app-level auth abuse controls: failed-login throttling, registration attempt throttling, `429` responses, and `Retry-After` headers.
+v0.2.7 keeps the v0.2.6 auth abuse-control slice complete and adds the first production-readiness foundation: approved repo cleanup, an unauthenticated health endpoint, and a GitHub Actions CI workflow scaffold.
 
 Remaining deployment-hardening work:
 
-1. Add CI plus a production-like preview, migration, backup/restore, monitoring, and rollback rehearsal.
-2. Decide whether provider/WAF-level auth protection is needed in addition to the v0.2.6 app-level limiter.
-3. Run deeper installed-PWA upgrade smoke from an older cached worker.
-4. Finish mobile editor/action accessibility work outside the task-title wrapping fixed in v0.2.3.
+1. Push and observe the GitHub Actions CI workflow on the remote branch, then fix any environment-specific failures.
+2. Run a production-like preview plus migration, backup/restore, monitoring, and rollback rehearsal.
+3. Decide whether provider/WAF-level auth protection is needed in addition to the v0.2.6 app-level limiter.
+4. Run deeper installed-PWA upgrade smoke from an older cached worker.
+5. Finish mobile editor/action accessibility work outside the task-title wrapping fixed in v0.2.3.
 
 Deployment acceptance requires two-user isolation tests, sequential Prisma/typecheck/build/e2e checks, desktop/mobile browser smoke, and documented recovery evidence. The detailed audit is in `docs/AUDIT_2026-06-15.md`.
 

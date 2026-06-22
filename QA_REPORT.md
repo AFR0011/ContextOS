@@ -1,13 +1,51 @@
 # ContextOS QA Report
 
+## 2026-06-17 - v0.2.8 CI Repair and Mobile Accessibility Foundation
+
+### Verdict
+
+- Local CI repair: PASS.
+- Mobile/editor accessibility foundation: PASS for touched controls.
+- Remote branch CI: PASS on `codex/v0.2.8-ci-a11y-foundation`.
+- Public production: still NO-GO until production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
+
+### Commands And Evidence
+
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard notepad supports toggle headings" --workers=1 --repeat-each=5` - initially failed once after the live-value fix, exposing a Dashboard Notepad dirty-draft hydration clobber; after the guard fix, rerun passed 5/5.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "mobile editor and task controls" --workers=1` - passed, 1 test.
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 36 tests.
+- In-app Browser smoke on `http://localhost:3001/dashboard` - passed on desktop and 390px mobile; authenticated Dashboard rendered `MVP v0.2.8`, Dashboard/Dates/Tasks were visible, horizontal overflow was false, browser console errors were empty, and touched mobile controls measured 40x40.
+- GitHub Actions CI on `codex/v0.2.8-ci-a11y-foundation` - passed after the e2e harness fix; run `27678139692`, `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
+
+### Coverage Added
+
+- Repeated toggle-heading coverage now protects the previous remote CI failure path.
+- Dashboard Notepad no longer overwrites dirty local editor state when saved content hydrates late.
+- Mobile task completion/delete and block editor add/action controls are covered for 40px hit targets.
+- Block action and slash-command menus expose roles, expanded/selected state, accessible names, and keyboard selection behavior.
+
+### Recovery Notes
+
+- Parallel targeted Playwright runs attempted to start two Next dev servers in the same repo and one failed with Next's "another dev server is already running" guard. Recovered by running targeted checks sequentially.
+- The first Browser dev-server start used the Windows `npm` shim and failed; recovered with `npm.cmd`.
+- The first in-app Browser login wait used an exact navigation wait that timed out even though the page later reached Dashboard; recovered with Dashboard heading and DOM-state checks.
+- Intermediate branch CI run `27677465248` failed on Playwright after a docs evidence commit. The failure was not the Dashboard Notepad bug; it exposed a reset-demo `ECONNRESET` and two immediate order assertions that sampled before task UI state settled. Fixed with reset retries and polling order assertions, then local full e2e and branch CI passed.
+- Later branch run `27678991414` failed on a quick-capture test selector that clicked the first generic `Capture actions` button instead of the capture card containing the unique text. Fixed by adding a stable `capture-card` test id and scoping the conversion action to that row; targeted quick-capture coverage, typecheck, build, and full e2e passed locally.
+- Later branch run `27679579719` failed on Dashboard Tasks completion-order stability for equal-created seeded tasks. Fixed by adding deterministic sort tie-breakers, then targeted Dashboard Tasks coverage, typecheck, build, and full e2e passed locally.
+
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation
 
 ### Verdict
 
 - Local cleanup verification: PASS.
 - Health endpoint: PASS.
-- CI workflow scaffold: PASS, remote run pending until push.
-- Public production: still NO-GO until remote CI evidence, production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
+- CI workflow scaffold: PASS; first remote failure later repaired and branch CI passed in v0.2.8.
+- Public production: still NO-GO until production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
 
 ### Commands And Evidence
 

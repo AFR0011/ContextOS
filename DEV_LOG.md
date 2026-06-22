@@ -1,5 +1,59 @@
 # ContextOS Dev Log
 
+## 2026-06-17 - v0.2.8 CI Repair and Mobile Accessibility Foundation Plan
+
+Planner scope: repair the failed remote GitHub Actions e2e run and harden the concrete mobile/editor accessibility gaps in one bounded batch.
+
+Remote failure being addressed:
+
+- GitHub Actions run `27674569958` on `main` failed only in Playwright.
+- Failing test: `dashboard notepad supports toggle headings and persists markdown details`.
+- Local repeats passed, so this batch treats the issue as a CI-exposed editor timing/state-boundary bug around rapid `fill` plus `Enter`.
+
+Planned changes:
+
+- Make block editor slash-command transforms read from the textarea's live value and selection during Enter handling.
+- Keep Markdown serialization and existing offline/data behavior unchanged.
+- Increase task/editor action hit targets where this batch touches undersized controls.
+- Add accessible menu/listbox semantics for block and slash-command menus.
+- Add targeted coverage for the timing path, mobile hit targets, and menu keyboard semantics.
+- Bump package/shell/docs to `0.2.8`.
+- Commit and push `codex/v0.2.8-ci-a11y-foundation`, then watch and record branch CI.
+
+Out of scope: PR creation, provider preview, WAF/provider settings, backup/restore, rollback, monitoring, installed-PWA upgrade smoke, dependency upgrades, schema/API changes, and broader Dashboard hierarchy polish.
+
+Implementation:
+
+- Fixed block editor command transforms to read the textarea's live value during Enter handling.
+- Guarded Dashboard Notepad hydration so late saved-content changes do not clobber a dirty local draft.
+- Increased touched Daily Timeline and block editor action controls to mobile-safe hit targets.
+- Made block editor controls reachable on touch viewports and added menu/listbox semantics for block actions and slash commands.
+- Added targeted Playwright coverage for mobile hit targets, menu semantics, selected option state, and no 390px overflow.
+- Bumped package metadata and shell label to `0.2.8`.
+
+Verification so far:
+
+- `npx prisma validate` - passed.
+- `npm run db:migrate` - passed; schema already in sync.
+- `npm run db:seed` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard notepad supports toggle headings" --workers=1 --repeat-each=5` - initially failed once after the live-value fix, then passed 5/5 after the Dashboard dirty-draft guard.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "mobile editor and task controls" --workers=1` - passed.
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 36 tests.
+- In-app Browser smoke passed on desktop and 390px mobile with `MVP v0.2.8`, Dashboard/Dates/Tasks visible, no console errors, no horizontal overflow, and 40x40 mobile controls where touched.
+
+Result:
+
+- Batch complete.
+- Branch `codex/v0.2.8-ci-a11y-foundation` was pushed.
+- GitHub Actions run `27676974625` passed on the implementation commit.
+- The docs evidence commit triggered run `27677465248`, which failed on Playwright harness issues unrelated to the notepad bug: reset-demo `ECONNRESET` and immediate order assertions after task mutations.
+- Hardened `tests/e2e/contextos.spec.ts` with reset retries and polling order checks; local targeted rerun, typecheck, build, and full e2e passed.
+- Hardened branch GitHub Actions CI passed in run `27678139692`: `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
+- Later docs-only run `27678991414` exposed one more Playwright selector flake: the quick-capture conversion test clicked the first generic `Capture actions` button instead of the card containing the unique capture text. Added a stable `capture-card` test id, scoped the test to that card, and reran targeted quick-capture coverage, typecheck, build, and full e2e locally.
+- Later branch run `27679579719` exposed a real Dashboard Tasks ordering edge: seeded tasks with equal `createdAt` could reorder after a completion mutation because the comparator returned `0` for ties. Added deterministic `id` tie-breakers to Dashboard task sorting and reran targeted Dashboard Tasks coverage, typecheck, build, and full e2e locally.
+
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation Plan
 
 Planner scope: implement the approved cleanup proposal and the first production-readiness foundation batch in one bounded cycle.
@@ -51,7 +105,7 @@ Verification:
 
 Result:
 
-- Batch complete locally. Cleanup, health endpoint, CI workflow scaffold, docs, and local verification evidence are done. Public production remains blocked on remote CI evidence, production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke.
+- Batch complete locally. Cleanup, health endpoint, CI workflow scaffold, docs, and local verification evidence are done. Public production remains blocked on production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke. The first remote CI failure was repaired in v0.2.8.
 
 ## 2026-06-16 - Cleanup Audit and Stale Route Test Fix
 

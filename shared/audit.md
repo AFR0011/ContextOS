@@ -1,5 +1,15 @@
 # Audit
 
+## 2026-06-17 - v0.2.8 CI Repair and Mobile Accessibility Foundation
+
+- Analyzed the first remote GitHub Actions failure on `main`; the only failing step was the Dashboard Notepad toggle-heading Playwright path.
+- Fixed block editor command transforms to use live textarea value/selection under rapid `fill` plus `Enter`.
+- Guarded Dashboard Notepad dirty drafts against late saved-content hydration overwrites.
+- Raised touched Daily Timeline task controls and block editor controls to mobile-safe hit targets.
+- Added block/slash command menu semantics and keyboard coverage.
+- Bumped package and shell version to `0.2.8`.
+- Verification passed: Prisma validate, migration, seed, targeted repeated toggle-heading Playwright, targeted mobile/menu Playwright, typecheck, build, full e2e, desktop/mobile Browser smoke, and branch GitHub Actions run `27678139692`.
+
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation
 
 - Executed approved cleanup and archived historical prototype/planning/audit/shared-message files under `docs/archive/`.

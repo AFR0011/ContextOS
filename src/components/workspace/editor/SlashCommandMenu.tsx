@@ -200,15 +200,16 @@ export const CAPTURE_COMMANDS: CommandItem[] = [
 ];
 
 interface SlashCommandMenuProps {
+  id: string;
   selectedIndex: number;
   onSelect: (command: CommandItem) => void;
   filteredCommands: CommandItem[];
 }
 
-export function SlashCommandMenu({ selectedIndex, onSelect, filteredCommands }: SlashCommandMenuProps) {
+export function SlashCommandMenu({ id, selectedIndex, onSelect, filteredCommands }: SlashCommandMenuProps) {
   if (!filteredCommands.length) {
     return (
-      <div className="absolute left-2 top-full z-30 mt-1 w-72 rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-2 text-xs shadow-[var(--cos-shadow-md)]">
+      <div id={id} role="listbox" aria-label="Block commands" className="absolute left-2 top-full z-30 mt-1 w-72 rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-2 text-xs shadow-[var(--cos-shadow-md)]">
         <div className="px-2 py-1 font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Basic Blocks</div>
         <div className="px-2 py-3 text-center text-[var(--cos-text-muted)]">No matching blocks found</div>
       </div>
@@ -216,7 +217,7 @@ export function SlashCommandMenu({ selectedIndex, onSelect, filteredCommands }: 
   }
 
   return (
-    <div className="absolute left-2 top-full z-30 mt-1 max-h-80 w-72 overflow-y-auto rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-1 shadow-[var(--cos-shadow-md)]">
+    <div id={id} role="listbox" aria-label="Block commands" className="absolute left-2 top-full z-30 mt-1 max-h-80 w-72 overflow-y-auto rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-1 shadow-[var(--cos-shadow-md)]">
       <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Basic Blocks</div>
       {filteredCommands.map((command, index) => {
         const Icon = command.icon;
@@ -225,9 +226,11 @@ export function SlashCommandMenu({ selectedIndex, onSelect, filteredCommands }: 
           <button
             key={command.command}
             type="button"
+            role="option"
+            aria-selected={active}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onSelect(command)}
-            className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left ${active ? "bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]" : "text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)]"}`}
+            className={`flex min-h-10 w-full items-center gap-2 rounded-md px-2 py-2 text-left ${active ? "bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]" : "text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)]"}`}
           >
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[var(--cos-bg-inset)] text-[var(--cos-primary)]">
               <Icon className="h-4 w-4" />

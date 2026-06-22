@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Zap } from "lucide-react";
 import { readJsonResponse, responseErrorMessage } from "@/lib/http-client";
 
 export default function AuthForm({ mode, serviceStatus, registrationEnabled = true }: { mode: "login" | "register"; serviceStatus?: string; registrationEnabled?: boolean }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next") || "/dashboard";
+  const safeNext = nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/dashboard";
   const [email, setEmail] = useState(mode === "login" ? "demo@contextos.local" : "");
   const [password, setPassword] = useState(mode === "login" ? "contextos-demo-v011" : "");
   const [error, setError] = useState("");
@@ -28,7 +31,7 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
       });
       const result = await readJsonResponse<{ error?: string; user?: unknown }>(response);
       if (!response.ok) throw new Error(responseErrorMessage(response, result, "Authentication failed"));
-      router.push("/dashboard");
+      router.push(safeNext);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed.");

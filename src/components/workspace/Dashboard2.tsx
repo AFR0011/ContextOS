@@ -98,19 +98,22 @@ function taskDateKey(task: Task) {
 }
 
 function compareDashboardTasks(a: Task, b: Task, mode: DashboardTaskSortMode) {
-  if (mode === "oldest") return a.createdAt.localeCompare(b.createdAt);
+  const byCreatedAsc = () => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id);
+  const byCreatedDesc = () => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
+
+  if (mode === "oldest") return byCreatedAsc();
   if (mode === "schedule") {
     const aTime = a.scheduledTime ?? "99:99";
     const bTime = b.scheduledTime ?? "99:99";
     if (aTime !== bTime) return aTime.localeCompare(bTime);
-    return b.createdAt.localeCompare(a.createdAt);
+    return byCreatedDesc();
   }
   if (mode === "date") {
     const byDate = taskDateKey(a).localeCompare(taskDateKey(b));
     if (byDate) return byDate;
-    return b.createdAt.localeCompare(a.createdAt);
+    return byCreatedDesc();
   }
-  return b.createdAt.localeCompare(a.createdAt);
+  return byCreatedDesc();
 }
 
 function sectionDefaults(preference?: DashboardPreference) {
@@ -234,8 +237,14 @@ function NotepadSection() {
   const [draft, setDraft] = useState(savedContent);
   const [saveState, setSaveState] = useState<"idle" | "dirty" | "saved">("idle");
   const lastSavedRef = useRef(savedContent);
+  const dirtyRef = useRef(false);
 
   useEffect(() => {
+    dirtyRef.current = draft !== lastSavedRef.current;
+  }, [draft]);
+
+  useEffect(() => {
+    if (dirtyRef.current) return;
     lastSavedRef.current = savedContent;
     setDraft(savedContent);
     setSaveState("idle");

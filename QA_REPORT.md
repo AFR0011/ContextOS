@@ -37,8 +37,8 @@
 
 - Local cleanup verification: PASS.
 - Health endpoint: PASS.
-- CI workflow scaffold: PASS, remote run pending until push.
-- Public production: still NO-GO until remote CI evidence, production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
+- CI workflow scaffold: PASS; first remote failure later repaired and branch CI passed in v0.2.8.
+- Public production: still NO-GO until production-like preview, backup/restore, rollback, monitoring, provider/WAF decisions, and installed-PWA upgrade smoke are complete.
 
 ### Commands And Evidence
 

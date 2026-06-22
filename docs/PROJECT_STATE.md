@@ -16,7 +16,7 @@ Complete v0.2.8 task-driven Daily timeline browser verification, then continue r
 - Metadata uses an explicit deployment/local `metadataBase` instead of implicit localhost build defaults.
 
 ## Current Product State
-- Package and shell version: `0.2.7`.
+- Package and shell version: `0.2.8`.
 - Core routes: Dashboard, Inbox, Today, This Week, Projects, Project Detail, Areas, Resources, Dates, Reviews, Search, Archive, and Settings.
 - `/dates` is canonical. `/deadlines` redirects to `/dates`.
 - `/date` is the advertised capture command. `/deadline` remains an accepted compatibility alias.
@@ -65,13 +65,15 @@ Complete v0.2.8 task-driven Daily timeline browser verification, then continue r
 - Focused v0.2.8 Playwright command timed out before returning usable output: `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard tasks can move|dashboard can add a project-linked important date|dashboard daily timeline supports one time|dashboard daily timeline supports untimed" --workers=1`.
 - DB-backed v0.2.8 e2e remains blocked because `docker compose ps` cannot reach Docker Desktop's Linux engine pipe.
 - `npx prisma validate` passed on 2026-06-17.
-- `npm run db:migrate` initially failed because Docker/Postgres was unavailable; after starting Docker Desktop and `docker compose up -d`, retry passed with schema already in sync.
+- `npm run db:migrate` passed; schema already in sync.
 - `npm run db:seed` passed.
-- `npm run typecheck` initially failed because archived prototype TypeScript files were included; after excluding `docs/archive`, retry passed. A final rerun after docs updates also passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard notepad supports toggle headings" --workers=1 --repeat-each=5` passed after the dirty-draft hydration guard.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "mobile editor and task controls" --workers=1` passed.
+- `npm run typecheck` passed.
 - `npm run build` passed.
-- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "health endpoint" --workers=1` passed with 1 test.
-- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 35 tests.
-- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.7`, Dashboard/Dates/Tasks visible, no horizontal overflow, and no console errors.
+- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` passed with 36 tests.
+- In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.8` on desktop and 390px mobile, Dashboard/Dates/Tasks visible, no horizontal overflow, no console errors, and touched mobile controls at 40x40.
+- GitHub Actions CI passed on `codex/v0.2.8-ci-a11y-foundation`: `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
 
 ## Next Useful Work
 - Start Docker/Postgres, rerun the focused v0.2.8 Dashboard timeline e2e slice, then run full e2e if it passes.
@@ -80,4 +82,5 @@ Complete v0.2.8 task-driven Daily timeline browser verification, then continue r
 - Add production-like preview evidence, operational recovery evidence, deeper installed-PWA upgrade smoke, and provider/WAF defense-in-depth decisions before public production.
 - Run the simplified workflow in real use before broadening scope.
 - Treat regressions in capture speed, timeline scanning, Dates separation, project recovery, or offline replay as v0.2.2 fixes.
+- Plan v0.2.9 around Dashboard hierarchy polish or choose the next production gate.
 - Review dependency advisories only through deliberate non-breaking upgrades.

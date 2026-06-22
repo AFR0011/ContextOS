@@ -208,7 +208,7 @@ function TimelineTaskRow({
         type="button"
         aria-label={done ? `Reopen ${row.task.title}` : `Mark ${row.task.title} done`}
         onClick={() => updateTask(row.task.id, { status: done ? "todo" : "done" })}
-        className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded border ${done ? "border-[var(--cos-success)] bg-[var(--cos-success)] text-white" : "border-[var(--cos-border-strong)] text-transparent hover:border-[var(--cos-primary)]"}`}
+        className={`grid h-10 w-10 shrink-0 place-items-center rounded-md border sm:mt-1 sm:h-7 sm:w-7 ${done ? "border-[var(--cos-success)] bg-[var(--cos-success)] text-white" : "border-[var(--cos-border-strong)] text-transparent hover:border-[var(--cos-primary)]"}`}
       >
         <Check className="h-3 w-3" />
       </button>
@@ -245,7 +245,7 @@ function TimelineTaskRow({
         type="button"
         aria-label={`Delete ${row.task.title}`}
         onClick={() => updateTask(row.task.id, { trashedAt: new Date().toISOString() })}
-        className="grid h-7 w-7 shrink-0 place-items-center rounded text-[var(--cos-text-subtle)] opacity-60 hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger-text)] group-hover:opacity-100"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] opacity-80 hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger-text)] group-hover:opacity-100 sm:h-8 sm:w-8"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>

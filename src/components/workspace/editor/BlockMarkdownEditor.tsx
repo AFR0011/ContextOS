@@ -271,11 +271,12 @@ export function BlockMarkdownEditor({
     if (cursorPos !== undefined) pendingCursorPos.current = cursorPos;
   }
 
-  function applyCommandToBlock(blockId: string, command: CommandItem, triggerIndex = 0) {
+  function applyCommandToBlock(blockId: string, command: CommandItem, triggerIndex = 0, liveText?: string) {
     const nextBlocks = blocks.map((block) => {
       if (block.id !== blockId) return block;
-      const body = commandBody(block.text, command.command, triggerIndex);
-      const beforeSlash = block.text.slice(0, triggerIndex).trim();
+      const sourceText = liveText ?? block.text;
+      const body = commandBody(sourceText, command.command, triggerIndex);
+      const beforeSlash = sourceText.slice(0, triggerIndex).trim();
 
       if (command.kind === "capture" && command.capture && onCaptureLine) {
         if (!body) return block;
@@ -403,7 +404,9 @@ export function BlockMarkdownEditor({
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>, block: EditorBlock, index: number) {
     const textarea = event.currentTarget;
     const selectionStart = textarea.selectionStart;
-    const textLength = textarea.value.length;
+    const liveText = textarea.value;
+    const textLength = liveText.length;
+    const liveBlock = { ...block, text: liveText };
 
     if (slashCommand && slashCommand.blockId === block.id) {
       if (event.key === "ArrowDown") {
@@ -419,7 +422,7 @@ export function BlockMarkdownEditor({
       if (event.key === "Enter") {
         event.preventDefault();
         const selected = filteredCommands[slashSelectedIndex];
-        if (selected) applyCommandToBlock(block.id, selected, slashCommand.triggerIndex);
+        if (selected) applyCommandToBlock(block.id, selected, slashCommand.triggerIndex, liveText);
         else setSlashCommand(null);
         return;
       }
@@ -440,21 +443,21 @@ export function BlockMarkdownEditor({
       if (block.type === "code") return;
       event.preventDefault();
 
-      const typedCommand = commandForLine(block.text, commands);
+      const typedCommand = commandForLine(liveText, commands);
       if (typedCommand) {
-        applyCommandToBlock(block.id, typedCommand, 0);
+        applyCommandToBlock(block.id, typedCommand, 0, liveText);
         return;
       }
 
       const isList = block.type === "bullet" || block.type === "numbered" || block.type === "todo";
-      if (isList && block.text.trim() === "") {
+      if (isList && liveText.trim() === "") {
         const nextBlocks = blocks.map((item) => (item.id === block.id ? changeBlockType(item, "paragraph") : item));
         setNextBlocks(nextBlocks, block.id, 0);
         return;
       }
 
-      const textBefore = block.text.slice(0, selectionStart);
-      const textAfter = block.text.slice(selectionStart);
+      const textBefore = liveText.slice(0, selectionStart);
+      const textAfter = liveText.slice(selectionStart);
       const nextType: BlockType = isList ? block.type : "paragraph";
       const newBlock: EditorBlock = {
         id: generateId(),
@@ -463,7 +466,7 @@ export function BlockMarkdownEditor({
         checked: nextType === "todo" ? false : undefined
       };
       const nextBlocks = [...blocks];
-      nextBlocks[index] = { ...block, text: textBefore };
+      nextBlocks[index] = { ...liveBlock, text: textBefore };
       nextBlocks.splice(index + 1, 0, newBlock);
       setNextBlocks(nextBlocks, newBlock.id, 0);
       return;
@@ -485,7 +488,7 @@ export function BlockMarkdownEditor({
         }
         const previousLength = previousBlock.text.length;
         const nextBlocks = [...blocks];
-        nextBlocks[index - 1] = { ...previousBlock, text: previousBlock.text + block.text };
+        nextBlocks[index - 1] = { ...previousBlock, text: previousBlock.text + liveText };
         nextBlocks.splice(index, 1);
         setNextBlocks(nextBlocks, previousBlock.id, previousLength);
       }
@@ -605,8 +608,9 @@ export function BlockMarkdownEditor({
                 <button
                   type="button"
                   onClick={() => handleToggleOpen(block.id)}
-                  className="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-md text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-primary-text)]"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-primary-text)] sm:mt-1 sm:h-8 sm:w-8"
                   aria-label={block.open === false ? "Expand toggle heading" : "Collapse toggle heading"}
+                  aria-expanded={block.open !== false}
                 >
                   <Icon className="h-4 w-4" />
                 </button>
@@ -620,7 +624,7 @@ export function BlockMarkdownEditor({
             }
             if (block.type === "todo") {
               return (
-                <span className="grid h-8 w-7 shrink-0 place-items-center">
+                <span className="grid h-10 w-10 shrink-0 place-items-center sm:h-8 sm:w-8">
                   <input
                     type="checkbox"
                     checked={Boolean(block.checked)}
@@ -642,36 +646,42 @@ export function BlockMarkdownEditor({
               onMouseLeave={() => setActionMenuBlockId(null)}
             >
               {!disabled ? (
-                <div className="absolute -left-12 top-1 hidden items-center gap-1 opacity-0 transition-opacity group-hover:flex group-hover:opacity-100 group-focus-within:flex group-focus-within:opacity-100 md:flex">
+                <div className="mb-1 flex items-center gap-1 opacity-100 transition-opacity sm:absolute sm:-left-20 sm:top-0 sm:mb-0 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                   <button
                     type="button"
                     onClick={() => handleInsertBlockBelow(block.id)}
-                    className="grid h-5 w-5 place-items-center rounded text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)]"
+                    data-testid="block-action-add"
+                    className="grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)] sm:h-8 sm:w-8"
+                    aria-label="Add block below"
                     title="Add block below"
                   >
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus className="h-4 w-4" />
                   </button>
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => setActionMenuBlockId(actionMenuBlockId === block.id ? null : block.id)}
-                      className="grid h-5 w-5 place-items-center rounded text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)]"
+                      data-testid="block-action-menu-trigger"
+                      aria-label="Open block actions"
+                      aria-haspopup="menu"
+                      aria-expanded={actionMenuBlockId === block.id}
+                      className="grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)] sm:h-8 sm:w-8"
                       title="Block actions"
                     >
-                      <GripVertical className="h-3.5 w-3.5" />
+                      <GripVertical className="h-4 w-4" />
                     </button>
                     {actionMenuBlockId === block.id ? (
-                      <div className="absolute left-0 top-full z-40 mt-1 w-56 rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-1 text-sm shadow-[var(--cos-shadow-md)]">
-                        <button type="button" onClick={() => { handleMoveBlock(block.id, "up"); setActionMenuBlockId(null); }} disabled={index === 0} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)] disabled:opacity-40">
+                      <div data-testid="block-action-menu" role="menu" aria-label="Block actions" className="absolute left-0 top-full z-40 mt-1 w-56 rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-1 text-sm shadow-[var(--cos-shadow-md)]">
+                        <button role="menuitem" type="button" onClick={() => { handleMoveBlock(block.id, "up"); setActionMenuBlockId(null); }} disabled={index === 0} className="flex min-h-10 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)] disabled:opacity-40">
                           <ArrowUp className="h-3.5 w-3.5" /> Move up
                         </button>
-                        <button type="button" onClick={() => { handleMoveBlock(block.id, "down"); setActionMenuBlockId(null); }} disabled={index === blocks.length - 1} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)] disabled:opacity-40">
+                        <button role="menuitem" type="button" onClick={() => { handleMoveBlock(block.id, "down"); setActionMenuBlockId(null); }} disabled={index === blocks.length - 1} className="flex min-h-10 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)] disabled:opacity-40">
                           <ArrowDown className="h-3.5 w-3.5" /> Move down
                         </button>
-                        <button type="button" onClick={() => { handleDuplicateBlock(block.id); setActionMenuBlockId(null); }} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)]">
+                        <button role="menuitem" type="button" onClick={() => { handleDuplicateBlock(block.id); setActionMenuBlockId(null); }} className="flex min-h-10 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)]">
                           <Copy className="h-3.5 w-3.5" /> Duplicate
                         </button>
-                        <button type="button" onClick={() => { handleDeleteBlock(block.id); setActionMenuBlockId(null); }} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]">
+                        <button role="menuitem" type="button" onClick={() => { handleDeleteBlock(block.id); setActionMenuBlockId(null); }} className="flex min-h-10 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]">
                           <Trash2 className="h-3.5 w-3.5" /> Delete
                         </button>
                         <div className="my-1 border-t border-[var(--cos-border-soft)]" />
@@ -681,13 +691,14 @@ export function BlockMarkdownEditor({
                           return (
                             <button
                               key={item.type}
+                              role="menuitem"
                               type="button"
                               onClick={() => {
                                 const nextBlocks = blocks.map((candidate) => (candidate.id === block.id ? changeBlockType(candidate, item.type) : candidate));
                                 setActionMenuBlockId(null);
                                 setNextBlocks(nextBlocks, block.id);
                               }}
-                              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)]"
+                              className="flex min-h-10 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)]"
                             >
                               <Icon className="h-3.5 w-3.5 text-[var(--cos-text-subtle)]" />
                               {item.label}
@@ -746,10 +757,13 @@ export function BlockMarkdownEditor({
                         onFocus={() => setFocusedBlockId(block.id)}
                         onChange={(event) => handleBlockTextChange(block.id, event.target.value, event.target.selectionStart)}
                         onKeyDown={(event) => handleKeyDown(event, block, index)}
-                        placeholder={isFocused ? placeholderFor(block, placeholder) : ""}
-                        className={inputClassName}
-                        disabled={disabled}
-                      />
+                      placeholder={isFocused ? placeholderFor(block, placeholder) : ""}
+                      className={inputClassName}
+                      disabled={disabled}
+                      aria-haspopup="listbox"
+                      aria-expanded={Boolean(slashCommand && slashCommand.blockId === block.id && isFocused)}
+                      aria-controls={slashCommand && slashCommand.blockId === block.id && isFocused ? `${dataTestId}-slash-menu-${block.id}` : undefined}
+                    />
                     </div>
                   ) : (
                     <AutoGrowingTextarea
@@ -765,11 +779,15 @@ export function BlockMarkdownEditor({
                       placeholder={isFocused || block.text === "" ? placeholderFor(block, placeholder) : ""}
                       className={inputClassName}
                       disabled={disabled}
+                      aria-haspopup="listbox"
+                      aria-expanded={Boolean(slashCommand && slashCommand.blockId === block.id && isFocused)}
+                      aria-controls={slashCommand && slashCommand.blockId === block.id && isFocused ? `${dataTestId}-slash-menu-${block.id}` : undefined}
                     />
                   )}
 
                   {slashCommand && slashCommand.blockId === block.id && isFocused ? (
                     <SlashCommandMenu
+                      id={`${dataTestId}-slash-menu-${block.id}`}
                       selectedIndex={slashSelectedIndex}
                       filteredCommands={filteredCommands}
                       onSelect={(command) => applyCommandToBlock(block.id, command, slashCommand.triggerIndex)}

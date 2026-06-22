@@ -1,14 +1,14 @@
 # ContextOS Future Concerns Backlog
 
-This file captures concerns that should survive beyond v0.2.7. It is not an active sprint plan; use `BLUEPRINT.md` and `DEV_STATE.md` for active work selection.
+This file captures concerns that should survive beyond v0.2.8. It is not an active sprint plan; use `BLUEPRINT.md` and `DEV_STATE.md` for active work selection.
 
 ## High Priority
 
 ### Deployment Hardening
 
 - Current issue: the 2026-06-15 audit found user-ownership gaps in sync upserts, public registration in a single-user MVP, unbounded sync payloads, missing abuse controls/security headers/CI, stale PWA cache routes, and incomplete operational recovery.
-- Status: v0.2.3 completed Gate 1 user/data isolation work, v0.2.4 completed Dashboard cleanup ergonomics, v0.2.5 completed baseline security headers, explicit metadata base handling, and corrected service-worker cache/routes, v0.2.6 completed app-level auth abuse controls, and v0.2.7 added the health endpoint plus GitHub Actions CI workflow scaffold.
-- Future work: observe/fix the remote CI run after push, run production-like preview smoke, deeper installed-PWA upgrade smoke, backup/restore, monitoring, rollback evidence, and any provider/WAF auth protection needed for public production.
+- Status: v0.2.3 completed Gate 1 user/data isolation work, v0.2.4 completed Dashboard cleanup ergonomics, v0.2.5 completed baseline security headers, explicit metadata base handling, and corrected service-worker cache/routes, v0.2.6 completed app-level auth abuse controls, v0.2.7 added the health endpoint plus GitHub Actions CI workflow scaffold, and v0.2.8 repaired the first remote CI failure path with passing branch CI.
+- Future work: run production-like preview smoke, deeper installed-PWA upgrade smoke, backup/restore, monitoring, rollback evidence, and any provider/WAF auth protection needed for public production.
 - Acceptance signal: remaining deployment gates in `docs/DEPLOYMENT.md` all pass.
 
 ### Graceful Database-Unavailable Handling
@@ -38,7 +38,7 @@ This file captures concerns that should survive beyond v0.2.7. It is not an acti
 - Current source: extracted from `UIUX Design Modifications.md` before archiving that planning file in v0.2.7.
 - Dashboard clarity: make Quick Capture and Notepad the dominant daily surface, add a compact Today pressure strip, reduce equal-weight section cards, and keep Show completed / sort controls in small section-level control rows.
 - Shared UI primitives: after production gates, extract behavior-preserving `Section`, `RecordRow`, `InlineComposer`, `EmptyState`, `Notice`, and segmented/filter controls from the largest workspace files.
-- Mobile command surface: add a mobile bottom navigation for Dashboard, Inbox, Today, Projects, and Search; ensure 40-44px tap targets; make hover-hidden actions visible on touch devices; add mobile viewport regression checks.
+- Mobile command surface: mobile bottom navigation exists for Dashboard, Inbox, Today, Projects, and Search. v0.2.8 adds 40px covered targets for touched Daily Timeline/editor controls; broader 40-44px tap target and touch-action audit remains.
 - Project recovery: promote Next Action and Latest Status into stronger hero fields, preserve Active Tasks and Dates near the top, and eventually add recovery scorecard/timeline affordances if real use proves they help.
 - Accessibility and interaction quality: add stronger slash/block menu semantics, verify icon-only labels, and standardize focus-visible states.
 - Acceptance signal: these changes improve capture speed, daily scanning, mobile use, and project recovery without reintroducing fake clickable rows, task search dead ends, priority terminology, or completion-based list jumps.
@@ -71,5 +71,5 @@ This file captures concerns that should survive beyond v0.2.7. It is not an acti
 
 ### Versioning Alignment
 
-- Status: aligned in v0.2.7. Package metadata, shell label, active docs, and version log use `0.2.7`.
+- Status: aligned in v0.2.8. Package metadata, shell label, active docs, and version log use `0.2.8`.
 - Future work: keep version bumps part of each release batch.

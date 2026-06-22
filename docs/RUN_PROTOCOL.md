@@ -29,7 +29,7 @@
 - Password: `contextos-demo-v011`
 
 ## Verification Ladder
-Run verification commands sequentially. In this Next.js app, `npm run build` can rewrite generated `.next` route type files while `npm run typecheck` is reading them, causing false transient typecheck failures if they run in parallel.
+Run verification commands sequentially. In this Next.js app, `npm run build` can rewrite generated `.next` route type files while `npm run typecheck` is reading them, causing false transient typecheck failures if they run in parallel. Playwright runs that auto-start the Next dev server should also be run sequentially unless they are pointed at a single already-running server.
 
 1. Typecheck:
    ```bash
@@ -66,6 +66,7 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    - Confirm project Notes / Decisions is absent and recovery notes persist.
    - Create a project subcontext and confirm the parent rolls up child tasks/dates.
    - Edit the Dashboard Notepad and confirm it persists.
+   - On a 390px mobile viewport, confirm touched task/editor controls have 40px hit targets, editor add/actions are reachable without hover, slash commands expose listbox/selected state, and block actions expose menu semantics.
    - Open an Area and confirm projects/subcontexts appear inside it.
    - Open Areas and Resources from the PARA nav group.
    - Search for a project task and confirm the result opens a surface where that task is visible; search for a standalone Resource note and confirm it opens Resources.

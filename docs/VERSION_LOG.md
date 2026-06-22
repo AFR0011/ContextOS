@@ -1,5 +1,35 @@
 # ContextOS Version Log
 
+## v0.2.8 CI Repair and Mobile Accessibility Foundation
+
+Status:
+Implemented and verified on 2026-06-17. Branch CI passed on `codex/v0.2.8-ci-a11y-foundation`: `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
+
+Goal:
+Repair the first remote GitHub Actions failure and harden the concrete mobile/editor accessibility gaps found in the deployment audit.
+
+Schema and compatibility:
+- No Prisma schema changes.
+- No API or sync payload changes.
+- Existing Markdown serialization, Dashboard Notepad behavior, project recovery notes, resources, reviews, and offline sync semantics are preserved.
+
+Implemented behavior:
+- Block editor typed/slash command transforms now use the textarea's live value during Enter handling.
+- Dashboard Notepad no longer lets a late saved-content hydration update overwrite a dirty local draft.
+- Daily Timeline completion/delete controls and block editor add/action controls now have 40px mobile hit targets where touched.
+- Block editor add/action controls are reachable on touch viewports instead of hover-only.
+- Block action and slash-command menus expose roles, expanded/selected state, and accessible labels for covered flows.
+- Bumped package and shell version to `0.2.8`.
+
+Verification:
+- Prisma validate, migration, and seed passed.
+- Targeted repeated toggle-heading Playwright coverage passed 5/5 after the hydration guard.
+- Targeted mobile editor/task control Playwright coverage passed.
+- Typecheck and build passed.
+- Full Playwright suite passed with 36 tests.
+- In-app Browser smoke passed on desktop and 390px mobile with `MVP v0.2.8`, Dashboard/Dates/Tasks visible, no overflow, no console errors, and touched mobile controls at 40x40.
+- GitHub Actions CI passed on the pushed branch after hardening reset/order e2e flakes discovered during the evidence push.
+
 ## v0.2.7 Cleanup and Production-Readiness Foundation
 
 Status:

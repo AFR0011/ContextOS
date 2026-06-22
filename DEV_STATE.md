@@ -2,80 +2,83 @@
 
 ## Active Loop
 
-- Status: CLOSE - Batch v0.2.7 cleanup and production-readiness foundation
-- Date: 2026-06-17
-- Active batch: none
+- Status: CLOSE - Batch v0.2.8 task-driven daily timeline
+- Date: 2026-06-22
+- Active batch: v0.2.8 task-driven daily timeline
 - Completed batch: v0.2.7 cleanup and production-readiness foundation
-- Post-batch cleanup: repo cleanup audit executed
 - Canonical product source: `BLUEPRINT.md`
-- Tooling fallback: dev-loop specialist tools are policy-gated unless the user explicitly requests delegation, so this cycle is using the documented local phase-artifact fallback.
+- Tooling fallback: dev-loop helper scripts are not present under `tools/`, so this cycle is using the documented local phase-artifact fallback.
 
 ## Active Batch Plan
 
-Scope this cycle to one independently testable production-readiness foundation batch:
+Scope this cycle to one independently testable dashboard workflow batch:
 
-1. Execute the approved cleanup: delete generated ignored artifacts, remove duplicate icon script, remove the stray `.gitignore` rule, and archive historical planning/prototype files under `docs/archive/`.
-2. Extract still-relevant UI/UX backlog themes into `docs/MIGRATION_BACKLOG.md` before archiving `UIUX Design Modifications.md`.
-3. Bump package metadata, shell label, and active docs from `0.2.6` to `0.2.7`.
-4. Add unauthenticated `GET /api/health` with no-store caching and structured `200`, `503`, and `500` responses.
-5. Add a GitHub Actions CI workflow with Node 22, PostgreSQL 16, Prisma validation/generation, migration deploy, seed, typecheck, build, and Playwright e2e.
-6. Update canonical docs and shared operational evidence for cleanup, health, and CI status.
+1. Audit the current product, QA, UI/UX, and senior-engineering state from the active docs and implementation.
+2. Keep the Daily timeline backed by real tasks, but make it visibly task-driven from the dashboard Tasks list.
+3. Add today important Dates into the Daily timeline so the day view is built from the day's tasks and dated commitments.
+4. Add lightweight task movement affordances between Dashboard Tasks and Daily timeline:
+   - drag a task into Daily timeline to plan it for today,
+   - drag a task back to Tasks to clear today timeline placement where possible,
+   - use row actions or right-click as an accessible fallback.
+5. Preserve existing task editing, completion, deletion, sorting, show-completed, offline outbox, and mobile wrapping behavior.
+6. Update focused regression coverage and canonical docs/state.
 
-Out of scope for this batch: commits, pushes, PRs, live provider preview deployment, provider/WAF configuration, backup/restore rehearsal, rollback rehearsal, monitoring setup, installed-PWA upgrade from an older cached worker, dependency upgrades, and UI/accessibility redesign.
+Out of scope for this batch: schema changes, external calendar integration, recurrence, AI scheduling, arbitrary manual ordering, time durations, empty calendar grids, and broad visual redesign.
 
 Acceptance criteria:
 
-- Approved generated artifacts are deleted while `.env`, `node_modules`, `.vercel`, `.remember`, and `.codex-observer` remain untouched.
-- Historical cleanup targets are preserved under `docs/archive/`.
-- `GET /api/health` reports database availability with the documented response shapes and `Cache-Control: no-store`.
-- GitHub Actions CI is present and matches the documented verification sequence.
-- Sequential Prisma, typecheck, build, targeted health, full e2e, and Browser smoke checks pass locally.
+- Daily timeline includes tasks planned or due today and important Dates scheduled for today.
+- Adding a task from the Daily timeline creates a real task planned for today.
+- A task in Dashboard Tasks can be added to today’s Daily timeline by drag/drop and by a row action/context menu.
+- A task planned for today can be removed from the Daily timeline without deleting the task.
+- Dates remain non-completable Date records, not task checkboxes.
+- Existing Dashboard, Today, Project task surfaces, and task sort/completion behavior keep working.
+- `npm run typecheck` and `npm run build` pass.
 
 ## Outcome
 
-Batch complete.
+Batch complete with DB-backed e2e blocked by local infrastructure.
 
-Implemented cleanup and production-readiness foundation in one scoped batch:
+Implemented the task-driven Daily timeline batch:
 
-- Deleted approved generated artifacts without touching `.env`, `node_modules`, `.vercel`, `.remember`, or `.codex-observer`.
-- Archived historical prototype/planning/audit/shared-message files under `docs/archive/`.
-- Removed the duplicate `scripts/generate-icons.js`, kept `scripts/generate-icons.cjs`, and removed the stray `.gitignore` `a` rule.
-- Extracted still-relevant UI/UX backlog themes into `docs/MIGRATION_BACKLOG.md`.
-- Added `GET /api/health` with structured DB availability responses and `Cache-Control: no-store`.
-- Added `.github/workflows/ci.yml` using Node 22, PostgreSQL 16, Prisma validation/generation, migration deploy, seed, typecheck, build, and Playwright e2e.
-- Bumped package metadata and shell label to `0.2.7`.
-- Excluded `docs/archive` from main app TypeScript checks so archived prototypes remain historical only.
+- Extended the shared `DailySchedule` component to render task rows and today Date rows.
+- Added drag/drop task movement hooks and row-action/right-click menus for adding tasks to, and removing tasks from, the Dashboard Daily timeline.
+- Updated the Dashboard Daily timeline to include tasks planned or due today plus important Dates dated today.
+- Kept newly created timeline tasks as real Task records planned for today.
+- Kept Dates as non-completable Date records with editable time and archive/restore behavior.
+- Updated Dashboard Tasks so it remains the broader task reservoir and can plan tasks into today's timeline.
+- Added focused e2e coverage for task movement and today Dates appearing in the timeline.
 
 ## Acceptance Evidence
 
 | Criteria | Status |
 | --- | --- |
-| Approved generated artifacts are deleted while protected local files remain untouched | DONE |
-| Historical cleanup targets are preserved under `docs/archive/` | DONE |
-| `/api/health` reports database availability with no-store responses | DONE |
-| GitHub Actions CI workflow matches the documented sequence | DONE |
-| Sequential Prisma, typecheck, build, targeted health, full e2e, and Browser smoke pass locally | DONE |
+| Daily timeline includes tasks planned or due today and important Dates scheduled for today | DONE in code; e2e coverage added but not run to completion because DB is unavailable |
+| Adding a task from the Daily timeline creates a real task planned for today | PRESERVED |
+| A task in Dashboard Tasks can be added to today's Daily timeline by drag/drop and by a row action/context menu | DONE in code; e2e coverage added but not run to completion because DB is unavailable |
+| A task planned for today can be removed from the Daily timeline without deleting the task | DONE in code; e2e coverage added but not run to completion because DB is unavailable |
+| Dates remain non-completable Date records, not task checkboxes | DONE |
+| Existing Dashboard, Today, Project task surfaces, and task sort/completion behavior keep working | STATIC PASS; full e2e blocked |
+| `npm run typecheck` and `npm run build` pass | DONE |
 
 ## Verification
 
-- `npx prisma validate` - passed.
-- First `npm run db:migrate` attempt failed because Docker Desktop/Postgres was not running; after starting Docker Desktop and `docker compose up -d`, retry passed and schema was already in sync.
-- `npm run db:seed` - passed.
-- First `npm run typecheck` attempt failed because archived prototype TypeScript files were included; after excluding `docs/archive`, retry passed.
+- `python tools/context_manager.py init --root .` - blocked; helper script is not present.
+- `python -m py_compile tools/context_manager.py tools/performance_tracker.py tools/consistency_validator.py tools/risk_assessor.py` - blocked; helper scripts are not present.
+- `npm run typecheck` - initially failed on a Today-view task-row type assumption after introducing mixed schedule rows; fixed by narrowing the Today local rows to task rows.
+- `npm run typecheck` - passed after fixes.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard tasks can move|dashboard can add a project-linked important date|dashboard daily timeline supports one time|dashboard daily timeline supports untimed" --workers=1` - timed out before returning usable test output.
+- `docker compose ps` - blocked because Docker Desktop's Linux engine pipe is unavailable, so DB-backed Playwright verification cannot complete in the current local state.
 - `npm run build` - passed.
-- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "health endpoint" --workers=1` - passed, 1 test.
-- `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1` - passed, 35 tests.
-- In-app Browser smoke at `http://localhost:3001/dashboard` - passed; authenticated Dashboard rendered `MVP v0.2.7`, Dashboard/Dates/Tasks were visible, horizontal overflow was false, and browser console errors were empty.
+- `npx prisma validate` - passed.
+- `git diff --check` - passed with line-ending normalization warnings only.
 
 ## Remaining Risks
 
-- P1: Remote GitHub Actions evidence, production-like preview evidence, monitoring setup, backup/restore rehearsal, and rollback rehearsal are still missing.
-- App-level auth abuse controls are implemented in v0.2.6; provider/WAF-level protection remains recommended as production defense in depth.
-- Deeper installed-PWA upgrade testing remains deferred; this batch verifies the script/cache text and local app-shell behavior, not an already-installed legacy worker upgrade path.
-- Drag-and-drop or arbitrary manual task ordering remains deferred; v0.2.4 only adds explicit sort modes.
-- Internal `Deadline` naming remains intentionally for compatibility and should only change in a dedicated migration.
-- Real-use validation should confirm newest-first Dashboard Tasks and cleanup actions reduce clutter without making the daily command sheet noisy.
+- Drag/drop behavior needs browser regression coverage because native HTML drag events can be brittle across inputs and touch devices.
+- Removing a task from the timeline clears today planning/time placement; tasks that are due today should still surface because they are still dated commitments.
+- Full DB-backed e2e and browser smoke still need to run once Docker/Postgres is available.
 
 ## Next Action
 
-Push or otherwise run the GitHub Actions workflow to collect remote CI evidence, then choose the next production-readiness batch: preview smoke, backup/restore, rollback, monitoring, provider/WAF, or installed-PWA upgrade.
+Start Docker/Postgres, rerun the focused Dashboard timeline e2e slice, then run the full documented e2e ladder if the focused slice passes.

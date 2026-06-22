@@ -1,16 +1,126 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Clock3, Trash2 } from "lucide-react";
+import type { DragEvent } from "react";
+import { CalendarClock, CalendarMinus, CalendarPlus, Check, Clock3, GripVertical, MoreHorizontal, Trash2 } from "lucide-react";
 import { useWorkspace } from "@/lib/client-store";
-import type { Task } from "@/lib/types";
+import type { Deadline, Task } from "@/lib/types";
 
-export interface DailyScheduleRow {
-  task: Task;
-  labels?: string[];
+export type DailyScheduleRow =
+  | {
+      type?: "task";
+      task: Task;
+      labels?: string[];
+    }
+  | {
+      type: "deadline";
+      deadline: Deadline;
+      labels?: string[];
+    };
+
+type TaskScheduleRow = Extract<DailyScheduleRow, { task: Task }>;
+type DeadlineScheduleRow = Extract<DailyScheduleRow, { type: "deadline" }>;
+type DailyScheduleOrder = "schedule" | "preserve";
+type TaskPlacementAction = "add" | "remove";
+
+function isTaskRow(row: DailyScheduleRow): row is TaskScheduleRow {
+  return "task" in row;
 }
 
-type DailyScheduleOrder = "schedule" | "preserve";
+function rowTime(row: DailyScheduleRow) {
+  return isTaskRow(row) ? row.task.scheduledTime : row.deadline.time;
+}
+
+function rowCreatedAt(row: DailyScheduleRow) {
+  return isTaskRow(row) ? row.task.createdAt : row.deadline.createdAt;
+}
+
+function rowKey(row: DailyScheduleRow) {
+  return isTaskRow(row) ? `task-${row.task.id}` : `deadline-${row.deadline.id}`;
+}
+
+function taskIdFromDrop(event: DragEvent) {
+  return event.dataTransfer.getData("application/x-contextos-task-id") || event.dataTransfer.getData("text/plain");
+}
+
+function placementLabel(action: TaskPlacementAction) {
+  return action === "add" ? "Add to timeline" : "Remove from timeline";
+}
+
+function placementIcon(action: TaskPlacementAction) {
+  return action === "add" ? CalendarPlus : CalendarMinus;
+}
+
+function TaskPlacementMenu({
+  task,
+  action,
+  open,
+  onOpenChange,
+  onAction
+}: {
+  task: Task;
+  action?: TaskPlacementAction;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAction?: (task: Task) => void;
+}) {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function close(event: MouseEvent) {
+      if (menuRef.current?.contains(event.target as Node)) return;
+      onOpenChange(false);
+    }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") onOpenChange(false);
+    }
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [onOpenChange, open]);
+
+  if (!action || !onAction) return null;
+
+  const label = placementLabel(action);
+  const Icon = placementIcon(action);
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        type="button"
+        aria-label={`${label} ${task.title}`}
+        title={label}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenChange(!open);
+        }}
+        className="grid h-7 w-7 shrink-0 place-items-center rounded text-[var(--cos-text-subtle)] opacity-70 hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)] group-hover:opacity-100"
+      >
+        <MoreHorizontal className="h-3.5 w-3.5" />
+      </button>
+      {open ? (
+        <div role="menu" className="absolute right-0 top-8 z-20 w-44 rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-1 shadow-md">
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              onAction(task);
+              onOpenChange(false);
+            }}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs font-semibold text-[var(--cos-text)] hover:bg-[var(--cos-bg-soft)]"
+          >
+            <Icon className="h-3.5 w-3.5 text-[var(--cos-primary)]" />
+            {label}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function TaskTitle({ task }: { task: Task }) {
   const { updateTask } = useWorkspace();
@@ -57,12 +167,43 @@ function TaskTitle({ task }: { task: Task }) {
   );
 }
 
-function TimelineTaskRow({ row }: { row: DailyScheduleRow }) {
+function TimelineTaskRow({
+  row,
+  draggableTasks,
+  taskPlacementAction,
+  onTaskPlacementAction
+}: {
+  row: TaskScheduleRow;
+  draggableTasks: boolean;
+  taskPlacementAction?: TaskPlacementAction;
+  onTaskPlacementAction?: (task: Task) => void;
+}) {
   const { updateTask } = useWorkspace();
   const done = row.task.status === "done";
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="group flex items-start gap-2 border-b border-[var(--cos-border-soft)] px-1 py-2 last:border-b-0">
+    <div
+      data-testid="daily-schedule-task-row"
+      draggable={draggableTasks}
+      onDragStart={(event) => {
+        if (!draggableTasks) return;
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("application/x-contextos-task-id", row.task.id);
+        event.dataTransfer.setData("text/plain", row.task.id);
+      }}
+      onContextMenu={(event) => {
+        if (!taskPlacementAction || !onTaskPlacementAction) return;
+        event.preventDefault();
+        setMenuOpen(true);
+      }}
+      className="group flex items-start gap-2 border-b border-[var(--cos-border-soft)] px-1 py-2 last:border-b-0"
+    >
+      {draggableTasks ? (
+        <div className="mt-1 grid h-5 w-4 shrink-0 place-items-center text-[var(--cos-text-subtle)]" aria-hidden="true">
+          <GripVertical className="h-4 w-4" />
+        </div>
+      ) : null}
       <button
         type="button"
         aria-label={done ? `Reopen ${row.task.title}` : `Mark ${row.task.title} done`}
@@ -92,6 +233,14 @@ function TimelineTaskRow({ row }: { row: DailyScheduleRow }) {
         />
       </label>
 
+      <TaskPlacementMenu
+        task={row.task}
+        action={taskPlacementAction}
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        onAction={onTaskPlacementAction}
+      />
+
       <button
         type="button"
         aria-label={`Delete ${row.task.title}`}
@@ -104,32 +253,103 @@ function TimelineTaskRow({ row }: { row: DailyScheduleRow }) {
   );
 }
 
+function DeadlineTimelineRow({ row }: { row: DeadlineScheduleRow }) {
+  const { updateDeadline } = useWorkspace();
+  const archived = Boolean(row.deadline.archivedAt);
+
+  return (
+    <div data-testid="daily-schedule-date-row" className={`group flex items-start gap-2 border-b border-[var(--cos-border-soft)] px-1 py-2 last:border-b-0 ${archived ? "opacity-60" : ""}`}>
+      <div className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[var(--cos-date-soft)] text-[var(--cos-date)]">
+        <CalendarClock className="h-3.5 w-3.5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold leading-5 text-[var(--cos-text-strong)]">{row.deadline.title}</p>
+        {row.labels?.length ? (
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {row.labels.map((label) => <span key={label} className="cos-pill cos-pill-muted">{label}</span>)}
+          </div>
+        ) : null}
+      </div>
+
+      <label className="flex shrink-0 items-center gap-1 text-[var(--cos-text-subtle)]">
+        <Clock3 className="h-3.5 w-3.5" />
+        <input
+          aria-label={`${row.deadline.title} date time`}
+          type="time"
+          value={row.deadline.time ?? ""}
+          onChange={(event) => updateDeadline(row.deadline.id, { time: event.target.value || null })}
+          className="w-[5.2rem] bg-transparent text-xs font-medium text-[var(--cos-text-muted)] outline-none"
+        />
+      </label>
+
+      <button
+        type="button"
+        aria-label={archived ? `Restore ${row.deadline.title}` : `Archive ${row.deadline.title}`}
+        onClick={() => updateDeadline(row.deadline.id, { archivedAt: archived ? null : new Date().toISOString() })}
+        className="grid h-7 w-7 shrink-0 place-items-center rounded text-[var(--cos-text-subtle)] opacity-60 hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)] group-hover:opacity-100"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 export function DailySchedule({
   rows,
   today: _today,
   emptyTitle = "No timeline items",
   emptyDescription = "Add one task for today.",
-  order = "schedule"
+  order = "schedule",
+  draggableTasks = false,
+  taskPlacementAction,
+  onTaskPlacementAction,
+  onTaskDrop
 }: {
   rows: DailyScheduleRow[];
   today: string;
   emptyTitle?: string;
   emptyDescription?: string;
   order?: DailyScheduleOrder;
+  draggableTasks?: boolean;
+  taskPlacementAction?: TaskPlacementAction;
+  onTaskPlacementAction?: (task: Task) => void;
+  onTaskDrop?: (taskId: string) => void;
 }) {
+  const [dragOver, setDragOver] = useState(false);
   const ordered = useMemo(() => {
     if (order === "preserve") return rows;
     return [...rows].sort((a, b) => {
-      const aTime = a.task.scheduledTime ?? "99:99";
-      const bTime = b.task.scheduledTime ?? "99:99";
+      const aTime = rowTime(a) ?? "99:99";
+      const bTime = rowTime(b) ?? "99:99";
       if (aTime !== bTime) return aTime.localeCompare(bTime);
-      return a.task.createdAt.localeCompare(b.task.createdAt);
+      return rowCreatedAt(a).localeCompare(rowCreatedAt(b));
     });
   }, [order, rows]);
 
+  const dropHandlers = onTaskDrop ? {
+    onDragOver: (event: DragEvent<HTMLDivElement>) => {
+      if (!taskIdFromDrop(event)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      setDragOver(true);
+    },
+    onDragLeave: () => setDragOver(false),
+    onDrop: (event: DragEvent<HTMLDivElement>) => {
+      const taskId = taskIdFromDrop(event);
+      setDragOver(false);
+      if (!taskId) return;
+      event.preventDefault();
+      onTaskDrop(taskId);
+    }
+  } : {};
+
   if (!ordered.length) {
     return (
-      <div className="rounded-lg border border-dashed border-[var(--cos-border)] px-4 py-6 text-center">
+      <div
+        data-testid="daily-schedule-drop-zone"
+        {...dropHandlers}
+        className={`rounded-lg border border-dashed px-4 py-6 text-center ${dragOver ? "border-[var(--cos-primary)] bg-[var(--cos-primary-soft)]" : "border-[var(--cos-border)]"}`}
+      >
         <p className="text-sm font-medium text-[var(--cos-text-muted)]">{emptyTitle}</p>
         <p className="mt-1 text-xs text-[var(--cos-text-subtle)]">{emptyDescription}</p>
       </div>
@@ -137,8 +357,24 @@ export function DailySchedule({
   }
 
   return (
-    <div data-testid="daily-timeline-list" className="rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)] px-2">
-      {ordered.map((row) => <TimelineTaskRow key={row.task.id} row={row} />)}
+    <div
+      data-testid="daily-schedule-drop-zone"
+      {...dropHandlers}
+      className={`rounded-lg border bg-[var(--cos-bg-elevated)] px-2 ${dragOver ? "border-[var(--cos-primary)] ring-2 ring-[var(--cos-focus)]" : "border-[var(--cos-border-soft)]"}`}
+    >
+      <div data-testid="daily-timeline-list">
+        {ordered.map((row) => isTaskRow(row)
+          ? (
+              <TimelineTaskRow
+                key={rowKey(row)}
+                row={row}
+                draggableTasks={draggableTasks}
+                taskPlacementAction={taskPlacementAction}
+                onTaskPlacementAction={onTaskPlacementAction}
+              />
+            )
+          : <DeadlineTimelineRow key={rowKey(row)} row={row} />)}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,36 @@
 # ContextOS QA Report
 
+## 2026-06-22 - v0.2.8 Task-Driven Daily Timeline
+
+### Verdict
+
+- Static implementation verification: PASS.
+- Schema validation: PASS.
+- Focused DB-backed Playwright coverage: BLOCKED locally because Docker/Postgres is unavailable.
+- Release confidence: PASS_WITH_RISKS until the focused timeline e2e slice and full e2e suite run against a live local database.
+
+### Commands And Evidence
+
+- `python tools/context_manager.py init --root .` - blocked; helper script is not present in this repo.
+- `python -m py_compile tools/context_manager.py tools/performance_tracker.py tools/consistency_validator.py tools/risk_assessor.py` - blocked; helper scripts are not present in this repo.
+- `npm run typecheck` - initially failed on a Today-view task-row type assumption after mixed schedule rows were introduced; fixed by narrowing Today rows to task rows.
+- `npm run typecheck` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard tasks can move|dashboard can add a project-linked important date|dashboard daily timeline supports one time|dashboard daily timeline supports untimed" --workers=1` - timed out before returning usable output.
+- `docker compose ps` - blocked because Docker Desktop's Linux engine pipe is unavailable.
+- `npm run build` - passed.
+- `npx prisma validate` - passed.
+- `git diff --check` - passed with line-ending normalization warnings only.
+
+### Coverage Added
+
+- Dashboard Tasks task can be moved into the Daily timeline by drag/drop, removed from timeline placement without deletion, and added again through the context/action menu.
+- A Dashboard Date created for today appears in the Daily timeline with its time, and archiving the Date removes it from the timeline.
+
+### Coverage Gaps
+
+- The new focused Playwright coverage is written but not yet executed to completion because DB-backed tests need Docker/Postgres.
+- Full e2e, mobile browser smoke, and drag/drop touch-device behavior remain to be verified.
+
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation
 
 ### Verdict

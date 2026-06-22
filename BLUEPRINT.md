@@ -434,6 +434,16 @@ A task may have one optional `scheduledTime` value. It represents when the task 
 
 Daily task surfaces show only occupied times plus untimed tasks. They do not render a full empty-day grid.
 
+The Dashboard Daily Timeline is derived from real records:
+
+```text
+Tasks planned today
+Tasks due today
+Important Dates dated today
+```
+
+Dashboard Tasks remains the broader task reservoir. Moving a task into the Daily Timeline sets or preserves today planning on the task; moving it out clears today timeline placement when the task is not still due today.
+
 ### 9.6 No Priority Subsystem
 
 There is no global task priority field in MVP.
@@ -605,7 +615,8 @@ Agent Suggestions
 When opening the dashboard:
 
 - Quick capture should always be visible at the top.
-- Daily Timeline should remain a fast, notepad-like task-writing surface.
+- Daily Timeline should remain a fast task-writing surface built from today's tasks and important Dates.
+- Dashboard Tasks should make it easy to move existing tasks into or out of today's Daily Timeline without creating duplicate checklist items.
 
 The dashboard should orient the user before asking for more input.
 

@@ -54,6 +54,8 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    - Add `/task` and `/date` captures from Dashboard Quick Capture and confirm they reach Inbox.
    - Convert an inbox capture to a task.
    - Add timed and untimed Daily timeline tasks, create two tasks at the same time, and confirm no empty calendar slots appear.
+   - Drag a task from Dashboard Tasks into Daily timeline, then remove it from timeline placement through row actions or right-click without deleting the task.
+   - Add an important Date for today and confirm it appears in Daily timeline as a Date row, not a task checkbox.
    - Cross a Daily timeline or Today task, reload, and confirm it remains visible and can be reopened.
    - Confirm crossing/reopening a task does not reorder it solely because it is completed.
    - Confirm long task titles wrap on mobile instead of truncating.

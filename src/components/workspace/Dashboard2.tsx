@@ -51,6 +51,17 @@ function isTaskVisible(task: Task, showCompleted: boolean) {
   return showCompleted || !DONE_TASK_STATUSES.includes(task.status);
 }
 
+function isTaskInDailyTimeline(task: Task, today: string) {
+  return !task.trashedAt && !task.archivedAt && (task.plannedDate === today || task.dueDate === today);
+}
+
+function removeTaskFromTimelineUpdates(task: Task, today: string): Partial<Task> {
+  return {
+    plannedDate: task.plannedDate === today ? null : task.plannedDate,
+    scheduledTime: null
+  };
+}
+
 function projectName(projects: Project[], projectId: string | null | undefined) {
   if (!projectId) return "";
   return projects.find((project) => project.id === projectId)?.name ?? "";
@@ -461,35 +472,48 @@ function DateComposer({
 }
 
 function DailyTimelineSection({ today }: { today: string }) {
-  const { data, addTask } = useWorkspace();
+  const { data, addTask, updateTask } = useWorkspace();
   const [title, setTitle] = useState("");
   const [projectId, setProjectId] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const projects = activeProjectOptions(data.projects);
   const rows = useMemo<DailyScheduleRow[]>(() => {
-    return data.tasks
-      .filter((task) => !task.trashedAt && !task.archivedAt)
-      .filter((task) => task.dueDate === today || task.plannedDate === today || task.status === "in-progress" || (task.dueDate && task.dueDate < today && isTaskOpen(task)))
-      .sort((a, b) => {
-        const aOverdue = Boolean(a.dueDate && a.dueDate < today && isTaskOpen(a));
-        const bOverdue = Boolean(b.dueDate && b.dueDate < today && isTaskOpen(b));
-        if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
-        const aTime = a.scheduledTime ?? "99:99";
-        const bTime = b.scheduledTime ?? "99:99";
-        if (aTime !== bTime) return aTime.localeCompare(bTime);
-        return a.createdAt.localeCompare(b.createdAt);
-      })
+    const taskRows: DailyScheduleRow[] = data.tasks
+      .filter((task) => isTaskInDailyTimeline(task, today))
       .map((task) => ({
         task,
         labels: [
-          task.dueDate && task.dueDate < today && isTaskOpen(task) ? "Overdue" : "",
+          task.dueDate === today ? "Due today" : "",
+          task.plannedDate === today ? "Planned today" : "",
           task.status === "in-progress" ? "In progress" : "",
-          task.dueDate ? `Due ${formatDateKey(task.dueDate)}` : "",
-          task.plannedDate ? `Planned ${formatDateKey(task.plannedDate)}` : "",
           projectName(data.projects, task.projectId)
         ].filter(Boolean)
       }));
-  }, [data.projects, data.tasks, today]);
+
+    const dateRows: DailyScheduleRow[] = data.deadlines
+      .filter((deadline) => !deadline.trashedAt && !deadline.archivedAt && deadline.date === today)
+      .map((deadline) => ({
+        type: "deadline" as const,
+        deadline,
+        labels: [
+          "Date",
+          deadline.location,
+          projectName(data.projects, deadline.projectId)
+        ].filter(Boolean)
+      }));
+
+    return [...taskRows, ...dateRows];
+  }, [data.deadlines, data.projects, data.tasks, today]);
+
+  function addTaskToTimeline(taskId: string) {
+    const task = data.tasks.find((item) => item.id === taskId);
+    if (!task || task.trashedAt || task.archivedAt) return;
+    updateTask(task.id, { plannedDate: today });
+  }
+
+  function removeTaskFromTimeline(task: Task) {
+    updateTask(task.id, removeTaskFromTimelineUpdates(task, today));
+  }
 
   function createTask() {
     const trimmed = title.trim();
@@ -531,7 +555,14 @@ function DailyTimelineSection({ today }: { today: string }) {
           </select>
         ) : null}
       </div>
-      <DailySchedule rows={rows} today={today} />
+      <DailySchedule
+        rows={rows}
+        today={today}
+        draggableTasks
+        taskPlacementAction="remove"
+        onTaskPlacementAction={removeTaskFromTimeline}
+        onTaskDrop={addTaskToTimeline}
+      />
     </div>
   );
 }
@@ -539,11 +570,13 @@ function DailyTimelineSection({ today }: { today: string }) {
 function AllTasksSection({
   showCompleted,
   taskSortMode,
-  onTaskSortMode
+  onTaskSortMode,
+  today
 }: {
   showCompleted: boolean;
   taskSortMode: DashboardTaskSortMode;
   onTaskSortMode: (mode: DashboardTaskSortMode) => void;
+  today: string;
 }) {
   const { data, updateTask } = useWorkspace();
   const finishedTasks = data.tasks.filter((task) => isTaskVisible(task, true) && DONE_TASK_STATUSES.includes(task.status));
@@ -564,6 +597,16 @@ function AllTasksSection({
     if (!window.confirm(`Move ${finishedTasks.length} finished task${finishedTasks.length === 1 ? "" : "s"} to Trash?`)) return;
     const trashedAt = new Date().toISOString();
     finishedTasks.forEach((task) => updateTask(task.id, { trashedAt }));
+  }
+
+  function addTaskToTimeline(task: Task) {
+    updateTask(task.id, { plannedDate: today });
+  }
+
+  function removeDroppedTaskFromTimeline(taskId: string) {
+    const task = data.tasks.find((item) => item.id === taskId);
+    if (!task) return;
+    updateTask(task.id, removeTaskFromTimelineUpdates(task, today));
   }
 
   return (
@@ -596,7 +639,17 @@ function AllTasksSection({
           </button>
         ) : null}
       </div>
-      <DailySchedule rows={rows} today={localDateKey()} order="preserve" emptyTitle="No active tasks" emptyDescription="Tasks from every date and project will appear here." />
+      <DailySchedule
+        rows={rows}
+        today={today}
+        order="preserve"
+        emptyTitle="No active tasks"
+        emptyDescription="Tasks from every date and project will appear here."
+        draggableTasks
+        taskPlacementAction="add"
+        onTaskPlacementAction={addTaskToTimeline}
+        onTaskDrop={removeDroppedTaskFromTimeline}
+      />
     </div>
   );
 }
@@ -704,7 +757,9 @@ export function Dashboard2View() {
   const collapsed = new Set(preferences.collapsedSections);
   const activeDateWindowEnd = addDaysToDateKey(today, preferences.dateWindowDays) ?? today;
   const datesCount = data.deadlines.filter((deadline) => !deadline.trashedAt && (preferences.showCompleted || !deadline.archivedAt) && (deadline.date < today || deadline.date <= activeDateWindowEnd)).length;
-  const tasksCount = data.tasks.filter((task) => !task.trashedAt && !task.archivedAt && (task.dueDate === today || task.plannedDate === today || task.status === "in-progress" || (task.dueDate && task.dueDate < today && isTaskOpen(task)))).length;
+  const tasksCount =
+    data.tasks.filter((task) => isTaskInDailyTimeline(task, today)).length +
+    data.deadlines.filter((deadline) => !deadline.trashedAt && !deadline.archivedAt && deadline.date === today).length;
   const allTasksCount = data.tasks.filter((task) => isTaskVisible(task, preferences.showCompleted)).length;
   const projectsCount = data.projects.filter((project) => !project.trashedAt && !project.archivedAt && project.status === "active").length;
 
@@ -743,6 +798,7 @@ export function Dashboard2View() {
         <AllTasksSection
           showCompleted={preferences.showCompleted}
           taskSortMode={preferences.taskSortMode}
+          today={today}
           onTaskSortMode={(taskSortMode) => updateDashboardPreferences({
             sectionOrder: preferences.sectionOrder,
             collapsedSections: preferences.collapsedSections,

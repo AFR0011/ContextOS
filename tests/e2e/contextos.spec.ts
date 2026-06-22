@@ -474,10 +474,35 @@ test("dashboard daily timeline supports untimed and same-time tasks without an e
   await expect(taskSection.locator('[data-testid="daily-schedule-grid"]')).toHaveCount(0);
 });
 
+test("dashboard tasks can move into and out of the daily timeline", async ({ page }) => {
+  await login(page);
+  const title = "Rerun RF baseline with corrected threshold logic";
+  const timeline = page.getByTestId("dashboard-section-tasks");
+  const allTasks = page.getByTestId("dashboard-section-allTasks");
+
+  await expect(allTasks.getByLabel(`Task title ${title}`)).toBeVisible();
+  await expect(timeline.getByLabel(`Task title ${title}`)).toHaveCount(0);
+
+  const allTaskRow = allTasks.locator('[data-testid="daily-schedule-task-row"]').filter({ has: allTasks.getByLabel(`Task title ${title}`) }).first();
+  await allTaskRow.dragTo(timeline.getByTestId("daily-schedule-drop-zone"));
+  await expect(timeline.getByLabel(`Task title ${title}`)).toBeVisible();
+
+  const timelineRow = timeline.locator('[data-testid="daily-schedule-task-row"]').filter({ has: timeline.getByLabel(`Task title ${title}`) }).first();
+  await timelineRow.click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Remove from timeline" }).click();
+  await expect(timeline.getByLabel(`Task title ${title}`)).toHaveCount(0);
+  await expect(allTasks.getByLabel(`Task title ${title}`)).toBeVisible();
+
+  await allTaskRow.click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Add to timeline" }).click();
+  await expect(timeline.getByLabel(`Task title ${title}`)).toBeVisible();
+});
+
 test("dashboard can add a project-linked important date with time and location", async ({ page }) => {
   await login(page);
   const title = `Dashboard date ${Date.now()}`;
   const datesSection = page.getByTestId("dashboard-section-dates");
+  const timeline = page.getByTestId("dashboard-section-tasks");
   await datesSection.getByTestId("dashboard-add-deadline-input").fill(title);
   await datesSection.getByLabel("Date time").fill("14:30");
   await datesSection.getByLabel("Date location").fill("Library");
@@ -486,11 +511,14 @@ test("dashboard can add a project-linked important date with time and location",
   await expect(datesSection.getByText(title)).toBeVisible();
   await expect(datesSection.getByText("14:30")).toBeVisible();
   await expect(datesSection.getByText("Library")).toBeVisible();
+  await expect(timeline.getByText(title)).toBeVisible();
+  await expect(timeline.getByLabel(`${title} date time`)).toHaveValue("14:30");
   await expect(datesSection.getByText("Write one clean latest-status note")).toHaveCount(0);
   await page.reload();
   await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toBeVisible();
   await page.getByTestId("dashboard-section-dates").getByRole("button", { name: `Archive ${title}` }).click();
   await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toHaveCount(0);
+  await expect(page.getByTestId("dashboard-section-tasks").getByText(title)).toHaveCount(0);
   await page.getByRole("button", { name: "Show completed" }).click();
   await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());

@@ -317,7 +317,7 @@ export function TodayView() {
   const tasks = executionTasks(data.tasks);
   const overdue = activeTasks(data.tasks).filter(isOverdue);
   const seen = new Set<string>();
-  const rows: DailyScheduleRow[] = [];
+  const rows: { task: Task; labels: string[] }[] = [];
   const add = (task: Task, labels: string[]) => {
     if (!seen.has(task.id)) {
       seen.add(task.id);

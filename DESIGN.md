@@ -22,8 +22,8 @@ This amendment is authoritative wherever older sections use legacy Deadline, pri
 - Visible product language is **Date/Dates**. Dates are important reference events, not completable tasks.
 - `/dates` is canonical; `/deadlines` is only a compatibility redirect. Capture advertises `/date` and still accepts `/deadline`.
 - The Dashboard starts with reusable Quick Capture above all other content.
-- Daily timeline is a compact notepad-like task list. Show only occupied optional times; never render empty calendar slots.
-- A separate collapsible Tasks section shows active tasks across dates and projects and follows Show completed.
+- Daily timeline is a compact day lane derived from tasks planned/due today and important Dates dated today. Show only occupied optional times; never render empty calendar slots.
+- A separate collapsible Tasks section shows active tasks across dates and projects, follows Show completed, and acts as the reservoir for moving tasks into or out of the Daily timeline.
 - Project pages read top to bottom as header, Active Tasks, Dates, Recovery Canvas, Subcontexts, and suggestions/actions.
 - Active Tasks stays expanded and editable. Project Notes / Decisions is not a separate surface; recovery notes hold imported project context.
 - Today, This Week, and reviews do not contain daily or weekly priority editors.
@@ -1469,6 +1469,7 @@ Use this checklist before merging UI changes.
 [ ] Add task inline
 [ ] Complete task inline
 [ ] Edit task title inline or via sheet
+[ ] Move existing tasks between Dashboard Tasks and Daily timeline without creating duplicate checklist items
 [ ] Mark deadline handled/archive if supported
 [ ] Project missing-next-action indicator
 [ ] Project stale-status indicator

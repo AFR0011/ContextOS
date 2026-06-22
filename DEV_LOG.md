@@ -1,5 +1,32 @@
 # ContextOS Dev Log
 
+## 2026-06-22 - v0.2.8 Task-Driven Daily Timeline
+
+Planner scope: implement one dashboard workflow batch that makes the Daily timeline a day lane derived from real tasks and today's Dates, while keeping Dashboard Tasks as the broader task reservoir.
+
+Implementation:
+
+- Extended `DailySchedule` from task-only rows to mixed task/Date rows while preserving existing task editing, completion, time editing, deletion, and sorting behavior.
+- Added optional drag/drop drop zones, drag handles, and row-action/right-click menus for adding tasks to the Dashboard Daily timeline and removing timeline placement without deleting the task.
+- Updated Dashboard Daily timeline membership to tasks planned or due today plus non-archived Dates dated today.
+- Updated Dashboard Tasks so tasks can be planned into today's timeline and can receive dragged timeline tasks to clear today placement where possible.
+- Kept newly created timeline entries as real Task records with `plannedDate` set to today.
+- Added focused Playwright coverage for moving a task into/out of the Daily timeline and for today Dates appearing in the Daily timeline.
+
+Verification:
+
+- `python tools/context_manager.py init --root .` - blocked; helper script is not present.
+- `python -m py_compile tools/context_manager.py tools/performance_tracker.py tools/consistency_validator.py tools/risk_assessor.py` - blocked; helper scripts are not present.
+- `npm run typecheck` - initially failed on a Today-view task-row type assumption after mixed schedule rows were introduced; fixed by narrowing that local row array.
+- `npm run typecheck` - passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard tasks can move|dashboard can add a project-linked important date|dashboard daily timeline supports one time|dashboard daily timeline supports untimed" --workers=1` - timed out before returning usable output.
+- `docker compose ps` - blocked because Docker Desktop's Linux engine pipe is unavailable; DB-backed Playwright verification is blocked until Postgres is available.
+- `npm run build` - passed.
+- `npx prisma validate` - passed.
+- `git diff --check` - passed with line-ending normalization warnings only.
+
+Residual risk: drag/drop and mixed Date-row behavior have focused e2e coverage written but not executed to completion in this local environment; rerun the focused slice and then full e2e after Docker/Postgres is available.
+
 ## 2026-06-17 - v0.2.7 Cleanup and Production-Readiness Foundation Plan
 
 Planner scope: implement the approved cleanup proposal and the first production-readiness foundation batch in one bounded cycle.

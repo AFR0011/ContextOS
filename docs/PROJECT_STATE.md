@@ -1,7 +1,7 @@
 # ContextOS Project State
 
 ## Current Objective
-Complete remaining deployment hardening after v0.2.7 cleanup, health endpoint, and CI workflow foundation before any public production release.
+Complete v0.2.8 task-driven Daily timeline browser verification, then continue remaining deployment hardening before any public production release.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
@@ -23,8 +23,8 @@ Complete remaining deployment hardening after v0.2.7 cleanup, health endpoint, a
 - The internal `Deadline` collection remains in storage and sync payloads for offline compatibility, but visible product terminology is Date/Dates.
 - Tasks have one optional `scheduledTime`. Legacy cached and queued tasks normalize from `scheduledTime ?? startTime ?? endTime`.
 - Dashboard begins with reusable Quick Capture, then Notepad, Dates, Daily timeline, Tasks, and Projects.
-- Daily timeline is a compact editable task list with optional time, inline deletion, and persistent cross/uncross completion. It does not render empty calendar slots.
-- Dashboard Tasks contains active tasks from all dates/projects. It defaults to newest-created sorting, offers persisted sort modes, and completed tasks appear when Show completed is enabled.
+- Daily timeline is a compact editable day lane built from tasks planned or due today plus important Dates dated today. It supports optional times, inline task completion, Date time editing, and no empty calendar slots.
+- Dashboard Tasks contains active tasks from all dates/projects. It defaults to newest-created sorting, offers persisted sort modes, can plan tasks into today's Daily timeline through drag/drop or row actions, and completed tasks appear when Show completed is enabled.
 - Dashboard cleanup actions can move finished tasks and archived dates to Trash without hard-deleting records.
 - Service-worker shell cache is `contextos-shell-v2` and precaches `/dates`, not the legacy `/deadlines` route.
 - Dates contains only important-date records. Task due dates remain on task surfaces.
@@ -61,6 +61,9 @@ Complete remaining deployment hardening after v0.2.7 cleanup, health endpoint, a
 
 ## Latest Verification
 
+- v0.2.8 task-driven Daily timeline checks on 2026-06-22: `npm run typecheck` passed after narrowing Today task rows, `npm run build` passed, `npx prisma validate` passed, and `git diff --check` passed with line-ending normalization warnings only.
+- Focused v0.2.8 Playwright command timed out before returning usable output: `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard tasks can move|dashboard can add a project-linked important date|dashboard daily timeline supports one time|dashboard daily timeline supports untimed" --workers=1`.
+- DB-backed v0.2.8 e2e remains blocked because `docker compose ps` cannot reach Docker Desktop's Linux engine pipe.
 - `npx prisma validate` passed on 2026-06-17.
 - `npm run db:migrate` initially failed because Docker/Postgres was unavailable; after starting Docker Desktop and `docker compose up -d`, retry passed with schema already in sync.
 - `npm run db:seed` passed.
@@ -71,6 +74,7 @@ Complete remaining deployment hardening after v0.2.7 cleanup, health endpoint, a
 - In-app Browser smoke passed with authenticated Dashboard rendering `MVP v0.2.7`, Dashboard/Dates/Tasks visible, no horizontal overflow, and no console errors.
 
 ## Next Useful Work
+- Start Docker/Postgres, rerun the focused v0.2.8 Dashboard timeline e2e slice, then run full e2e if it passes.
 - Treat v0.2.7 cleanup, health endpoint, and CI workflow foundation as complete locally.
 - Push and observe the GitHub Actions workflow, then fix any remote-only CI issues.
 - Add production-like preview evidence, operational recovery evidence, deeper installed-PWA upgrade smoke, and provider/WAF defense-in-depth decisions before public production.

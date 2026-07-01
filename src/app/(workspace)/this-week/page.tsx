@@ -1,5 +1,5 @@
-import { ThisWeekView } from "@/components/workspace/Views";
+import { redirect } from "next/navigation";
 
 export default function ThisWeekPage() {
-  return <ThisWeekView />;
+  redirect("/dashboard");
 }

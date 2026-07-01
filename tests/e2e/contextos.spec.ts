@@ -171,18 +171,18 @@ test("date utilities keep date-only values on the local calendar day", async () 
   }
 });
 
-test("dashboard preferences restore default sections when legacy order is missing dates and tasks", async () => {
+test("dashboard preferences ignore legacy section order and hidden allTasks", async () => {
   const { normalizeDashboardPreference } = await import("../../src/lib/dashboard-preferences");
   const preference = normalizeDashboardPreference({
-    sectionOrder: ["notepad", "projects"],
-    collapsedSections: ["projects", "legacy", "projects"],
+    sectionOrder: ["notepad", "allTasks", "projects"],
+    collapsedSections: ["projects", "legacy", "allTasks", "projects"],
     dateWindowDays: 7,
     reviewPromptDismissals: ["daily-startup:2026-06-09"],
     showCompleted: true,
     taskSortMode: "oldest"
   });
 
-  expect(preference.sectionOrder).toEqual(["notepad", "dates", "tasks", "allTasks", "projects"]);
+  expect(preference.sectionOrder).toEqual(["tasks", "dates", "projects", "notepad"]);
   expect(preference.collapsedSections).toEqual(["projects"]);
   expect(preference.dateWindowDays).toBe(7);
   expect(preference.reviewPromptDismissals).toEqual(["daily-startup:2026-06-09"]);
@@ -289,18 +289,43 @@ test("auth endpoints throttle repeated failed attempts", async ({ page }) => {
 
 test("seeded demo account can log in and render dashboard", async ({ page }) => {
   await login(page);
-  await expect(page.getByText("Mobile Command Sheet")).toBeVisible();
-  await expect(page.getByTestId("dashboard-section-notepad")).toBeVisible();
-  await expect(page.getByTestId("dashboard-section-dates")).toBeVisible();
+  await expect(page.getByText("Daily Command Sheet")).toBeVisible();
   await expect(page.getByTestId("dashboard-section-tasks")).toBeVisible();
-  await expect(page.getByTestId("dashboard-section-allTasks")).toBeVisible();
+  await expect(page.getByTestId("dashboard-section-dates")).toBeVisible();
   await expect(page.getByTestId("dashboard-section-projects")).toBeVisible();
+  await expect(page.getByTestId("dashboard-section-notepad")).toBeVisible();
+  await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
   await expect(page.getByTestId("dashboard-section-projects").getByRole("button", { name: /ContextOS Demo/ })).toBeVisible();
-  const timeline = page.getByTestId("dashboard-section-tasks");
-  await expect(timeline.getByLabel("Task title Process inbox captures")).toBeVisible();
-  await expect(timeline.getByLabel("Process inbox captures scheduled time")).toHaveValue("09:30");
-  await expect(timeline.getByLabel("Task title Write one clean latest-status note")).toBeVisible();
-  await expect(page.getByTestId("dashboard-section-allTasks").getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toBeVisible();
+  const todayTasks = page.getByTestId("dashboard-section-tasks");
+  await expect(todayTasks.getByLabel("Task title Process inbox captures")).toBeVisible();
+  await expect(todayTasks.getByLabel("Process inbox captures scheduled time")).toHaveValue("09:30");
+  await expect(todayTasks.getByLabel("Task title Write one clean latest-status note")).toBeVisible();
+  await expect(todayTasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toHaveCount(0);
+});
+
+test("simplified navigation shows core surfaces and hides utility routes from primary nav", async ({ page }) => {
+  await login(page);
+  const primaryNav = page.getByTestId("workspace-primary-nav");
+  await expect(primaryNav.getByRole("button", { name: "Dashboard" })).toBeVisible();
+  await expect(primaryNav.getByRole("button", { name: "Inbox" })).toBeVisible();
+  await expect(primaryNav.getByRole("button", { name: "Search" })).toBeVisible();
+  await expect(primaryNav.getByRole("button", { name: "ContextOS Demo" })).toBeVisible();
+  await expect(primaryNav.getByRole("button", { name: "Today" })).toHaveCount(0);
+  await expect(primaryNav.getByRole("button", { name: "This Week" })).toHaveCount(0);
+  await expect(primaryNav.getByRole("button", { name: "Areas" })).toHaveCount(0);
+  await expect(primaryNav.getByRole("button", { name: "Resources" })).toHaveCount(0);
+  await expect(primaryNav.getByRole("button", { name: "Reviews" })).toHaveCount(0);
+});
+
+test("mobile bottom navigation uses the simplified four-tab set", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  const mobileNav = page.getByRole("navigation", { name: "Primary navigation" });
+  await expect(mobileNav.getByRole("button", { name: "Dashboard" })).toBeVisible();
+  await expect(mobileNav.getByRole("button", { name: "Inbox" })).toBeVisible();
+  await expect(mobileNav.getByRole("button", { name: "Projects" })).toBeVisible();
+  await expect(mobileNav.getByRole("button", { name: "Search" })).toBeVisible();
+  await expect(mobileNav.getByRole("button", { name: "Today" })).toHaveCount(0);
 });
 
 test("quick capture appears in inbox and can convert to a task", async ({ page }) => {
@@ -332,7 +357,7 @@ test("dashboard quick capture sends slash commands to inbox", async ({ page }) =
 test("project recovery fields persist after reload", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
-  await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   const nextAction = `Verify recovery persistence ${Date.now()}`;
   const note = `Recovery note ${Date.now()}`;
   const editor = page.getByTestId("project-recovery-editor");
@@ -349,7 +374,7 @@ test("project recovery fields persist after reload", async ({ page }) => {
 test("project subcontexts roll child tasks and dates into parent recovery", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
-  await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
 
   const subcontext = `Trial Subcontext ${Date.now()}`;
   await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").fill(subcontext);
@@ -369,7 +394,7 @@ test("project subcontexts roll child tasks and dates into parent recovery", asyn
   await datesSection.getByRole("button", { name: "Add date" }).click();
 
   await page.getByRole("button", { name: "Back" }).click();
-  await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   await expect(page.getByLabel(`Task title ${childTask}`)).toBeVisible();
   await expect(page.getByText(subcontext).first()).toBeVisible();
   await expectInputValue(page, "input", childDate);
@@ -437,7 +462,7 @@ test("dashboard sections collapse and persist after refresh", async ({ page }) =
   await expect(page.getByTestId("dashboard-section-dates").getByTestId("dashboard-add-deadline-input")).toBeVisible();
 });
 
-test("dashboard daily timeline supports one time, inline editing, crossing, and deletion", async ({ page }) => {
+test("dashboard today tasks support one time, inline editing, crossing, and deletion", async ({ page }) => {
   await login(page);
   const title = `Dashboard real task ${Date.now()}`;
   const taskSection = page.getByTestId("dashboard-section-tasks");
@@ -518,7 +543,7 @@ test("mobile editor and task controls expose accessible hit targets and menus", 
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });
 
-test("dashboard daily timeline supports untimed and same-time tasks without an empty-day grid", async ({ page }) => {
+test("dashboard today tasks support untimed and same-time tasks without an empty-day grid", async ({ page }) => {
   await login(page);
   const taskSection = page.getByTestId("dashboard-section-tasks");
   const suffix = Date.now();
@@ -541,36 +566,24 @@ test("dashboard daily timeline supports untimed and same-time tasks without an e
   await expect(taskSection.locator('[data-testid="daily-schedule-grid"]')).toHaveCount(0);
 });
 
-test("dashboard tasks can move into and out of the daily timeline", async ({ page }) => {
+test("dashboard hides backlog tasks without removing recovery paths", async ({ page }) => {
   await login(page);
   const title = "Rerun RF baseline with corrected threshold logic";
-  const timeline = page.getByTestId("dashboard-section-tasks");
-  const allTasks = page.getByTestId("dashboard-section-allTasks");
-
-  await expect(allTasks.getByLabel(`Task title ${title}`)).toBeVisible();
-  await expect(timeline.getByLabel(`Task title ${title}`)).toHaveCount(0);
-
-  const allTaskRow = allTasks.locator('[data-testid="daily-schedule-task-row"]').filter({ has: allTasks.getByLabel(`Task title ${title}`) }).first();
-  await allTaskRow.dragTo(timeline.getByTestId("daily-schedule-drop-zone"));
-  await expect(timeline.getByLabel(`Task title ${title}`)).toBeVisible();
-
-  const timelineRow = timeline.locator('[data-testid="daily-schedule-task-row"]').filter({ has: timeline.getByLabel(`Task title ${title}`) }).first();
-  await timelineRow.click({ button: "right" });
-  await page.getByRole("menuitem", { name: "Remove from timeline" }).click();
-  await expect(timeline.getByLabel(`Task title ${title}`)).toHaveCount(0);
-  await expect(allTasks.getByLabel(`Task title ${title}`)).toBeVisible();
-
-  await allTaskRow.click({ button: "right" });
-  await page.getByRole("menuitem", { name: "Add to timeline" }).click();
-  await expect(timeline.getByLabel(`Task title ${title}`)).toBeVisible();
+  await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
+  await expect(page.getByTestId("dashboard-section-tasks").getByLabel(`Task title ${title}`)).toHaveCount(0);
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByPlaceholder("Search workspace...").fill(title);
+  await page.getByRole("button", { name: new RegExp(`Task ${title}`) }).click();
+  await expect(page).toHaveURL(/\/projects\//);
+  await expect(page.getByLabel(`Task title ${title}`)).toBeVisible();
 });
 
 test("dashboard can add a project-linked important date with time and location", async ({ page }) => {
   await login(page);
   const title = `Dashboard date ${Date.now()}`;
   const datesSection = page.getByTestId("dashboard-section-dates");
-  const timeline = page.getByTestId("dashboard-section-tasks");
   await datesSection.getByTestId("dashboard-add-deadline-input").fill(title);
+  await datesSection.getByRole("button", { name: "Details" }).click();
   await datesSection.getByLabel("Date time").fill("14:30");
   await datesSection.getByLabel("Date location").fill("Library");
   await datesSection.getByLabel("Date project").selectOption({ label: "ContextOS Demo" });
@@ -578,28 +591,21 @@ test("dashboard can add a project-linked important date with time and location",
   await expect(datesSection.getByText(title)).toBeVisible();
   await expect(datesSection.getByText("14:30")).toBeVisible();
   await expect(datesSection.getByText("Library")).toBeVisible();
-  await expect(timeline.getByText(title)).toBeVisible();
-  await expect(timeline.getByLabel(`${title} date time`)).toHaveValue("14:30");
+  await expect(datesSection.getByRole("button", { name: `Archive ${title}` })).toBeVisible();
   await expect(datesSection.getByText("Write one clean latest-status note")).toHaveCount(0);
   await page.reload();
   await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toBeVisible();
   await page.getByTestId("dashboard-section-dates").getByRole("button", { name: `Archive ${title}` }).click();
   await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toHaveCount(0);
-  await expect(page.getByTestId("dashboard-section-tasks").getByText(title)).toHaveCount(0);
-  await page.getByRole("button", { name: "Show completed" }).click();
-  await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toBeVisible();
-  page.once("dialog", (dialog) => dialog.accept());
-  await page.getByTestId("dashboard-section-dates").getByTestId("dashboard-clear-archived-dates").click();
-  await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toHaveCount(0);
 });
 
-test("today tasks stay visible and interactable after completion", async ({ page }) => {
+test("today redirects to dashboard and completed today tasks stay interactable", async ({ page }) => {
   await login(page);
-  await page.getByRole("button", { name: "Today", exact: true }).click();
-  await expect(page).toHaveURL(/\/today$/);
-  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+  await page.goto("/today");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   const taskTitle = "Process inbox captures";
-  const main = page.locator("main");
+  const main = page.getByTestId("dashboard-section-tasks");
   await expect(main.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
   await expect(main.getByLabel("Task title Write one clean latest-status note")).toBeVisible();
   await main.getByRole("button", { name: `Mark ${taskTitle} done` }).first().click();
@@ -607,43 +613,43 @@ test("today tasks stay visible and interactable after completion", async ({ page
   await expect(main.getByRole("button", { name: `Reopen ${taskTitle}` }).first()).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   await expect(main.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
   await expect(main.getByRole("button", { name: `Reopen ${taskTitle}` }).first()).toBeVisible();
 });
 
-test("dashboard Tasks includes future tasks and follows Show completed", async ({ page }) => {
+test("dashboard ignores legacy allTasks preferences and hides backlog controls", async ({ page }) => {
   await login(page);
-  const section = page.getByTestId("dashboard-section-allTasks");
-  const timeline = page.getByTestId("dashboard-section-tasks");
-  const firstCreated = `Older dashboard task ${Date.now()}`;
-  await page.getByTestId("dashboard-add-task-input").fill(firstCreated);
-  await timeline.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(section.getByLabel(`Task title ${firstCreated}`)).toBeVisible();
-  const secondCreated = `Newer dashboard task ${Date.now()}`;
-  await page.getByTestId("dashboard-add-task-input").fill(secondCreated);
-  await timeline.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(section.getByLabel(`Task title ${secondCreated}`)).toBeVisible();
-  await expect(section.getByLabel("Task sort")).toHaveValue("recent");
-  const newestOrder = await taskTitleOrder(section);
-  expect(newestOrder.indexOf(secondCreated)).toBeLessThan(newestOrder.indexOf(firstCreated));
-  await section.getByLabel("Task sort").selectOption("oldest");
-  await expect(section.getByLabel("Task sort")).toHaveValue("oldest");
-  await page.waitForTimeout(250);
+  await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
+  await expect(page.getByLabel("Task sort")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Show completed" })).toHaveCount(0);
+  await page.evaluate(() => new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open("contextos-offline-v1");
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result;
+      const tx = db.transaction("kv", "readwrite");
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      const store = tx.objectStore("kv");
+      const get = store.get("workspace");
+      get.onerror = () => reject(get.error);
+      get.onsuccess = () => {
+        const current = get.result;
+        current.dashboardPreferences = [{
+          ...current.dashboardPreferences[0],
+          sectionOrder: ["allTasks", "projects", "notepad", "dates", "tasks"],
+          collapsedSections: []
+        }];
+        store.put(current, "workspace");
+      };
+    };
+  }));
   await page.reload();
-  await expect(page.getByTestId("dashboard-section-allTasks").getByLabel("Task sort")).toHaveValue("oldest");
-
-  const title = "Rerun RF baseline with corrected threshold logic";
-  await expect(section.getByLabel(`Task title ${title}`)).toBeVisible();
-  await page.getByRole("button", { name: "Show completed" }).click();
-  const beforeDoneOrder = await taskTitleOrder(section);
-  await section.getByRole("button", { name: `Mark ${title} done` }).click();
-  await expect(section.getByLabel(`Task title ${title}`)).toBeVisible();
-  await expect(section.getByRole("button", { name: `Reopen ${title}` })).toBeVisible();
-  await expectTaskTitleOrder(section, beforeDoneOrder);
-  page.once("dialog", (dialog) => dialog.accept());
-  await section.getByTestId("dashboard-clear-finished-tasks").click();
-  await expect(section.getByLabel(`Task title ${title}`)).toHaveCount(0);
+  await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
+  await expect(page.getByTestId("dashboard-section-tasks")).toBeVisible();
+  await expect(page.getByTestId("dashboard-section-dates")).toBeVisible();
+  await expect(page.getByTestId("dashboard-section-projects")).toBeVisible();
 });
 
 test("search results open surfaces where task and standalone note records are visible", async ({ page }) => {
@@ -665,7 +671,7 @@ test("search results open surfaces where task and standalone note records are vi
 
 test("areas and resources expose PARA navigation", async ({ page }) => {
   await login(page);
-  await page.getByRole("button", { name: "Areas" }).click();
+  await page.goto("/areas");
   await expect(page.getByRole("heading", { name: "Areas" })).toBeVisible();
   await expect(page.getByText("Dev / Freelance")).toBeVisible();
   await page.getByRole("button", { name: "Open Dev / Freelance" }).click();
@@ -677,7 +683,7 @@ test("areas and resources expose PARA navigation", async ({ page }) => {
   await page.getByRole("button", { name: `Delete ${areaProject}` }).click();
   await expect(page.getByText(areaProject)).not.toBeVisible();
 
-  await page.getByRole("button", { name: "Resources" }).click();
+  await page.goto("/resources");
   await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();
   await expect(page.getByText("Piano Schedule")).toBeVisible();
   await expect(page.getByTestId("piano-schedule-table")).toContainText("Status");
@@ -974,7 +980,7 @@ test("legacy task, project-note, and priority mutations drain compatibly", async
 test("project pages use recovery notes instead of project note cards", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
-  await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   await expect(page.getByText("Notes / Decisions")).toHaveCount(0);
   const editor = page.getByTestId("project-recovery-notes");
   await expect(editor).toContainText("Demo handoff");
@@ -1011,7 +1017,7 @@ test("date remains stable after save and legacy route redirects", async ({ page 
 test("project sections follow the simplified order", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
-  await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   await expect(page).toHaveURL(/\/projects\//);
   const sections = page.locator("main section");
   const headings = await sections.locator("h3").allTextContents();
@@ -1024,20 +1030,22 @@ test("project sections follow the simplified order", async ({ page }) => {
   await expect(page.getByTestId("daily-timeline-list")).toBeVisible();
 });
 
-test("Today and This Week contain no priority editor terminology", async ({ page }) => {
+test("Today and This Week redirect to dashboard without priority terminology", async ({ page }) => {
   await login(page);
   await page.goto("/today");
-  await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   await expect(page.getByText(/priorit/i)).toHaveCount(0);
   await page.goto("/this-week");
-  await expect(page.getByRole("heading", { name: "This Week", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   await expect(page.getByText(/priorit/i)).toHaveCount(0);
 });
 
 test("archive and trash restore flows work", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
-  await page.getByRole("button", { name: /^ContextOS Demo/ }).click();
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   await page.getByRole("button", { name: "Archive project" }).click();
   await page.goto("/archive");
   await expect(page.getByText("ContextOS Demo")).toBeVisible();

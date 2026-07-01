@@ -22,8 +22,10 @@ This amendment is authoritative wherever older sections use legacy Deadline, pri
 - Visible product language is **Date/Dates**. Dates are important reference events, not completable tasks.
 - `/dates` is canonical; `/deadlines` is only a compatibility redirect. Capture advertises `/date` and still accepts `/deadline`.
 - The Dashboard starts with reusable Quick Capture above all other content.
-- Daily timeline is a compact day lane derived from tasks planned/due today and important Dates dated today. Show only occupied optional times; never render empty calendar slots.
-- A separate collapsible Tasks section shows active tasks across dates and projects, follows Show completed, and acts as the reservoir for moving tasks into or out of the Daily timeline.
+- Dashboard is the canonical Today surface in the simplified Phase 1 UI; `/today` and `/this-week` redirect to `/dashboard`.
+- Today Tasks is a compact editable list derived from overdue, due-today, planned-today, and in-progress tasks. Done tasks planned/due today remain visible and reopenable. Show only occupied optional times; never render empty calendar slots.
+- Dates is a separate section for overdue, today, and near-upcoming important Dates. Dates are not task checkboxes.
+- The separate Dashboard all-task reservoir, task sort control, Show completed toggle, drag/drop planning, and review prompt are hidden in Phase 1.
 - Project pages read top to bottom as header, Active Tasks, Dates, Recovery Canvas, Subcontexts, and suggestions/actions.
 - Active Tasks stays expanded and editable. Project Notes / Decisions is not a separate surface; recovery notes hold imported project context.
 - Today, This Week, and reviews do not contain daily or weekly priority editors.
@@ -725,17 +727,19 @@ It should feel like an operating page, not a report.
 ```text
 Dashboard
 
-▾ Notepad
-  Freeform scratch area...
+Quick Capture
 
-▾ Dates
-  Overdue / upcoming items
-
-▾ Tasks
+▾ Today Tasks
   Today / overdue tasks
 
-▾ Projects
+▾ Dates
+  Overdue / upcoming important dates
+
+▾ Project Recovery
   Active project recovery cards
+
+▾ Scratchpad
+  Freeform scratch area...
 ```
 
 ### 9.3 Notepad Section
@@ -872,23 +876,28 @@ Recommended top-level areas:
 ```text
 Dashboard
 Inbox
-Today / Tasks
-Projects
-Deadlines
-Reviews
 Search
+```
+
+Desktop also shows active Projects as a sidebar tree rather than a standard top-level route group. Utility routes remain reachable outside primary navigation:
+
+```text
+Projects index
+Dates
+Areas
+Resources
+Reviews
 Archive
 Settings
 ```
 
-Mobile may use fewer visible tabs:
+Mobile visible tabs:
 
 ```text
 Dashboard
 Inbox
 Projects
 Search
-More
 ```
 
 ### 10.2 Quick Capture
@@ -1449,14 +1458,14 @@ Use this checklist before merging UI changes.
 ### 20.1 Dashboard 2.0 Must-Haves
 
 ```text
-[ ] Collapsible Notepad section
+[ ] Compact/collapsible Scratchpad section
 [ ] Collapsible Dates section
 [ ] Collapsible Tasks section
 [ ] Collapsible Projects section
 [ ] Persist collapsed state per user
 [ ] Dashboard scratchpad with debounced autosave
 [ ] Dates from real deadlines/tasks
-[ ] Tasks from real task records
+[ ] Today Tasks from real task records
 [ ] Projects from active project records
 [ ] Mobile-first layout
 [ ] Local date handling
@@ -1469,7 +1478,7 @@ Use this checklist before merging UI changes.
 [ ] Add task inline
 [ ] Complete task inline
 [ ] Edit task title inline or via sheet
-[ ] Move existing tasks between Dashboard Tasks and Daily timeline without creating duplicate checklist items
+[ ] Keep backlog/future tasks recoverable through Projects and Search without showing a second Dashboard task reservoir
 [ ] Mark deadline handled/archive if supported
 [ ] Project missing-next-action indicator
 [ ] Project stale-status indicator

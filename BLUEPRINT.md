@@ -19,7 +19,7 @@ Remaining deployment-hardening work:
 2. Decide whether provider/WAF-level auth protection is needed in addition to the v0.2.6 app-level limiter.
 3. Run deeper installed-PWA upgrade smoke from an older cached worker.
 4. Finish broader mobile editor/action accessibility work outside the task-title wrapping fixed in v0.2.3 and touched controls fixed in v0.2.8.
-5. Polish Dashboard hierarchy so Quick Capture, Notepad, Today pressure, and project recovery read with clearer priority.
+5. Polish Dashboard hierarchy so Quick Capture, Today Tasks, Dates, project recovery, and Scratchpad read with clearer priority.
 
 Deployment acceptance requires two-user isolation tests, sequential Prisma/typecheck/build/e2e checks, desktop/mobile browser smoke, and documented recovery evidence. The detailed audit is in `docs/AUDIT_2026-06-15.md`.
 
@@ -125,8 +125,8 @@ PARA is used to make execution context recoverable. It should not add capture fr
 - Responsive mobile UI.
 - Dashboard.
 - Inbox.
-- Today view.
-- This Week view.
+- Dashboard daily task selection.
+- `/today` and `/this-week` compatibility redirects.
 - Projects.
 - Project detail pages.
 - Project subcontexts / nested projects.
@@ -163,28 +163,41 @@ PARA is used to make execution context recoverable. It should not add capture fr
 
 ## 5. Top-Level Navigation
 
-MVP navigation:
+Phase 1 visible MVP navigation:
 
 ```text
 Dashboard
 Inbox
-Today
-This Week
+Search
+```
+
+Desktop also includes a persistent Projects sidebar section with active root projects and active-branch subcontexts. Mobile uses four bottom tabs:
+
+```text
+Dashboard
+Inbox
 Projects
+Search
+```
+
+Utility routes remain valid but are not primary navigation:
+
+```text
 Areas
 Resources
 Archive
 Dates
 Reviews
-Search
 Settings
 ```
+
+`/today` and `/this-week` redirect to `/dashboard`; Dashboard is canonical for daily work selection.
 
 There is no top-level `Workspaces` page in MVP.
 
 There is no top-level `Agents` page in MVP.
 
-Agent suggestions appear only inside project pages and a collapsed dashboard section.
+Agent suggestions are not shown in the Phase 1 simplified visible surface.
 
 ---
 
@@ -340,7 +353,6 @@ Active Tasks, expanded
 Dates
 Recovery Canvas: Next Action, Latest Status, Current Objective, Open Loops, Freeform Recovery Notes
 Subcontexts
-Agent Suggestions
 Project actions
 ```
 
@@ -434,21 +446,23 @@ A task may have one optional `scheduledTime` value. It represents when the task 
 
 Daily task surfaces show only occupied times plus untimed tasks. They do not render a full empty-day grid.
 
-The Dashboard Daily Timeline is derived from real records:
+The Dashboard Today Tasks section is derived from real task records:
 
 ```text
+Overdue active tasks
 Tasks planned today
 Tasks due today
-Important Dates dated today
+In-progress tasks
+Done tasks that are still planned or due today
 ```
 
-Dashboard Tasks remains the broader task reservoir. Moving a task into the Daily Timeline sets or preserves today planning on the task; moving it out clears today timeline placement when the task is not still due today.
+Backlog and future tasks stay recoverable through project pages and Search; they do not appear in a separate Dashboard task reservoir in the simplified Phase 1 surface.
 
 ### 9.6 No Priority Subsystem
 
 There is no global task priority field in MVP.
 
-There is no separate daily or weekly priority object. Today selection is expressed through planned dates, due dates, task state, and the dedicated Daily Timeline.
+There is no separate daily or weekly priority object. Today selection is expressed through planned dates, due dates, task state, and the Dashboard Today Tasks section.
 
 ---
 
@@ -597,30 +611,27 @@ What needs recovery?
 
 ```text
 Quick Capture
-Notepad
+Today Tasks
 Dates
-Daily Timeline
-Tasks
-Projects
+Project Recovery
+Scratchpad
 ```
 
-### 12.3 Collapsed by Default
+The visible order is fixed for Phase 1. Legacy stored dashboard section orders are normalized so old `allTasks` values do not reintroduce hidden sections.
 
-```text
-Agent Suggestions
-```
-
-### 12.4 First-Load Behavior
+### 12.3 First-Load Behavior
 
 When opening the dashboard:
 
 - Quick capture should always be visible at the top.
-- Daily Timeline should remain a fast task-writing surface built from today's tasks and important Dates.
-- Dashboard Tasks should make it easy to move existing tasks into or out of today's Daily Timeline without creating duplicate checklist items.
+- Today Tasks should remain a fast task-writing surface built from overdue, due-today, planned-today, and in-progress tasks.
+- Dates should show overdue, today, and near-upcoming important dates separately from task checkboxes.
+- Project Recovery should show active projects with next action and latest status.
+- Scratchpad should stay compact and below structured execution sections.
 
 The dashboard should orient the user before asking for more input.
 
-### 12.5 Dashboard Canvas
+### 12.4 Dashboard Canvas
 
 The Dashboard should include a persistent Markdown canvas inspired by the user's Notion Dashboard 2.0.
 
@@ -640,7 +651,7 @@ Quick Capture remains above the canvas.
 The canvas is stored as a standalone Resource note titled "Dashboard Canvas".
 The canvas supports Markdown/checklist text.
 Checkboxes inside the canvas stay local unless explicitly converted into structured tasks.
-The canvas should sit below Quick Capture and before structured execution sections.
+The canvas should sit after Today Tasks, Dates, and Project Recovery in the simplified Phase 1 Dashboard.
 Fixed widgets remain responsible for execution surfacing.
 ```
 
@@ -648,51 +659,18 @@ The Dashboard should feel markdown-friendly without becoming a full Notion page 
 
 ---
 
-## 13. Today View
+## 13. Today and This Week Compatibility
 
-### 13.1 Today Includes
+Dashboard is canonical for daily work selection in the simplified Phase 1 surface.
 
-```text
-Tasks due today
-Tasks manually planned for today
-Overdue tasks
-In-progress tasks
-Tasks from active projects
-Dates occurring today
-```
-
-### 13.2 Deduplication
-
-The Today view should avoid repeating the same task across multiple sections.
-
-Recommended UI:
+Compatibility behavior:
 
 ```text
-Deduplicated task list with labels.
+/today -> /dashboard
+/this-week -> /dashboard
 ```
 
-Example:
-
-```text
-Finish Protocol B table
-Labels: Planned Today, Due Today, MSc Thesis
-```
-
----
-
-## 14. This Week View
-
-This Week is an automatic rollup of dated work and active project context.
-
-### 14.1 This Week Includes
-
-```text
-Tasks due this week
-Dates this week
-Active projects
-Overdue tasks
-Tasks planned for the week
-```
+Weekly and broader planning remain represented through Dates, active Projects, and Search until real use proves a separate weekly surface is needed again.
 
 ---
 
@@ -915,7 +893,7 @@ Suggested stale project review
 
 ### 19.4 Agent Suggestions UI
 
-Agent suggestions may appear in:
+Agent suggestions are deferred from the Phase 1 simplified visible surface. They may return later as an explicitly requested, collapsed/manual review aid in:
 
 ```text
 Project detail pages
@@ -1067,7 +1045,7 @@ ContextOS succeeds if, after one week:
 ```text
 1. User opens Dashboard at least once per workday.
 2. User captures ideas/tasks in ContextOS instead of phone notes.
-3. User uses Today view for daily work selection.
+3. User uses Dashboard for daily work selection.
 4. User resumes at least one paused or half-finished project using Latest Status + Next Action.
 5. User uses at least one subcontext for a large project.
 6. User writes or edits the Dashboard Canvas at least once.
@@ -1091,7 +1069,7 @@ Recommended implementation order:
 6. Tasks
 7. Dashboard + Dashboard Canvas
 8. Inbox + quick capture
-9. Today view
+9. Dashboard daily task selection
 10. Dates
 11. Reviews
 12. Notes / Resources editor

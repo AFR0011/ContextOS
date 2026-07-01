@@ -1,23 +1,17 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
-  ArrowDownUp,
-  Bell,
-  BookOpen,
   CalendarClock,
   CalendarDays,
-  Check,
   ChevronDown,
   ChevronRight,
-  Circle,
   Eraser,
   FolderKanban,
   MapPin,
   NotebookPen,
-  ListChecks,
   Plus,
   Send,
   SquarePen,
@@ -29,37 +23,20 @@ import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { DailySchedule, type DailyScheduleRow } from "@/components/workspace/DailySchedule";
 import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
 import { normalizeDashboardPreference } from "@/lib/dashboard-preferences";
-import { addDaysToDateKey, dateKeyToLocalDate, localDateKey, localWeekStartKey } from "@/lib/dates";
+import { addDaysToDateKey, dateKeyToLocalDate, localDateKey } from "@/lib/dates";
 import { useWorkspace } from "@/lib/client-store";
-import type { DashboardPreference, DashboardSectionId, DashboardTaskSortMode, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
+import type { DashboardPreference, DashboardSectionId, Project, Task } from "@/lib/types";
 
-const DONE_TASK_STATUSES: TaskStatus[] = ["done", "dropped"];
 const PROJECT_STALE_DAYS = 14;
-const DASHBOARD_TASK_SORT_LABELS: Record<DashboardTaskSortMode, string> = {
-  recent: "Newest",
-  oldest: "Oldest",
-  schedule: "Scheduled",
-  date: "Date"
-};
 
-function isTaskOpen(task: Task) {
-  return !task.trashedAt && !task.archivedAt && !DONE_TASK_STATUSES.includes(task.status);
-}
-
-function isTaskVisible(task: Task, showCompleted: boolean) {
-  if (task.trashedAt || task.archivedAt) return false;
-  return showCompleted || !DONE_TASK_STATUSES.includes(task.status);
-}
-
-function isTaskInDailyTimeline(task: Task, today: string) {
-  return !task.trashedAt && !task.archivedAt && (task.plannedDate === today || task.dueDate === today);
-}
-
-function removeTaskFromTimelineUpdates(task: Task, today: string): Partial<Task> {
-  return {
-    plannedDate: task.plannedDate === today ? null : task.plannedDate,
-    scheduledTime: null
-  };
+function isTaskInTodayTasks(task: Task, today: string) {
+  if (task.trashedAt || task.archivedAt || task.status === "dropped") return false;
+  if (task.status === "done") return task.plannedDate === today || task.dueDate === today;
+  return (
+    Boolean(task.dueDate && task.dueDate <= today) ||
+    task.plannedDate === today ||
+    task.status === "in-progress"
+  );
 }
 
 function projectName(projects: Project[], projectId: string | null | undefined) {
@@ -93,63 +70,17 @@ function dateBadge(dateKey: string, today: string) {
   return `In ${days} days`;
 }
 
-function taskDateKey(task: Task) {
-  return task.dueDate ?? task.plannedDate ?? "9999-12-31";
-}
-
-function compareDashboardTasks(a: Task, b: Task, mode: DashboardTaskSortMode) {
-  const byCreatedAsc = () => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id);
-  const byCreatedDesc = () => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
-
-  if (mode === "oldest") return byCreatedAsc();
-  if (mode === "schedule") {
-    const aTime = a.scheduledTime ?? "99:99";
-    const bTime = b.scheduledTime ?? "99:99";
-    if (aTime !== bTime) return aTime.localeCompare(bTime);
-    return byCreatedDesc();
-  }
-  if (mode === "date") {
-    const byDate = taskDateKey(a).localeCompare(taskDateKey(b));
-    if (byDate) return byDate;
-    return byCreatedDesc();
-  }
-  return byCreatedDesc();
-}
-
 function sectionDefaults(preference?: DashboardPreference) {
   return normalizeDashboardPreference(preference);
-}
-
-function reviewLabel(type: ReviewType) {
-  const labels: Record<ReviewType, string> = {
-    "daily-startup": "Daily startup",
-    "daily-shutdown": "Daily shutdown",
-    weekly: "Weekly review"
-  };
-  return labels[type];
-}
-
-function dueReviewType(reviews: { type: ReviewType; date: string }[], dismissals: string[]) {
-  const today = localDateKey();
-  const week = localWeekStartKey();
-  const nowHour = new Date().getHours();
-  const reviewedToday = (type: ReviewType) => reviews.some((review) => review.type === type && localDateKey(parseISO(review.date)) === today);
-  const weeklyDone = reviews.some((review) => review.type === "weekly" && localWeekStartKey(parseISO(review.date)) === week);
-  const candidates: { type: ReviewType; key: string; message: string }[] = [
-    { type: "daily-startup", key: `daily-startup:${today}`, message: "Start the day with one short review." }
-  ];
-  if (nowHour >= 16) candidates.push({ type: "daily-shutdown", key: `daily-shutdown:${today}`, message: "Close today with a shutdown note." });
-  candidates.push({ type: "weekly", key: `weekly:${week}`, message: "Set or refresh this week's recovery plan." });
-  return candidates.find((candidate) => !dismissals.includes(candidate.key) && (candidate.type === "weekly" ? !weeklyDone : !reviewedToday(candidate.type)));
 }
 
 function DashboardPageShell({ children, loading }: { children: React.ReactNode; loading: boolean }) {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-4 sm:px-5 sm:pt-6 lg:px-8">
       <header className="mb-4 px-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--cos-primary-text)]">Mobile Command Sheet</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--cos-primary-text)]">Daily Command Sheet</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">{loading ? "Loading dashboard" : "Dashboard"}</h1>
-        <p className="mt-1 text-sm text-[var(--cos-text-muted)]">Mind, dates, tasks, and active projects in one calm operating view.</p>
+        <p className="mt-1 text-sm text-[var(--cos-text-muted)]">Capture, today&apos;s tasks, important dates, and project recovery.</p>
       </header>
       <div className="space-y-3">{children}</div>
     </div>
@@ -275,9 +206,9 @@ function NotepadSection() {
       value={draft}
       onChange={setDraft}
       placeholder="Scratch what is on your mind. Capture first; organize when it matters."
-      minLines={8}
+      minLines={4}
       hideSaveButton
-      className="min-h-56 bg-[var(--cos-bg-soft)]"
+      className="min-h-36 bg-[var(--cos-bg-soft)]"
       footer={
         <>
           <span className="mr-auto text-[var(--cos-text-subtle)]">
@@ -299,7 +230,7 @@ function NotepadSection() {
   );
 }
 
-function DatesSection({ today, windowDays, showCompleted }: { today: string; windowDays: number; showCompleted: boolean }) {
+function DatesSection({ today, windowDays }: { today: string; windowDays: number }) {
   const router = useRouter();
   const { data, addDeadline, updateDeadline } = useWorkspace();
   const [title, setTitle] = useState("");
@@ -311,20 +242,12 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
   const projects = activeProjectOptions(data.projects);
 
   const items = useMemo(() => data.deadlines
-      .filter((deadline) => !deadline.trashedAt && (showCompleted || !deadline.archivedAt))
+      .filter((deadline) => !deadline.trashedAt && !deadline.archivedAt)
       .filter((deadline) => deadline.date < today || deadline.date <= windowEnd)
       .sort((a, b) => {
         const byDate = a.date.localeCompare(b.date);
         return byDate || a.title.localeCompare(b.title);
-      }), [data.deadlines, showCompleted, today, windowEnd]);
-  const archivedItems = items.filter((item) => item.archivedAt);
-
-  function clearArchivedDates() {
-    if (!archivedItems.length) return;
-    if (!window.confirm(`Move ${archivedItems.length} archived date${archivedItems.length === 1 ? "" : "s"} to Trash?`)) return;
-    const trashedAt = new Date().toISOString();
-    archivedItems.forEach((item) => updateDeadline(item.id, { trashedAt }));
-  }
+      }), [data.deadlines, today, windowEnd]);
 
   if (!items.length) {
     return (
@@ -380,21 +303,8 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
           setProjectId("");
         }}
       />
-      {showCompleted && archivedItems.length ? (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            data-testid="dashboard-clear-archived-dates"
-            onClick={clearArchivedDates}
-            className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"
-          >
-            <Trash2 className="h-4 w-4" />
-            Clear archived
-          </button>
-        </div>
-      ) : null}
       {items.map((item) => (
-        <div key={item.id} className={`cos-row-muted flex items-start gap-3 px-3 py-3 ${item.archivedAt ? "opacity-60" : ""}`}>
+        <div key={item.id} className="cos-row-muted flex items-start gap-3 px-3 py-3">
           <button type="button" onClick={() => router.push("/dates")} className="min-w-0 flex-1 text-left">
             <div className="flex min-w-0 items-start justify-between gap-2">
               <div className="min-w-0">
@@ -404,7 +314,6 @@ function DatesSection({ today, windowDays, showCompleted }: { today: string; win
                   {item.time ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{item.time}</span> : null}
                   {item.location ? <span className="cos-pill cos-pill-muted"><MapPin className="h-3 w-3" />{item.location}</span> : null}
                   {projectName(data.projects, item.projectId) ? <span className="cos-pill cos-pill-muted">{projectName(data.projects, item.projectId)}</span> : null}
-                  {item.archivedAt ? <span className="cos-pill cos-pill-muted">Archived</span> : null}
                 </div>
               </div>
               <span className="shrink-0 text-xs font-semibold text-[var(--cos-text-subtle)]">{formatDateKey(item.date)}</span>
@@ -446,9 +355,11 @@ function DateComposer({
   onProject: (value: string) => void;
   onCreate: () => void;
 }) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   return (
     <div className="rounded-xl border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-2">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <CalendarClock className="ml-1 h-5 w-5 shrink-0 text-[var(--cos-date)]" />
         <input
           data-testid="dashboard-add-deadline-input"
@@ -459,70 +370,58 @@ function DateComposer({
             if (event.key === "Escape") onTitle("");
           }}
           placeholder="Add an important date..."
-          className="min-h-10 min-w-0 flex-1 bg-transparent text-base text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
+          className="min-h-10 min-w-48 flex-1 bg-transparent text-base text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
         />
+        <input aria-label="Date" type="date" value={date} onChange={(event) => onDate(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
+        <button
+          type="button"
+          aria-expanded={detailsOpen}
+          onClick={() => setDetailsOpen(!detailsOpen)}
+          className="cos-btn cos-btn-ghost min-h-10 px-2 text-xs"
+        >
+          Details
+        </button>
         <button type="button" onClick={onCreate} disabled={!title.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 text-sm disabled:bg-[var(--cos-border)]">
           Add
         </button>
       </div>
-      <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_0.8fr_1.1fr_1.1fr]">
-        <input aria-label="Date" type="date" value={date} onChange={(event) => onDate(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
-        <input aria-label="Date time" type="time" value={time} onChange={(event) => onTime(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
-        <input aria-label="Date location" value={location} onChange={(event) => onLocation(event.target.value)} placeholder="Location" className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
-        <select aria-label="Date project" value={projectId} onChange={(event) => onProject(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs">
-          <option value="">No project</option>
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>{project.name}</option>
-          ))}
-        </select>
-      </div>
+      {detailsOpen ? (
+        <div className="mt-2 grid gap-2 sm:grid-cols-[0.8fr_1.1fr_1.1fr]">
+          <input aria-label="Date time" type="time" value={time} onChange={(event) => onTime(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
+          <input aria-label="Date location" value={location} onChange={(event) => onLocation(event.target.value)} placeholder="Location" className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
+          <select aria-label="Date project" value={projectId} onChange={(event) => onProject(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs">
+            <option value="">No project</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>{project.name}</option>
+            ))}
+          </select>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function DailyTimelineSection({ today }: { today: string }) {
+function TodayTasksSection({ today }: { today: string }) {
   const { data, addTask, updateTask } = useWorkspace();
   const [title, setTitle] = useState("");
   const [projectId, setProjectId] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const projects = activeProjectOptions(data.projects);
   const rows = useMemo<DailyScheduleRow[]>(() => {
-    const taskRows: DailyScheduleRow[] = data.tasks
-      .filter((task) => isTaskInDailyTimeline(task, today))
+    return data.tasks
+      .filter((task) => isTaskInTodayTasks(task, today))
       .map((task) => ({
         task,
         labels: [
+          task.status === "done" ? "Done" : "",
+          task.dueDate && task.dueDate < today && task.status !== "done" ? "Overdue" : "",
           task.dueDate === today ? "Due today" : "",
           task.plannedDate === today ? "Planned today" : "",
           task.status === "in-progress" ? "In progress" : "",
           projectName(data.projects, task.projectId)
         ].filter(Boolean)
       }));
-
-    const dateRows: DailyScheduleRow[] = data.deadlines
-      .filter((deadline) => !deadline.trashedAt && !deadline.archivedAt && deadline.date === today)
-      .map((deadline) => ({
-        type: "deadline" as const,
-        deadline,
-        labels: [
-          "Date",
-          deadline.location,
-          projectName(data.projects, deadline.projectId)
-        ].filter(Boolean)
-      }));
-
-    return [...taskRows, ...dateRows];
-  }, [data.deadlines, data.projects, data.tasks, today]);
-
-  function addTaskToTimeline(taskId: string) {
-    const task = data.tasks.find((item) => item.id === taskId);
-    if (!task || task.trashedAt || task.archivedAt) return;
-    updateTask(task.id, { plannedDate: today });
-  }
-
-  function removeTaskFromTimeline(task: Task) {
-    updateTask(task.id, removeTaskFromTimelineUpdates(task, today));
-  }
+  }, [data.projects, data.tasks, today]);
 
   function createTask() {
     const trimmed = title.trim();
@@ -546,7 +445,7 @@ function DailyTimelineSection({ today }: { today: string }) {
             if (event.key === "Enter") createTask();
             if (event.key === "Escape") setTitle("");
           }}
-          placeholder="Add something to today's timeline..."
+          placeholder="Add a task for today..."
           className="min-h-10 min-w-0 flex-1 bg-transparent text-base text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
         />
         <button type="button" onClick={createTask} disabled={!title.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 text-sm disabled:bg-[var(--cos-border)]">
@@ -567,97 +466,8 @@ function DailyTimelineSection({ today }: { today: string }) {
       <DailySchedule
         rows={rows}
         today={today}
-        draggableTasks
-        taskPlacementAction="remove"
-        onTaskPlacementAction={removeTaskFromTimeline}
-        onTaskDrop={addTaskToTimeline}
-      />
-    </div>
-  );
-}
-
-function AllTasksSection({
-  showCompleted,
-  taskSortMode,
-  onTaskSortMode,
-  today
-}: {
-  showCompleted: boolean;
-  taskSortMode: DashboardTaskSortMode;
-  onTaskSortMode: (mode: DashboardTaskSortMode) => void;
-  today: string;
-}) {
-  const { data, updateTask } = useWorkspace();
-  const finishedTasks = data.tasks.filter((task) => isTaskVisible(task, true) && DONE_TASK_STATUSES.includes(task.status));
-  const rows = data.tasks
-    .filter((task) => isTaskVisible(task, showCompleted))
-    .sort((a, b) => compareDashboardTasks(a, b, taskSortMode))
-    .map((task) => ({
-      task,
-      labels: [
-        task.dueDate ? `Due ${formatDateKey(task.dueDate)}` : "",
-        task.plannedDate ? `Planned ${formatDateKey(task.plannedDate)}` : "",
-        projectName(data.projects, task.projectId)
-      ].filter(Boolean)
-    }));
-
-  function clearFinishedTasks() {
-    if (!finishedTasks.length) return;
-    if (!window.confirm(`Move ${finishedTasks.length} finished task${finishedTasks.length === 1 ? "" : "s"} to Trash?`)) return;
-    const trashedAt = new Date().toISOString();
-    finishedTasks.forEach((task) => updateTask(task.id, { trashedAt }));
-  }
-
-  function addTaskToTimeline(task: Task) {
-    updateTask(task.id, { plannedDate: today });
-  }
-
-  function removeDroppedTaskFromTimeline(taskId: string) {
-    const task = data.tasks.find((item) => item.id === taskId);
-    if (!task) return;
-    updateTask(task.id, removeTaskFromTimelineUpdates(task, today));
-  }
-
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="cos-input flex min-h-9 items-center gap-2 bg-[var(--cos-bg-soft)] px-2 py-1 text-xs text-[var(--cos-text-muted)]">
-          <ArrowDownUp className="h-3.5 w-3.5" />
-          <span className="font-medium">Sort</span>
-          <select
-            aria-label="Task sort"
-            data-testid="dashboard-task-sort"
-            value={taskSortMode}
-            onChange={(event) => onTaskSortMode(event.target.value as DashboardTaskSortMode)}
-            className="bg-transparent text-xs font-semibold text-[var(--cos-text-strong)] outline-none"
-          >
-            {(Object.keys(DASHBOARD_TASK_SORT_LABELS) as DashboardTaskSortMode[]).map((mode) => (
-              <option key={mode} value={mode}>{DASHBOARD_TASK_SORT_LABELS[mode]}</option>
-            ))}
-          </select>
-        </label>
-        {showCompleted && finishedTasks.length ? (
-          <button
-            type="button"
-            data-testid="dashboard-clear-finished-tasks"
-            onClick={clearFinishedTasks}
-            className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"
-          >
-            <Trash2 className="h-4 w-4" />
-            Clear finished
-          </button>
-        ) : null}
-      </div>
-      <DailySchedule
-        rows={rows}
-        today={today}
-        order="preserve"
-        emptyTitle="No active tasks"
-        emptyDescription="Tasks from every date and project will appear here."
-        draggableTasks
-        taskPlacementAction="add"
-        onTaskPlacementAction={addTaskToTimeline}
-        onTaskDrop={removeDroppedTaskFromTimeline}
+        emptyTitle="No tasks for today"
+        emptyDescription="Add one task here, or plan work from a project."
       />
     </div>
   );
@@ -721,55 +531,14 @@ function EmptySmall({ icon: Icon, title, description }: { icon: LucideIcon; titl
   );
 }
 
-function ReviewPrompt({ preferences }: { preferences: ReturnType<typeof sectionDefaults> }) {
-  const router = useRouter();
-  const { data, updateDashboardPreferences } = useWorkspace();
-  const due = dueReviewType(data.reviews, preferences.reviewPromptDismissals);
-  if (!due) return null;
-
-  function dismiss() {
-    if (!due) return;
-    updateDashboardPreferences({
-      sectionOrder: preferences.sectionOrder,
-      collapsedSections: preferences.collapsedSections,
-      dateWindowDays: preferences.dateWindowDays,
-      reviewPromptDismissals: [...preferences.reviewPromptDismissals, due.key],
-      showCompleted: preferences.showCompleted,
-      taskSortMode: preferences.taskSortMode
-    });
-  }
-
-  return (
-    <section className="rounded-lg border border-[var(--cos-review)] bg-[var(--cos-review-soft)] px-4 py-3 text-sm text-[var(--cos-review)]">
-      <div className="flex items-start gap-3">
-        <Bell className="mt-0.5 h-4 w-4 shrink-0" />
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold">{reviewLabel(due.type)} is due</p>
-          <p className="mt-0.5 text-xs opacity-90">{due.message}</p>
-        </div>
-        <button type="button" onClick={() => router.push("/reviews")} className="cos-btn cos-btn-ghost min-h-8 px-2 py-1 text-xs">
-          <BookOpen className="h-3.5 w-3.5" />
-          Review
-        </button>
-        <button type="button" onClick={dismiss} aria-label={`Dismiss ${reviewLabel(due.type)} prompt`} className="grid h-8 w-8 shrink-0 place-items-center rounded-md hover:bg-[var(--cos-bg-elevated)]">
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-    </section>
-  );
-}
-
 export function Dashboard2View() {
   const { data, loading, updateDashboardPreferences } = useWorkspace();
   const today = localDateKey();
   const preferences = sectionDefaults(data.dashboardPreferences[0]);
   const collapsed = new Set(preferences.collapsedSections);
   const activeDateWindowEnd = addDaysToDateKey(today, preferences.dateWindowDays) ?? today;
-  const datesCount = data.deadlines.filter((deadline) => !deadline.trashedAt && (preferences.showCompleted || !deadline.archivedAt) && (deadline.date < today || deadline.date <= activeDateWindowEnd)).length;
-  const tasksCount =
-    data.tasks.filter((task) => isTaskInDailyTimeline(task, today)).length +
-    data.deadlines.filter((deadline) => !deadline.trashedAt && !deadline.archivedAt && deadline.date === today).length;
-  const allTasksCount = data.tasks.filter((task) => isTaskVisible(task, preferences.showCompleted)).length;
+  const datesCount = data.deadlines.filter((deadline) => !deadline.trashedAt && !deadline.archivedAt && (deadline.date < today || deadline.date <= activeDateWindowEnd)).length;
+  const tasksCount = data.tasks.filter((task) => isTaskInTodayTasks(task, today)).length;
   const projectsCount = data.projects.filter((project) => !project.trashedAt && !project.archivedAt && project.status === "active").length;
 
   function toggleSection(id: DashboardSectionId) {
@@ -786,42 +555,25 @@ export function Dashboard2View() {
     });
   }
 
-  const sectionComponents: Record<DashboardSectionId, React.ReactNode> = {
-    notepad: (
-      <CollapsibleSection id="notepad" title="Notepad" icon={NotebookPen} collapsed={collapsed.has("notepad")} onToggle={toggleSection}>
-        <NotepadSection />
+  const sectionComponents: Partial<Record<DashboardSectionId, React.ReactNode>> = {
+    tasks: (
+      <CollapsibleSection id="tasks" title="Today Tasks" icon={SquarePen} count={tasksCount} collapsed={collapsed.has("tasks")} onToggle={toggleSection}>
+        <TodayTasksSection today={today} />
       </CollapsibleSection>
     ),
     dates: (
       <CollapsibleSection id="dates" title="Dates" icon={CalendarDays} count={datesCount} collapsed={collapsed.has("dates")} onToggle={toggleSection}>
-        <DatesSection today={today} windowDays={preferences.dateWindowDays} showCompleted={preferences.showCompleted} />
-      </CollapsibleSection>
-    ),
-    tasks: (
-      <CollapsibleSection id="tasks" title="Daily timeline" icon={SquarePen} count={tasksCount} collapsed={collapsed.has("tasks")} onToggle={toggleSection}>
-        <DailyTimelineSection today={today} />
-      </CollapsibleSection>
-    ),
-    allTasks: (
-      <CollapsibleSection id="allTasks" title="Tasks" icon={ListChecks} count={allTasksCount} collapsed={collapsed.has("allTasks")} onToggle={toggleSection}>
-        <AllTasksSection
-          showCompleted={preferences.showCompleted}
-          taskSortMode={preferences.taskSortMode}
-          today={today}
-          onTaskSortMode={(taskSortMode) => updateDashboardPreferences({
-            sectionOrder: preferences.sectionOrder,
-            collapsedSections: preferences.collapsedSections,
-            dateWindowDays: preferences.dateWindowDays,
-            reviewPromptDismissals: preferences.reviewPromptDismissals,
-            showCompleted: preferences.showCompleted,
-            taskSortMode
-          })}
-        />
+        <DatesSection today={today} windowDays={preferences.dateWindowDays} />
       </CollapsibleSection>
     ),
     projects: (
-      <CollapsibleSection id="projects" title="Projects" icon={FolderKanban} count={projectsCount} collapsed={collapsed.has("projects")} onToggle={toggleSection}>
+      <CollapsibleSection id="projects" title="Project Recovery" icon={FolderKanban} count={projectsCount} collapsed={collapsed.has("projects")} onToggle={toggleSection}>
         <ProjectsSection />
+      </CollapsibleSection>
+    ),
+    notepad: (
+      <CollapsibleSection id="notepad" title="Scratchpad" icon={NotebookPen} collapsed={collapsed.has("notepad")} onToggle={toggleSection}>
+        <NotepadSection />
       </CollapsibleSection>
     )
   };
@@ -830,34 +582,7 @@ export function Dashboard2View() {
     <DashboardPageShell loading={loading}>
       {loading ? <div className="cos-surface p-4 text-sm text-[var(--cos-text-muted)]">Loading cached command sheet...</div> : null}
       <QuickCapture />
-      <div className="rounded-lg border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] px-4 py-3 text-sm text-[var(--cos-primary-text)]">
-        <div className="flex items-start gap-2">
-          <Circle className="mt-1 h-3 w-3 fill-[var(--cos-primary)] text-[var(--cos-primary)]" />
-          <p><span className="font-semibold">Today:</span> capture quickly, write the day as a task list, and keep important dates separate.</p>
-        </div>
-      </div>
-      <div className="flex justify-end">
-        <button
-          type="button"
-          aria-pressed={preferences.showCompleted}
-          onClick={() => updateDashboardPreferences({
-            sectionOrder: preferences.sectionOrder,
-            collapsedSections: preferences.collapsedSections,
-            dateWindowDays: preferences.dateWindowDays,
-            reviewPromptDismissals: preferences.reviewPromptDismissals,
-            showCompleted: !preferences.showCompleted,
-            taskSortMode: preferences.taskSortMode
-          })}
-          className={`cos-btn px-3 py-1.5 text-xs ${preferences.showCompleted ? "cos-btn-primary" : "cos-btn-ghost"}`}
-        >
-          {preferences.showCompleted ? <Check className="h-3.5 w-3.5" /> : null}
-          Show completed
-        </button>
-      </div>
-      <ReviewPrompt preferences={preferences} />
-      {preferences.sectionOrder.map((id) => (
-        <Fragment key={id}>{sectionComponents[id] ?? null}</Fragment>
-      ))}
+      {preferences.sectionOrder.map((id) => sectionComponents[id] ? <div key={id}>{sectionComponents[id]}</div> : null)}
     </DashboardPageShell>
   );
 }

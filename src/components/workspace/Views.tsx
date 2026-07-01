@@ -27,7 +27,6 @@ import {
   RotateCcw,
   Search,
   Send,
-  Sparkles,
   Trash2,
   Zap
 } from "lucide-react";
@@ -304,7 +303,7 @@ function CaptureCard({ capture, onConvert, onArchive, onDelete }: { capture: Cap
           ))}
           <div className="flex-1" />
           <button onClick={onArchive} className="rounded-lg bg-[var(--cos-bg-inset)] px-3 py-1.5 text-xs font-medium text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]">Archive</button>
-          <button onClick={onDelete} className="rounded-lg bg-[var(--cos-danger-soft)] px-3 py-1.5 text-xs font-medium text-[var(--cos-danger-text)]">Delete</button>
+          <button onClick={onDelete} className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--cos-text-subtle)] hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger-text)]">Delete</button>
         </div>
       ) : null}
     </div>
@@ -887,13 +886,6 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const activeProjectTasks = tasks.filter((task) => !task.archivedAt && task.status !== "done" && task.status !== "dropped");
   const activeTaskCount = tasks.filter((task) => task.status !== "done" && task.status !== "dropped").length;
   const activeDomains = data.domains.filter((domain) => !domain.archived);
-  const suggestions = [
-    !project.nextAction ? "Define a next action to make recovery easier." : "",
-    !project.latestStatus ? "Add a latest status so future-you can resume quickly." : "",
-    project.openLoops.length ? `Review ${project.openLoops.length} open loop(s).` : "",
-    !activeTaskCount ? "No active tasks. Add one small concrete task." : ""
-  ].filter(Boolean);
-
   function addSubcontext() {
     const name = newSubcontext.trim();
     if (!name) return;
@@ -1073,8 +1065,6 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           </div>
         </div>
       </InfoBlock>
-
-      {suggestions.length ? <div className="mt-4 rounded-lg border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] p-4"><div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]"><Sparkles className="h-4 w-4" /> Agent Suggestions</div><ul className="space-y-1 text-sm text-[var(--cos-primary-text)]">{suggestions.map((suggestion) => <li key={suggestion}>{suggestion}</li>)}</ul></div> : null}
 
       <div className="mt-4 flex flex-wrap gap-3">
         <button onClick={exportMarkdown} className="cos-btn cos-btn-ghost px-3 py-2 text-sm"><Download className="h-4 w-4" /> Export Markdown</button>

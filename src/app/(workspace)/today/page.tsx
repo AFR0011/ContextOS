@@ -1,5 +1,5 @@
-import { TodayView } from "@/components/workspace/Views";
+import { redirect } from "next/navigation";
 
 export default function TodayPage() {
-  return <TodayView />;
+  redirect("/dashboard");
 }

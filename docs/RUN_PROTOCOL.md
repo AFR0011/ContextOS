@@ -50,27 +50,28 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    ```
 5. Manual checks:
    - Confirm `GET /api/health` returns `200`, `Cache-Control: no-store`, `database: "ok"`, and the current package version while Postgres is available.
-   - Log in with the demo account and confirm Dashboard Quick Capture is above all sections.
+   - Log in with the demo account and confirm Dashboard Quick Capture is above Today Tasks, Dates, Project Recovery, and Scratchpad.
+   - Confirm desktop primary navigation shows Dashboard, Inbox, Search, and active project links; confirm mobile bottom navigation shows Dashboard, Inbox, Projects, and Search.
+   - Confirm Today and This Week redirect to Dashboard.
    - Add `/task` and `/date` captures from Dashboard Quick Capture and confirm they reach Inbox.
    - Convert an inbox capture to a task.
-   - Add timed and untimed Daily timeline tasks, create two tasks at the same time, and confirm no empty calendar slots appear.
-   - Drag a task from Dashboard Tasks into Daily timeline, then remove it from timeline placement through row actions or right-click without deleting the task.
-   - Add an important Date for today and confirm it appears in Daily timeline as a Date row, not a task checkbox.
-   - Cross a Daily timeline or Today task, reload, and confirm it remains visible and can be reopened.
+   - Add timed and untimed Today Tasks, create two tasks at the same time, and confirm no empty calendar slots appear.
+   - Confirm backlog/future tasks do not appear in a separate Dashboard all-task reservoir but remain recoverable through Projects or Search.
+   - Add an important Date for today and confirm it appears in Dates as a Date row, not a task checkbox.
+   - Cross a Today task, reload, and confirm it remains visible and can be reopened.
    - Confirm crossing/reopening a task does not reorder it solely because it is completed.
    - Confirm long task titles wrap on mobile instead of truncating.
-   - Confirm Dashboard Tasks includes a future task and follows Show completed.
    - Create, edit, archive, restore, and delete an important Date; confirm task due dates do not appear in Dates.
    - Confirm `/deadlines` redirects to `/dates`.
    - Open a project and confirm section order: Active Tasks, Dates, Recovery Canvas, Subcontexts.
    - Confirm project Notes / Decisions is absent and recovery notes persist.
    - Create a project subcontext and confirm the parent rolls up child tasks/dates.
-   - Edit the Dashboard Notepad and confirm it persists.
+   - Edit the Dashboard Scratchpad and confirm it persists.
    - On a 390px mobile viewport, confirm touched task/editor controls have 40px hit targets, editor add/actions are reachable without hover, slash commands expose listbox/selected state, and block actions expose menu semantics.
-   - Open an Area and confirm projects/subcontexts appear inside it.
-   - Open Areas and Resources from the PARA nav group.
+   - Open an Area by URL and confirm projects/subcontexts appear inside it.
+   - Open Resources by URL or Search and confirm standalone notes remain reachable.
    - Search for a project task and confirm the result opens a surface where that task is visible; search for a standalone Resource note and confirm it opens Resources.
-   - Confirm Today and This Week contain no priority editor terminology.
+   - Confirm Dashboard contains no priority editor terminology.
    - Toggle dark mode and reload to confirm it persists.
    - Go offline, add a capture, reload a visited route, return online, and confirm pending sync clears.
 
@@ -93,7 +94,7 @@ Use [FRICTION_LOG.md](FRICTION_LOG.md) during the one-day trial.
 3. Use ContextOS as the only capture and execution surface for one real workday.
 4. Capture every open loop.
 5. Process the inbox at least twice.
-6. Use Today for execution.
+6. Use Dashboard for execution.
 7. Update at least two project pages.
 8. Use at least one subcontext for a large project, course, assignment, or duty.
 9. Edit the Dashboard Canvas at least once.

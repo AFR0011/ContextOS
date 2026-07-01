@@ -4,12 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   AlertTriangle,
-  Archive,
-  Boxes,
-  BookOpen,
-  CalendarDays,
   Download,
-  FileText,
   FolderKanban,
   Inbox,
   LayoutDashboard,
@@ -18,7 +13,6 @@ import {
   Moon,
   RefreshCw,
   Search,
-  Settings,
   Sun,
   Wifi,
   WifiOff,
@@ -27,46 +21,57 @@ import {
 } from "lucide-react";
 import type { PublicUser } from "@/lib/auth";
 import { useWorkspace } from "@/lib/client-store";
+import type { Project } from "@/lib/types";
 
 const mobileBottomNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/today", label: "Today", icon: Sun },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/search", label: "Search", icon: Search }
 ] as const;
 
-const navSections = [
-  {
-    label: "Execution",
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/inbox", label: "Inbox", icon: Inbox },
-      { href: "/today", label: "Today", icon: Sun },
-      { href: "/this-week", label: "This Week", icon: CalendarDays }
-    ]
-  },
-  {
-    label: "PARA",
-    items: [
-      { href: "/projects", label: "Projects", icon: FolderKanban },
-      { href: "/areas", label: "Areas", icon: Boxes },
-      { href: "/resources", label: "Resources", icon: FileText },
-      { href: "/archive", label: "Archive", icon: Archive }
-    ]
-  },
-  {
-    label: "Review",
-    items: [
-      { href: "/dates", label: "Dates", icon: CalendarDays },
-      { href: "/reviews", label: "Reviews", icon: BookOpen },
-      { href: "/search", label: "Search", icon: Search },
-      { href: "/settings", label: "Settings", icon: Settings }
-    ]
-  }
-];
+const primaryNavItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/search", label: "Search", icon: Search }
+] as const;
+
+const utilityNavItems = [
+  { href: "/dates", label: "Dates" },
+  { href: "/archive", label: "Archive" },
+  { href: "/settings", label: "Settings" }
+] as const;
 
 type SyncSnapshot = ReturnType<typeof useWorkspace>["sync"];
+
+function activeSidebarProjects(projects: Project[]) {
+  return projects
+    .filter((project) => !project.trashedAt && !project.archivedAt && project.status === "active")
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function rootSidebarProjects(projects: Project[]) {
+  const visibleIds = new Set(projects.map((project) => project.id));
+  return projects.filter((project) => !project.parentProjectId || !visibleIds.has(project.parentProjectId));
+}
+
+function sidebarChildren(projects: Project[], parentId: string) {
+  return projects.filter((project) => project.parentProjectId === parentId);
+}
+
+function currentProjectIdFromPath(path: string) {
+  const match = path.match(/^\/projects\/([^/]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function projectIsActiveBranch(projects: Project[], projectId: string, currentProjectId: string | null) {
+  let cursor = currentProjectId;
+  while (cursor) {
+    if (cursor === projectId) return true;
+    cursor = projects.find((project) => project.id === cursor)?.parentProjectId ?? null;
+  }
+  return false;
+}
 
 function syncStatusLabel(sync: SyncSnapshot) {
   if (sync.syncing) return "Syncing";
@@ -139,6 +144,9 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
   const { data, sync, forceRefreshFromServer } = useWorkspace();
   const inboxCount = data.captures.filter((capture) => capture.status === "unprocessed").length;
   const isDark = darkMode ?? false;
+  const sidebarProjects = activeSidebarProjects(data.projects);
+  const currentProjectId = currentProjectIdFromPath(currentPath);
+  const projectRoots = rootSidebarProjects(sidebarProjects);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("contextos-theme");
@@ -155,6 +163,37 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
+  }
+
+  function goTo(href: string) {
+    router.push(href);
+    setOpen(false);
+  }
+
+  function renderProjectLink(project: Project, depth = 0): ReactNode {
+    const active = currentProjectId === project.id;
+    const expanded = projectIsActiveBranch(sidebarProjects, project.id, currentProjectId);
+    const children = expanded ? sidebarChildren(sidebarProjects, project.id) : [];
+
+    return (
+      <div key={project.id}>
+        <button
+          type="button"
+          onClick={() => goTo(`/projects/${project.id}`)}
+          aria-current={active ? "page" : undefined}
+          className={`mb-0.5 flex min-h-9 w-full items-center gap-2 rounded-lg border py-1.5 pr-2 text-left text-sm font-medium ${
+            active
+              ? "border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
+              : "border-transparent text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text-strong)]"
+          }`}
+          style={{ paddingLeft: `${12 + depth * 14}px` }}
+        >
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-[var(--cos-primary)]" : "bg-[var(--cos-border-strong)]"}`} />
+          <span className="truncate">{project.name}</span>
+        </button>
+        {children.length ? <div>{children.map((child) => renderProjectLink(child, depth + 1))}</div> : null}
+      </div>
+    );
   }
 
   return (
@@ -186,41 +225,72 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-3">
-          {navSections.map((section) => (
-            <div key={section.label} className="mb-3">
-              <p className="px-3 pb-1.5 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">{section.label}</p>
-              {section.items.map((item) => {
-                const Icon = item.icon;
-                const active = currentPath === item.href || (item.href === "/projects" && currentPath.startsWith("/projects"));
-                return (
-                  <button
-                    key={item.href}
-                    onClick={() => {
-                      router.push(item.href);
-                      setOpen(false);
-                    }}
-                    className={`mb-0.5 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium ${
-                      active
-                        ? "border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
-                        : "border border-transparent text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text-strong)]"
-                    }`}
-                  >
-                    <Icon className="h-[18px] w-[18px]" />
-                    <span>{item.label}</span>
-                    {item.href === "/inbox" && inboxCount > 0 ? (
-                      <span className="ml-auto min-w-5 rounded-full bg-[var(--cos-primary)] px-1.5 py-0.5 text-center text-[11px] font-semibold text-white">
-                        {inboxCount}
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
+        <nav aria-label="Workspace navigation" data-testid="workspace-primary-nav" className="flex-1 overflow-y-auto px-3 py-3">
+          <div className="mb-3">
+            <p className="px-3 pb-1.5 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Home</p>
+            {primaryNavItems.map((item) => {
+              const Icon = item.icon;
+              const active = currentPath === item.href;
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => goTo(item.href)}
+                  className={`mb-0.5 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium ${
+                    active
+                      ? "border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
+                      : "border border-transparent text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text-strong)]"
+                  }`}
+                >
+                  <Icon className="h-[18px] w-[18px]" />
+                  <span>{item.label}</span>
+                  {item.href === "/inbox" && inboxCount > 0 ? (
+                    <span className="ml-auto min-w-5 rounded-full bg-[var(--cos-primary)] px-1.5 py-0.5 text-center text-[11px] font-semibold text-white">
+                      {inboxCount}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mb-3">
+            <button
+              type="button"
+              onClick={() => goTo("/projects")}
+              className={`mb-1 flex min-h-10 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold ${
+                currentPath === "/projects"
+                  ? "border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
+                  : "border-transparent text-[var(--cos-text-strong)] hover:bg-[var(--cos-bg-soft)]"
+              }`}
+            >
+              <FolderKanban className="h-[18px] w-[18px]" />
+              <span>Projects</span>
+              <span className="ml-auto text-[11px] text-[var(--cos-text-subtle)]">{projectRoots.length}</span>
+            </button>
+            <div data-testid="workspace-project-nav">
+              {projectRoots.length ? (
+                projectRoots.map((project) => renderProjectLink(project))
+              ) : (
+                <p className="px-3 py-2 text-xs text-[var(--cos-text-subtle)]">No active projects</p>
+              )}
             </div>
-          ))}
+          </div>
         </nav>
 
         <div className="border-t border-[var(--cos-border-soft)] px-5 py-4">
+          <div data-testid="workspace-utility-nav" className="mb-3 flex flex-wrap gap-1">
+            {utilityNavItems.map((item) => (
+              <button
+                key={item.href}
+                type="button"
+                onClick={() => goTo(item.href)}
+                className="rounded-md px-2 py-1 text-[11px] font-semibold text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text)]"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
           <SyncIndicator sync={sync} onRefreshFromServer={forceRefreshFromServer} />
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
@@ -260,7 +330,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--cos-border)] bg-[var(--cos-bg-elevated)]/95 backdrop-blur lg:hidden"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="grid grid-cols-5">
+          <div className="grid grid-cols-4">
             {mobileBottomNav.map((item) => {
               const Icon = item.icon;
               const active =

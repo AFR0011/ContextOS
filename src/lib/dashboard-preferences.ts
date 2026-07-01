@@ -1,6 +1,6 @@
 import type { DashboardPreference, DashboardSectionId, DashboardTaskSortMode } from "@/lib/types";
 
-export const DASHBOARD_SECTION_ORDER: DashboardSectionId[] = ["notepad", "dates", "tasks", "allTasks", "projects"];
+export const DASHBOARD_SECTION_ORDER: DashboardSectionId[] = ["tasks", "dates", "projects", "notepad"];
 export const DASHBOARD_TASK_SORT_MODES: DashboardTaskSortMode[] = ["recent", "oldest", "schedule", "date"];
 
 const DASHBOARD_SECTION_IDS = new Set<DashboardSectionId>(DASHBOARD_SECTION_ORDER);
@@ -31,15 +31,12 @@ function validTaskSortMode(value: string | undefined) {
 }
 
 export function normalizeDashboardPreference(preference?: DashboardPreferenceInput | null) {
-  const storedOrder = validUniqueSections(preference?.sectionOrder);
-  const sectionOrder = DASHBOARD_SECTION_ORDER.every((section) => storedOrder.includes(section)) ? storedOrder : [...DASHBOARD_SECTION_ORDER];
-
   return {
     collapsedSections: validUniqueSections(preference?.collapsedSections),
     dateWindowDays: preference?.dateWindowDays ?? 14,
     reviewPromptDismissals: preference?.reviewPromptDismissals ?? [],
     showCompleted: preference?.showCompleted ?? false,
     taskSortMode: validTaskSortMode(preference?.taskSortMode),
-    sectionOrder
+    sectionOrder: [...DASHBOARD_SECTION_ORDER]
   };
 }

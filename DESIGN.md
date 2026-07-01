@@ -1,10 +1,10 @@
 ---
-version: 0.2.2
+version: 0.2.9-draft
 name: ContextOS Design System
 status: active-draft
 product: ContextOS
 primary_mode: mobile-first personal command sheet
-last_updated: 2026-06-11
+last_updated: 2026-07-01
 influences:
   primary_spine: Linear
   editable_workspace: Notion
@@ -21,12 +21,13 @@ This amendment is authoritative wherever older sections use legacy Deadline, pri
 
 - Visible product language is **Date/Dates**. Dates are important reference events, not completable tasks.
 - `/dates` is canonical; `/deadlines` is only a compatibility redirect. Capture advertises `/date` and still accepts `/deadline`.
-- The Dashboard starts with reusable Quick Capture above all other content.
+- The Dashboard is now a Notion-style command page: the page editor is the primary surface, and pinned live Tasks/Dates blocks stay visible below it.
 - Dashboard is the canonical Today surface in the simplified Phase 1 UI; `/today` and `/this-week` redirect to `/dashboard`.
-- Today Tasks is a compact editable list derived from overdue, due-today, planned-today, and in-progress tasks. Done tasks planned/due today remain visible and reopenable. Show only occupied optional times; never render empty calendar slots.
+- Explicit `/task` and `/date` command lines create structured records. Plain prose, bullets, and Markdown checkboxes remain scratchpad content.
+- Dashboard Tasks is a compact editable live block derived from all active workspace tasks, grouped by time, Area, or Project. Done tasks planned/due today remain visible and reopenable. Show only occupied optional times; never render empty calendar slots.
 - Dates is a separate section for overdue, today, and near-upcoming important Dates. Dates are not task checkboxes.
 - The separate Dashboard all-task reservoir, task sort control, Show completed toggle, drag/drop planning, and review prompt are hidden in Phase 1.
-- Project pages read top to bottom as header, Active Tasks, Dates, Recovery Canvas, Subcontexts, and suggestions/actions.
+- Project pages use the same command-page model: editable title/metadata, project notes editor, pinned Tasks, pinned Dates, compact Recovery fields, and Subcontexts.
 - Active Tasks stays expanded and editable. Project Notes / Decisions is not a separate surface; recovery notes hold imported project context.
 - Today, This Week, and reviews do not contain daily or weekly priority editors.
 
@@ -714,10 +715,10 @@ The dashboard is the signature product surface.
 
 Dashboard 2.0 is a mobile-first editable command sheet combining:
 
-- Notepad
+- Page editor
 - Dates
 - Tasks
-- Projects
+- Project context through command pages
 - Reviews later
 
 It should feel like an operating page, not a report.
@@ -727,22 +728,17 @@ It should feel like an operating page, not a report.
 ```text
 Dashboard
 
-Quick Capture
+Page editor
 
-▾ Today Tasks
-  Today / overdue tasks
+Pinned Tasks
+  Overdue / today / in-progress / upcoming / unscheduled / done today
 
-▾ Dates
+Pinned Dates
   Overdue / upcoming important dates
 
-▾ Project Recovery
-  Active project recovery cards
-
-▾ Scratchpad
-  Freeform scratch area...
 ```
 
-### 9.3 Notepad Section
+### 9.3 Command Page Body
 
 Purpose:
 
@@ -750,20 +746,23 @@ Purpose:
 - temporary notes
 - fast capture
 - messy ideas before structure
+- explicit command entry for structured records
 
 Behavior:
 
-- multiline text area
+- Markdown page editor
 - debounced autosave
 - offline compatible
-- clear/archive action
 - no project required
+- `/task ...` creates a real task
+- `/date ...` creates a real Date
+- Markdown checkboxes stay local scratch content
 
 Style:
 
-- slightly inset surface
+- document-like surface
 - calm placeholder
-- minimal toolbar or no toolbar
+- low-chrome block controls
 
 Placeholder examples:
 
@@ -781,10 +780,9 @@ Purpose:
 
 Content:
 
-- overdue deadlines
-- upcoming deadlines
-- tasks with due dates
-- tasks planned for today/this week if applicable
+- overdue Dates
+- today Dates
+- upcoming active Dates
 
 Style:
 
@@ -809,12 +807,16 @@ Content:
 
 - overdue tasks
 - planned today tasks
-- optionally next actions from projects
+- due today tasks
+- in-progress tasks
+- upcoming active tasks
+- unscheduled active tasks
+- done-today tasks
 
 Actions:
 
 - complete/uncomplete
-- add inline
+- create with `/task` in the page editor
 - edit/open
 - reschedule later
 
@@ -824,34 +826,17 @@ Style:
 - completed tasks subdued
 - overdue tasks flagged but not visually screaming
 
-### 9.6 Projects Section
+### 9.6 Project Context
 
 Purpose:
 
-- recover active project context
+- keep project recovery one click away without making Dashboard carry a second project surface
 
-Each project card/row should show:
+Rules:
 
-- title
-- next action
-- latest status
-- stale/missing-next-action indicator
-- linked deadline pressure if relevant
-
-Style:
-
-- compact recovery cards
-- next action visually more prominent than description
-- status muted but readable
-
-Good project card:
-
-```text
-ContextOS
-Next: Fix dashboard date handling
-Status: Offline sync works; task editing is still weak.
-⚠ No weekly review in 5 days
-```
+- Desktop navigation owns active project discovery through the sidebar tree.
+- Project detail owns recovery: title/metadata, notes, Tasks, Dates, Recovery, Subcontexts.
+- Dashboard may group tasks by Project, but it should not show a separate Project Recovery card stack.
 
 ### 9.7 Dashboard Anti-Patterns
 
@@ -864,6 +849,7 @@ Do not add:
 - AI chat panel as default
 - complex drag-and-drop before basic usage works
 - separate fake checklist layer detached from real tasks
+- form-heavy task/date composers on the Dashboard
 
 ---
 
@@ -997,14 +983,19 @@ working memory file
 
 Required visible fields:
 
-- Objective
-- Latest Status
-- Next Action
-- Open Loops
-- Tasks
-- Deadlines
-- Notes
-- Decisions later
+- Editable title and metadata
+- Project notes page editor
+- Pinned Tasks
+- Pinned Dates
+- Compact Objective, Latest Status, Next Action, and Open Loops fields
+- Subcontexts
+
+Rules:
+
+- `/task` and `/date` commands from the project editor attach to the current project.
+- Direct project records render first.
+- Immediate child subcontexts render below with descendant task/date rollups.
+- Recovery fields stay editable without taking over the whole page.
 
 ### 11.6 Deadlines
 
@@ -1458,15 +1449,14 @@ Use this checklist before merging UI changes.
 ### 20.1 Dashboard 2.0 Must-Haves
 
 ```text
-[ ] Compact/collapsible Scratchpad section
-[ ] Collapsible Dates section
-[ ] Collapsible Tasks section
-[ ] Collapsible Projects section
-[ ] Persist collapsed state per user
-[ ] Dashboard scratchpad with debounced autosave
-[ ] Dates from real deadlines/tasks
-[ ] Today Tasks from real task records
-[ ] Projects from active project records
+[ ] Page-style Dashboard editor with debounced autosave
+[ ] Explicit /task command creates real task records
+[ ] Explicit /date command creates real Date records
+[ ] Markdown checkboxes remain scratch content
+[ ] Pinned Dates block from real Date records
+[ ] Pinned Tasks block from all active task records
+[ ] Dashboard scope and group controls persisted locally
+[ ] Project command pages with notes, Tasks, Dates, Recovery, and Subcontexts
 [ ] Mobile-first layout
 [ ] Local date handling
 [ ] Offline-compatible actions
@@ -1475,15 +1465,12 @@ Use this checklist before merging UI changes.
 ### 20.2 Dashboard 2.0 Should-Haves
 
 ```text
-[ ] Add task inline
 [ ] Complete task inline
 [ ] Edit task title inline or via sheet
-[ ] Keep backlog/future tasks recoverable through Projects and Search without showing a second Dashboard task reservoir
+[ ] Keep backlog/future tasks visible in the same Dashboard Tasks block without restoring a second reservoir
 [ ] Mark deadline handled/archive if supported
-[ ] Project missing-next-action indicator
-[ ] Project stale-status indicator
-[ ] Clear/archive notepad
 [ ] Section counts
+[ ] Compact project missing-next-action and stale-status cues on project pages
 ```
 
 ### 20.3 Dashboard 2.0 Later

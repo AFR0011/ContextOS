@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { CaptureCommand, CaptureLineResult } from "@/components/workspace/editor/editorTypes";
 import { BlockMarkdownEditor } from "@/components/workspace/editor/BlockMarkdownEditor";
 
 interface MarkdownEditorProps {
@@ -13,9 +14,10 @@ interface MarkdownEditorProps {
   minLines?: number;
   onChange?: (value: string) => void;
   onSave?: (value: string) => void;
-  onCaptureLine?: (line: string) => void;
+  allowedCaptureCommands?: CaptureCommand[];
+  onCaptureLine?: (line: string) => CaptureLineResult | void;
   disabled?: boolean;
-  mode?: "full" | "compact";
+  mode?: "full" | "compact" | "page";
 }
 
 export function MarkdownEditor({
@@ -28,6 +30,7 @@ export function MarkdownEditor({
   minLines,
   onChange,
   onSave,
+  allowedCaptureCommands,
   onCaptureLine,
   disabled,
   mode
@@ -43,6 +46,7 @@ export function MarkdownEditor({
       minLines={minLines}
       onChange={onChange}
       onSave={onSave}
+      allowedCaptureCommands={allowedCaptureCommands}
       onCaptureLine={onCaptureLine}
       disabled={disabled}
       mode={mode}

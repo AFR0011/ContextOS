@@ -34,7 +34,17 @@ import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
 import { MarkdownPreview as SharedMarkdownPreview } from "@/components/workspace/editor/MarkdownPreview";
 import { Dashboard2View } from "@/components/workspace/Dashboard2";
+import {
+  CommandDateRows,
+  CommandPageEditor,
+  CommandTaskRows,
+  LiveBlock,
+  type CommandDateGroup,
+  type CommandTaskGroup,
+  type CommandTaskRow
+} from "@/components/workspace/CommandPageBlocks";
 import { DailySchedule, type DailyScheduleRow } from "@/components/workspace/DailySchedule";
+import { parseCommandPageLine } from "@/lib/command-page-commands";
 import { useWorkspace } from "@/lib/client-store";
 import { isDateKeyInLocalWeek, localDateKey, localWeekStartKey } from "@/lib/dates";
 import type { Capture, Deadline, Domain, Note, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
@@ -862,30 +872,95 @@ function parseProjectRecoveryMarkdown(markdown: string) {
   };
 }
 
+function projectCommandTaskActive(task: Task, today: string) {
+  if (task.trashedAt || task.archivedAt || task.status === "dropped") return false;
+  if (task.status === "done") return task.plannedDate === today || task.dueDate === today;
+  return true;
+}
+
+function projectCommandTaskLabels(task: Task, today: string, projects: Project[]) {
+  return [
+    task.status === "done" ? "Done today" : "",
+    task.dueDate && task.dueDate < today && task.status !== "done" ? "Overdue" : "",
+    task.dueDate === today ? "Due today" : "",
+    task.plannedDate === today ? "Planned today" : "",
+    task.status === "in-progress" ? "In progress" : "",
+    task.scheduledTime ?? "",
+    projectName(projects, task.projectId)
+  ].filter(Boolean);
+}
+
+function projectCommandTaskSort(a: CommandTaskRow, b: CommandTaskRow) {
+  const aDate = a.task.dueDate ?? a.task.plannedDate ?? "9999-12-31";
+  const bDate = b.task.dueDate ?? b.task.plannedDate ?? "9999-12-31";
+  if (aDate !== bDate) return aDate.localeCompare(bDate);
+  const aTime = a.task.scheduledTime ?? "99:99";
+  const bTime = b.task.scheduledTime ?? "99:99";
+  if (aTime !== bTime) return aTime.localeCompare(bTime);
+  return a.task.createdAt.localeCompare(b.task.createdAt);
+}
+
+function projectCommandDateSort(a: Deadline, b: Deadline) {
+  const byDate = a.date.localeCompare(b.date);
+  if (byDate) return byDate;
+  const byTime = (a.time ?? "99:99").localeCompare(b.time ?? "99:99");
+  if (byTime) return byTime;
+  return a.createdAt.localeCompare(b.createdAt);
+}
+
 export function ProjectDetailView({ projectId }: { projectId: string }) {
   const router = useRouter();
-  const { data, updateProject, addProject, addTask, addDeadline, updateDeadline } = useWorkspace();
+  const { data, updateProject, addProject, addTask, addDeadline } = useWorkspace();
   const project = data.projects.find((item) => item.id === projectId);
   const [newSubcontext, setNewSubcontext] = useState("");
-  const [newTask, setNewTask] = useState("");
-  const [newDeadline, setNewDeadline] = useState("");
-  const [newDeadlineDate, setNewDeadlineDate] = useState(localDateKey());
-  const [newDeadlineTime, setNewDeadlineTime] = useState("");
-  const [newDeadlineLocation, setNewDeadlineLocation] = useState("");
 
   if (!project) {
     return <Page title="Project not found"><button onClick={() => router.push("/projects")} className="text-sm font-semibold text-[var(--cos-primary-text)]">Back to projects</button></Page>;
   }
 
   const currentProject = project;
+  const today = localDateKey();
   const subcontexts = childProjects(data.projects, project.id);
   const descendantIds = descendantProjectIds(data.projects, project.id);
   const rollupProjectIds = new Set([project.id, ...descendantIds]);
-  const tasks = data.tasks.filter((task) => task.projectId && rollupProjectIds.has(task.projectId) && !task.trashedAt);
-  const deadlines = data.deadlines.filter((deadline) => deadline.projectId && rollupProjectIds.has(deadline.projectId) && !deadline.trashedAt);
-  const activeProjectTasks = tasks.filter((task) => !task.archivedAt && task.status !== "done" && task.status !== "dropped");
-  const activeTaskCount = tasks.filter((task) => task.status !== "done" && task.status !== "dropped").length;
+  const tasks = data.tasks.filter((task) => task.projectId && rollupProjectIds.has(task.projectId) && projectCommandTaskActive(task, today));
+  const deadlines = data.deadlines.filter((deadline) => deadline.projectId && rollupProjectIds.has(deadline.projectId) && !deadline.trashedAt && !deadline.archivedAt);
   const activeDomains = data.domains.filter((domain) => !domain.archived);
+
+  const directTaskRows = tasks
+    .filter((task) => task.projectId === project.id)
+    .map((task) => ({ task, labels: projectCommandTaskLabels(task, today, data.projects) }))
+    .sort(projectCommandTaskSort);
+  const taskGroups: CommandTaskGroup[] = [
+    { id: "this-project", title: "This project", rows: directTaskRows },
+    ...subcontexts.map((child) => {
+      const childDescendants = descendantProjectIds(data.projects, child.id);
+      const childIds = new Set([child.id, ...childDescendants]);
+      return {
+        id: child.id,
+        title: child.name,
+        rows: tasks
+          .filter((task) => task.projectId && childIds.has(task.projectId))
+          .map((task) => ({ task, labels: projectCommandTaskLabels(task, today, data.projects) }))
+          .sort(projectCommandTaskSort)
+      };
+    })
+  ];
+  const dateGroups: CommandDateGroup[] = [
+    { id: "this-project", title: "This project", rows: deadlines.filter((deadline) => deadline.projectId === project.id).sort(projectCommandDateSort) },
+    ...subcontexts.map((child) => {
+      const childDescendants = descendantProjectIds(data.projects, child.id);
+      const childIds = new Set([child.id, ...childDescendants]);
+      return {
+        id: child.id,
+        title: child.name,
+        rows: deadlines.filter((deadline) => deadline.projectId && childIds.has(deadline.projectId)).sort(projectCommandDateSort)
+      };
+    })
+  ];
+  const taskCount = taskGroups.reduce((count, group) => count + group.rows.length, 0);
+  const dateCount = dateGroups.reduce((count, group) => count + group.rows.length, 0);
+
   function addSubcontext() {
     const name = newSubcontext.trim();
     if (!name) return;
@@ -897,6 +972,25 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       nextAction: ""
     });
     setNewSubcontext("");
+  }
+
+  function handleCommandLine(line: string) {
+    const parsed = parseCommandPageLine(line, today);
+    if (parsed.type === "error") return { ok: false, message: parsed.message };
+    if (parsed.type === "none") return { ok: false, message: "Use /task or /date here." };
+    if (parsed.type === "task") {
+      addTask({
+        title: parsed.title,
+        plannedDate: parsed.plannedDate,
+        dueDate: parsed.dueDate,
+        scheduledTime: parsed.scheduledTime,
+        projectId: currentProject.id,
+        domainId: currentProject.domainId
+      });
+      return { ok: true };
+    }
+    addDeadline({ title: parsed.title, date: parsed.date, time: parsed.time, projectId: currentProject.id });
+    return { ok: true };
   }
 
   function exportMarkdown() {
@@ -939,10 +1033,18 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   }
 
   return (
-    <Page title={project.name} subtitle="Recovery-first project detail." action={<button onClick={() => router.push("/projects")} className="text-sm font-semibold text-[var(--cos-primary-text)]">Back</button>}>
-      <div className="cos-surface p-5">
-        <EditableField value={project.name} placeholder="Project name" onSave={(value) => updateProject(project.id, { name: value })} inputClassName="text-base font-semibold" />
-        <div className="mt-2 flex flex-wrap items-center gap-3">
+    <div data-testid="project-command-page" className="cos-page mx-auto max-w-3xl">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <button onClick={() => router.push("/projects")} className="text-sm font-semibold text-[var(--cos-primary-text)]">Back</button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button onClick={exportMarkdown} className="cos-btn cos-btn-ghost min-h-9 px-3 py-1 text-xs"><Download className="h-4 w-4" /> Export</button>
+          <button aria-label={project.status === "archived" ? "Unarchive project" : "Archive project"} onClick={() => updateProject(project.id, { status: project.status === "archived" ? "active" : "archived", archivedAt: project.status === "archived" ? null : new Date().toISOString() })} className="cos-btn cos-btn-ghost min-h-9 px-3 py-1 text-xs"><Archive className="h-4 w-4" /> {project.status === "archived" ? "Unarchive" : "Archive"}</button>
+        </div>
+      </div>
+
+      <header className="mb-5">
+        <EditableField value={project.name} placeholder="Project name" onSave={(value) => updateProject(project.id, { name: value })} inputClassName="text-3xl font-bold tracking-tight text-[var(--cos-text-strong)]" />
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <select value={project.status} onChange={(event) => updateProject(project.id, { status: event.target.value as any, archivedAt: event.target.value === "archived" ? new Date().toISOString() : null })} className={`rounded-full border-0 px-3 py-1 text-xs font-medium ${projectStatus[project.status].color}`}>
             {Object.entries(projectStatus).map(([value, config]) => <option key={value} value={value}>{config.label}</option>)}
           </select>
@@ -952,47 +1054,27 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           {project.parentProjectId ? <span className="cos-pill cos-pill-muted">Parent: {projectName(data.projects, project.parentProjectId)}</span> : null}
           <span className="text-[11px] text-[var(--cos-text-subtle)]">Updated {formatDistanceToNow(parseISO(project.updatedAt), { addSuffix: true })}</span>
         </div>
-      </div>
+      </header>
 
-      <InfoBlock title={`Active Tasks (${activeTaskCount})`} accent className="mt-4">
-        <DailySchedule
-          rows={activeProjectTasks.map((task) => ({
-            task,
-            labels: [taskStatus[task.status].label, task.projectId !== project.id ? projectName(data.projects, task.projectId) : ""].filter(Boolean)
-          }))}
-          today={localDateKey()}
-          emptyTitle="No active tasks"
-          emptyDescription="Add one concrete task to keep this project moving."
-        />
-        <div className="mt-3 flex items-center gap-2">
-          <input value={newTask} onChange={(event) => setNewTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && newTask.trim()) { addTask({ title: newTask.trim(), projectId: project.id, domainId: project.domainId }); setNewTask(""); } }} placeholder="Add task..." className="cos-input flex-1 px-3 py-2 text-sm" />
-          <button onClick={() => { if (newTask.trim()) { addTask({ title: newTask.trim(), projectId: project.id, domainId: project.domainId }); setNewTask(""); } }} className="cos-btn cos-btn-primary px-3 py-2 text-sm">Add</button>
-        </div>
-      </InfoBlock>
+      <CommandPageEditor
+        dataTestId="project-recovery-notes"
+        value={project.recoveryNotes}
+        onSave={(recoveryNotes) => updateProject(project.id, { recoveryNotes })}
+        onCommandLine={handleCommandLine}
+        placeholder="Write project context. /task Draft next note today or /date Final review on:2026-07-10..."
+        minLines={9}
+      />
 
-      <InfoBlock title="Dates" className="mt-4">
-        <div className="space-y-2">
-          {deadlines.map((deadline) => (
-            <div key={deadline.id} className="group grid gap-2 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-2 text-sm sm:grid-cols-[1fr_auto_auto_auto] sm:items-center">
-              <EditableField value={deadline.title} placeholder="Date title" onSave={(title) => updateDeadline(deadline.id, { title })} inputClassName="font-medium" />
-              {deadline.projectId !== project.id ? <span className="cos-pill cos-pill-muted max-w-32 truncate">{projectName(data.projects, deadline.projectId)}</span> : null}
-              <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="cos-input px-2 py-1 text-xs" />
-              <input aria-label={`${deadline.title} time`} type="time" value={deadline.time ?? ""} onChange={(event) => updateDeadline(deadline.id, { time: event.target.value || null })} className="cos-input px-2 py-1 text-xs" />
-              <EditableField value={deadline.location} placeholder="Location" onSave={(location) => updateDeadline(deadline.id, { location })} inputClassName="px-2 py-1 text-xs" />
-            </div>
-          ))}
-          <div className="flex flex-wrap items-center gap-2 pt-2">
-            <input value={newDeadline} onChange={(event) => setNewDeadline(event.target.value)} placeholder="Important date..." className="min-w-0 flex-1 border-b border-[var(--cos-border)] bg-transparent py-1 text-sm outline-none focus:border-[var(--cos-primary-border)]" />
-            <input type="date" value={newDeadlineDate} onChange={(event) => setNewDeadlineDate(event.target.value)} className="cos-input px-2 py-1 text-xs" />
-            <input aria-label="New date time" type="time" value={newDeadlineTime} onChange={(event) => setNewDeadlineTime(event.target.value)} className="cos-input px-2 py-1 text-xs" />
-            <input aria-label="New date location" value={newDeadlineLocation} onChange={(event) => setNewDeadlineLocation(event.target.value)} placeholder="Location" className="cos-input px-2 py-1 text-xs" />
-            <button aria-label="Add date" onClick={() => { if (newDeadline.trim()) { addDeadline({ title: newDeadline.trim(), date: newDeadlineDate, time: newDeadlineTime || null, location: newDeadlineLocation.trim(), projectId: project.id }); setNewDeadline(""); setNewDeadlineTime(""); setNewDeadlineLocation(""); } }} className="text-[var(--cos-primary-text)]"><Plus className="h-4 w-4" /></button>
-          </div>
-        </div>
-      </InfoBlock>
+      <div className="mt-6 space-y-1">
+        <LiveBlock title="Tasks" count={taskCount} testId="project-live-tasks">
+          <CommandTaskRows groups={taskGroups} emptyTitle="No active tasks for this project" />
+        </LiveBlock>
 
-      <InfoBlock title="Recovery Canvas" accent className="mt-4">
-        <div data-testid="project-recovery-editor" className="space-y-4">
+        <LiveBlock title="Dates" count={dateCount} testId="project-live-dates">
+          <CommandDateRows groups={dateGroups} emptyTitle="No active dates for this project" />
+        </LiveBlock>
+
+        <LiveBlock title="Recovery" testId="project-recovery-editor">
           <div className="grid gap-3 lg:grid-cols-3">
             <label className="block">
               <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]">Next action</span>
@@ -1017,24 +1099,10 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
               onSave={(value) => updateProject(project.id, { openLoops: value.split(/\r?\n/).map((line) => line.replace(/^- \[( |x|X)\]\s?/, "").replace(/^- /, "").trim()).filter(Boolean) })}
             />
           </label>
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]">Freeform recovery notes</span>
-              <span className="text-[11px] text-[var(--cos-text-subtle)]">Markdown supported</span>
-            </div>
-            <MarkdownEditor
-              value={project.recoveryNotes}
-              placeholder="Add togglable headings, lists, todos, rough handoff notes, blockers, and context you want future-you to find..."
-              minLines={12}
-              dataTestId="project-recovery-notes"
-              onSave={(recoveryNotes) => updateProject(project.id, { recoveryNotes })}
-            />
-          </div>
-        </div>
-      </InfoBlock>
+        </LiveBlock>
 
-      <InfoBlock title="Subcontexts" className="mt-4">
-        <div className="space-y-2">
+        <LiveBlock title="Subcontexts" count={subcontexts.length} testId="project-subcontexts">
+          <div className="space-y-2">
           {subcontexts.map((child) => {
             const childDescendants = descendantProjectIds(data.projects, child.id);
             const childIds = new Set([child.id, ...childDescendants]);
@@ -1063,15 +1131,14 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
             <input value={newSubcontext} onChange={(event) => setNewSubcontext(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addSubcontext()} placeholder="Add subcontext, course, assignment, or duty..." className="flex-1 border-b border-[var(--cos-border)] bg-transparent py-1 text-sm outline-none focus:border-[var(--cos-primary-border)]" />
             <button onClick={addSubcontext} className="text-[var(--cos-primary-text)]"><Plus className="h-4 w-4" /></button>
           </div>
-        </div>
-      </InfoBlock>
+          </div>
+        </LiveBlock>
+      </div>
 
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button onClick={exportMarkdown} className="cos-btn cos-btn-ghost px-3 py-2 text-sm"><Download className="h-4 w-4" /> Export Markdown</button>
-        <button aria-label={project.status === "archived" ? "Unarchive project" : "Archive project"} onClick={() => updateProject(project.id, { status: project.status === "archived" ? "active" : "archived", archivedAt: project.status === "archived" ? null : new Date().toISOString() })} className="cos-btn cos-btn-ghost px-3 py-2 text-sm"><Archive className="h-4 w-4" /> {project.status === "archived" ? "Unarchive" : "Archive"}</button>
+      <div className="mt-4 flex flex-wrap gap-3 border-t border-[var(--cos-border)] pt-4">
         <button onClick={() => { updateProject(project.id, { trashedAt: new Date().toISOString() }); router.push("/projects"); }} className="cos-btn px-3 py-2 text-sm text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"><Trash2 className="h-4 w-4" /> Delete</button>
       </div>
-    </Page>
+    </div>
   );
 }
 

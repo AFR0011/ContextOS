@@ -50,23 +50,26 @@ Run verification commands sequentially. In this Next.js app, `npm run build` can
    ```
 5. Manual checks:
    - Confirm `GET /api/health` returns `200`, `Cache-Control: no-store`, `database: "ok"`, and the current package version while Postgres is available.
-   - Log in with the demo account and confirm Dashboard Quick Capture is above Today Tasks, Dates, Project Recovery, and Scratchpad.
+   - Log in with the demo account and confirm Dashboard renders as a command page with the page editor above pinned Tasks and Dates blocks.
    - Confirm desktop primary navigation shows Dashboard, Inbox, Search, and active project links; confirm mobile bottom navigation shows Dashboard, Inbox, Projects, and Search.
    - Confirm Today and This Week redirect to Dashboard.
-   - Add `/task` and `/date` captures from Dashboard Quick Capture and confirm they reach Inbox.
+   - Add `/task` and `/date` commands from the Dashboard page editor and confirm they create real structured records rather than Inbox captures.
+   - Add a Markdown checkbox in the Dashboard page editor and confirm it remains scratchpad content rather than creating a task.
+   - Change Dashboard block controls between all areas and a Domain, and between Time, Area, and Project grouping.
    - Convert an inbox capture to a task.
-   - Add timed and untimed Today Tasks, create two tasks at the same time, and confirm no empty calendar slots appear.
-   - Confirm backlog/future tasks do not appear in a separate Dashboard all-task reservoir but remain recoverable through Projects or Search.
+   - Add timed and untimed tasks, create two tasks at the same time, and confirm no empty calendar slots appear.
+   - Confirm backlog/future active tasks appear in the same Dashboard Tasks block without restoring a separate all-task reservoir.
    - Add an important Date for today and confirm it appears in Dates as a Date row, not a task checkbox.
    - Cross a Today task, reload, and confirm it remains visible and can be reopened.
    - Confirm crossing/reopening a task does not reorder it solely because it is completed.
    - Confirm long task titles wrap on mobile instead of truncating.
    - Create, edit, archive, restore, and delete an important Date; confirm task due dates do not appear in Dates.
    - Confirm `/deadlines` redirects to `/dates`.
-   - Open a project and confirm section order: Active Tasks, Dates, Recovery Canvas, Subcontexts.
-   - Confirm project Notes / Decisions is absent and recovery notes persist.
-   - Create a project subcontext and confirm the parent rolls up child tasks/dates.
-   - Edit the Dashboard Scratchpad and confirm it persists.
+   - Open a project and confirm it renders as a command page with notes, pinned Tasks, pinned Dates, compact Recovery fields, and Subcontexts.
+   - Confirm project `/task` and `/date` commands attach records to the current project.
+   - Confirm project Notes / Decisions is absent and project notes persist through the command-page editor.
+   - Create a project subcontext and confirm the parent rolls up child tasks/dates under the child group.
+   - Edit the Dashboard page editor and confirm it persists.
    - On a 390px mobile viewport, confirm touched task/editor controls have 40px hit targets, editor add/actions are reachable without hover, slash commands expose listbox/selected state, and block actions expose menu semantics.
    - Open an Area by URL and confirm projects/subcontexts appear inside it.
    - Open Resources by URL or Search and confirm standalone notes remain reachable.

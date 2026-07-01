@@ -381,6 +381,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-family: var(--cos-font-mono);
 }
 
+.command-page-editor {
+  border-radius: 0;
+  background: transparent;
+}
+
+.command-page-editor .group {
+  border-radius: 0.375rem;
+}
+
+.command-page-editor textarea {
+  caret-color: var(--cos-primary);
+}
+
+.command-live-block {
+  scroll-margin-top: 5rem;
+}
+
 html.dark .bg-white,
 html.dark .hover\:bg-white:hover {
   background-color: var(--cos-bg-elevated) !important;

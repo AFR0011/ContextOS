@@ -19,9 +19,10 @@
 ## Product UI
 - `src/components/AuthForm.tsx`: local auth form.
 - `src/components/workspace/WorkspaceShell.tsx`: protected app shell, navigation, sync badge.
-- `src/components/workspace/Views.tsx`: route-level ContextOS views and workflow components.
-- `src/components/workspace/Dashboard2.tsx`: Dashboard Quick Capture and persisted section layout.
-- `src/components/workspace/DailySchedule.tsx`: shared compact editable task-list surface for Dashboard, Today, and projects.
+- `src/components/workspace/Views.tsx`: route-level ContextOS views and Project command-page surface.
+- `src/components/workspace/Dashboard2.tsx`: Dashboard command page with scratchpad editor, live Tasks/Dates blocks, and local block view controls.
+- `src/components/workspace/CommandPageBlocks.tsx`: shared command-page editor and live task/date block components for Dashboard and Project detail.
+- `src/components/workspace/DailySchedule.tsx`: compact editable task-list surface retained for compatibility views.
 
 ## Server And Data
 - `prisma/schema.prisma`: PostgreSQL schema, including nullable task `scheduledTime` and project `parentProjectId`.
@@ -31,6 +32,7 @@
 - `src/lib/data.ts`: database-to-client workspace serialization.
 - `src/lib/sync-server.ts`: idempotent outbox replay, legacy task/note/priority compatibility, and last-write-wins application.
 - `src/lib/starter.ts`: default domains and seeded workspace creation.
+- `src/lib/command-page-commands.ts`: parser for explicit `/task` and `/date` command-page lines.
 - `src/lib/types.ts`: shared app data types.
 - `src/lib/client-store.tsx`: IndexedDB cache, offline outbox, sync state, and client mutations.
 

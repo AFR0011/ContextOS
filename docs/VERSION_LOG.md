@@ -1,5 +1,36 @@
 # ContextOS Version Log
 
+## Unreleased - Notion-Style Command Pages
+
+Status:
+Implemented locally on 2026-07-01 with DB-backed e2e blocked by unavailable local Postgres.
+
+Goal:
+Make Dashboard and Project detail feel like lightweight Notion-style command pages while keeping ContextOS records structured and the implementation schema-compatible.
+
+Schema and compatibility:
+- No Prisma schema changes.
+- No record deletion.
+- Dashboard page body reuses `DashboardScratchpad.content`.
+- Project page body reuses `Project.recoveryNotes`.
+- The repo-root `Notion-style editor demo/` remains a reference artifact only and is excluded from app TypeScript compilation.
+
+Implemented behavior:
+- Added explicit `/task` and `/date` command parsing with local-date handling and inline validation.
+- Extended the existing Markdown editor with a page-style mode, command filtering, and command-line clearing after structured creation.
+- Rebuilt Dashboard as a command page with pinned live Tasks and Dates blocks plus local scope/group controls.
+- Rebuilt Project detail as a command page with notes, pinned Tasks, pinned Dates, compact Recovery fields, and Subcontexts.
+- Project live blocks render direct records first, then immediate child subcontext groups with descendant rollups.
+- Updated parser and command-page e2e coverage.
+
+Verification:
+- `npm run typecheck` passed.
+- `npm run build` passed.
+- `npx prisma validate` passed.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "command page parser" --workers=1` passed.
+- `git diff --check` passed with line-ending normalization warnings only.
+- `docker compose ps` and `npm run db:migrate` remain blocked because Docker/Postgres is unavailable locally.
+
 ## v0.2.8 CI Repair and Mobile Accessibility Foundation
 
 Status:

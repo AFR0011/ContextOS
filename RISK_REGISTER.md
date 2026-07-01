@@ -4,6 +4,7 @@
 
 | ID | Risk | Level | Mitigation | Status |
 | --- | --- | --- | --- | --- |
+| R-2026-07-01-01 | Notion-style Dashboard and Project command-page flows have code and focused test coverage, but DB-backed browser tests could not run while Docker/Postgres is unavailable. | Medium | Typecheck, build, Prisma validate, parser Playwright, and diff checks passed; rerun focused Dashboard/Project command-page e2e and then full e2e after Postgres is available. | Open |
 | R-2026-06-22-01 | Task-driven Daily timeline drag/drop and Date-row behavior have code and test coverage, but DB-backed browser tests could not complete while Docker/Postgres is unavailable. | Medium | Static checks, build, and schema validation passed; rerun the focused timeline e2e slice and then full e2e after Docker/Postgres is available. | Open |
 | R-2026-06-15-05 | Remote CI evidence, production-like preview, health monitoring, and rehearsed backup/restore/rollback are incomplete. | High | v0.2.7 adds `/api/health` and a GitHub Actions workflow scaffold with local equivalent verification; still need remote CI run, preview smoke, monitoring setup, backup/restore, and rollback rehearsal. | Open |
 | R-2026-06-15-07 | Mobile editor controls are undersized, partly clipped, and some icon-only controls lack accessible names/menu semantics. | Medium | Raise touch targets, keep controls in viewport, add names/roles/focus behavior, and test keyboard/mobile flows. | Open |

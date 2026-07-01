@@ -142,21 +142,22 @@ function commandForLine(text: string, commands: CommandItem[]) {
   return commands.find((command) => trimmed === command.command || trimmed.startsWith(`${command.command} `));
 }
 
-function blockInputClass(block: EditorBlock, mode: "full" | "compact") {
-  const base = "min-h-8 w-full resize-none overflow-hidden bg-transparent px-2 py-1 text-sm leading-6 text-[var(--cos-text)] outline-none placeholder:text-[var(--cos-text-subtle)]";
+function blockInputClass(block: EditorBlock, mode: "full" | "compact" | "page") {
+  const page = mode === "page";
+  const base = `${page ? "min-h-9 px-0 py-1 text-base leading-7" : "min-h-8 px-2 py-1 text-sm leading-6"} w-full resize-none overflow-hidden bg-transparent text-[var(--cos-text)] outline-none placeholder:text-[var(--cos-text-subtle)]`;
 
   if (block.type === "heading1") {
-    return `${base} ${mode === "compact" ? "text-base" : "text-xl"} font-bold leading-tight text-[var(--cos-text-strong)]`;
+    return `${base} ${mode === "compact" ? "text-base" : page ? "text-3xl" : "text-xl"} font-bold leading-tight text-[var(--cos-text-strong)]`;
   }
   if (block.type === "heading2") {
-    return `${base} ${mode === "compact" ? "text-sm" : "text-lg"} font-bold leading-tight text-[var(--cos-text-strong)]`;
+    return `${base} ${mode === "compact" ? "text-sm" : page ? "text-xl" : "text-lg"} font-bold leading-tight text-[var(--cos-text-strong)]`;
   }
   if (block.type === "heading3") {
     return `${base} text-base font-semibold leading-tight text-[var(--cos-text-strong)]`;
   }
   if (isToggleHeadingType(block.type)) {
     const level = headingLevel(block.type);
-    const size = level === 1 && mode !== "compact" ? "text-xl" : level === 2 && mode !== "compact" ? "text-lg" : "text-base";
+    const size = page && level === 1 ? "text-3xl" : page && level === 2 ? "text-xl" : level === 1 && mode !== "compact" ? "text-xl" : level === 2 && mode !== "compact" ? "text-lg" : "text-base";
     return `${base} ${size} font-bold leading-tight text-[var(--cos-text-strong)]`;
   }
   if (block.type === "quote") {
@@ -197,6 +198,7 @@ export function BlockMarkdownEditor({
   disabled = false,
   hideSaveButton = false,
   footer,
+  allowedCaptureCommands,
   onCaptureLine
 }: BlockMarkdownEditorProps) {
   const [blocks, setBlocks] = useState<EditorBlock[]>(() => parseMarkdownToBlocks(value));
@@ -207,11 +209,17 @@ export function BlockMarkdownEditor({
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
   const [savedFlash, setSavedFlash] = useState(false);
   const [capturedFlash, setCapturedFlash] = useState(false);
+  const [commandError, setCommandError] = useState<string | null>(null);
   const lastEmittedRef = useRef(value);
   const pendingCursorPos = useRef<number | null>(null);
   const blockRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const commands = useMemo(() => (onCaptureLine ? [...FORMAT_COMMANDS, ...CAPTURE_COMMANDS] : FORMAT_COMMANDS), [onCaptureLine]);
+  const commands = useMemo(() => {
+    if (!onCaptureLine) return FORMAT_COMMANDS;
+    const allowed = allowedCaptureCommands ? new Set<CaptureCommand>(allowedCaptureCommands) : null;
+    const captureCommands = allowed ? CAPTURE_COMMANDS.filter((command) => command.capture && allowed.has(command.capture)) : CAPTURE_COMMANDS;
+    return [...FORMAT_COMMANDS, ...captureCommands];
+  }, [allowedCaptureCommands, onCaptureLine]);
   const hiddenIds = useMemo(() => hiddenBlockIdsForCollapsedToggles(blocks), [blocks]);
   const dirty = draftMarkdown !== value;
 
@@ -280,9 +288,20 @@ export function BlockMarkdownEditor({
 
       if (command.kind === "capture" && command.capture && onCaptureLine) {
         if (!body) return block;
-        onCaptureLine(`${command.command} ${body}`);
+        const result = onCaptureLine(`${command.command} ${body}`);
+        if (result && !result.ok) {
+          setCommandError(result.message ?? "Could not create that record.");
+          return block;
+        }
+        setCommandError(null);
         setCapturedFlash(true);
         window.setTimeout(() => setCapturedFlash(false), 1200);
+        if (result?.ok) {
+          return {
+            ...changeBlockType(block, "paragraph"),
+            text: ""
+          };
+        }
         return captureReplacement(command.capture, body, block);
       }
 
@@ -315,6 +334,7 @@ export function BlockMarkdownEditor({
 
     setBlocks(nextBlocks);
     updateParent(nextBlocks);
+    if (commandError) setCommandError(null);
 
     const textBeforeCursor = newText.slice(0, nextSelectionStart);
     const lastSlashIndex = textBeforeCursor.lastIndexOf("/");
@@ -587,7 +607,7 @@ export function BlockMarkdownEditor({
   return (
     <div
       data-testid={dataTestId}
-      className={`block-markdown-editor cos-surface overflow-visible p-3 ${className}`}
+      className={`block-markdown-editor overflow-visible ${mode === "page" ? "command-page-editor" : "cos-surface p-3"} ${className}`}
       style={{ minHeight: `${minLines * 32}px` }}
     >
       <div className="space-y-1">
@@ -803,6 +823,7 @@ export function BlockMarkdownEditor({
       <div className="mt-3 flex min-h-9 flex-wrap items-center justify-end gap-2 border-t border-[var(--cos-border-soft)] pt-2 text-[11px]">
         {footer ?? (
           <>
+            {commandError ? <span className="mr-auto text-[var(--cos-danger-text)]">{commandError}</span> : null}
             {capturedFlash ? <span className="cos-pill cos-pill-success">Captured</span> : null}
             {dirty ? <span className="text-[var(--cos-warning-text)]">Unsaved changes</span> : savedFlash ? <span className="text-[var(--cos-success-text)]">Saved</span> : null}
             {onSave && !hideSaveButton ? (

@@ -17,6 +17,11 @@ export type BlockType =
 
 export type CaptureCommand = "task" | "note" | "project" | "deadline" | "status";
 
+export interface CaptureLineResult {
+  ok: boolean;
+  message?: string;
+}
+
 export interface EditorBlock {
   id: string;
   type: BlockType;
@@ -31,7 +36,7 @@ export interface BlockMarkdownEditorProps {
   onChange?: (markdown: string) => void;
   onSave?: (markdown: string) => void;
   placeholder?: string;
-  mode?: "full" | "compact";
+  mode?: "full" | "compact" | "page";
   minLines?: number;
   className?: string;
   dataTestId?: string;
@@ -40,5 +45,6 @@ export interface BlockMarkdownEditorProps {
   autosaveDelayMs?: number;
   hideSaveButton?: boolean;
   footer?: ReactNode;
-  onCaptureLine?: (line: string) => void;
+  allowedCaptureCommands?: CaptureCommand[];
+  onCaptureLine?: (line: string) => CaptureLineResult | void;
 }

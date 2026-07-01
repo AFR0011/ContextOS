@@ -2,83 +2,87 @@
 
 ## Active Loop
 
-- Status: CLOSE - Batch v0.2.8 task-driven daily timeline
-- Date: 2026-06-22
-- Active batch: v0.2.8 task-driven daily timeline
-- Completed batch: v0.2.7 cleanup and production-readiness foundation
+- Status: CLOSE - Notion-style command pages
+- Date: 2026-07-01
+- Active batch: Notion-style command pages for Dashboard and Project detail
+- Completed batch: v0.2.8 task-driven daily timeline
 - Canonical product source: `BLUEPRINT.md`
 - Tooling fallback: dev-loop helper scripts are not present under `tools/`, so this cycle is using the documented local phase-artifact fallback.
 
 ## Active Batch Plan
 
-Scope this cycle to one independently testable dashboard workflow batch:
+Scope this cycle to one independently testable simplification batch:
 
-1. Audit the current product, QA, UI/UX, and senior-engineering state from the active docs and implementation.
-2. Keep the Daily timeline backed by real tasks, but make it visibly task-driven from the dashboard Tasks list.
-3. Add today important Dates into the Daily timeline so the day view is built from the day's tasks and dated commitments.
-4. Add lightweight task movement affordances between Dashboard Tasks and Daily timeline:
-   - drag a task into Daily timeline to plan it for today,
-   - drag a task back to Tasks to clear today timeline placement where possible,
-   - use row actions or right-click as an accessible fallback.
-5. Preserve existing task editing, completion, deletion, sorting, show-completed, offline outbox, and mobile wrapping behavior.
-6. Update focused regression coverage and canonical docs/state.
+1. Reuse the existing Markdown editor and stored scratch/recovery fields instead of introducing a new editor dependency.
+2. Add a shared parser for explicit `/task` and `/date` command lines.
+3. Convert Dashboard into a command page backed by `DashboardScratchpad.content`.
+4. Replace old Dashboard composers and Project Recovery with pinned live Tasks and Dates blocks.
+5. Convert Project detail into a command page backed by `Project.recoveryNotes`.
+6. Group Project task/date blocks by direct project first, then immediate child subcontexts with descendant rollups.
+7. Update focused e2e coverage and canonical docs/state.
 
-Out of scope for this batch: schema changes, external calendar integration, recurrence, AI scheduling, arbitrary manual ordering, time durations, empty calendar grids, and broad visual redesign.
+Out of scope for this batch: Prisma/schema changes, record deletion, a full Notion clone, drag/drop block reordering, external AI calls, and broad navigation changes beyond the already-simplified Pareto nav.
 
 Acceptance criteria:
 
-- Daily timeline includes tasks planned or due today and important Dates scheduled for today.
-- Adding a task from the Daily timeline creates a real task planned for today.
-- A task in Dashboard Tasks can be added to today’s Daily timeline by drag/drop and by a row action/context menu.
-- A task planned for today can be removed from the Daily timeline without deleting the task.
-- Dates remain non-completable Date records, not task checkboxes.
-- Existing Dashboard, Today, Project task surfaces, and task sort/completion behavior keep working.
+- Dashboard page body autosaves and supports Markdown scratch content.
+- Dashboard `/task` creates a real workspace-level task and clears the command line.
+- Dashboard `/date` creates a real Date and clears the command line.
+- Plain Markdown checkboxes do not create structured task records.
+- Dashboard no longer shows Project Recovery or old task/date composer fields.
+- Dashboard live blocks show active workspace tasks/dates with local scope/group controls.
+- Project notes persist through the page editor.
+- Project `/task` and `/date` attach records to the current project.
+- Project live blocks group direct records first, then child subcontext rollups.
+- Existing recovery fields and subcontexts remain editable.
 - `npm run typecheck` and `npm run build` pass.
 
 ## Outcome
 
 Batch complete with DB-backed e2e blocked by local infrastructure.
 
-Implemented the task-driven Daily timeline batch:
+Implemented the Notion-style command-page batch:
 
-- Extended the shared `DailySchedule` component to render task rows and today Date rows.
-- Added drag/drop task movement hooks and row-action/right-click menus for adding tasks to, and removing tasks from, the Dashboard Daily timeline.
-- Updated the Dashboard Daily timeline to include tasks planned or due today plus important Dates dated today.
-- Kept newly created timeline tasks as real Task records planned for today.
-- Kept Dates as non-completable Date records with editable time and archive/restore behavior.
-- Updated Dashboard Tasks so it remains the broader task reservoir and can plan tasks into today's timeline.
-- Added focused e2e coverage for task movement and today Dates appearing in the timeline.
+- Added `src/lib/command-page-commands.ts` for explicit `/task` and `/date` parsing.
+- Extended the existing Markdown editor with page-mode styling, allowed command filtering, inline validation, and command-line clearing after successful structured creation.
+- Added shared `CommandPageEditor`, task rows, date rows, and live block components.
+- Rebuilt Dashboard as a command page with a scratchpad editor, pinned Tasks/Dates blocks, and localStorage-backed scope/group controls.
+- Rebuilt Project detail as a command page with project notes, pinned Tasks/Dates, compact Recovery fields, and Subcontexts.
+- Updated e2e coverage for parser behavior, Dashboard command creation/scratchpad behavior, Project command attachment/grouping, and simplified nav/dashboard expectations.
+- Updated canonical product, design, repo-map, run-protocol, QA, and risk docs.
 
 ## Acceptance Evidence
 
 | Criteria | Status |
 | --- | --- |
-| Daily timeline includes tasks planned or due today and important Dates scheduled for today | DONE in code; e2e coverage added but not run to completion because DB is unavailable |
-| Adding a task from the Daily timeline creates a real task planned for today | PRESERVED |
-| A task in Dashboard Tasks can be added to today's Daily timeline by drag/drop and by a row action/context menu | DONE in code; e2e coverage added but not run to completion because DB is unavailable |
-| A task planned for today can be removed from the Daily timeline without deleting the task | DONE in code; e2e coverage added but not run to completion because DB is unavailable |
-| Dates remain non-completable Date records, not task checkboxes | DONE |
-| Existing Dashboard, Today, Project task surfaces, and task sort/completion behavior keep working | STATIC PASS; full e2e blocked |
+| Dashboard page body autosaves and supports Markdown scratch content | DONE in code; DB-backed e2e added but not run because DB is unavailable |
+| Dashboard `/task` creates a real workspace-level task and clears the command line | DONE in code; DB-backed e2e added but not run because DB is unavailable |
+| Dashboard `/date` creates a real Date and clears the command line | DONE in code; DB-backed e2e added but not run because DB is unavailable |
+| Plain Markdown checkboxes do not create structured task records | DONE in parser/editor behavior; DB-backed e2e added but not run because DB is unavailable |
+| Dashboard no longer shows Project Recovery or old task/date composer fields | DONE in code and test expectations |
+| Dashboard live blocks show active workspace tasks/dates with local scope/group controls | DONE in code and test expectations |
+| Project notes persist through the page editor | DONE in code; DB-backed e2e added but not run because DB is unavailable |
+| Project `/task` and `/date` attach records to the current project | DONE in code; DB-backed e2e added but not run because DB is unavailable |
+| Project live blocks group direct records first, then child subcontext rollups | DONE in code and test expectations |
+| Existing recovery fields and subcontexts remain editable | DONE in code and test expectations |
 | `npm run typecheck` and `npm run build` pass | DONE |
 
 ## Verification
 
-- `python tools/context_manager.py init --root .` - blocked; helper script is not present.
-- `python -m py_compile tools/context_manager.py tools/performance_tracker.py tools/consistency_validator.py tools/risk_assessor.py` - blocked; helper scripts are not present.
-- `npm run typecheck` - initially failed on a Today-view task-row type assumption after introducing mixed schedule rows; fixed by narrowing the Today local rows to task rows.
-- `npm run typecheck` - passed after fixes.
-- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "dashboard tasks can move|dashboard can add a project-linked important date|dashboard daily timeline supports one time|dashboard daily timeline supports untimed" --workers=1` - timed out before returning usable test output.
-- `docker compose ps` - blocked because Docker Desktop's Linux engine pipe is unavailable, so DB-backed Playwright verification cannot complete in the current local state.
+- `npm run typecheck` - passed.
 - `npm run build` - passed.
 - `npx prisma validate` - passed.
+- `docker compose ps` - blocked because Docker Desktop's Linux engine pipe is unavailable.
+- `npm run db:migrate` - blocked because PostgreSQL at `localhost:5432` is unavailable.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "command page parser" --workers=1` - passed, 1 test.
 - `git diff --check` - passed with line-ending normalization warnings only.
 
 ## Remaining Risks
 
-- Drag/drop behavior needs browser regression coverage because native HTML drag events can be brittle across inputs and touch devices.
-- Removing a task from the timeline clears today planning/time placement; tasks that are due today should still surface because they are still dated commitments.
-- Full DB-backed e2e and browser smoke still need to run once Docker/Postgres is available.
+- Full DB-backed Dashboard and Project command-page e2e coverage is written but still needs to run against a live local Postgres.
+- The new command-page interaction should be trialed in real use before deleting any hidden utility routes or legacy compatibility surfaces.
+- The user-supplied `Notion-style editor demo/` folder remains untracked and is treated as a reference artifact only.
 
 ## Next Action
 
-Start Docker/Postgres, rerun the focused Dashboard timeline e2e slice, then run the full documented e2e ladder if the focused slice passes.
+Start Docker/Postgres, rerun `npm run db:migrate` and `npm run db:seed`, run the focused Dashboard/Project command-page e2e slice, then run the full documented e2e ladder if the focused slice passes.

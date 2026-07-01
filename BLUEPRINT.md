@@ -19,7 +19,7 @@ Remaining deployment-hardening work:
 2. Decide whether provider/WAF-level auth protection is needed in addition to the v0.2.6 app-level limiter.
 3. Run deeper installed-PWA upgrade smoke from an older cached worker.
 4. Finish broader mobile editor/action accessibility work outside the task-title wrapping fixed in v0.2.3 and touched controls fixed in v0.2.8.
-5. Polish Dashboard hierarchy so Quick Capture, Today Tasks, Dates, project recovery, and Scratchpad read with clearer priority.
+5. Validate the Notion-style command page flow so the Dashboard editor, live Tasks/Dates blocks, and Project detail recovery blocks feel simpler in daily use.
 
 Deployment acceptance requires two-user isolation tests, sequential Prisma/typecheck/build/e2e checks, desktop/mobile browser smoke, and documented recovery evidence. The detailed audit is in `docs/AUDIT_2026-06-15.md`.
 
@@ -347,11 +347,11 @@ Project pages should prioritize recovery and execution.
 Recommended order:
 
 ```text
-Header
-Status
-Active Tasks, expanded
-Dates
-Recovery Canvas: Next Action, Latest Status, Current Objective, Open Loops, Freeform Recovery Notes
+Header with editable title and metadata
+Main page editor backed by recovery notes
+Pinned Tasks, expanded
+Pinned Dates
+Compact Recovery fields: Next Action, Latest Status, Current Objective, Open Loops
 Subcontexts
 Project actions
 ```
@@ -446,7 +446,7 @@ A task may have one optional `scheduledTime` value. It represents when the task 
 
 Daily task surfaces show only occupied times plus untimed tasks. They do not render a full empty-day grid.
 
-The Dashboard Today Tasks section is derived from real task records:
+The Dashboard live Tasks block is derived from real task records:
 
 ```text
 Overdue active tasks
@@ -454,15 +454,17 @@ Tasks planned today
 Tasks due today
 In-progress tasks
 Done tasks that are still planned or due today
+Upcoming active tasks
+Unscheduled active tasks
 ```
 
-Backlog and future tasks stay recoverable through project pages and Search; they do not appear in a separate Dashboard task reservoir in the simplified Phase 1 surface.
+Backlog and future tasks now appear in the same live Dashboard Tasks block rather than a separate all-task reservoir. The block can be grouped by time, Area, or Project, and scoped to all areas or a single Domain.
 
 ### 9.6 No Priority Subsystem
 
 There is no global task priority field in MVP.
 
-There is no separate daily or weekly priority object. Today selection is expressed through planned dates, due dates, task state, and the Dashboard Today Tasks section.
+There is no separate daily or weekly priority object. Today selection is expressed through planned dates, due dates, task state, and the Dashboard live Tasks block.
 
 ---
 
@@ -610,30 +612,29 @@ What needs recovery?
 ### 12.2 Visible by Default
 
 ```text
-Quick Capture
-Today Tasks
+Page editor / scratchpad
+Live Tasks
 Dates
-Project Recovery
-Scratchpad
 ```
 
-The visible order is fixed for Phase 1. Legacy stored dashboard section orders are normalized so old `allTasks` values do not reintroduce hidden sections.
+The visible order is fixed for Phase 1 command pages. Legacy stored dashboard section orders are normalized so old `allTasks` values and previous section order values do not reintroduce hidden sections.
 
 ### 12.3 First-Load Behavior
 
 When opening the dashboard:
 
-- Quick capture should always be visible at the top.
-- Today Tasks should remain a fast task-writing surface built from overdue, due-today, planned-today, and in-progress tasks.
-- Dates should show overdue, today, and near-upcoming important dates separately from task checkboxes.
-- Project Recovery should show active projects with next action and latest status.
-- Scratchpad should stay compact and below structured execution sections.
+- The page editor should be the main writing surface.
+- `/task` commands should create structured tasks and clear the command line.
+- `/date` commands should create structured Dates and clear the command line.
+- Plain Markdown checkboxes should remain scratch content.
+- Live Tasks should show active workspace tasks, including overdue, today, in-progress, upcoming, unscheduled, and done-today groups.
+- Dates should show overdue, today, and upcoming important Dates separately from task checkboxes.
 
 The dashboard should orient the user before asking for more input.
 
 ### 12.4 Dashboard Canvas
 
-The Dashboard should include a persistent Markdown canvas inspired by the user's Notion Dashboard 2.0.
+The Dashboard should include a persistent Markdown page body inspired by the user's Notion-style editor demo.
 
 Purpose:
 
@@ -642,20 +643,20 @@ Loose daily notepad
 Ad hoc dates/checklists
 Short goal reminders
 Scratch planning that is not yet structured
+Structured command entry
 ```
 
 Rules:
 
 ```text
-Quick Capture remains above the canvas.
-The canvas is stored as a standalone Resource note titled "Dashboard Canvas".
-The canvas supports Markdown/checklist text.
-Checkboxes inside the canvas stay local unless explicitly converted into structured tasks.
-The canvas should sit after Today Tasks, Dates, and Project Recovery in the simplified Phase 1 Dashboard.
-Fixed widgets remain responsible for execution surfacing.
+The page body is stored in DashboardScratchpad.content.
+The page body supports Markdown/checklist text.
+Only explicit /task and /date command lines create structured records.
+Checkboxes inside the page body stay local scratch content.
+Live Tasks and Dates blocks remain responsible for execution surfacing.
 ```
 
-The Dashboard should feel markdown-friendly without becoming a full Notion page builder.
+The Dashboard should feel markdown-friendly without becoming a full Notion page builder or arbitrary database system.
 
 ---
 

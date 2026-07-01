@@ -1,5 +1,36 @@
 # ContextOS QA Report
 
+## 2026-07-01 - Notion-Style Command Pages
+
+### Verdict
+
+- Static implementation verification: PASS.
+- Schema validation: PASS.
+- Parser Playwright coverage: PASS.
+- Focused DB-backed Dashboard/Project Playwright coverage: BLOCKED locally because Docker/Postgres is unavailable.
+- Release confidence: PASS_WITH_RISKS until the focused command-page e2e slice and full e2e suite run against a live local database.
+
+### Commands And Evidence
+
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npx prisma validate` - passed.
+- `docker compose ps` - blocked because Docker Desktop's Linux engine pipe is unavailable.
+- `npm run db:migrate` - blocked because PostgreSQL at `localhost:5432` is unavailable.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "command page parser" --workers=1` - passed, 1 test.
+- `git diff --check` - passed with line-ending normalization warnings only.
+
+### Coverage Added
+
+- Command-page parser handles `/task`, `/date`, required Date validation, token stripping, local date behavior, and time behavior.
+- Dashboard command page coverage was updated for scratchpad persistence, structured `/task` and `/date` creation, Markdown checkbox non-conversion, hidden old composer/recovery surfaces, and Domain/group filters.
+- Project command page coverage was updated for notes persistence, command attachment to the current project, direct/child grouped live blocks, recovery fields, and subcontexts.
+
+### Coverage Gaps
+
+- The DB-backed Dashboard and Project command-page tests are written but not yet executed locally because Docker/Postgres is unavailable.
+- Full e2e and browser smoke should run after Postgres is available.
+
 ## 2026-06-22 - v0.2.8 Task-Driven Daily Timeline
 
 ### Verdict

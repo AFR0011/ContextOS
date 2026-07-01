@@ -1,588 +1,324 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, CheckSquare } from "lucide-react";
 import {
-  AlertTriangle,
-  CalendarClock,
-  CalendarDays,
-  ChevronDown,
-  ChevronRight,
-  Eraser,
-  FolderKanban,
-  MapPin,
-  NotebookPen,
-  Plus,
-  Send,
-  SquarePen,
-  Trash2,
-  Zap,
-  type LucideIcon
-} from "lucide-react";
-import { format, formatDistanceToNow, parseISO } from "date-fns";
-import { DailySchedule, type DailyScheduleRow } from "@/components/workspace/DailySchedule";
-import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
-import { normalizeDashboardPreference } from "@/lib/dashboard-preferences";
-import { addDaysToDateKey, dateKeyToLocalDate, localDateKey } from "@/lib/dates";
+  CommandDateRows,
+  CommandPageEditor,
+  CommandTaskRows,
+  LiveBlock,
+  type CommandDateGroup,
+  type CommandTaskGroup,
+  type CommandTaskRow
+} from "@/components/workspace/CommandPageBlocks";
+import { parseCommandPageLine } from "@/lib/command-page-commands";
+import { localDateKey } from "@/lib/dates";
 import { useWorkspace } from "@/lib/client-store";
-import type { DashboardPreference, DashboardSectionId, Project, Task } from "@/lib/types";
+import type { Deadline, Domain, Project, Task } from "@/lib/types";
 
-const PROJECT_STALE_DAYS = 14;
+type DashboardGroupMode = "time" | "area" | "project";
 
-function isTaskInTodayTasks(task: Task, today: string) {
+const VIEW_STORAGE_KEY = "contextos-dashboard-command-page-view";
+const ALL_AREAS = "__all";
+
+function domainName(domains: Domain[], id: string | null | undefined) {
+  if (!id) return "";
+  return domains.find((domain) => domain.id === id)?.name ?? "Unknown area";
+}
+
+function projectName(projects: Project[], id: string | null | undefined) {
+  if (!id) return "";
+  return projects.find((project) => project.id === id)?.name ?? "";
+}
+
+function projectDomainId(projects: Project[], projectId: string | null | undefined) {
+  if (!projectId) return null;
+  return projects.find((project) => project.id === projectId)?.domainId ?? null;
+}
+
+function taskDomainId(task: Task, projects: Project[]) {
+  return task.domainId ?? projectDomainId(projects, task.projectId);
+}
+
+function deadlineDomainId(deadline: Deadline, projects: Project[]) {
+  return projectDomainId(projects, deadline.projectId);
+}
+
+function doneToday(task: Task, today: string) {
+  return task.status === "done" && (task.plannedDate === today || task.dueDate === today);
+}
+
+function activeDashboardTask(task: Task, today: string) {
   if (task.trashedAt || task.archivedAt || task.status === "dropped") return false;
-  if (task.status === "done") return task.plannedDate === today || task.dueDate === today;
-  return (
-    Boolean(task.dueDate && task.dueDate <= today) ||
-    task.plannedDate === today ||
-    task.status === "in-progress"
-  );
+  if (task.status === "done") return doneToday(task, today);
+  return true;
 }
 
-function projectName(projects: Project[], projectId: string | null | undefined) {
-  if (!projectId) return "";
-  return projects.find((project) => project.id === projectId)?.name ?? "";
+function taskTimeGroup(task: Task, today: string) {
+  if (doneToday(task, today)) return "done-today";
+  if (task.dueDate && task.dueDate < today) return "overdue";
+  if (task.dueDate === today || task.plannedDate === today) return "today";
+  if (task.status === "in-progress") return "in-progress";
+  if ((task.dueDate && task.dueDate > today) || (task.plannedDate && task.plannedDate > today)) return "upcoming";
+  return "unscheduled";
 }
 
-function formatDateKey(dateKey: string) {
-  const date = dateKeyToLocalDate(dateKey);
-  return date ? format(date, "MMM d, yyyy") : dateKey;
+function taskLabels(task: Task, today: string, projects: Project[], domains: Domain[]) {
+  return [
+    doneToday(task, today) ? "Done today" : "",
+    task.dueDate && task.dueDate < today && task.status !== "done" ? "Overdue" : "",
+    task.dueDate === today ? "Due today" : "",
+    task.plannedDate === today ? "Planned today" : "",
+    task.status === "in-progress" ? "In progress" : "",
+    task.scheduledTime ?? "",
+    projectName(projects, task.projectId),
+    domainName(domains, taskDomainId(task, projects))
+  ].filter(Boolean);
 }
 
-function activeProjectOptions(projects: Project[]) {
-  return projects.filter((project) => !project.trashedAt && !project.archivedAt && project.status !== "archived").sort((a, b) => a.name.localeCompare(b.name));
+function taskSort(a: CommandTaskRow, b: CommandTaskRow) {
+  const aDate = a.task.dueDate ?? a.task.plannedDate ?? "9999-12-31";
+  const bDate = b.task.dueDate ?? b.task.plannedDate ?? "9999-12-31";
+  if (aDate !== bDate) return aDate.localeCompare(bDate);
+  const aTime = a.task.scheduledTime ?? "99:99";
+  const bTime = b.task.scheduledTime ?? "99:99";
+  if (aTime !== bTime) return aTime.localeCompare(bTime);
+  return a.task.createdAt.localeCompare(b.task.createdAt);
 }
 
-function daysBetween(startKey: string, endKey: string) {
-  const start = dateKeyToLocalDate(startKey);
-  const end = dateKeyToLocalDate(endKey);
-  if (!start || !end) return 0;
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  return Math.round((end.getTime() - start.getTime()) / 86_400_000);
-}
-
-function dateBadge(dateKey: string, today: string) {
-  if (dateKey < today) return "Overdue";
-  if (dateKey === today) return "Today";
-  const days = daysBetween(today, dateKey);
-  if (days === 1) return "Tomorrow";
-  return `In ${days} days`;
-}
-
-function sectionDefaults(preference?: DashboardPreference) {
-  return normalizeDashboardPreference(preference);
-}
-
-function DashboardPageShell({ children, loading }: { children: React.ReactNode; loading: boolean }) {
-  return (
-    <div className="mx-auto max-w-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-4 sm:px-5 sm:pt-6 lg:px-8">
-      <header className="mb-4 px-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--cos-primary-text)]">Daily Command Sheet</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">{loading ? "Loading dashboard" : "Dashboard"}</h1>
-        <p className="mt-1 text-sm text-[var(--cos-text-muted)]">Capture, today&apos;s tasks, important dates, and project recovery.</p>
-      </header>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function CollapsibleSection({
-  id,
-  title,
-  icon: Icon,
-  count,
-  collapsed,
-  onToggle,
-  children
-}: {
-  id: DashboardSectionId;
-  title: string;
-  icon: LucideIcon;
-  count?: number;
-  collapsed: boolean;
-  onToggle: (id: DashboardSectionId) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <section data-testid={`dashboard-section-${id}`} className="cos-surface overflow-hidden">
-      <button
-        type="button"
-        onClick={() => onToggle(id)}
-        aria-expanded={!collapsed}
-        aria-label={id === "projects" ? (collapsed ? "Open project recovery section" : "Collapse project recovery section") : undefined}
-        className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left active:bg-[var(--cos-bg-soft)]"
-      >
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--cos-bg-inset)] text-[var(--cos-text-muted)]">
-          <Icon className="h-4.5 w-4.5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-bold text-[var(--cos-text-strong)]">{title}</h2>
-          <p className="text-[11px] text-[var(--cos-text-subtle)]">Tap to {collapsed ? "open" : "collapse"}</p>
-        </div>
-        {count !== undefined ? <span className="cos-pill cos-pill-muted">{count}</span> : null}
-        {collapsed ? <ChevronRight className="h-5 w-5 text-[var(--cos-text-subtle)]" /> : <ChevronDown className="h-5 w-5 text-[var(--cos-text-subtle)]" />}
-      </button>
-      {!collapsed ? <div className="border-t border-[var(--cos-border-soft)] px-4 py-4">{children}</div> : null}
-    </section>
-  );
-}
-
-function QuickCapture() {
-  const { addCapture } = useWorkspace();
-  const [text, setText] = useState("");
-  const [captured, setCaptured] = useState(false);
-
-  function submit() {
-    if (!text.trim()) return;
-    addCapture(text);
-    setText("");
-    setCaptured(true);
-    window.setTimeout(() => setCaptured(false), 700);
+function groupedByLabel<T>(items: T[], labelFor: (item: T) => { id: string; title: string }) {
+  const map = new Map<string, { title: string; rows: T[] }>();
+  for (const item of items) {
+    const label = labelFor(item);
+    const existing = map.get(label.id);
+    if (existing) existing.rows.push(item);
+    else map.set(label.id, { title: label.title, rows: [item] });
   }
-
-  return (
-    <div data-testid="dashboard-quick-capture" className={`cos-input flex items-center gap-2 px-4 py-3 ${captured ? "border-[var(--cos-success-border)]" : ""}`}>
-      <Zap className={`h-5 w-5 shrink-0 ${captured ? "text-[var(--cos-success)]" : "text-[var(--cos-primary)]"}`} />
-      <input
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") submit();
-          if (event.key === "Escape") setText("");
-        }}
-        placeholder="Quick capture... try /task, /note, /project, /date, /status"
-        className="min-w-0 flex-1 bg-transparent text-sm text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
-      />
-      <button type="button" onClick={submit} disabled={!text.trim()} aria-label="Capture" className="grid h-9 w-9 place-items-center rounded-lg text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)]">
-        <Send className="h-4 w-4" />
-      </button>
-    </div>
-  );
+  return Array.from(map, ([id, group]) => ({ id, ...group })).sort((a, b) => a.title.localeCompare(b.title));
 }
 
-function NotepadSection() {
-  const { data, sync, updateDashboardScratchpad } = useWorkspace();
-  const scratchpad = data.dashboardScratchpads[0];
-  const savedContent = scratchpad?.content ?? "";
-  const [draft, setDraft] = useState(savedContent);
-  const [saveState, setSaveState] = useState<"idle" | "dirty" | "saved">("idle");
-  const lastSavedRef = useRef(savedContent);
-  const dirtyRef = useRef(false);
-
-  useEffect(() => {
-    dirtyRef.current = draft !== lastSavedRef.current;
-  }, [draft]);
-
-  useEffect(() => {
-    if (dirtyRef.current) return;
-    lastSavedRef.current = savedContent;
-    setDraft(savedContent);
-    setSaveState("idle");
-  }, [savedContent]);
-
-  useEffect(() => {
-    if (draft === lastSavedRef.current) return;
-    setSaveState("dirty");
-    const handle = window.setTimeout(() => {
-      updateDashboardScratchpad(draft);
-      lastSavedRef.current = draft;
-      setSaveState("saved");
-      window.setTimeout(() => setSaveState("idle"), 1200);
-    }, 900);
-    return () => window.clearTimeout(handle);
-  }, [draft, updateDashboardScratchpad]);
-
-  function clear() {
-    setDraft("");
-    updateDashboardScratchpad("");
-    lastSavedRef.current = "";
-    setSaveState("saved");
-  }
-
-  return (
-    <MarkdownEditor
-      dataTestId="dashboard-scratchpad"
-      value={draft}
-      onChange={setDraft}
-      placeholder="Scratch what is on your mind. Capture first; organize when it matters."
-      minLines={4}
-      hideSaveButton
-      className="min-h-36 bg-[var(--cos-bg-soft)]"
-      footer={
-        <>
-          <span className="mr-auto text-[var(--cos-text-subtle)]">
-            {saveState === "dirty" ? "Autosaving..." : saveState === "saved" ? "Saved locally" : scratchpad?.updatedAt ? `Updated ${formatDistanceToNow(parseISO(scratchpad.updatedAt), { addSuffix: true })}` : "Ready"}
-          </span>
-          {!sync.online ? <span className="cos-pill cos-pill-warning">Offline: queued for sync</span> : null}
-          <button
-            type="button"
-            onClick={clear}
-            disabled={!draft.trim()}
-            className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs disabled:opacity-40"
-          >
-            <Eraser className="h-4 w-4" />
-            Clear
-          </button>
-        </>
-      }
-    />
-  );
-}
-
-function DatesSection({ today, windowDays }: { today: string; windowDays: number }) {
-  const router = useRouter();
-  const { data, addDeadline, updateDeadline } = useWorkspace();
-  const [title, setTitle] = useState("");
-  const [date, setDate] = useState(today);
-  const [time, setTime] = useState("");
-  const [location, setLocation] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const windowEnd = addDaysToDateKey(today, windowDays) ?? today;
-  const projects = activeProjectOptions(data.projects);
-
-  const items = useMemo(() => data.deadlines
-      .filter((deadline) => !deadline.trashedAt && !deadline.archivedAt)
-      .filter((deadline) => deadline.date < today || deadline.date <= windowEnd)
-      .sort((a, b) => {
-        const byDate = a.date.localeCompare(b.date);
-        return byDate || a.title.localeCompare(b.title);
-      }), [data.deadlines, today, windowEnd]);
-
-  if (!items.length) {
-    return (
-      <div className="space-y-3">
-        <DateComposer
-          title={title}
-          date={date}
-          time={time}
-          location={location}
-          projectId={projectId}
-          projects={projects}
-          onTitle={setTitle}
-          onDate={setDate}
-          onTime={setTime}
-          onLocation={setLocation}
-          onProject={setProjectId}
-          onCreate={() => {
-            const trimmed = title.trim();
-            if (!trimmed) return;
-            addDeadline({ title: trimmed, date, time: time || null, location: location.trim(), projectId: projectId || null });
-            setTitle("");
-            setTime("");
-            setLocation("");
-            setProjectId("");
-          }}
-        />
-        <EmptySmall icon={CalendarDays} title="No important dates in range" description={`Showing past dates plus the next ${windowDays} days.`} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      <DateComposer
-        title={title}
-        date={date}
-        time={time}
-        location={location}
-        projectId={projectId}
-        projects={projects}
-        onTitle={setTitle}
-        onDate={setDate}
-        onTime={setTime}
-        onLocation={setLocation}
-        onProject={setProjectId}
-        onCreate={() => {
-          const trimmed = title.trim();
-          if (!trimmed) return;
-          addDeadline({ title: trimmed, date, time: time || null, location: location.trim(), projectId: projectId || null });
-          setTitle("");
-          setTime("");
-          setLocation("");
-          setProjectId("");
-        }}
-      />
-      {items.map((item) => (
-        <div key={item.id} className="cos-row-muted flex items-start gap-3 px-3 py-3">
-          <button type="button" onClick={() => router.push("/dates")} className="min-w-0 flex-1 text-left">
-            <div className="flex min-w-0 items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[var(--cos-text-strong)]">{item.title}</p>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  <span className={`cos-pill ${item.date < today && !item.archivedAt ? "cos-pill-danger" : item.date === today ? "cos-pill-primary" : "cos-pill-muted"}`}>{dateBadge(item.date, today)}</span>
-                  {item.time ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{item.time}</span> : null}
-                  {item.location ? <span className="cos-pill cos-pill-muted"><MapPin className="h-3 w-3" />{item.location}</span> : null}
-                  {projectName(data.projects, item.projectId) ? <span className="cos-pill cos-pill-muted">{projectName(data.projects, item.projectId)}</span> : null}
-                </div>
-              </div>
-              <span className="shrink-0 text-xs font-semibold text-[var(--cos-text-subtle)]">{formatDateKey(item.date)}</span>
-            </div>
-          </button>
-          <button type="button" aria-label={item.archivedAt ? `Restore ${item.title}` : `Archive ${item.title}`} onClick={() => updateDeadline(item.id, { archivedAt: item.archivedAt ? null : new Date().toISOString() })} className="grid h-8 w-8 shrink-0 place-items-center rounded text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)]">
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DateComposer({
-  title,
-  date,
-  time,
-  location,
-  projectId,
+function dashboardTaskGroups({
+  tasks,
   projects,
-  onTitle,
-  onDate,
-  onTime,
-  onLocation,
-  onProject,
-  onCreate
+  domains,
+  today,
+  scope,
+  groupMode
 }: {
-  title: string;
-  date: string;
-  time: string;
-  location: string;
-  projectId: string;
+  tasks: Task[];
   projects: Project[];
-  onTitle: (value: string) => void;
-  onDate: (value: string) => void;
-  onTime: (value: string) => void;
-  onLocation: (value: string) => void;
-  onProject: (value: string) => void;
-  onCreate: () => void;
-}) {
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  domains: Domain[];
+  today: string;
+  scope: string;
+  groupMode: DashboardGroupMode;
+}): CommandTaskGroup[] {
+  const rows = tasks
+    .filter((task) => activeDashboardTask(task, today))
+    .filter((task) => scope === ALL_AREAS || taskDomainId(task, projects) === scope)
+    .map((task) => ({ task, labels: taskLabels(task, today, projects, domains) }))
+    .sort(taskSort);
 
-  return (
-    <div className="rounded-xl border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <CalendarClock className="ml-1 h-5 w-5 shrink-0 text-[var(--cos-date)]" />
-        <input
-          data-testid="dashboard-add-deadline-input"
-          value={title}
-          onChange={(event) => onTitle(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") onCreate();
-            if (event.key === "Escape") onTitle("");
-          }}
-          placeholder="Add an important date..."
-          className="min-h-10 min-w-48 flex-1 bg-transparent text-base text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
-        />
-        <input aria-label="Date" type="date" value={date} onChange={(event) => onDate(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
-        <button
-          type="button"
-          aria-expanded={detailsOpen}
-          onClick={() => setDetailsOpen(!detailsOpen)}
-          className="cos-btn cos-btn-ghost min-h-10 px-2 text-xs"
-        >
-          Details
-        </button>
-        <button type="button" onClick={onCreate} disabled={!title.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 text-sm disabled:bg-[var(--cos-border)]">
-          Add
-        </button>
-      </div>
-      {detailsOpen ? (
-        <div className="mt-2 grid gap-2 sm:grid-cols-[0.8fr_1.1fr_1.1fr]">
-          <input aria-label="Date time" type="time" value={time} onChange={(event) => onTime(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
-          <input aria-label="Date location" value={location} onChange={(event) => onLocation(event.target.value)} placeholder="Location" className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs" />
-          <select aria-label="Date project" value={projectId} onChange={(event) => onProject(event.target.value)} className="cos-input bg-[var(--cos-bg-elevated)] px-2 py-2 text-xs">
-            <option value="">No project</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>{project.name}</option>
-            ))}
-          </select>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function TodayTasksSection({ today }: { today: string }) {
-  const { data, addTask, updateTask } = useWorkspace();
-  const [title, setTitle] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("");
-  const projects = activeProjectOptions(data.projects);
-  const rows = useMemo<DailyScheduleRow[]>(() => {
-    return data.tasks
-      .filter((task) => isTaskInTodayTasks(task, today))
-      .map((task) => ({
-        task,
-        labels: [
-          task.status === "done" ? "Done" : "",
-          task.dueDate && task.dueDate < today && task.status !== "done" ? "Overdue" : "",
-          task.dueDate === today ? "Due today" : "",
-          task.plannedDate === today ? "Planned today" : "",
-          task.status === "in-progress" ? "In progress" : "",
-          projectName(data.projects, task.projectId)
-        ].filter(Boolean)
-      }));
-  }, [data.projects, data.tasks, today]);
-
-  function createTask() {
-    const trimmed = title.trim();
-    if (!trimmed) return;
-    const project = projects.find((item) => item.id === projectId);
-    addTask({ title: trimmed, plannedDate: today, scheduledTime: scheduledTime || null, projectId: projectId || null, domainId: project?.domainId ?? null });
-    setTitle("");
-    setProjectId("");
-    setScheduledTime("");
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="cos-input flex items-center gap-2 bg-[var(--cos-bg-soft)] p-2 focus-within:bg-[var(--cos-bg-elevated)]">
-        <Plus className="ml-1 h-5 w-5 shrink-0 text-[var(--cos-primary)]" />
-        <input
-          data-testid="dashboard-add-task-input"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") createTask();
-            if (event.key === "Escape") setTitle("");
-          }}
-          placeholder="Add a task for today..."
-          className="min-h-10 min-w-0 flex-1 bg-transparent text-base text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
-        />
-        <button type="button" onClick={createTask} disabled={!title.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 text-sm disabled:bg-[var(--cos-border)]">
-          Add
-        </button>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-[0.7fr_1.4fr]">
-        <input aria-label="Task scheduled time" type="time" value={scheduledTime} onChange={(event) => setScheduledTime(event.target.value)} className="cos-input bg-[var(--cos-bg-soft)] px-3 py-2 text-xs" />
-        {projects.length ? (
-          <select aria-label="Task project" value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input w-full bg-[var(--cos-bg-soft)] px-3 py-2 text-xs">
-            <option value="">No project</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>{project.name}</option>
-            ))}
-          </select>
-        ) : null}
-      </div>
-      <DailySchedule
-        rows={rows}
-        today={today}
-        emptyTitle="No tasks for today"
-        emptyDescription="Add one task here, or plan work from a project."
-      />
-    </div>
-  );
-}
-
-function ProjectsSection() {
-  const router = useRouter();
-  const { data } = useWorkspace();
-  const projects = data.projects
-    .filter((project) => !project.trashedAt && !project.archivedAt && project.status === "active")
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const nowMs = Date.now();
-
-  if (!projects.length) {
-    return <EmptySmall icon={FolderKanban} title="No active projects" description="Active project recovery will appear here." />;
-  }
-
-  return (
-    <div className="space-y-2">
-      {projects.map((project) => {
-        const updatedAt = parseISO(project.updatedAt);
-        const stale = Number.isFinite(updatedAt.getTime()) && nowMs - updatedAt.getTime() > PROJECT_STALE_DAYS * 86_400_000;
-        const missingNext = !project.nextAction.trim();
-        const missingStatus = !project.latestStatus.trim();
-        return (
-          <button key={project.id} type="button" onClick={() => router.push(`/projects/${project.id}`)} className="cos-row-muted w-full px-3 py-3 text-left active:bg-[var(--cos-bg-inset)]">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-bold text-[var(--cos-text-strong)]">{project.name}</h3>
-                <p className={`mt-1 text-sm ${missingNext ? "font-semibold text-[var(--cos-danger-text)]" : "text-[var(--cos-primary-text)]"}`}>Next: {project.nextAction || "Missing next action"}</p>
-                <p className={`mt-1 line-clamp-2 text-xs ${missingStatus ? "font-semibold text-[var(--cos-warning-text)]" : "text-[var(--cos-text-muted)]"}`}>Status: {project.latestStatus || "No latest status"}</p>
-              </div>
-              <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[var(--cos-text-subtle)]" />
-            </div>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {missingNext ? <WarningPill tone="red" label="No next action" /> : null}
-              {missingStatus ? <WarningPill tone="amber" label="No status" /> : null}
-              {stale ? <WarningPill tone="amber" label={`Stale ${PROJECT_STALE_DAYS}+d`} /> : null}
-              {!missingNext && !missingStatus && !stale ? <span className="cos-pill cos-pill-success">Recoverable</span> : null}
-              <span className="cos-pill cos-pill-muted">Changed {formatDistanceToNow(updatedAt, { addSuffix: true })}</span>
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function WarningPill({ tone, label }: { tone: "red" | "amber"; label: string }) {
-  const classes = tone === "red" ? "cos-pill-danger" : "cos-pill-warning";
-  return <span className={`cos-pill ${classes}`}><AlertTriangle className="h-3 w-3" />{label}</span>;
-}
-
-function EmptySmall({ icon: Icon, title, description }: { icon: LucideIcon; title: string; description: string }) {
-  return (
-    <div className="cos-empty px-4 py-6 text-center">
-      <Icon className="mx-auto mb-2 h-7 w-7 text-[var(--cos-text-subtle)]" />
-      <p className="text-sm font-semibold text-[var(--cos-text-muted)]">{title}</p>
-      <p className="mt-1 text-xs text-[var(--cos-text-subtle)]">{description}</p>
-    </div>
-  );
-}
-
-export function Dashboard2View() {
-  const { data, loading, updateDashboardPreferences } = useWorkspace();
-  const today = localDateKey();
-  const preferences = sectionDefaults(data.dashboardPreferences[0]);
-  const collapsed = new Set(preferences.collapsedSections);
-  const activeDateWindowEnd = addDaysToDateKey(today, preferences.dateWindowDays) ?? today;
-  const datesCount = data.deadlines.filter((deadline) => !deadline.trashedAt && !deadline.archivedAt && (deadline.date < today || deadline.date <= activeDateWindowEnd)).length;
-  const tasksCount = data.tasks.filter((task) => isTaskInTodayTasks(task, today)).length;
-  const projectsCount = data.projects.filter((project) => !project.trashedAt && !project.archivedAt && project.status === "active").length;
-
-  function toggleSection(id: DashboardSectionId) {
-    const next = new Set(preferences.collapsedSections);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    updateDashboardPreferences({
-      sectionOrder: preferences.sectionOrder,
-      collapsedSections: Array.from(next),
-      dateWindowDays: preferences.dateWindowDays,
-      reviewPromptDismissals: preferences.reviewPromptDismissals,
-      showCompleted: preferences.showCompleted,
-      taskSortMode: preferences.taskSortMode
+  if (groupMode === "area") {
+    return groupedByLabel(rows, (row) => {
+      const id = taskDomainId(row.task, projects) ?? "no-area";
+      return { id, title: domainName(domains, id) || "No area" };
     });
   }
 
-  const sectionComponents: Partial<Record<DashboardSectionId, React.ReactNode>> = {
-    tasks: (
-      <CollapsibleSection id="tasks" title="Today Tasks" icon={SquarePen} count={tasksCount} collapsed={collapsed.has("tasks")} onToggle={toggleSection}>
-        <TodayTasksSection today={today} />
-      </CollapsibleSection>
-    ),
-    dates: (
-      <CollapsibleSection id="dates" title="Dates" icon={CalendarDays} count={datesCount} collapsed={collapsed.has("dates")} onToggle={toggleSection}>
-        <DatesSection today={today} windowDays={preferences.dateWindowDays} />
-      </CollapsibleSection>
-    ),
-    projects: (
-      <CollapsibleSection id="projects" title="Project Recovery" icon={FolderKanban} count={projectsCount} collapsed={collapsed.has("projects")} onToggle={toggleSection}>
-        <ProjectsSection />
-      </CollapsibleSection>
-    ),
-    notepad: (
-      <CollapsibleSection id="notepad" title="Scratchpad" icon={NotebookPen} collapsed={collapsed.has("notepad")} onToggle={toggleSection}>
-        <NotepadSection />
-      </CollapsibleSection>
-    )
+  if (groupMode === "project") {
+    return groupedByLabel(rows, (row) => {
+      const id = row.task.projectId ?? "no-project";
+      return { id, title: projectName(projects, id) || "No project" };
+    });
+  }
+
+  const labels: Record<string, string> = {
+    overdue: "Overdue",
+    today: "Today",
+    "in-progress": "In progress",
+    upcoming: "Upcoming",
+    unscheduled: "Unscheduled",
+    "done-today": "Done today"
   };
+  const order = ["overdue", "today", "in-progress", "upcoming", "unscheduled", "done-today"];
+  return order.map((id) => ({
+    id,
+    title: labels[id],
+    rows: rows.filter((row) => taskTimeGroup(row.task, today) === id)
+  }));
+}
+
+function dateTimeGroup(deadline: Deadline, today: string) {
+  if (deadline.date < today) return "overdue";
+  if (deadline.date === today) return "today";
+  return "upcoming";
+}
+
+function dateSort(a: Deadline, b: Deadline) {
+  const byDate = a.date.localeCompare(b.date);
+  if (byDate) return byDate;
+  const byTime = (a.time ?? "99:99").localeCompare(b.time ?? "99:99");
+  if (byTime) return byTime;
+  return a.createdAt.localeCompare(b.createdAt);
+}
+
+function dashboardDateGroups({
+  deadlines,
+  projects,
+  domains,
+  today,
+  scope,
+  groupMode
+}: {
+  deadlines: Deadline[];
+  projects: Project[];
+  domains: Domain[];
+  today: string;
+  scope: string;
+  groupMode: DashboardGroupMode;
+}): CommandDateGroup[] {
+  const rows = deadlines
+    .filter((deadline) => !deadline.trashedAt && !deadline.archivedAt)
+    .filter((deadline) => scope === ALL_AREAS || deadlineDomainId(deadline, projects) === scope)
+    .sort(dateSort);
+
+  if (groupMode === "area") {
+    return groupedByLabel(rows, (deadline) => {
+      const id = deadlineDomainId(deadline, projects) ?? "no-area";
+      return { id, title: domainName(domains, id) || "No area" };
+    });
+  }
+
+  if (groupMode === "project") {
+    return groupedByLabel(rows, (deadline) => {
+      const id = deadline.projectId ?? "no-project";
+      return { id, title: projectName(projects, id) || "No project" };
+    });
+  }
+
+  return ["overdue", "today", "upcoming"].map((id) => ({
+    id,
+    title: id === "overdue" ? "Overdue" : id === "today" ? "Today" : "Upcoming",
+    rows: rows.filter((deadline) => dateTimeGroup(deadline, today) === id)
+  }));
+}
+
+function readStoredView() {
+  try {
+    const value = window.localStorage.getItem(VIEW_STORAGE_KEY);
+    if (!value) return null;
+    return JSON.parse(value) as { scope?: string; groupMode?: DashboardGroupMode };
+  } catch {
+    return null;
+  }
+}
+
+export function Dashboard2View() {
+  const { data, loading, sync, addTask, addDeadline, updateDashboardScratchpad } = useWorkspace();
+  const today = localDateKey();
+  const scratchpad = data.dashboardScratchpads[0];
+  const [scope, setScope] = useState(ALL_AREAS);
+  const [groupMode, setGroupMode] = useState<DashboardGroupMode>("time");
+
+  useEffect(() => {
+    const stored = readStoredView();
+    if (stored?.scope) setScope(stored.scope);
+    if (stored?.groupMode && ["time", "area", "project"].includes(stored.groupMode)) setGroupMode(stored.groupMode);
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify({ scope, groupMode }));
+  }, [groupMode, scope]);
+
+  const taskGroups = useMemo(
+    () => dashboardTaskGroups({ tasks: data.tasks, projects: data.projects, domains: data.domains, today, scope, groupMode }),
+    [data.domains, data.projects, data.tasks, groupMode, scope, today]
+  );
+  const dateGroups = useMemo(
+    () => dashboardDateGroups({ deadlines: data.deadlines, projects: data.projects, domains: data.domains, today, scope, groupMode }),
+    [data.deadlines, data.domains, data.projects, groupMode, scope, today]
+  );
+  const taskCount = taskGroups.reduce((count, group) => count + group.rows.length, 0);
+  const dateCount = dateGroups.reduce((count, group) => count + group.rows.length, 0);
+
+  function handleCommandLine(line: string) {
+    const parsed = parseCommandPageLine(line, today);
+    if (parsed.type === "error") return { ok: false, message: parsed.message };
+    if (parsed.type === "none") return { ok: false, message: "Use /task or /date here." };
+    if (parsed.type === "task") {
+      addTask({
+        title: parsed.title,
+        plannedDate: parsed.plannedDate,
+        dueDate: parsed.dueDate,
+        scheduledTime: parsed.scheduledTime,
+        projectId: null,
+        domainId: null
+      });
+      return { ok: true };
+    }
+    addDeadline({ title: parsed.title, date: parsed.date, time: parsed.time, projectId: null });
+    return { ok: true };
+  }
 
   return (
-    <DashboardPageShell loading={loading}>
-      {loading ? <div className="cos-surface p-4 text-sm text-[var(--cos-text-muted)]">Loading cached command sheet...</div> : null}
-      <QuickCapture />
-      {preferences.sectionOrder.map((id) => sectionComponents[id] ? <div key={id}>{sectionComponents[id]}</div> : null)}
-    </DashboardPageShell>
+    <div data-testid="dashboard-command-page" className="mx-auto max-w-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-4 sm:px-5 sm:pt-6 lg:px-8">
+      <header className="mb-5 px-1">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--cos-primary-text)]">Daily Command Page</p>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--cos-text-strong)]">{loading ? "Loading dashboard" : "Dashboard"}</h1>
+        <p className="mt-2 text-sm text-[var(--cos-text-muted)]">Write freely. Use /task and /date when a line should become a real record.</p>
+      </header>
+
+      {loading ? <div className="mb-4 rounded-lg border border-[var(--cos-border)] p-3 text-sm text-[var(--cos-text-muted)]">Loading cached command page...</div> : null}
+
+      <CommandPageEditor
+        dataTestId="dashboard-scratchpad"
+        value={scratchpad?.content ?? ""}
+        onSave={updateDashboardScratchpad}
+        onCommandLine={handleCommandLine}
+        placeholder="Start typing. /task Send update today at:09:30 or /date Exam on:2026-07-10..."
+        minLines={8}
+      />
+
+      <div className="mt-6 space-y-1">
+        <LiveBlock
+          title="Tasks"
+          count={taskCount}
+          testId="dashboard-live-tasks"
+          action={
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <label className="flex items-center gap-1 text-xs font-semibold text-[var(--cos-text-muted)]">
+                Scope
+                <select data-testid="dashboard-scope-select" value={scope} onChange={(event) => setScope(event.target.value)} className="rounded-md border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] px-2 py-1 text-xs text-[var(--cos-text)] outline-none">
+                  <option value={ALL_AREAS}>All areas</option>
+                  {data.domains.filter((domain) => !domain.archived).map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
+                </select>
+              </label>
+              <label className="flex items-center gap-1 text-xs font-semibold text-[var(--cos-text-muted)]">
+                Group
+                <select data-testid="dashboard-group-select" value={groupMode} onChange={(event) => setGroupMode(event.target.value as DashboardGroupMode)} className="rounded-md border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] px-2 py-1 text-xs text-[var(--cos-text)] outline-none">
+                  <option value="time">Time</option>
+                  <option value="area">Area</option>
+                  <option value="project">Project</option>
+                </select>
+              </label>
+            </div>
+          }
+        >
+          <div className="mb-2 flex items-center gap-2 text-xs text-[var(--cos-text-subtle)]">
+            <CheckSquare className="h-3.5 w-3.5" />
+            <span>{sync.online ? "Structured task records" : "Offline changes queue until sync"}</span>
+          </div>
+          <CommandTaskRows groups={taskGroups} emptyTitle="No active tasks in this view" />
+        </LiveBlock>
+
+        <LiveBlock title="Dates" count={dateCount} testId="dashboard-live-dates">
+          <div className="mb-2 flex items-center gap-2 text-xs text-[var(--cos-text-subtle)]">
+            <CalendarDays className="h-3.5 w-3.5" />
+            <span>Important dates are separate from task checkboxes</span>
+          </div>
+          <CommandDateRows groups={dateGroups} emptyTitle="No active dates in this view" />
+        </LiveBlock>
+      </div>
+    </div>
   );
 }

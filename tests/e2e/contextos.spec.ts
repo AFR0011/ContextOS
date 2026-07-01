@@ -191,6 +191,34 @@ test("dashboard preferences ignore legacy section order and hidden allTasks", as
   expect(normalizeDashboardPreference({ taskSortMode: "manual" as any }).taskSortMode).toBe("recent");
 });
 
+test("command page parser handles explicit task and date commands", async () => {
+  const { parseCommandPageLine } = await import("../../src/lib/command-page-commands");
+
+  expect(parseCommandPageLine("/task Send update today at:09:30 due:2026-07-05", "2026-07-01")).toMatchObject({
+    type: "task",
+    title: "Send update",
+    plannedDate: "2026-07-01",
+    dueDate: "2026-07-05",
+    scheduledTime: "09:30"
+  });
+  expect(parseCommandPageLine("/task Call advisor at:14:00", "2026-07-01")).toMatchObject({
+    type: "task",
+    plannedDate: "2026-07-01",
+    scheduledTime: "14:00"
+  });
+  expect(parseCommandPageLine("/date Exam tomorrow at:10:00", "2026-07-01")).toMatchObject({
+    type: "date",
+    title: "Exam",
+    date: "2026-07-02",
+    time: "10:00"
+  });
+  expect(parseCommandPageLine("/date Missing date", "2026-07-01")).toMatchObject({
+    type: "error",
+    message: expect.stringContaining("Dates need")
+  });
+  expect(parseCommandPageLine("- [ ] local checkbox", "2026-07-01")).toEqual({ type: "none" });
+});
+
 test("deployment headers, metadata, and service worker cache routes are configured", async ({ page }) => {
   const response = await page.request.get("/login");
   const headers = response.headers();
@@ -289,18 +317,17 @@ test("auth endpoints throttle repeated failed attempts", async ({ page }) => {
 
 test("seeded demo account can log in and render dashboard", async ({ page }) => {
   await login(page);
-  await expect(page.getByText("Daily Command Sheet")).toBeVisible();
-  await expect(page.getByTestId("dashboard-section-tasks")).toBeVisible();
-  await expect(page.getByTestId("dashboard-section-dates")).toBeVisible();
-  await expect(page.getByTestId("dashboard-section-projects")).toBeVisible();
-  await expect(page.getByTestId("dashboard-section-notepad")).toBeVisible();
+  await expect(page.getByText("Daily Command Page")).toBeVisible();
+  await expect(page.getByTestId("dashboard-command-page")).toBeVisible();
+  await expect(page.getByTestId("dashboard-live-tasks")).toBeVisible();
+  await expect(page.getByTestId("dashboard-live-dates")).toBeVisible();
+  await expect(page.getByTestId("dashboard-section-projects")).toHaveCount(0);
   await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
-  await expect(page.getByTestId("dashboard-section-projects").getByRole("button", { name: /ContextOS Demo/ })).toBeVisible();
-  const todayTasks = page.getByTestId("dashboard-section-tasks");
-  await expect(todayTasks.getByLabel("Task title Process inbox captures")).toBeVisible();
-  await expect(todayTasks.getByLabel("Process inbox captures scheduled time")).toHaveValue("09:30");
-  await expect(todayTasks.getByLabel("Task title Write one clean latest-status note")).toBeVisible();
-  await expect(todayTasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toHaveCount(0);
+  const tasks = page.getByTestId("dashboard-live-tasks");
+  await expect(tasks.getByLabel("Task title Process inbox captures")).toBeVisible();
+  await expect(tasks.getByLabel("Process inbox captures scheduled time")).toHaveValue("09:30");
+  await expect(tasks.getByLabel("Task title Write one clean latest-status note")).toBeVisible();
+  await expect(tasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toBeVisible();
 });
 
 test("simplified navigation shows core surfaces and hides utility routes from primary nav", async ({ page }) => {
@@ -344,14 +371,25 @@ test("quick capture appears in inbox and can convert to a task", async ({ page }
   await expect(page.getByText(text).first()).toBeVisible();
 });
 
-test("dashboard quick capture sends slash commands to inbox", async ({ page }) => {
+test("dashboard command page creates real task and date records", async ({ page }) => {
   await login(page);
-  const title = `Dashboard captured task ${Date.now()}`;
-  const capture = page.getByTestId("dashboard-quick-capture");
-  await capture.getByPlaceholder(/Quick capture/i).fill(`/task ${title}`);
-  await capture.getByRole("button", { name: "Capture" }).click();
+  const taskTitle = `Dashboard command task ${Date.now()}`;
+  const dateTitle = `Dashboard command date ${Date.now()}`;
+  const editor = page.getByTestId("dashboard-scratchpad");
+
+  await markdownLine(editor, 0).fill(`/task ${taskTitle} today at:09:15`);
+  await markdownLine(editor, 0).press("Enter");
+  await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${taskTitle}`)).toBeVisible();
+  await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`${taskTitle} scheduled time`)).toHaveValue("09:15");
+  await expect(markdownLine(editor, 0)).toHaveValue("");
+
+  await markdownLine(editor, 0).fill(`/date ${dateTitle} today at:14:30`);
+  await markdownLine(editor, 0).press("Enter");
+  await expect(page.getByTestId("dashboard-live-dates").getByLabel(`Date title ${dateTitle}`)).toBeVisible();
+  await expect(page.getByTestId("dashboard-live-dates").getByText("14:30")).toBeVisible();
+
   await page.goto("/inbox");
-  await expect(page.getByText(`/task ${title}`)).toBeVisible();
+  await expect(page.getByText(taskTitle)).toHaveCount(0);
 });
 
 test("project recovery fields persist after reload", async ({ page }) => {
@@ -364,8 +402,7 @@ test("project recovery fields persist after reload", async ({ page }) => {
   await editor.getByPlaceholder("Concrete next action...").fill(nextAction);
   await editor.getByPlaceholder("Concrete next action...").blur();
   await markdownLine(page.getByTestId("project-recovery-notes"), 0).fill(note);
-  await expect(page.getByText("Unsaved changes").first()).toBeVisible();
-  await page.getByTestId("project-recovery-notes").getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Saved").first()).toBeVisible({ timeout: 3000 });
   await page.reload();
   await expect(page.getByPlaceholder("Concrete next action...")).toHaveValue(nextAction);
   await expect(markdownLine(page.getByTestId("project-recovery-notes"), 0)).toHaveValue(note);
@@ -385,38 +422,43 @@ test("project subcontexts roll child tasks and dates into parent recovery", asyn
   await expect(page.getByText("Parent: ContextOS Demo")).toBeVisible();
 
   const childTask = `Rolled child task ${Date.now()}`;
-  await page.getByPlaceholder("Add task...").fill(childTask);
-  await page.getByPlaceholder("Add task...").press("Enter");
+  const childEditor = page.getByTestId("project-recovery-notes");
+  await markdownLine(childEditor, 0).fill(`/task ${childTask} today`);
+  await markdownLine(childEditor, 0).press("Enter");
+  await expect(page.getByTestId("project-live-tasks").getByLabel(`Task title ${childTask}`)).toBeVisible();
 
   const childDate = `Rolled child date ${Date.now()}`;
-  const datesSection = page.locator("section").filter({ hasText: /^Dates/ });
-  await datesSection.getByPlaceholder("Important date...").fill(childDate);
-  await datesSection.getByRole("button", { name: "Add date" }).click();
+  await markdownLine(childEditor, 0).fill(`/date ${childDate} today`);
+  await markdownLine(childEditor, 0).press("Enter");
+  await expect(page.getByTestId("project-live-dates").getByLabel(`Date title ${childDate}`)).toBeVisible();
 
   await page.getByRole("button", { name: "Back" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await expect(page.getByLabel(`Task title ${childTask}`)).toBeVisible();
-  await expect(page.getByText(subcontext).first()).toBeVisible();
-  await expectInputValue(page, "input", childDate);
+  await expect(page.getByTestId("project-live-tasks").getByText(subcontext)).toBeVisible();
+  await expect(page.getByTestId("project-live-tasks").getByLabel(`Task title ${childTask}`)).toBeVisible();
+  await expect(page.getByTestId("project-live-dates").getByText(subcontext)).toBeVisible();
+  await expect(page.getByTestId("project-live-dates").getByLabel(`Date title ${childDate}`)).toBeVisible();
 });
 
-test("dashboard notepad autosaves and persists after reload", async ({ page }) => {
+test("dashboard command page autosaves local Markdown without creating records", async ({ page }) => {
   await login(page);
   const heading = `Scratchpad check ${Date.now()}`;
+  const localTask = `Local checkbox ${Date.now()}`;
   const content = `## ${heading}\n\n- [ ] Render markdown`;
   const scratchpad = page.getByTestId("dashboard-scratchpad");
   await expect(page.getByTestId("dashboard-markdown-preview")).toHaveCount(0);
-  await fillMarkdownEditor(scratchpad, [`## ${heading}`, "- [ ] Render markdown"]);
+  await fillMarkdownEditor(scratchpad, [`## ${heading}`, `- [ ] ${localTask}`]);
   await expect(markdownLine(scratchpad, 0)).toHaveValue(heading);
-  await expect(markdownLine(scratchpad, 1)).toHaveValue("Render markdown");
+  await expect(markdownLine(scratchpad, 1)).toHaveValue(localTask);
   await expect(scratchpad.locator('input[type="checkbox"]').first()).not.toBeChecked();
-  await expect(page.getByText(/Saved locally|Updated/i)).toBeVisible({ timeout: 3000 });
+  await expect(page.getByText("Saved").first()).toBeVisible({ timeout: 3000 });
+  await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${localTask}`)).toHaveCount(0);
   await page.reload();
   await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(heading);
-  await expect.poll(() => offlineCacheState(page, content)).toMatchObject({ hasScratchpad: true });
+  await expect.poll(() => offlineCacheState(page, `## ${heading}\n\n- [ ] ${localTask}`)).toMatchObject({ hasScratchpad: true });
 });
 
-test("dashboard notepad supports toggle headings and persists markdown details", async ({ page }) => {
+test("dashboard command page supports toggle headings and persists markdown details", async ({ page }) => {
   await login(page);
   const suffix = Date.now();
   const scratchpad = page.getByTestId("dashboard-scratchpad");
@@ -451,25 +493,25 @@ test("dashboard notepad supports toggle headings and persists markdown details",
   await expect.poll(() => dashboardScratchpadContent(page)).toContain("- [ ] Nested todo");
 });
 
-test("dashboard sections collapse and persist after refresh", async ({ page }) => {
+test("dashboard view menu can scope and group active records", async ({ page }) => {
   await login(page);
-  const datesHeader = page.getByTestId("dashboard-section-dates").getByRole("button", { name: /Dates/ });
-  await datesHeader.click();
-  await expect(page.getByTestId("dashboard-section-dates").getByTestId("dashboard-add-deadline-input")).not.toBeVisible();
+  await page.getByTestId("dashboard-group-select").selectOption("area");
+  await page.getByTestId("dashboard-scope-select").selectOption({ label: "Research" });
+  const tasks = page.getByTestId("dashboard-live-tasks");
+  await expect(tasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toBeVisible();
+  await expect(tasks.getByLabel("Task title Process inbox captures")).toHaveCount(0);
   await page.reload();
-  await expect(page.getByTestId("dashboard-section-dates").getByTestId("dashboard-add-deadline-input")).not.toBeVisible();
-  await page.getByTestId("dashboard-section-dates").getByRole("button", { name: /Dates/ }).click();
-  await expect(page.getByTestId("dashboard-section-dates").getByTestId("dashboard-add-deadline-input")).toBeVisible();
+  await expect(page.getByTestId("dashboard-scope-select")).toHaveValue(/.+/);
+  await expect(tasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toBeVisible();
 });
 
-test("dashboard today tasks support one time, inline editing, crossing, and deletion", async ({ page }) => {
+test("dashboard command tasks support one time, inline editing, crossing, and deletion", async ({ page }) => {
   await login(page);
   const title = `Dashboard real task ${Date.now()}`;
-  const taskSection = page.getByTestId("dashboard-section-tasks");
-  await page.getByTestId("dashboard-add-task-input").fill(title);
-  await taskSection.getByLabel("Task scheduled time").fill("09:15");
-  await taskSection.getByLabel("Task project").selectOption({ label: "ContextOS Demo" });
-  await taskSection.getByRole("button", { name: "Add", exact: true }).click();
+  const taskSection = page.getByTestId("dashboard-live-tasks");
+  const editor = page.getByTestId("dashboard-scratchpad");
+  await markdownLine(editor, 0).fill(`/task ${title} today at:09:15`);
+  await markdownLine(editor, 0).press("Enter");
   await expect(taskSection.getByLabel(`Task title ${title}`)).toBeVisible();
   await expect(taskSection.getByLabel(`${title} scheduled time`)).toHaveValue("09:15");
 
@@ -485,19 +527,19 @@ test("dashboard today tasks support one time, inline editing, crossing, and dele
   await expect(taskSection.getByRole("button", { name: `Reopen ${renamed}` })).toBeVisible();
   await expectTaskTitleOrder(taskSection, beforeDoneOrder);
   await page.reload();
-  await expect(page.getByTestId("dashboard-section-tasks").getByLabel(`Task title ${renamed}`)).toBeVisible();
-  await page.getByTestId("dashboard-section-tasks").getByRole("button", { name: `Reopen ${renamed}` }).click();
-  await page.getByTestId("dashboard-section-tasks").getByRole("button", { name: `Delete ${renamed}` }).click();
-  await expect(page.getByTestId("dashboard-section-tasks").getByLabel(`Task title ${renamed}`)).toHaveCount(0);
+  await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${renamed}`)).toBeVisible();
+  await page.getByTestId("dashboard-live-tasks").getByRole("button", { name: `Reopen ${renamed}` }).click();
+  await page.getByTestId("dashboard-live-tasks").getByRole("button", { name: `Delete ${renamed}` }).click();
+  await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${renamed}`)).toHaveCount(0);
 });
 
 test("long task titles wrap on mobile instead of truncating", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
-  const taskSection = page.getByTestId("dashboard-section-tasks");
+  const taskSection = page.getByTestId("dashboard-live-tasks");
   const title = `This is a deliberately long task title that should stay fully visible on narrow mobile screens ${Date.now()}`;
-  await page.getByTestId("dashboard-add-task-input").fill(title);
-  await taskSection.getByRole("button", { name: "Add", exact: true }).click();
+  await markdownLine(page.getByTestId("dashboard-scratchpad"), 0).fill(`/task ${title} today`);
+  await markdownLine(page.getByTestId("dashboard-scratchpad"), 0).press("Enter");
   const titleField = taskSection.getByLabel(`Task title ${title}`);
   await expect(titleField).toBeVisible();
   await expect
@@ -509,7 +551,7 @@ test("mobile editor and task controls expose accessible hit targets and menus", 
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
 
-  const taskSection = page.getByTestId("dashboard-section-tasks");
+  const taskSection = page.getByTestId("dashboard-live-tasks");
   await expectMinTouchTarget(taskSection.getByRole("button", { name: "Mark Process inbox captures done" }));
   await expectMinTouchTarget(taskSection.getByRole("button", { name: "Delete Process inbox captures" }));
 
@@ -543,34 +585,33 @@ test("mobile editor and task controls expose accessible hit targets and menus", 
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });
 
-test("dashboard today tasks support untimed and same-time tasks without an empty-day grid", async ({ page }) => {
+test("dashboard command tasks support untimed and same-time tasks without an empty-day grid", async ({ page }) => {
   await login(page);
-  const taskSection = page.getByTestId("dashboard-section-tasks");
+  const taskSection = page.getByTestId("dashboard-live-tasks");
+  const editor = page.getByTestId("dashboard-scratchpad");
   const suffix = Date.now();
   const untimed = `Untimed schedule item ${suffix}`;
-  await page.getByTestId("dashboard-add-task-input").fill(untimed);
-  await taskSection.getByRole("button", { name: "Add", exact: true }).click();
+  await markdownLine(editor, 0).fill(`/task ${untimed}`);
+  await markdownLine(editor, 0).press("Enter");
   await expect(taskSection.getByLabel(`Task title ${untimed}`)).toBeVisible();
 
   const first = `Same time one ${suffix}`;
-  await page.getByTestId("dashboard-add-task-input").fill(first);
-  await taskSection.getByLabel("Task scheduled time").fill("11:00");
-  await taskSection.getByRole("button", { name: "Add", exact: true }).click();
+  await markdownLine(editor, 0).fill(`/task ${first} at:11:00`);
+  await markdownLine(editor, 0).press("Enter");
   await expect(taskSection.getByLabel(`Task title ${first}`)).toBeVisible();
   const second = `Same time two ${suffix}`;
-  await page.getByTestId("dashboard-add-task-input").fill(second);
-  await taskSection.getByLabel("Task scheduled time").fill("11:00");
-  await taskSection.getByRole("button", { name: "Add", exact: true }).click();
+  await markdownLine(editor, 0).fill(`/task ${second} at:11:00`);
+  await markdownLine(editor, 0).press("Enter");
   await expect(taskSection.getByLabel(`Task title ${first}`)).toBeVisible();
   await expect(taskSection.getByLabel(`Task title ${second}`)).toBeVisible();
   await expect(taskSection.locator('[data-testid="daily-schedule-grid"]')).toHaveCount(0);
 });
 
-test("dashboard hides backlog tasks without removing recovery paths", async ({ page }) => {
+test("dashboard shows all active workspace tasks without restoring allTasks chrome", async ({ page }) => {
   await login(page);
   const title = "Rerun RF baseline with corrected threshold logic";
   await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
-  await expect(page.getByTestId("dashboard-section-tasks").getByLabel(`Task title ${title}`)).toHaveCount(0);
+  await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${title}`)).toBeVisible();
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.getByPlaceholder("Search workspace...").fill(title);
   await page.getByRole("button", { name: new RegExp(`Task ${title}`) }).click();
@@ -578,25 +619,21 @@ test("dashboard hides backlog tasks without removing recovery paths", async ({ p
   await expect(page.getByLabel(`Task title ${title}`)).toBeVisible();
 });
 
-test("dashboard can add a project-linked important date with time and location", async ({ page }) => {
+test("dashboard command page can create an important date with time", async ({ page }) => {
   await login(page);
   const title = `Dashboard date ${Date.now()}`;
-  const datesSection = page.getByTestId("dashboard-section-dates");
-  await datesSection.getByTestId("dashboard-add-deadline-input").fill(title);
-  await datesSection.getByRole("button", { name: "Details" }).click();
-  await datesSection.getByLabel("Date time").fill("14:30");
-  await datesSection.getByLabel("Date location").fill("Library");
-  await datesSection.getByLabel("Date project").selectOption({ label: "ContextOS Demo" });
-  await datesSection.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(datesSection.getByText(title)).toBeVisible();
+  const datesSection = page.getByTestId("dashboard-live-dates");
+  const editor = page.getByTestId("dashboard-scratchpad");
+  await markdownLine(editor, 0).fill(`/date ${title} today at:14:30`);
+  await markdownLine(editor, 0).press("Enter");
+  await expect(datesSection.getByLabel(`Date title ${title}`)).toBeVisible();
   await expect(datesSection.getByText("14:30")).toBeVisible();
-  await expect(datesSection.getByText("Library")).toBeVisible();
   await expect(datesSection.getByRole("button", { name: `Archive ${title}` })).toBeVisible();
-  await expect(datesSection.getByText("Write one clean latest-status note")).toHaveCount(0);
+  await expect(datesSection.getByRole("button", { name: `Mark ${title} done` })).toHaveCount(0);
   await page.reload();
-  await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toBeVisible();
-  await page.getByTestId("dashboard-section-dates").getByRole("button", { name: `Archive ${title}` }).click();
-  await expect(page.getByTestId("dashboard-section-dates").getByText(title)).toHaveCount(0);
+  await expect(page.getByTestId("dashboard-live-dates").getByLabel(`Date title ${title}`)).toBeVisible();
+  await page.getByTestId("dashboard-live-dates").getByRole("button", { name: `Archive ${title}` }).click();
+  await expect(page.getByTestId("dashboard-live-dates").getByLabel(`Date title ${title}`)).toHaveCount(0);
 });
 
 test("today redirects to dashboard and completed today tasks stay interactable", async ({ page }) => {
@@ -605,7 +642,7 @@ test("today redirects to dashboard and completed today tasks stay interactable",
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   const taskTitle = "Process inbox captures";
-  const main = page.getByTestId("dashboard-section-tasks");
+  const main = page.getByTestId("dashboard-live-tasks");
   await expect(main.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
   await expect(main.getByLabel("Task title Write one clean latest-status note")).toBeVisible();
   await main.getByRole("button", { name: `Mark ${taskTitle} done` }).first().click();
@@ -614,8 +651,9 @@ test("today redirects to dashboard and completed today tasks stay interactable",
 
   await page.reload();
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
-  await expect(main.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
-  await expect(main.getByRole("button", { name: `Reopen ${taskTitle}` }).first()).toBeVisible();
+  const reloaded = page.getByTestId("dashboard-live-tasks");
+  await expect(reloaded.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
+  await expect(reloaded.getByRole("button", { name: `Reopen ${taskTitle}` }).first()).toBeVisible();
 });
 
 test("dashboard ignores legacy allTasks preferences and hides backlog controls", async ({ page }) => {
@@ -623,6 +661,8 @@ test("dashboard ignores legacy allTasks preferences and hides backlog controls",
   await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
   await expect(page.getByLabel("Task sort")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Show completed" })).toHaveCount(0);
+  await expect(page.getByTestId("dashboard-add-task-input")).toHaveCount(0);
+  await expect(page.getByTestId("dashboard-add-deadline-input")).toHaveCount(0);
   await page.evaluate(() => new Promise<void>((resolve, reject) => {
     const request = indexedDB.open("contextos-offline-v1");
     request.onerror = () => reject(request.error);
@@ -647,9 +687,9 @@ test("dashboard ignores legacy allTasks preferences and hides backlog controls",
   }));
   await page.reload();
   await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
-  await expect(page.getByTestId("dashboard-section-tasks")).toBeVisible();
-  await expect(page.getByTestId("dashboard-section-dates")).toBeVisible();
-  await expect(page.getByTestId("dashboard-section-projects")).toBeVisible();
+  await expect(page.getByTestId("dashboard-live-tasks")).toBeVisible();
+  await expect(page.getByTestId("dashboard-live-dates")).toBeVisible();
+  await expect(page.getByTestId("dashboard-section-projects")).toHaveCount(0);
 });
 
 test("search results open surfaces where task and standalone note records are visible", async ({ page }) => {
@@ -982,14 +1022,14 @@ test("project pages use recovery notes instead of project note cards", async ({ 
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   await expect(page.getByText("Notes / Decisions")).toHaveCount(0);
+  await expect(page.getByTestId("project-command-page")).toBeVisible();
+  await expect(page.getByTestId("project-live-tasks")).toBeVisible();
+  await expect(page.getByTestId("project-live-dates")).toBeVisible();
   const editor = page.getByTestId("project-recovery-notes");
-  await expect(editor).toContainText("Demo handoff");
 
   const content = `Recovery save check ${Date.now()}`;
   await markdownLine(editor, 0).fill(content);
-  await expect(page.getByText("Unsaved changes").first()).toBeVisible();
-  await editor.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText("Saved").first()).toBeVisible();
+  await expect(page.getByText("Saved").first()).toBeVisible({ timeout: 3000 });
 
   await page.reload();
   await expect(markdownLine(page.getByTestId("project-recovery-notes"), 0)).toHaveValue(content);
@@ -1020,14 +1060,14 @@ test("project sections follow the simplified order", async ({ page }) => {
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   await expect(page).toHaveURL(/\/projects\//);
   const sections = page.locator("main section");
-  const headings = await sections.locator("h3").allTextContents();
-  expect(headings.slice(0, 4).map((heading) => heading.replace(/\s*\(\d+\)$/, ""))).toEqual([
-    "Active Tasks",
+  const headings = await sections.locator("h2").allTextContents();
+  expect(headings.slice(0, 4).map((heading) => heading.replace(/\s*\d+$/, ""))).toEqual([
+    "Tasks",
     "Dates",
-    "Recovery Canvas",
+    "Recovery",
     "Subcontexts"
   ]);
-  await expect(page.getByTestId("daily-timeline-list")).toBeVisible();
+  await expect(page.getByTestId("project-live-tasks")).toBeVisible();
 });
 
 test("Today and This Week redirect to dashboard without priority terminology", async ({ page }) => {

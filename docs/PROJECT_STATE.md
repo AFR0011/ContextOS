@@ -1,7 +1,7 @@
 # ContextOS Project State
 
 ## Current Objective
-Complete Phase 1 Pareto simplification verification, then continue remaining deployment hardening before any public production release.
+Complete Notion-style command page verification for Dashboard and Project detail, then continue remaining deployment hardening before any public production release.
 
 ## Current Architecture
 - Next.js App Router under `src/app`.
@@ -23,15 +23,17 @@ Complete Phase 1 Pareto simplification verification, then continue remaining dep
 - `/date` is the advertised capture command. `/deadline` remains an accepted compatibility alias.
 - The internal `Deadline` collection remains in storage and sync payloads for offline compatibility, but visible product terminology is Date/Dates.
 - Tasks have one optional `scheduledTime`. Legacy cached and queued tasks normalize from `scheduledTime ?? startTime ?? endTime`.
-- Dashboard begins with reusable Quick Capture, then Today Tasks, Dates, Project Recovery, and compact Scratchpad.
-- Today Tasks is a compact editable task list built from overdue, due-today, planned-today, and in-progress tasks. Done tasks planned/due today remain visible and reopenable.
+- Dashboard is now a Notion-style command page: the primary page body is the existing Dashboard scratchpad editor, with pinned live Tasks and Dates blocks below it.
+- Dashboard `/task` commands create real workspace-level tasks; `/date` commands create real Dates. Plain Markdown checkboxes remain scratchpad content and do not create task records.
+- Dashboard Tasks is a compact editable live block built from all active workspace tasks, grouped by time, Area, or Project and scoped locally to all areas or one Domain. Done tasks planned/due today remain visible and reopenable.
 - Dashboard no longer shows the separate all-task reservoir, task sort control, Show completed toggle, drag/drop planning, or review prompt. Backlog/future tasks remain recoverable through Projects and Search.
-- Dates uses a title/date-first composer with optional time, location, and project fields behind Details.
+- Dates on Dashboard is a live block for overdue, today, and upcoming important Dates. New Dashboard Dates are created through `/date` commands.
 - Desktop navigation now shows Dashboard, Inbox, Search, and a Notion/Codex-like active project tree. Mobile bottom nav shows Dashboard, Inbox, Projects, and Search.
 - Service-worker shell cache is `contextos-shell-v2` and precaches `/dates`, not the legacy `/deadlines` route.
 - Dates contains only important-date records. Task due dates remain on task surfaces.
-- Project detail order is header, Active Tasks, Dates, Recovery Canvas, Subcontexts, and actions. Agent suggestions are hidden in the simplified visible surface.
-- Project Active Tasks is expanded and directly editable.
+- Project detail pages now use the command-page model: editable title/metadata, project notes editor, pinned Tasks, pinned Dates, compact Recovery fields, and Subcontexts.
+- Project `/task` and `/date` commands attach records to the current project and use the project Domain. Direct project records render first, followed by immediate child subcontext groups with descendant rollups.
+- Project Active Tasks remains expanded and directly editable through the pinned live block.
 - Project Notes / Decisions was removed. Existing project-linked notes migrate into `Project.recoveryNotes`; standalone Resources remain Notes.
 - Daily and weekly Priority records, editors, seed data, and client state are removed.
 - Legacy queued Priority mutations are acknowledged no-ops so old outboxes can drain.
@@ -42,7 +44,8 @@ Complete Phase 1 Pareto simplification verification, then continue remaining dep
 - `/api/health` returns no-store `200` when PostgreSQL is reachable and structured `503` when the database is unavailable.
 - Historical prototype/planning files have been archived under `docs/archive/`; active TypeScript excludes that archive.
 - Search task results open a surface where the task is visible, and standalone note results open Resources.
-- Task titles wrap in task surfaces, and completion toggles no longer reorder tasks solely by status.
+- Task titles wrap in task surfaces, completion toggles no longer reorder tasks solely by status, and command-page live blocks keep mobile task/date actions reachable.
+- The user-supplied `Notion-style editor demo/` folder remains a reference artifact only and is excluded from app TypeScript compilation.
 
 ## Data Migration
 - Migration `20260611130000_workflow_simplification` adds and populates `Task.scheduledTime`, then removes `startTime` and `endTime`.
@@ -63,6 +66,8 @@ Complete Phase 1 Pareto simplification verification, then continue remaining dep
 
 ## Latest Verification
 
+- Notion-style command-page checks on 2026-07-01: `npm run typecheck` passed, `npm run build` passed, `npx prisma validate` passed, `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "command page parser" --workers=1` passed with 1 test, and `git diff --check` passed with line-ending normalization warnings only.
+- DB-backed command-page verification remains blocked on 2026-07-01 because Docker Desktop's Linux engine pipe is unavailable and `npm run db:migrate` cannot reach PostgreSQL at `localhost:5432`.
 - Phase 1 Pareto simplification checks on 2026-07-01: `npm run typecheck` passed, `npm run build` passed, `npx prisma validate` passed, `npx playwright test tests/e2e/contextos.spec.ts -g "date utilities|dashboard preferences" --workers=1` passed, and `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/database-errors.spec.ts --workers=1` passed.
 - DB-backed verification remains blocked on 2026-07-01 because Docker Desktop's Linux engine pipe is unavailable and `npm run db:migrate` cannot reach PostgreSQL at `localhost:5432`.
 - v0.2.8 task-driven Daily timeline checks on 2026-06-22: `npm run typecheck` passed after narrowing Today task rows, `npm run build` passed, `npx prisma validate` passed, and `git diff --check` passed with line-ending normalization warnings only.
@@ -80,7 +85,7 @@ Complete Phase 1 Pareto simplification verification, then continue remaining dep
 - GitHub Actions CI passed on `codex/v0.2.8-ci-a11y-foundation`: `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
 
 ## Next Useful Work
-- Start Docker/Postgres, rerun the focused Phase 1 Dashboard/navigation e2e slice, then run full e2e if it passes.
+- Start Docker/Postgres, rerun `npm run db:migrate` and `npm run db:seed`, rerun the focused Dashboard/Project command-page e2e slice, then run full e2e if it passes.
 - Treat v0.2.7 cleanup, health endpoint, and CI workflow foundation as complete locally.
 - Push and observe the GitHub Actions workflow, then fix any remote-only CI issues.
 - Add production-like preview evidence, operational recovery evidence, deeper installed-PWA upgrade smoke, and provider/WAF defense-in-depth decisions before public production.

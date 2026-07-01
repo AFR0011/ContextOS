@@ -1,5 +1,32 @@
 # ContextOS Dev Log
 
+## 2026-07-01 - Notion-Style Command Pages
+
+Planner scope: implement the requested command-page simplification for Dashboard and Project detail without schema changes, record deletion, or importing the repo-root editor demo as a dependency.
+
+Implementation:
+
+- Added a shared `/task` and `/date` command parser with local-date handling, token stripping, required Date validation, and time behavior.
+- Extended the existing Markdown editor with a page-style mode, command filtering, inline validation, and command-line clearing after successful structured creation.
+- Added shared command-page editor and live task/date block components.
+- Rebuilt Dashboard as a page editor backed by `DashboardScratchpad.content`, with pinned live Tasks and Dates blocks plus localStorage-backed scope/group controls.
+- Rebuilt Project detail as a page editor backed by `Project.recoveryNotes`, with pinned Tasks and Dates grouped by direct project first and immediate child subcontext rollups below.
+- Removed old Dashboard Project Recovery/composer surfaces from the visible command page.
+- Updated focused e2e expectations for parser behavior, Dashboard command creation/scratchpad behavior, Project command attachment/grouping, and simplified visible surfaces.
+- Updated product, design, repo-map, run-protocol, state, QA, and risk docs.
+
+Verification:
+
+- `npm run typecheck` - passed.
+- `npm run build` - passed.
+- `npx prisma validate` - passed.
+- `docker compose ps` - blocked because Docker Desktop's Linux engine pipe is unavailable.
+- `npm run db:migrate` - blocked because PostgreSQL at `localhost:5432` is unavailable.
+- `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "command page parser" --workers=1` - passed, 1 test.
+- `git diff --check` - passed with line-ending normalization warnings only.
+
+Residual risk: DB-backed Dashboard and Project command-page e2e coverage is written but not executed locally because Postgres is unavailable. Rerun the focused command-page slice and then full e2e after Docker/Postgres is available.
+
 ## 2026-06-22 - v0.2.8 Task-Driven Daily Timeline
 
 Planner scope: implement one dashboard workflow batch that makes the Daily timeline a day lane derived from real tasks and today's Dates, while keeping Dashboard Tasks as the broader task reservoir.

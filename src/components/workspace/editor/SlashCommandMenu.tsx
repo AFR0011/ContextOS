@@ -155,8 +155,8 @@ export const CAPTURE_COMMANDS: CommandItem[] = [
   {
     command: "/task",
     label: "Task",
-    description: "Capture a structured task",
-    searchKeys: ["task", "todo", "capture"],
+    description: "Capture a task. Add [2026-07-10] (09:30)",
+    searchKeys: ["task", "todo", "capture", "date", "time"],
     icon: CheckSquare,
     kind: "capture",
     capture: "task"
@@ -182,11 +182,11 @@ export const CAPTURE_COMMANDS: CommandItem[] = [
   {
     command: "/date",
     label: "Date",
-    description: "Capture an important date",
-    searchKeys: ["deadline", "date", "calendar", "capture"],
+    description: "Capture a Date. Add [2026-07-10] (14:30)",
+    searchKeys: ["deadline", "date", "calendar", "capture", "time"],
     icon: Calendar,
     kind: "capture",
-    capture: "deadline"
+    capture: "date"
   },
   {
     command: "/status",

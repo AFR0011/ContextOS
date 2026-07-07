@@ -265,7 +265,7 @@ export function Dashboard2View() {
       <header className="mb-5 px-1">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--cos-primary-text)]">Daily Command Page</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--cos-text-strong)]">{loading ? "Loading dashboard" : "Dashboard"}</h1>
-        <p className="mt-2 text-sm text-[var(--cos-text-muted)]">Write freely. Use /task and /date when a line should become a real record.</p>
+        <p className="mt-2 text-sm text-[var(--cos-text-muted)]">Write freely. Use /task and /date when a line should become a real record. Add [date] and (time) for timing.</p>
       </header>
 
       {loading ? <div className="mb-4 rounded-lg border border-[var(--cos-border)] p-3 text-sm text-[var(--cos-text-muted)]">Loading cached command page...</div> : null}
@@ -275,7 +275,7 @@ export function Dashboard2View() {
         value={scratchpad?.content ?? ""}
         onSave={updateDashboardScratchpad}
         onCommandLine={handleCommandLine}
-        placeholder="Start typing. /task Send update today at:09:30 or /date Exam on:2026-07-10..."
+        placeholder="Start typing. /task Send update [2026-07-10] (09:30) or /date Exam [2026-07-10] (14:30)..."
         minLines={8}
       />
 

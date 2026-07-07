@@ -15,7 +15,7 @@ export type BlockType =
   | "code"
   | "divider";
 
-export type CaptureCommand = "task" | "note" | "project" | "deadline" | "status";
+export type CaptureCommand = "task" | "note" | "project" | "date" | "deadline" | "status";
 
 export interface CaptureLineResult {
   ok: boolean;

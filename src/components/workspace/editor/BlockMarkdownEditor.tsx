@@ -116,7 +116,7 @@ function commandBody(text: string, command: string, triggerIndex = 0) {
 }
 
 function captureReplacement(capture: CaptureCommand, body: string, block: EditorBlock): EditorBlock {
-  if (capture === "task" || capture === "deadline") {
+  if (capture === "task" || capture === "date" || capture === "deadline") {
     return {
       ...changeBlockType(block, "todo"),
       text: body,
@@ -217,7 +217,9 @@ export function BlockMarkdownEditor({
   const commands = useMemo(() => {
     if (!onCaptureLine) return FORMAT_COMMANDS;
     const allowed = allowedCaptureCommands ? new Set<CaptureCommand>(allowedCaptureCommands) : null;
-    const captureCommands = allowed ? CAPTURE_COMMANDS.filter((command) => command.capture && allowed.has(command.capture)) : CAPTURE_COMMANDS;
+    const captureCommands = allowed
+      ? CAPTURE_COMMANDS.filter((command) => command.capture && (allowed.has(command.capture) || (command.capture === "date" && allowed.has("deadline"))))
+      : CAPTURE_COMMANDS;
     return [...FORMAT_COMMANDS, ...captureCommands];
   }, [allowedCaptureCommands, onCaptureLine]);
   const hiddenIds = useMemo(() => hiddenBlockIdsForCollapsedToggles(blocks), [blocks]);
@@ -821,10 +823,12 @@ export function BlockMarkdownEditor({
       </div>
 
       <div className="mt-3 flex min-h-9 flex-wrap items-center justify-end gap-2 border-t border-[var(--cos-border-soft)] pt-2 text-[11px]">
-        {footer ?? (
+        {commandError ? (
+          <span className="mr-auto text-[var(--cos-danger-text)]">{commandError}</span>
+        ) : capturedFlash ? (
+          <span className="mr-auto cos-pill cos-pill-success">Captured</span>
+        ) : footer ?? (
           <>
-            {commandError ? <span className="mr-auto text-[var(--cos-danger-text)]">{commandError}</span> : null}
-            {capturedFlash ? <span className="cos-pill cos-pill-success">Captured</span> : null}
             {dirty ? <span className="text-[var(--cos-warning-text)]">Unsaved changes</span> : savedFlash ? <span className="text-[var(--cos-success-text)]">Saved</span> : null}
             {onSave && !hideSaveButton ? (
               <button

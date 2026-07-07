@@ -1103,7 +1103,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         value={project.recoveryNotes}
         onSave={(recoveryNotes) => updateProject(project.id, { recoveryNotes })}
         onCommandLine={handleCommandLine}
-        placeholder="Write project context. /task Draft next note today or /date Final review on:2026-07-10..."
+        placeholder="Write project context. /task Draft next note [2026-07-10] (09:30) or /date Final review [2026-07-10]..."
         minLines={9}
       />
 

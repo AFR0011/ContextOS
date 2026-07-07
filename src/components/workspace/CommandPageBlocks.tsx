@@ -110,7 +110,7 @@ export function CommandPageEditor({
       value={draft}
       onChange={setDraft}
       onCaptureLine={onCommandLine}
-      allowedCaptureCommands={["task", "deadline"]}
+      allowedCaptureCommands={["task", "date"]}
       placeholder={placeholder}
       dataTestId={dataTestId}
       minLines={minLines}
@@ -119,7 +119,7 @@ export function CommandPageEditor({
       footer={
         <>
           <span className="mr-auto text-[var(--cos-text-subtle)]">{autosaveLabel(saveState)}</span>
-          <span className="text-[var(--cos-text-subtle)]">Use /task or /date for records</span>
+          <span className="text-[var(--cos-text-subtle)]">Hint: /task or /date with [2026-07-10] (09:30)</span>
         </>
       }
     />

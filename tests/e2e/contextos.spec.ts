@@ -206,11 +206,29 @@ test("command page parser handles explicit task and date commands", async () => 
     plannedDate: "2026-07-01",
     scheduledTime: "14:00"
   });
+  expect(parseCommandPageLine("/task Send update [2026-07-10] (930)", "2026-07-01")).toMatchObject({
+    type: "task",
+    title: "Send update",
+    plannedDate: "2026-07-10",
+    scheduledTime: "09:30"
+  });
   expect(parseCommandPageLine("/date Exam tomorrow at:10:00", "2026-07-01")).toMatchObject({
     type: "date",
     title: "Exam",
     date: "2026-07-02",
     time: "10:00"
+  });
+  expect(parseCommandPageLine("/date Exam [20260710] (14)", "2026-07-01")).toMatchObject({
+    type: "date",
+    title: "Exam",
+    date: "2026-07-10",
+    time: "14:00"
+  });
+  expect(parseCommandPageLine("/deadline Review [7/10] (1430)", "2026-07-01")).toMatchObject({
+    type: "date",
+    title: "Review",
+    date: "2026-07-10",
+    time: "14:30"
   });
   expect(parseCommandPageLine("/date Missing date", "2026-07-01")).toMatchObject({
     type: "error",
@@ -372,18 +390,21 @@ test("quick capture appears in inbox and can convert to a task", async ({ page }
 });
 
 test("dashboard command page creates real task and date records", async ({ page }) => {
+  const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
+  const today = localDateKey();
   const taskTitle = `Dashboard command task ${Date.now()}`;
   const dateTitle = `Dashboard command date ${Date.now()}`;
   const editor = page.getByTestId("dashboard-scratchpad");
+  await expect(page.getByText("Hint: /task or /date with [2026-07-10] (09:30)")).toBeVisible();
 
-  await markdownLine(editor, 0).fill(`/task ${taskTitle} today at:09:15`);
+  await markdownLine(editor, 0).fill(`/task ${taskTitle} [${today}] (09:15)`);
   await markdownLine(editor, 0).press("Enter");
   await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${taskTitle}`)).toBeVisible();
   await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`${taskTitle} scheduled time`)).toHaveValue("09:15");
   await expect(markdownLine(editor, 0)).toHaveValue("");
 
-  await markdownLine(editor, 0).fill(`/date ${dateTitle} today at:14:30`);
+  await markdownLine(editor, 0).fill(`/date ${dateTitle} [${today}] (14:30)`);
   await markdownLine(editor, 0).press("Enter");
   await expect(page.getByTestId("dashboard-live-dates").getByLabel(`Date title ${dateTitle}`)).toBeVisible();
   await expect(page.getByTestId("dashboard-live-dates").getByText("14:30")).toBeVisible();

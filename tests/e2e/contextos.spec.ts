@@ -440,6 +440,41 @@ test("project subcontexts roll child tasks and dates into parent recovery", asyn
   await expect(page.getByTestId("project-live-dates").getByLabel(`Date title ${childDate}`)).toBeVisible();
 });
 
+test("project add buttons create direct project task and date records", async ({ page }) => {
+  const { localDateKey } = await import("../../src/lib/dates");
+  await login(page);
+  await page.getByRole("button", { name: "Projects" }).click();
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
+
+  const today = localDateKey();
+  const taskTitle = `Button project task ${Date.now()}`;
+  const dateTitle = `Button project date ${Date.now()}`;
+  const tasks = page.getByTestId("project-live-tasks");
+  const dates = page.getByTestId("project-live-dates");
+
+  await tasks.getByRole("button", { name: "Add task", exact: true }).click();
+  const taskComposer = page.getByTestId("project-task-composer");
+  await taskComposer.getByPlaceholder("Task title...").fill(taskTitle);
+  await taskComposer.getByLabel("Task planned date").fill(today);
+  await taskComposer.getByLabel("Task scheduled time").fill("10:45");
+  await taskComposer.getByRole("button", { name: "Add task", exact: true }).click();
+  await expect(tasks.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
+  await expect(tasks.getByLabel(`${taskTitle} scheduled time`)).toHaveValue("10:45");
+
+  await dates.getByRole("button", { name: "Add Date", exact: true }).click();
+  const dateComposer = page.getByTestId("project-date-composer");
+  await dateComposer.getByPlaceholder("Date title...").fill(dateTitle);
+  await dateComposer.getByLabel("Date date").fill(today);
+  await dateComposer.getByLabel("Date time").fill("13:20");
+  await dateComposer.getByRole("button", { name: "Add Date", exact: true }).click();
+  await expect(dates.getByLabel(`Date title ${dateTitle}`)).toBeVisible();
+  await expect(dates.getByText("13:20")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByTestId("project-live-tasks").getByLabel(`Task title ${taskTitle}`)).toBeVisible();
+  await expect(page.getByTestId("project-live-dates").getByLabel(`Date title ${dateTitle}`)).toBeVisible();
+});
+
 test("dashboard command page autosaves local Markdown without creating records", async ({ page }) => {
   await login(page);
   const heading = `Scratchpad check ${Date.now()}`;

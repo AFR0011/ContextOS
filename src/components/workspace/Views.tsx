@@ -913,6 +913,15 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const { data, updateProject, addProject, addTask, addDeadline } = useWorkspace();
   const project = data.projects.find((item) => item.id === projectId);
   const [newSubcontext, setNewSubcontext] = useState("");
+  const [showTaskComposer, setShowTaskComposer] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskPlannedDate, setNewTaskPlannedDate] = useState("");
+  const [newTaskDueDate, setNewTaskDueDate] = useState("");
+  const [newTaskScheduledTime, setNewTaskScheduledTime] = useState("");
+  const [showDateComposer, setShowDateComposer] = useState(false);
+  const [newDateTitle, setNewDateTitle] = useState("");
+  const [newDateDate, setNewDateDate] = useState(localDateKey());
+  const [newDateTime, setNewDateTime] = useState("");
 
   if (!project) {
     return <Page title="Project not found"><button onClick={() => router.push("/projects")} className="text-sm font-semibold text-[var(--cos-primary-text)]">Back to projects</button></Page>;
@@ -972,6 +981,39 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       nextAction: ""
     });
     setNewSubcontext("");
+  }
+
+  function createProjectTask() {
+    const title = newTaskTitle.trim();
+    if (!title) return;
+    addTask({
+      title,
+      plannedDate: newTaskPlannedDate || null,
+      dueDate: newTaskDueDate || null,
+      scheduledTime: newTaskScheduledTime || null,
+      projectId: currentProject.id,
+      domainId: currentProject.domainId
+    });
+    setNewTaskTitle("");
+    setNewTaskPlannedDate("");
+    setNewTaskDueDate("");
+    setNewTaskScheduledTime("");
+    setShowTaskComposer(false);
+  }
+
+  function createProjectDate() {
+    const title = newDateTitle.trim();
+    if (!title) return;
+    addDeadline({
+      title,
+      date: newDateDate || today,
+      time: newDateTime || null,
+      projectId: currentProject.id
+    });
+    setNewDateTitle("");
+    setNewDateDate(today);
+    setNewDateTime("");
+    setShowDateComposer(false);
   }
 
   function handleCommandLine(line: string) {
@@ -1066,11 +1108,123 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       />
 
       <div className="mt-6 space-y-1">
-        <LiveBlock title="Tasks" count={taskCount} testId="project-live-tasks">
+        <LiveBlock
+          title="Tasks"
+          count={taskCount}
+          testId="project-live-tasks"
+          action={
+            <button
+              type="button"
+              aria-expanded={showTaskComposer}
+              aria-controls="project-task-composer"
+              onClick={() => setShowTaskComposer((open) => !open)}
+              className="cos-btn cos-btn-secondary min-h-9 px-3 py-1 text-xs"
+            >
+              <Plus className="h-4 w-4" /> Add task
+            </button>
+          }
+        >
+          {showTaskComposer ? (
+            <form
+              id="project-task-composer"
+              data-testid="project-task-composer"
+              onSubmit={(event) => {
+                event.preventDefault();
+                createProjectTask();
+              }}
+              className="mb-3 rounded-lg border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] p-3"
+            >
+              <input
+                value={newTaskTitle}
+                onChange={(event) => setNewTaskTitle(event.target.value)}
+                placeholder="Task title..."
+                className="cos-input w-full px-3 py-2 text-sm"
+                autoFocus
+              />
+              <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_0.8fr_auto_auto] sm:items-center">
+                <input
+                  aria-label="Task planned date"
+                  type="date"
+                  value={newTaskPlannedDate}
+                  onChange={(event) => setNewTaskPlannedDate(event.target.value)}
+                  className="cos-input px-3 py-2 text-sm"
+                />
+                <input
+                  aria-label="Task due date"
+                  type="date"
+                  value={newTaskDueDate}
+                  onChange={(event) => setNewTaskDueDate(event.target.value)}
+                  className="cos-input px-3 py-2 text-sm"
+                />
+                <input
+                  aria-label="Task scheduled time"
+                  type="time"
+                  value={newTaskScheduledTime}
+                  onChange={(event) => setNewTaskScheduledTime(event.target.value)}
+                  className="cos-input px-3 py-2 text-sm"
+                />
+                <button type="submit" className="cos-btn cos-btn-primary px-3 py-2 text-sm">Add task</button>
+                <button type="button" onClick={() => setShowTaskComposer(false)} className="cos-btn cos-btn-ghost px-3 py-2 text-sm">Cancel</button>
+              </div>
+            </form>
+          ) : null}
           <CommandTaskRows groups={taskGroups} emptyTitle="No active tasks for this project" />
         </LiveBlock>
 
-        <LiveBlock title="Dates" count={dateCount} testId="project-live-dates">
+        <LiveBlock
+          title="Dates"
+          count={dateCount}
+          testId="project-live-dates"
+          action={
+            <button
+              type="button"
+              aria-expanded={showDateComposer}
+              aria-controls="project-date-composer"
+              onClick={() => setShowDateComposer((open) => !open)}
+              className="cos-btn cos-btn-secondary min-h-9 px-3 py-1 text-xs"
+            >
+              <Plus className="h-4 w-4" /> Add Date
+            </button>
+          }
+        >
+          {showDateComposer ? (
+            <form
+              id="project-date-composer"
+              data-testid="project-date-composer"
+              onSubmit={(event) => {
+                event.preventDefault();
+                createProjectDate();
+              }}
+              className="mb-3 rounded-lg border border-[var(--cos-date)] bg-[var(--cos-date-soft)] p-3"
+            >
+              <input
+                value={newDateTitle}
+                onChange={(event) => setNewDateTitle(event.target.value)}
+                placeholder="Date title..."
+                className="cos-input w-full px-3 py-2 text-sm"
+                autoFocus
+              />
+              <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_0.8fr_auto_auto] sm:items-center">
+                <input
+                  aria-label="Date date"
+                  type="date"
+                  value={newDateDate}
+                  onChange={(event) => setNewDateDate(event.target.value)}
+                  className="cos-input px-3 py-2 text-sm"
+                  required
+                />
+                <input
+                  aria-label="Date time"
+                  type="time"
+                  value={newDateTime}
+                  onChange={(event) => setNewDateTime(event.target.value)}
+                  className="cos-input px-3 py-2 text-sm"
+                />
+                <button type="submit" className="cos-btn cos-btn-primary px-3 py-2 text-sm">Add Date</button>
+                <button type="button" onClick={() => setShowDateComposer(false)} className="cos-btn cos-btn-ghost px-3 py-2 text-sm">Cancel</button>
+              </div>
+            </form>
+          ) : null}
           <CommandDateRows groups={dateGroups} emptyTitle="No active dates for this project" />
         </LiveBlock>
 

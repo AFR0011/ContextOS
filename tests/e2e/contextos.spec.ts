@@ -87,6 +87,30 @@ async function offlineCacheState(page: Page, text: string) {
   }, text);
 }
 
+async function workspaceProjectRecoveryIncludes(page: Page, projectName: string, text: string) {
+  return page.evaluate(async ({ projectName: expectedProjectName, text: expectedText }) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("contextos-offline-v1", 1);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains("kv")) database.createObjectStore("kv");
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    const workspace = await new Promise<{ projects?: { name: string; recoveryNotes: string }[] } | null>((resolve, reject) => {
+      const tx = db.transaction("kv", "readonly");
+      const request = tx.objectStore("kv").get("workspace");
+      request.onsuccess = () => resolve((request.result as { projects?: { name: string; recoveryNotes: string }[] } | undefined) ?? null);
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return Boolean(workspace?.projects?.some((project) => project.name === expectedProjectName && project.recoveryNotes.includes(expectedText)));
+  }, { projectName, text });
+}
+
 async function dashboardScratchpadContent(page: Page) {
   return page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -381,12 +405,118 @@ test("quick capture appears in inbox and can convert to a task", async ({ page }
   await page.getByPlaceholder(/Quick capture/i).press("Enter");
   await expect(page.getByText(`/task ${text}`)).toBeVisible();
   const captureCard = page.getByTestId("capture-card").filter({ hasText: `/task ${text}` });
-  await captureCard.getByRole("button", { name: "Capture actions" }).click();
   await captureCard.getByRole("button", { name: "Convert to task" }).click();
-  await expect(page.getByText("converted")).toBeVisible();
+  await expect(captureCard).toHaveCount(0);
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.getByPlaceholder("Search workspace...").fill(text);
   await expect(page.getByText(text).first()).toBeVisible();
+});
+
+test("dashboard inbox preview opens one-by-one review mode", async ({ page }) => {
+  await login(page);
+  const preview = page.getByTestId("dashboard-inbox-preview");
+  await expect(preview).toBeVisible();
+  await expect(preview).toContainText("Inbox");
+  await expect(preview).toContainText("/task Clean up deployment checklist");
+  await preview.getByRole("button", { name: "Review Inbox", exact: true }).click();
+  await expect(page).toHaveURL(/\/inbox\?review=1/);
+  await expect(page.getByTestId("inbox-review-panel")).toBeVisible();
+  await expect(page.getByText(/1 of \d+/)).toBeVisible();
+});
+
+test("inbox review converts slash task captures with parsed date and time", async ({ page }) => {
+  await login(page);
+  const { localDateKey } = await import("../../src/lib/dates");
+  const today = localDateKey();
+  const title = `Review task ${Date.now()}`;
+  await page.goto("/inbox");
+  await page.getByPlaceholder(/Quick capture/i).fill(`/task ${title} [${today}] (10:45)`);
+  await page.getByPlaceholder(/Quick capture/i).press("Enter");
+
+  const captureCard = page.getByTestId("capture-card").filter({ hasText: title });
+  await captureCard.getByRole("button", { name: "Review", exact: true }).click();
+  await expect(page.getByTestId("inbox-review-panel")).toBeVisible();
+  await expect(page.getByTestId("triage-title-input")).toHaveValue(title);
+  await expect(page.locator('input[type="date"]').first()).toHaveValue(today);
+  await expect(page.locator('input[type="time"]').first()).toHaveValue("10:45");
+  await page.getByRole("button", { name: "Create task" }).click();
+
+  await page.goto("/dashboard");
+  await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${title}`)).toBeVisible();
+  await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`${title} scheduled time`)).toHaveValue("10:45");
+});
+
+test("inbox review creates a date with parsed date and time", async ({ page }) => {
+  await login(page);
+  const title = `Review date ${Date.now()}`;
+  await page.goto("/inbox");
+  await page.getByPlaceholder(/Quick capture/i).fill(`/date ${title} [2026-07-20] (16:30)`);
+  await page.getByPlaceholder(/Quick capture/i).press("Enter");
+
+  const captureCard = page.getByTestId("capture-card").filter({ hasText: title });
+  await captureCard.getByRole("button", { name: "Review", exact: true }).click();
+  await expect(page.getByTestId("triage-title-input")).toHaveValue(title);
+  await expect(page.getByTestId("triage-date-input")).toHaveValue("2026-07-20");
+  await expect(page.getByTestId("triage-time-input")).toHaveValue("16:30");
+  await page.getByRole("button", { name: "Create Date" }).click();
+
+  await page.goto("/dates");
+  await expectInputValue(page, "input", title);
+  await expectInputValue(page, 'input[type="date"]', "2026-07-20");
+  await expect(page.getByText("16:30")).toBeVisible();
+});
+
+test("inbox review attaches capture context to a project", async ({ page }) => {
+  await login(page);
+  const text = `Attach inbox context ${Date.now()}`;
+  await page.goto("/inbox");
+  await page.getByPlaceholder(/Quick capture/i).fill(text);
+  await page.getByPlaceholder(/Quick capture/i).press("Enter");
+
+  const captureCard = page.getByTestId("capture-card").filter({ hasText: text });
+  await captureCard.getByRole("button", { name: "Review", exact: true }).click();
+  await page.getByRole("button", { name: "Attach to project" }).click();
+  await page.getByTestId("triage-attach-project-select").selectOption({ label: "ContextOS Demo" });
+  await page.getByRole("button", { name: "Attach", exact: true }).click();
+  await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", text)).toBe(true);
+
+  await page.goto("/projects");
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
+  await expect(page.getByTestId("project-recovery-notes")).toBeVisible();
+  await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", text)).toBe(true);
+});
+
+test("review archive and delete remove captures from the unprocessed queue", async ({ page }) => {
+  await login(page);
+  const archiveText = `Archive capture ${Date.now()}`;
+  const deleteText = `Delete capture ${Date.now()}`;
+  await page.goto("/inbox");
+  await page.getByPlaceholder(/Quick capture/i).fill(archiveText);
+  await page.getByPlaceholder(/Quick capture/i).press("Enter");
+  await page.getByPlaceholder(/Quick capture/i).fill(deleteText);
+  await page.getByPlaceholder(/Quick capture/i).press("Enter");
+
+  await page.getByTestId("capture-card").filter({ hasText: archiveText }).getByRole("button", { name: "Review", exact: true }).click();
+  await page.getByTestId("inbox-review-panel").getByRole("button", { name: "Archive" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
+  await expect(page.getByTestId("capture-card").filter({ hasText: archiveText })).toHaveCount(0);
+
+  await page.getByTestId("capture-card").filter({ hasText: deleteText }).getByRole("button", { name: "Review", exact: true }).click();
+  await page.getByTestId("inbox-review-panel").getByRole("button", { name: "Delete" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
+  await expect(page.getByTestId("capture-card").filter({ hasText: deleteText })).toHaveCount(0);
+});
+
+test("mobile inbox actions remain reachable with touch-sized targets", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  await page.goto("/inbox");
+  const card = page.getByTestId("capture-card").filter({ hasText: "/task Clean up deployment checklist" });
+  await expectMinTouchTarget(card.getByRole("button", { name: "Review", exact: true }));
+  await expectMinTouchTarget(card.getByRole("button", { name: "Convert to task" }));
+  await expectMinTouchTarget(card.getByRole("button", { name: "Convert to date" }));
+  await expectMinTouchTarget(card.getByRole("button", { name: "Archive" }));
+  await expectMinTouchTarget(card.getByRole("button", { name: "Delete" }));
 });
 
 test("dashboard command page creates real task and date records", async ({ page }) => {

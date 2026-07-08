@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CheckSquare } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarDays, CheckSquare, Inbox } from "lucide-react";
+import { formatDistanceToNow, parseISO } from "date-fns";
 import {
   CommandDateRows,
   CommandPageEditor,
@@ -14,7 +16,7 @@ import {
 import { parseCommandPageLine } from "@/lib/command-page-commands";
 import { localDateKey } from "@/lib/dates";
 import { useWorkspace } from "@/lib/client-store";
-import type { Deadline, Domain, Project, Task } from "@/lib/types";
+import type { Capture, Deadline, Domain, Project, Task } from "@/lib/types";
 
 type DashboardGroupMode = "time" | "area" | "project";
 
@@ -213,7 +215,41 @@ function readStoredView() {
   }
 }
 
+function dashboardCaptureType(capture: Capture) {
+  if (capture.type === "deadline") return "Date";
+  if (capture.type) return capture.type[0].toUpperCase() + capture.type.slice(1);
+  return "Capture";
+}
+
+function DashboardInboxPreview({ captures, count, onReview }: { captures: Capture[]; count: number; onReview: () => void }) {
+  if (!count) return null;
+  return (
+    <LiveBlock
+      title="Inbox"
+      count={count}
+      testId="dashboard-inbox-preview"
+      action={
+        <button onClick={onReview} className="cos-btn cos-btn-primary min-h-9 px-3 py-1.5 text-xs">
+          <Inbox className="h-4 w-4" />
+          Review Inbox
+        </button>
+      }
+    >
+      <div className="space-y-1">
+        {captures.map((capture) => (
+          <button key={capture.id} onClick={onReview} className="flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left hover:bg-[var(--cos-bg-soft)]">
+            <span className="cos-pill cos-pill-primary shrink-0">{dashboardCaptureType(capture)}</span>
+            <span className="min-w-0 flex-1 break-words text-sm text-[var(--cos-text-strong)]">{capture.text}</span>
+            <span className="hidden shrink-0 text-[11px] text-[var(--cos-text-subtle)] sm:inline">{formatDistanceToNow(parseISO(capture.createdAt), { addSuffix: true })}</span>
+          </button>
+        ))}
+      </div>
+    </LiveBlock>
+  );
+}
+
 export function Dashboard2View() {
+  const router = useRouter();
   const { data, loading, sync, addTask, addDeadline, updateDashboardScratchpad } = useWorkspace();
   const today = localDateKey();
   const scratchpad = data.dashboardScratchpads[0];
@@ -240,6 +276,10 @@ export function Dashboard2View() {
   );
   const taskCount = taskGroups.reduce((count, group) => count + group.rows.length, 0);
   const dateCount = dateGroups.reduce((count, group) => count + group.rows.length, 0);
+  const unprocessedCaptures = useMemo(
+    () => data.captures.filter((capture) => capture.status === "unprocessed").sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [data.captures]
+  );
 
   function handleCommandLine(line: string) {
     const parsed = parseCommandPageLine(line, today);
@@ -280,6 +320,7 @@ export function Dashboard2View() {
       />
 
       <div className="mt-6 space-y-1">
+        <DashboardInboxPreview captures={unprocessedCaptures.slice(0, 3)} count={unprocessedCaptures.length} onReview={() => router.push("/inbox?review=1")} />
         <LiveBlock
           title="Tasks"
           count={taskCount}

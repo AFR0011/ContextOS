@@ -103,6 +103,32 @@ function stripCommand(text: string, command: string) {
   return text.replace(new RegExp(`^\\/${command}\\s+`, "i"), "").trim();
 }
 
+function captureTitle(capture: Capture) {
+  if (capture.type === "deadline") {
+    return capture.text.replace(/^\/(?:date|deadline)\s+/i, "").trim() || capture.text;
+  }
+  if (capture.type) return stripCommand(capture.text, capture.type) || capture.text;
+  return capture.text;
+}
+
+function appendInboxContext(recoveryNotes: string, capture: Capture) {
+  const section = "## Inbox context";
+  const line = `- ${capture.createdAt.slice(0, 10)}: ${capture.text.trim()}`;
+  const trimmed = recoveryNotes.trim();
+  if (!trimmed) return `${section}\n${line}`;
+  if (trimmed.includes(section)) return trimmed.replace(section, `${section}\n${line}`);
+  return `${trimmed}\n\n${section}\n${line}`;
+}
+
+export type TriageCaptureAction =
+  | { type: "task"; title: string; plannedDate?: string | null; dueDate?: string | null; scheduledTime?: string | null; projectId?: string | null; domainId?: string | null }
+  | { type: "date"; title: string; date: string; time?: string | null; projectId?: string | null; notes?: string }
+  | { type: "project"; name: string; domainId?: string | null; currentObjective?: string; nextAction?: string }
+  | { type: "note"; title: string; content?: string; domainId?: string | null; projectId?: string | null }
+  | { type: "attach-project"; projectId: string }
+  | { type: "archive" }
+  | { type: "delete" };
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -218,6 +244,7 @@ interface StoreApi {
   resetDemoData: () => Promise<void>;
   addCapture: (text: string) => void;
   updateCapture: (id: string, updates: Partial<Capture>) => void;
+  triageCapture: (id: string, action: TriageCaptureAction) => void;
   convertCapture: (id: string, target: "task" | "project" | "note" | "deadline") => void;
   addTask: (data: Partial<Task> & { title: string }) => string;
   updateTask: (id: string, updates: Partial<Task>) => void;
@@ -464,6 +491,108 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const api = useMemo<StoreApi>(() => {
     const defaultDomainId = () => dataRef.current.domains.find((domain) => !domain.archived)?.id || "";
     const notesDomainId = () => dataRef.current.domains.find((domain) => domain.name === "Notes")?.id || defaultDomainId();
+    const projectDomainId = (projectId: string | null | undefined) => {
+      if (!projectId) return null;
+      return byId(dataRef.current.projects, projectId)?.domainId ?? null;
+    };
+    const triageCapture = (id: string, action: TriageCaptureAction) => {
+      const capture = byId(dataRef.current.captures, id);
+      if (!capture) return;
+
+      if (action.type === "archive") {
+        mutate("captures", { ...capture, status: "archived" });
+        return;
+      }
+      if (action.type === "delete") {
+        mutate("captures", { ...capture, status: "deleted" });
+        return;
+      }
+      if (action.type === "attach-project") {
+        const project = byId(dataRef.current.projects, action.projectId);
+        if (!project) return;
+        mutate("projects", { ...project, recoveryNotes: appendInboxContext(project.recoveryNotes, capture) });
+        mutate("captures", { ...capture, status: "attached", convertedToId: project.id });
+        return;
+      }
+
+      const ts = now();
+      const fallbackTitle = captureTitle(capture);
+      let convertedToId = "";
+
+      if (action.type === "task") {
+        convertedToId = newId("task");
+        const projectId = action.projectId || null;
+        mutate("tasks", {
+          id: convertedToId,
+          title: action.title.trim() || fallbackTitle,
+          plannedDate: action.plannedDate || null,
+          dueDate: action.dueDate || null,
+          scheduledTime: action.scheduledTime || null,
+          projectId,
+          domainId: action.domainId ?? projectDomainId(projectId),
+          status: "todo",
+          createdAt: ts,
+          updatedAt: ts,
+          archivedAt: null,
+          trashedAt: null
+        } satisfies Task);
+      }
+
+      if (action.type === "date") {
+        convertedToId = newId("deadline");
+        mutate("deadlines", {
+          id: convertedToId,
+          title: action.title.trim() || fallbackTitle,
+          date: action.date,
+          time: action.time || null,
+          location: "",
+          projectId: action.projectId || null,
+          taskIds: [],
+          notes: action.notes ?? "",
+          createdAt: ts,
+          updatedAt: ts,
+          archivedAt: null,
+          trashedAt: null
+        } satisfies Deadline);
+      }
+
+      if (action.type === "project") {
+        convertedToId = newId("proj");
+        mutate("projects", {
+          id: convertedToId,
+          name: action.name.trim() || fallbackTitle,
+          domainId: action.domainId || notesDomainId(),
+          parentProjectId: null,
+          status: "active",
+          currentObjective: action.currentObjective ?? "",
+          nextAction: action.nextAction ?? "",
+          latestStatus: "",
+          recoveryNotes: "",
+          openLoops: [],
+          createdAt: ts,
+          updatedAt: ts,
+          archivedAt: null,
+          trashedAt: null
+        } satisfies Project);
+      }
+
+      if (action.type === "note") {
+        convertedToId = newId("note");
+        mutate("notes", {
+          id: convertedToId,
+          title: action.title.trim() || fallbackTitle,
+          content: action.content ?? capture.text,
+          projectId: action.projectId || null,
+          domainId: action.domainId || notesDomainId(),
+          createdAt: ts,
+          updatedAt: ts,
+          archivedAt: null,
+          trashedAt: null
+        } satisfies Note);
+      }
+
+      if (convertedToId) mutate("captures", { ...capture, status: "converted", convertedToId });
+    };
 
     return {
       data,
@@ -522,85 +651,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         const capture = byId(dataRef.current.captures, id);
         if (capture) mutate("captures", { ...capture, ...updates });
       },
+      triageCapture,
       convertCapture: (id, target) => {
         const capture = byId(dataRef.current.captures, id);
         if (!capture) return;
-        const ts = now();
-        const rawTitle = capture.type === "deadline"
-          ? capture.text.replace(/^\/(?:date|deadline)\s+/i, "").trim()
-          : capture.type
-            ? stripCommand(capture.text, capture.type)
-            : capture.text;
-        const title = rawTitle || capture.text;
-        let convertedToId = "";
-        if (target === "task") {
-          convertedToId = newId("task");
-          mutate("tasks", {
-            id: convertedToId,
-            title,
-            plannedDate: null,
-            dueDate: null,
-            scheduledTime: null,
-            projectId: null,
-            domainId: null,
-            status: "todo",
-            createdAt: ts,
-            updatedAt: ts,
-            archivedAt: null,
-            trashedAt: null
-          } satisfies Task);
-        }
-        if (target === "project") {
-          convertedToId = newId("proj");
-          mutate("projects", {
-            id: convertedToId,
-            name: title,
-            domainId: notesDomainId(),
-            parentProjectId: null,
-            status: "active",
-            currentObjective: "",
-            nextAction: "",
-            latestStatus: "",
-            recoveryNotes: "",
-            openLoops: [],
-            createdAt: ts,
-            updatedAt: ts,
-            archivedAt: null,
-            trashedAt: null
-          } satisfies Project);
-        }
-        if (target === "note") {
-          convertedToId = newId("note");
-          mutate("notes", {
-            id: convertedToId,
-            title,
-            content: "",
-            projectId: null,
-            domainId: notesDomainId(),
-            createdAt: ts,
-            updatedAt: ts,
-            archivedAt: null,
-            trashedAt: null
-          } satisfies Note);
-        }
-        if (target === "deadline") {
-          convertedToId = newId("deadline");
-          mutate("deadlines", {
-            id: convertedToId,
-            title,
-            date: localDateKey(),
-            time: null,
-            location: "",
-            projectId: null,
-            taskIds: [],
-            notes: "",
-            createdAt: ts,
-            updatedAt: ts,
-            archivedAt: null,
-            trashedAt: null
-          } satisfies Deadline);
-        }
-        mutate("captures", { ...capture, status: "converted", convertedToId });
+        const title = captureTitle(capture);
+        if (target === "task") triageCapture(id, { type: "task", title });
+        if (target === "project") triageCapture(id, { type: "project", name: title, domainId: notesDomainId() });
+        if (target === "note") triageCapture(id, { type: "note", title, content: capture.text, domainId: notesDomainId() });
+        if (target === "deadline") triageCapture(id, { type: "date", title, date: localDateKey() });
       },
       addTask: (input) => {
         const ts = now();

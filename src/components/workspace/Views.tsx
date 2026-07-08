@@ -21,7 +21,6 @@ import {
   Layers,
   MapPin,
   Inbox,
-  MoreHorizontal,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -45,7 +44,7 @@ import {
 } from "@/components/workspace/CommandPageBlocks";
 import { DailySchedule, type DailyScheduleRow } from "@/components/workspace/DailySchedule";
 import { parseCommandPageLine } from "@/lib/command-page-commands";
-import { useWorkspace } from "@/lib/client-store";
+import { useWorkspace, type TriageCaptureAction } from "@/lib/client-store";
 import { isDateKeyInLocalWeek, localDateKey, localWeekStartKey } from "@/lib/dates";
 import type { Capture, Deadline, Domain, Note, Project, ReviewType, Task, TaskStatus } from "@/lib/types";
 
@@ -268,22 +267,251 @@ export function DashboardView() {
   return <Dashboard2View />;
 }
 
+type InboxFilter = "unprocessed" | "processed" | "archived" | "all";
+type TriageMode = "task" | "date" | "project" | "note" | "attach-project";
+type QuickCaptureTarget = Exclude<TriageMode, "attach-project">;
+
+interface CaptureReviewDraft {
+  mode: TriageMode;
+  title: string;
+  details: string;
+  taskPlannedDate: string;
+  taskDueDate: string;
+  taskScheduledTime: string;
+  taskProjectId: string;
+  dateDate: string;
+  dateTime: string;
+  dateProjectId: string;
+  projectName: string;
+  projectDomainId: string;
+  noteTitle: string;
+  noteDomainId: string;
+  noteContent: string;
+  attachProjectId: string;
+}
+
+function activeDomainOptions(domains: Domain[]) {
+  return domains.filter((domain) => !domain.archived);
+}
+
+function notesDomainId(domains: Domain[]) {
+  return domains.find((domain) => domain.name === "Notes")?.id ?? activeDomainOptions(domains)[0]?.id ?? "";
+}
+
+function captureTypeLabel(capture: Capture) {
+  if (capture.type === "deadline") return "Date";
+  if (capture.type) return capture.type[0].toUpperCase() + capture.type.slice(1);
+  return "Capture";
+}
+
+function captureWorkingTitle(capture: Capture) {
+  const text = capture.text.trim();
+  if (capture.type === "deadline") return text.replace(/^\/(?:date|deadline)\s+/i, "").trim() || text;
+  if (capture.type) return text.replace(new RegExp(`^\\/${capture.type}\\s+`, "i"), "").trim() || text;
+  return text;
+}
+
+function defaultModeForCapture(capture: Capture, today: string): TriageMode {
+  const parsed = parseCommandPageLine(capture.text, today);
+  if (parsed.type === "task") return "task";
+  if (parsed.type === "date") return "date";
+  if (capture.type === "deadline") return "date";
+  if (capture.type === "project") return "project";
+  if (capture.type === "note" || capture.type === "status") return "note";
+  return "task";
+}
+
+function captureDraftFor(capture: Capture, today: string, domains: Domain[], projects: Project[]): CaptureReviewDraft {
+  const parsed = parseCommandPageLine(capture.text, today);
+  const fallbackTitle = parsed.type === "task" || parsed.type === "date" ? parsed.title : captureWorkingTitle(capture);
+  const defaultDomain = notesDomainId(domains);
+  const firstProject = visibleProjects(projects)[0]?.id ?? "";
+
+  return {
+    mode: defaultModeForCapture(capture, today),
+    title: fallbackTitle,
+    details: capture.text,
+    taskPlannedDate: parsed.type === "task" ? parsed.plannedDate ?? "" : "",
+    taskDueDate: parsed.type === "task" ? parsed.dueDate ?? "" : "",
+    taskScheduledTime: parsed.type === "task" ? parsed.scheduledTime ?? "" : "",
+    taskProjectId: "",
+    dateDate: parsed.type === "date" ? parsed.date : today,
+    dateTime: parsed.type === "date" ? parsed.time ?? "" : "",
+    dateProjectId: "",
+    projectName: fallbackTitle,
+    projectDomainId: defaultDomain,
+    noteTitle: fallbackTitle,
+    noteDomainId: defaultDomain,
+    noteContent: capture.text,
+    attachProjectId: firstProject
+  };
+}
+
+function quickTriageAction(capture: Capture, target: QuickCaptureTarget, today: string, domains: Domain[], projects: Project[]): TriageCaptureAction {
+  const draft = captureDraftFor(capture, today, domains, projects);
+  if (target === "task") {
+    return {
+      type: "task",
+      title: draft.title,
+      plannedDate: draft.taskPlannedDate || null,
+      dueDate: draft.taskDueDate || null,
+      scheduledTime: draft.taskScheduledTime || null,
+      projectId: draft.taskProjectId || null
+    };
+  }
+  if (target === "date") {
+    return {
+      type: "date",
+      title: draft.title,
+      date: draft.dateDate || today,
+      time: draft.dateTime || null,
+      projectId: draft.dateProjectId || null
+    };
+  }
+  if (target === "project") {
+    return { type: "project", name: draft.projectName, domainId: draft.projectDomainId };
+  }
+  return { type: "note", title: draft.noteTitle, content: draft.noteContent, domainId: draft.noteDomainId };
+}
+
 export function InboxView() {
-  const { data, convertCapture, updateCapture } = useWorkspace();
-  const [filter, setFilter] = useState<"all" | "unprocessed" | "converted" | "archived">("unprocessed");
-  const captures = data.captures.filter((capture) => capture.status !== "deleted" && (filter === "all" || capture.status === filter));
+  const router = useRouter();
+  const { data, triageCapture } = useWorkspace();
+  const today = localDateKey();
+  const [filter, setFilter] = useState<InboxFilter>("unprocessed");
+  const [reviewMode, setReviewMode] = useState(false);
+  const [reviewStartId, setReviewStartId] = useState<string | null>(null);
+  const [skippedIds, setSkippedIds] = useState<string[]>([]);
+  const [processedReviewIds, setProcessedReviewIds] = useState<string[]>([]);
+  const [reviewProgress, setReviewProgress] = useState({ done: 0, total: 0 });
+  const unprocessed = useMemo(
+    () => data.captures.filter((capture) => capture.status === "unprocessed").sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [data.captures]
+  );
+  const captures = useMemo(
+    () =>
+      data.captures
+        .filter((capture) => capture.status !== "deleted")
+        .filter((capture) => {
+          if (filter === "all") return true;
+          if (filter === "processed") return capture.status === "converted" || capture.status === "attached";
+          return capture.status === filter;
+        })
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [data.captures, filter]
+  );
+  const reviewQueue = useMemo(() => {
+    const processed = new Set(processedReviewIds);
+    const remaining = unprocessed.filter((capture) => !processed.has(capture.id));
+    const start = reviewStartId ? remaining.find((capture) => capture.id === reviewStartId) : null;
+    const ordered = start ? [start, ...remaining.filter((capture) => capture.id !== start.id)] : remaining;
+    const skipped = new Set(skippedIds);
+    return [...ordered.filter((capture) => !skipped.has(capture.id)), ...ordered.filter((capture) => skipped.has(capture.id))];
+  }, [processedReviewIds, reviewStartId, skippedIds, unprocessed]);
+  const currentReviewCapture = reviewQueue[0] ?? null;
+  const reviewTotal = reviewProgress.total || unprocessed.length;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const active = new URLSearchParams(window.location.search).get("review") === "1";
+    setReviewMode(active);
+    if (active) setReviewProgress({ done: 0, total: unprocessed.length });
+  }, []);
+
+  useEffect(() => {
+    if (reviewMode && reviewProgress.total === 0 && unprocessed.length) {
+      setReviewProgress({ done: 0, total: unprocessed.length });
+    }
+  }, [reviewMode, reviewProgress.total, unprocessed.length]);
+
+  function startReview(captureId?: string) {
+    setReviewMode(true);
+    setReviewStartId(captureId ?? null);
+    setSkippedIds([]);
+    setProcessedReviewIds([]);
+    setReviewProgress({ done: 0, total: unprocessed.length });
+    router.push("/inbox?review=1");
+  }
+
+  function closeReview() {
+    setReviewMode(false);
+    setReviewStartId(null);
+    setSkippedIds([]);
+    setProcessedReviewIds([]);
+    router.push("/inbox");
+  }
+
+  function completeReviewItem(captureId: string) {
+    setReviewStartId(null);
+    setSkippedIds((ids) => ids.filter((id) => id !== captureId));
+    setProcessedReviewIds((ids) => [...ids.filter((id) => id !== captureId), captureId]);
+    setReviewProgress((current) => {
+      const total = current.total || unprocessed.length;
+      return { done: Math.min(current.done + 1, total), total };
+    });
+  }
+
+  function skipReviewItem(captureId: string) {
+    setReviewStartId(null);
+    setSkippedIds((ids) => [...ids.filter((id) => id !== captureId), captureId]);
+  }
+
+  function runQuickTriage(capture: Capture, target: QuickCaptureTarget) {
+    triageCapture(capture.id, quickTriageAction(capture, target, today, data.domains, data.projects));
+  }
+
+  if (reviewMode) {
+    return (
+      <Page title="Review Inbox" subtitle="Walk unprocessed captures into the right place, one item at a time.">
+        <InboxReviewPanel
+          capture={currentReviewCapture}
+          domains={data.domains}
+          projects={data.projects}
+          today={today}
+          progressDone={reviewProgress.done}
+          progressTotal={reviewTotal}
+          onTriage={(id, action) => {
+            triageCapture(id, action);
+            completeReviewItem(id);
+          }}
+          onSkip={() => currentReviewCapture && skipReviewItem(currentReviewCapture.id)}
+          onClose={closeReview}
+        />
+      </Page>
+    );
+  }
 
   return (
     <Page title="Inbox" subtitle="Capture and triage without deciding too early.">
       <QuickCapture />
+      <div data-testid="inbox-triage-summary" className="mt-4 flex flex-col gap-3 rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-[var(--cos-text-strong)]">{unprocessed.length} unprocessed capture{unprocessed.length === 1 ? "" : "s"}</p>
+          <p className="mt-1 text-xs text-[var(--cos-text-muted)]">Newest captures stay visible here; review mode works oldest-first.</p>
+        </div>
+        <button onClick={() => startReview()} disabled={!unprocessed.length} className="cos-btn cos-btn-primary min-h-10 px-4 py-2 text-sm disabled:opacity-50">
+          <Inbox className="h-4 w-4" />
+          Review Inbox
+        </button>
+      </div>
       <div className="mt-4 flex gap-1 rounded-lg bg-[var(--cos-bg-inset)] p-1">
-        {(["unprocessed", "all", "converted", "archived"] as const).map((tab) => (
+        {(["unprocessed", "processed", "archived", "all"] as const).map((tab) => (
           <button key={tab} onClick={() => setFilter(tab)} className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium capitalize ${filter === tab ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]"}`}>{tab}</button>
         ))}
       </div>
       <div className="mt-4 space-y-2">
         {captures.map((capture) => (
-          <CaptureCard key={capture.id} capture={capture} onConvert={convertCapture} onArchive={() => updateCapture(capture.id, { status: "archived" })} onDelete={() => updateCapture(capture.id, { status: "deleted" })} />
+          <CaptureCard
+            key={capture.id}
+            capture={capture}
+            today={today}
+            domains={data.domains}
+            projects={data.projects}
+            onReview={() => startReview(capture.id)}
+            onQuickTriage={(target) => runQuickTriage(capture, target)}
+            onArchive={() => triageCapture(capture.id, { type: "archive" })}
+            onDelete={() => triageCapture(capture.id, { type: "delete" })}
+          />
         ))}
         {!captures.length ? <EmptyState icon={Inbox} title="No captures here" description="Quick capture something to start." /> : null}
       </div>
@@ -291,31 +519,316 @@ export function InboxView() {
   );
 }
 
-function CaptureCard({ capture, onConvert, onArchive, onDelete }: { capture: Capture; onConvert: (id: string, target: "task" | "project" | "note" | "deadline") => void; onArchive: () => void; onDelete: () => void }) {
-  const [open, setOpen] = useState(false);
+function CaptureCard({
+  capture,
+  today,
+  domains,
+  projects,
+  onReview,
+  onQuickTriage,
+  onArchive,
+  onDelete
+}: {
+  capture: Capture;
+  today: string;
+  domains: Domain[];
+  projects: Project[];
+  onReview: () => void;
+  onQuickTriage: (target: QuickCaptureTarget) => void;
+  onArchive: () => void;
+  onDelete: () => void;
+}) {
+  const parsed = parseCommandPageLine(capture.text, today);
+  const detected = parsed.type === "task" ? "Task" : parsed.type === "date" ? "Date" : captureTypeLabel(capture);
   return (
     <div data-testid="capture-card" className="cos-surface p-4">
-      <div className="flex items-start gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           <p className="whitespace-pre-wrap text-sm text-[var(--cos-text-strong)]">{capture.text}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            {capture.type ? <span className="cos-pill cos-pill-primary">{capture.type}</span> : null}
+            <span className="cos-pill cos-pill-primary">{detected}</span>
             <span className="text-[11px] text-[var(--cos-text-subtle)]">{formatDistanceToNow(parseISO(capture.createdAt), { addSuffix: true })}</span>
             {capture.status !== "unprocessed" ? <span className="cos-pill cos-pill-success">{capture.status}</span> : null}
           </div>
         </div>
-        {capture.status === "unprocessed" ? <button aria-label="Capture actions" onClick={() => setOpen(!open)} className="rounded p-1 text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text)]"><MoreHorizontal className="h-5 w-5" /></button> : null}
+        {capture.status === "unprocessed" ? (
+          <button onClick={onReview} className="cos-btn cos-btn-secondary min-h-10 shrink-0 px-3 py-2 text-xs">
+            Review
+          </button>
+        ) : null}
       </div>
-      {open && capture.status === "unprocessed" ? (
+      {capture.status === "unprocessed" ? (
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--cos-border-soft)] pt-3">
-          {(["task", "project", "note", "deadline"] as const).map((target) => (
-            <button key={target} onClick={() => onConvert(capture.id, target)} className="rounded-lg bg-[var(--cos-primary-soft)] px-3 py-1.5 text-xs font-medium capitalize text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-border)]">Convert to {target === "deadline" ? "date" : target}</button>
-          ))}
+          <button aria-label="Convert to task" onClick={() => onQuickTriage("task")} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs"><CheckSquare className="h-4 w-4" /> Task</button>
+          <button aria-label="Convert to date" onClick={() => onQuickTriage("date")} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs"><Calendar className="h-4 w-4" /> Date</button>
+          <button aria-label="Convert to project" onClick={() => onQuickTriage("project")} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs"><FolderKanban className="h-4 w-4" /> Project</button>
+          <button aria-label="Convert to resource note" onClick={() => onQuickTriage("note")} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs"><FileText className="h-4 w-4" /> Resource</button>
           <div className="flex-1" />
-          <button onClick={onArchive} className="rounded-lg bg-[var(--cos-bg-inset)] px-3 py-1.5 text-xs font-medium text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]">Archive</button>
-          <button onClick={onDelete} className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--cos-text-subtle)] hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger-text)]">Delete</button>
+          <button onClick={onArchive} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs"><Archive className="h-4 w-4" /> Archive</button>
+          <button onClick={onDelete} className="cos-btn min-h-10 px-3 py-2 text-xs text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"><Trash2 className="h-4 w-4" /> Delete</button>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function InboxReviewPanel({
+  capture,
+  domains,
+  projects,
+  today,
+  progressDone,
+  progressTotal,
+  onTriage,
+  onSkip,
+  onClose
+}: {
+  capture: Capture | null;
+  domains: Domain[];
+  projects: Project[];
+  today: string;
+  progressDone: number;
+  progressTotal: number;
+  onTriage: (id: string, action: TriageCaptureAction) => void;
+  onSkip: () => void;
+  onClose: () => void;
+}) {
+  const activeDomains = activeDomainOptions(domains);
+  const activeProjects = visibleProjects(projects);
+  const [draft, setDraft] = useState<CaptureReviewDraft | null>(capture ? captureDraftFor(capture, today, domains, projects) : null);
+
+  useEffect(() => {
+    setDraft(capture ? captureDraftFor(capture, today, domains, projects) : null);
+  }, [capture, domains, projects, today]);
+
+  if (!capture || !draft) {
+    return (
+      <div data-testid="inbox-review-empty" className="space-y-4">
+        <EmptyState icon={Inbox} title="Inbox review is done" description="There are no unprocessed captures in the queue." />
+        <button onClick={onClose} className="cos-btn cos-btn-primary min-h-10 px-4 py-2 text-sm">Done</button>
+      </div>
+    );
+  }
+
+  const detected = captureTypeLabel(capture);
+  const progressCurrent = Math.min(progressDone + 1, Math.max(progressTotal, 1));
+
+  function update<K extends keyof CaptureReviewDraft>(key: K, value: CaptureReviewDraft[K]) {
+    setDraft((current) => (current ? { ...current, [key]: value } : current));
+  }
+
+  function submit() {
+    const currentDraft = draft;
+    const currentCapture = capture;
+    if (!currentDraft || !currentCapture) return;
+
+    if (currentDraft.mode === "task") {
+      onTriage(currentCapture.id, {
+        type: "task",
+        title: currentDraft.title,
+        plannedDate: currentDraft.taskPlannedDate || null,
+        dueDate: currentDraft.taskDueDate || null,
+        scheduledTime: currentDraft.taskScheduledTime || null,
+        projectId: currentDraft.taskProjectId || null
+      });
+      return;
+    }
+    if (currentDraft.mode === "date") {
+      onTriage(currentCapture.id, {
+        type: "date",
+        title: currentDraft.title,
+        date: currentDraft.dateDate || today,
+        time: currentDraft.dateTime || null,
+        projectId: currentDraft.dateProjectId || null,
+        notes: currentDraft.details
+      });
+      return;
+    }
+    if (currentDraft.mode === "project") {
+      onTriage(currentCapture.id, {
+        type: "project",
+        name: currentDraft.projectName,
+        domainId: currentDraft.projectDomainId || notesDomainId(domains),
+        currentObjective: currentDraft.details === currentCapture.text ? "" : currentDraft.details
+      });
+      return;
+    }
+    if (currentDraft.mode === "note") {
+      onTriage(currentCapture.id, {
+        type: "note",
+        title: currentDraft.noteTitle,
+        content: currentDraft.noteContent,
+        domainId: currentDraft.noteDomainId || notesDomainId(domains)
+      });
+      return;
+    }
+    if (currentDraft.attachProjectId) onTriage(currentCapture.id, { type: "attach-project", projectId: currentDraft.attachProjectId });
+  }
+
+  const canSubmit =
+    draft.mode === "attach-project"
+      ? Boolean(draft.attachProjectId)
+      : draft.mode === "project"
+        ? Boolean(draft.projectName.trim())
+        : draft.mode === "note"
+          ? Boolean(draft.noteTitle.trim())
+          : Boolean(draft.title.trim());
+
+  return (
+    <div data-testid="inbox-review-panel" className="space-y-4">
+      <div className="cos-surface p-4">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="cos-pill cos-pill-primary">{progressCurrent} of {progressTotal || 1}</span>
+          <span className="cos-pill cos-pill-muted">{detected}</span>
+          <span className="text-xs text-[var(--cos-text-subtle)]">{formatDistanceToNow(parseISO(capture.createdAt), { addSuffix: true })}</span>
+        </div>
+        <p className="whitespace-pre-wrap text-sm text-[var(--cos-text-strong)]">{capture.text}</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {([
+          ["task", "Task", CheckSquare],
+          ["date", "Date", Calendar],
+          ["project", "Project", FolderKanban],
+          ["note", "Resource note", FileText],
+          ["attach-project", "Attach to project", Layers]
+        ] as const).map(([mode, label, Icon]) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => update("mode", mode)}
+            className={`cos-btn min-h-10 px-3 py-2 text-xs ${draft.mode === mode ? "cos-btn-primary" : "cos-btn-ghost"}`}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <form
+        className="cos-surface space-y-4 p-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (canSubmit) submit();
+        }}
+      >
+        {draft.mode === "task" ? (
+          <>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Task title</span>
+              <input data-testid="triage-title-input" value={draft.title} onChange={(event) => update("title", event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Planned date</span>
+                <input type="date" value={draft.taskPlannedDate} onChange={(event) => update("taskPlannedDate", event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Due date</span>
+                <input type="date" value={draft.taskDueDate} onChange={(event) => update("taskDueDate", event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Time</span>
+                <input type="time" value={draft.taskScheduledTime} onChange={(event) => update("taskScheduledTime", event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Project</span>
+                <select value={draft.taskProjectId} onChange={(event) => update("taskProjectId", event.target.value)} className="cos-input w-full px-3 py-2 text-sm">
+                  <option value="">No project</option>
+                  {activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+                </select>
+              </label>
+            </div>
+          </>
+        ) : null}
+
+        {draft.mode === "date" ? (
+          <>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Date title</span>
+              <input data-testid="triage-title-input" value={draft.title} onChange={(event) => update("title", event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Date</span>
+                <input data-testid="triage-date-input" type="date" value={draft.dateDate} onChange={(event) => update("dateDate", event.target.value)} className="cos-input w-full px-3 py-2 text-sm" required />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Time</span>
+                <input data-testid="triage-time-input" type="time" value={draft.dateTime} onChange={(event) => update("dateTime", event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Project</span>
+                <select value={draft.dateProjectId} onChange={(event) => update("dateProjectId", event.target.value)} className="cos-input w-full px-3 py-2 text-sm">
+                  <option value="">No project</option>
+                  {activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+                </select>
+              </label>
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Details</span>
+              <textarea value={draft.details} onChange={(event) => update("details", event.target.value)} className="cos-input min-h-24 w-full px-3 py-2 text-sm" />
+            </label>
+          </>
+        ) : null}
+
+        {draft.mode === "project" ? (
+          <>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Project name</span>
+              <input value={draft.projectName} onChange={(event) => update("projectName", event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Area</span>
+              <select value={draft.projectDomainId} onChange={(event) => update("projectDomainId", event.target.value)} className="cos-input w-full px-3 py-2 text-sm">
+                {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Details</span>
+              <textarea value={draft.details} onChange={(event) => update("details", event.target.value)} className="cos-input min-h-24 w-full px-3 py-2 text-sm" />
+            </label>
+          </>
+        ) : null}
+
+        {draft.mode === "note" ? (
+          <>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Resource title</span>
+              <input value={draft.noteTitle} onChange={(event) => update("noteTitle", event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Area</span>
+              <select value={draft.noteDomainId} onChange={(event) => update("noteDomainId", event.target.value)} className="cos-input w-full px-3 py-2 text-sm">
+                {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Content</span>
+              <textarea value={draft.noteContent} onChange={(event) => update("noteContent", event.target.value)} className="cos-input min-h-32 w-full px-3 py-2 text-sm" />
+            </label>
+          </>
+        ) : null}
+
+        {draft.mode === "attach-project" ? (
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Project</span>
+            <select data-testid="triage-attach-project-select" value={draft.attachProjectId} onChange={(event) => update("attachProjectId", event.target.value)} className="cos-input w-full px-3 py-2 text-sm">
+              {activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+            </select>
+          </label>
+        ) : null}
+
+        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--cos-border-soft)] pt-4">
+          <button type="submit" disabled={!canSubmit} className="cos-btn cos-btn-primary min-h-10 px-4 py-2 text-sm disabled:opacity-50">
+            {draft.mode === "attach-project" ? "Attach" : draft.mode === "note" ? "Create resource" : draft.mode === "date" ? "Create Date" : draft.mode === "project" ? "Create project" : "Create task"}
+          </button>
+          <button type="button" onClick={onSkip} className="cos-btn cos-btn-secondary min-h-10 px-4 py-2 text-sm">Skip</button>
+          <button type="button" onClick={() => onTriage(capture.id, { type: "archive" })} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-sm"><Archive className="h-4 w-4" /> Archive</button>
+          <button type="button" onClick={() => onTriage(capture.id, { type: "delete" })} className="cos-btn min-h-10 px-3 py-2 text-sm text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"><Trash2 className="h-4 w-4" /> Delete</button>
+          <button type="button" onClick={onClose} className="ml-auto text-sm font-medium text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]">Done</button>
+        </div>
+      </form>
     </div>
   );
 }

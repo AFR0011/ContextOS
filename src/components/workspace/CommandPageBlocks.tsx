@@ -52,10 +52,12 @@ export function LiveBlock({
 }) {
   return (
     <section data-testid={testId} className="command-live-block border-t border-[var(--cos-border)] py-5">
-      <div className="mb-3 flex min-h-9 items-center gap-3">
-        <h2 className="text-sm font-bold text-[var(--cos-text-strong)]">{title}</h2>
-        {count !== undefined ? <span className="cos-pill cos-pill-muted">{count}</span> : null}
-        <div className="ml-auto">{action}</div>
+      <div className="mb-3 flex min-h-9 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <h2 className="text-sm font-bold text-[var(--cos-text-strong)]">{title}</h2>
+          {count !== undefined ? <span className="cos-pill cos-pill-muted">{count}</span> : null}
+        </div>
+        {action ? <div className="w-full sm:ml-auto sm:w-auto">{action}</div> : null}
       </div>
       {children}
     </section>
@@ -118,8 +120,8 @@ export function CommandPageEditor({
       hideSaveButton
       footer={
         <>
-          <span className="mr-auto text-[var(--cos-text-subtle)]">{autosaveLabel(saveState)}</span>
-          <span className="text-[var(--cos-text-subtle)]">Hint: /task or /date with [2026-07-10] (09:30)</span>
+          <span className="w-full text-[var(--cos-text-subtle)] sm:mr-auto sm:w-auto">{autosaveLabel(saveState)}</span>
+          <span className="w-full text-[var(--cos-text-subtle)] sm:w-auto sm:text-right">Hint: /task or /date with [2026-07-10] (09:30)</span>
         </>
       }
     />

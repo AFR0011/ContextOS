@@ -125,7 +125,7 @@ function SyncIndicator({ sync, compact = false, onRefreshFromServer }: { sync: S
           disabled={!canRefreshFromServer}
           aria-label="Refresh workspace from server"
           title={refreshTitle}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-current/20 bg-white/45 px-2 py-1.5 text-xs font-semibold hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-md border border-current/20 bg-white/45 px-2 py-2 text-sm font-semibold hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Download className={`h-3.5 w-3.5 ${sync.refreshing ? "animate-pulse" : ""}`} />
           <span>{sync.refreshing ? "Refreshing" : "Refresh"}</span>
@@ -181,7 +181,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           type="button"
           onClick={() => goTo(`/projects/${project.id}`)}
           aria-current={active ? "page" : undefined}
-          className={`mb-0.5 flex min-h-9 w-full items-center gap-2 rounded-lg border py-1.5 pr-2 text-left text-sm font-medium ${
+          className={`mb-0.5 flex min-h-10 w-full items-center gap-2 rounded-lg border py-2 pr-2 text-left text-sm font-medium ${
             active
               ? "border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
               : "border-transparent text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text-strong)]"
@@ -213,14 +213,14 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             <p className="text-[11px] font-medium text-[var(--cos-text-subtle)]">MVP v0.2.8</p>
           </div>
           <button
-            className="cos-btn-ghost ml-auto grid h-9 w-9 place-items-center rounded-md text-[var(--cos-text-muted)]"
+            className="cos-btn-ghost ml-auto grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text-muted)]"
             onClick={() => setDarkMode(!isDark)}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
-          <button className="cos-btn-ghost grid h-9 w-9 place-items-center rounded-md text-[var(--cos-text-muted)] lg:hidden" onClick={() => setOpen(false)}>
+          <button className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text-muted)] lg:hidden" onClick={() => setOpen(false)}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -285,7 +285,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
                 key={item.href}
                 type="button"
                 onClick={() => goTo(item.href)}
-                className="rounded-md px-2 py-1 text-[11px] font-semibold text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text)]"
+                className="min-h-10 rounded-md px-3 py-2 text-xs font-semibold text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text)]"
               >
                 {item.label}
               </button>
@@ -297,7 +297,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
               <p className="truncate text-xs font-medium text-[var(--cos-text)]">{user.email}</p>
               <p className="text-[11px] text-[var(--cos-text-subtle)]">{sync.syncing ? "Syncing..." : sync.lastSyncedAt ? `Synced ${new Date(sync.lastSyncedAt).toLocaleTimeString()}` : "Not synced yet"}</p>
             </div>
-            <button onClick={logout} className="cos-btn-ghost grid h-9 w-9 place-items-center rounded-md text-[var(--cos-text-muted)]" title="Log out">
+            <button onClick={logout} className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text-muted)]" title="Log out">
               <LogOut className="h-4 w-4" />
             </button>
           </div>
@@ -306,20 +306,20 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
 
       <main className="min-w-0 flex-1 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
         <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-[var(--cos-border)] bg-[var(--cos-bg-elevated)]/95 px-4 py-3 backdrop-blur lg:hidden">
-          <button className="cos-btn-ghost grid h-9 w-9 place-items-center rounded-md text-[var(--cos-text)]" onClick={() => setOpen(true)}>
+          <button className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text)]" onClick={() => setOpen(true)}>
             <Menu className="h-5 w-5" />
           </button>
           <button
-            className="cos-btn-ghost grid h-9 w-9 place-items-center rounded-md text-[var(--cos-text)]"
+            className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text)]"
             onClick={() => setDarkMode(!isDark)}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
-          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--cos-text-strong)]">
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-sm font-semibold text-[var(--cos-text-strong)]">
             <Zap className="h-4 w-4 text-[var(--cos-primary)]" />
-            ContextOS
+            <span className="truncate">ContextOS</span>
           </div>
           <SyncIndicator sync={sync} compact />
         </div>

@@ -98,7 +98,7 @@ function TaskPlacementMenu({
           event.stopPropagation();
           onOpenChange(!open);
         }}
-        className="grid h-7 w-7 shrink-0 place-items-center rounded text-[var(--cos-text-subtle)] opacity-70 hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)] group-hover:opacity-100"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] opacity-80 hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)] group-hover:opacity-100 sm:h-7 sm:w-7"
       >
         <MoreHorizontal className="h-3.5 w-3.5" />
       </button>
@@ -222,7 +222,7 @@ function TimelineTaskRow({
         ) : null}
       </div>
 
-      <label className="flex shrink-0 items-center gap-1 text-[var(--cos-text-subtle)]">
+      <label className="hidden shrink-0 items-center gap-1 text-[var(--cos-text-subtle)] sm:flex">
         <Clock3 className="h-3.5 w-3.5" />
         <input
           aria-label={`${row.task.title} scheduled time`}
@@ -271,7 +271,7 @@ function DeadlineTimelineRow({ row }: { row: DeadlineScheduleRow }) {
         ) : null}
       </div>
 
-      <label className="flex shrink-0 items-center gap-1 text-[var(--cos-text-subtle)]">
+      <label className="hidden shrink-0 items-center gap-1 text-[var(--cos-text-subtle)] sm:flex">
         <Clock3 className="h-3.5 w-3.5" />
         <input
           aria-label={`${row.deadline.title} date time`}
@@ -286,7 +286,7 @@ function DeadlineTimelineRow({ row }: { row: DeadlineScheduleRow }) {
         type="button"
         aria-label={archived ? `Restore ${row.deadline.title}` : `Archive ${row.deadline.title}`}
         onClick={() => updateDeadline(row.deadline.id, { archivedAt: archived ? null : new Date().toISOString() })}
-        className="grid h-7 w-7 shrink-0 place-items-center rounded text-[var(--cos-text-subtle)] opacity-60 hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)] group-hover:opacity-100"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] opacity-80 hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)] group-hover:opacity-100 sm:h-7 sm:w-7"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>

@@ -668,7 +668,7 @@ export function BlockMarkdownEditor({
               onMouseLeave={() => setActionMenuBlockId(null)}
             >
               {!disabled ? (
-                <div className="mb-1 flex items-center gap-1 opacity-100 transition-opacity sm:absolute sm:-left-20 sm:top-0 sm:mb-0 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                <div className={`mb-1 flex items-center gap-1 transition-opacity ${isFocused ? "opacity-100" : "pointer-events-none opacity-0"} sm:absolute sm:-left-20 sm:top-0 sm:mb-0 sm:pointer-events-auto sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100`}>
                   <button
                     type="button"
                     onClick={() => handleInsertBlockBelow(block.id)}
@@ -822,7 +822,7 @@ export function BlockMarkdownEditor({
         })}
       </div>
 
-      <div className="mt-3 flex min-h-9 flex-wrap items-center justify-end gap-2 border-t border-[var(--cos-border-soft)] pt-2 text-[11px]">
+      <div className="mt-3 flex min-h-10 flex-wrap items-center justify-end gap-2 border-t border-[var(--cos-border-soft)] pt-2 text-xs">
         {commandError ? (
           <span className="mr-auto text-[var(--cos-danger-text)]">{commandError}</span>
         ) : capturedFlash ? (
@@ -835,7 +835,7 @@ export function BlockMarkdownEditor({
                 type="button"
                 disabled={!dirty}
                 onClick={() => commit()}
-                className="inline-flex min-h-8 items-center gap-1 rounded-md px-2 py-1 font-semibold text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)] disabled:hover:bg-transparent"
+                className="inline-flex min-h-10 items-center gap-1 rounded-md px-3 py-2 font-semibold text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)] disabled:hover:bg-transparent"
               >
                 <Send className="h-3.5 w-3.5" />
                 Save

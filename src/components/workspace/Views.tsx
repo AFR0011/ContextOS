@@ -205,7 +205,7 @@ function QuickCapture() {
         placeholder="Quick capture... try /task, /note, /project, /date, /status"
         className="min-w-0 flex-1 bg-transparent text-sm text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
       />
-      <button onClick={submit} disabled={!text.trim()} className="grid h-9 w-9 place-items-center rounded-lg text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)]">
+      <button onClick={submit} disabled={!text.trim()} className="grid h-10 w-10 place-items-center rounded-lg text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)] disabled:text-[var(--cos-text-subtle)]">
         <Send className="h-4 w-4" />
       </button>
     </div>
@@ -496,7 +496,7 @@ export function InboxView() {
       </div>
       <div className="mt-4 flex gap-1 rounded-lg bg-[var(--cos-bg-inset)] p-1">
         {(["unprocessed", "processed", "archived", "all"] as const).map((tab) => (
-          <button key={tab} onClick={() => setFilter(tab)} className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium capitalize ${filter === tab ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]"}`}>{tab}</button>
+          <button key={tab} onClick={() => setFilter(tab)} className={`min-h-10 flex-1 rounded-md px-3 py-2 text-sm font-medium capitalize ${filter === tab ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]"}`}>{tab}</button>
         ))}
       </div>
       <div className="mt-4 space-y-2">
@@ -558,14 +558,14 @@ function CaptureCard({
         ) : null}
       </div>
       {capture.status === "unprocessed" ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--cos-border-soft)] pt-3">
-          <button aria-label="Convert to task" onClick={() => onQuickTriage("task")} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs"><CheckSquare className="h-4 w-4" /> Task</button>
-          <button aria-label="Convert to date" onClick={() => onQuickTriage("date")} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs"><Calendar className="h-4 w-4" /> Date</button>
-          <button aria-label="Convert to project" onClick={() => onQuickTriage("project")} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs"><FolderKanban className="h-4 w-4" /> Project</button>
-          <button aria-label="Convert to resource note" onClick={() => onQuickTriage("note")} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs"><FileText className="h-4 w-4" /> Resource</button>
-          <div className="flex-1" />
-          <button onClick={onArchive} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs"><Archive className="h-4 w-4" /> Archive</button>
-          <button onClick={onDelete} className="cos-btn min-h-10 px-3 py-2 text-xs text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"><Trash2 className="h-4 w-4" /> Delete</button>
+        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[var(--cos-border-soft)] pt-3 sm:flex sm:flex-wrap sm:items-center">
+          <button aria-label="Convert to task" onClick={() => onQuickTriage("task")} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-xs sm:w-auto"><CheckSquare className="h-4 w-4" /> Task</button>
+          <button aria-label="Convert to date" onClick={() => onQuickTriage("date")} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-xs sm:w-auto"><Calendar className="h-4 w-4" /> Date</button>
+          <button aria-label="Convert to project" onClick={() => onQuickTriage("project")} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-xs sm:w-auto"><FolderKanban className="h-4 w-4" /> Project</button>
+          <button aria-label="Convert to resource note" onClick={() => onQuickTriage("note")} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-xs sm:w-auto"><FileText className="h-4 w-4" /> Resource</button>
+          <div className="hidden flex-1 sm:block" />
+          <button onClick={onArchive} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-xs sm:w-auto"><Archive className="h-4 w-4" /> Archive</button>
+          <button onClick={onDelete} className="cos-btn min-h-10 justify-center px-3 py-2 text-xs text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)] sm:w-auto"><Trash2 className="h-4 w-4" /> Delete</button>
         </div>
       ) : null}
     </div>
@@ -685,7 +685,7 @@ function InboxReviewPanel({
         <p className="whitespace-pre-wrap text-sm text-[var(--cos-text-strong)]">{capture.text}</p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         {([
           ["task", "Task", CheckSquare],
           ["date", "Date", Calendar],
@@ -697,7 +697,7 @@ function InboxReviewPanel({
             key={mode}
             type="button"
             onClick={() => update("mode", mode)}
-            className={`cos-btn min-h-10 px-3 py-2 text-xs ${draft.mode === mode ? "cos-btn-primary" : "cos-btn-ghost"}`}
+            className={`cos-btn min-h-10 justify-center px-3 py-2 text-xs ${mode === "attach-project" ? "col-span-2 sm:col-span-1" : ""} ${draft.mode === mode ? "cos-btn-primary" : "cos-btn-ghost"}`}
           >
             <Icon className="h-4 w-4" />
             {label}
@@ -819,14 +819,14 @@ function InboxReviewPanel({
           </label>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--cos-border-soft)] pt-4">
-          <button type="submit" disabled={!canSubmit} className="cos-btn cos-btn-primary min-h-10 px-4 py-2 text-sm disabled:opacity-50">
+        <div className="grid grid-cols-2 gap-2 border-t border-[var(--cos-border-soft)] pt-4 sm:flex sm:flex-wrap sm:items-center">
+          <button type="submit" disabled={!canSubmit} className="cos-btn cos-btn-primary min-h-10 justify-center px-4 py-2 text-sm disabled:opacity-50 sm:w-auto">
             {draft.mode === "attach-project" ? "Attach" : draft.mode === "note" ? "Create resource" : draft.mode === "date" ? "Create Date" : draft.mode === "project" ? "Create project" : "Create task"}
           </button>
-          <button type="button" onClick={onSkip} className="cos-btn cos-btn-secondary min-h-10 px-4 py-2 text-sm">Skip</button>
-          <button type="button" onClick={() => onTriage(capture.id, { type: "archive" })} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-sm"><Archive className="h-4 w-4" /> Archive</button>
-          <button type="button" onClick={() => onTriage(capture.id, { type: "delete" })} className="cos-btn min-h-10 px-3 py-2 text-sm text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"><Trash2 className="h-4 w-4" /> Delete</button>
-          <button type="button" onClick={onClose} className="ml-auto text-sm font-medium text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]">Done</button>
+          <button type="button" onClick={onSkip} className="cos-btn cos-btn-secondary min-h-10 justify-center px-4 py-2 text-sm sm:w-auto">Skip</button>
+          <button type="button" onClick={() => onTriage(capture.id, { type: "archive" })} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-sm sm:w-auto"><Archive className="h-4 w-4" /> Archive</button>
+          <button type="button" onClick={() => onTriage(capture.id, { type: "delete" })} className="cos-btn min-h-10 justify-center px-3 py-2 text-sm text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)] sm:w-auto"><Trash2 className="h-4 w-4" /> Delete</button>
+          <button type="button" onClick={onClose} className="cos-btn cos-btn-ghost col-span-2 min-h-10 justify-center px-3 py-2 text-sm sm:ml-auto sm:w-auto">Done</button>
         </div>
       </form>
     </div>
@@ -939,12 +939,12 @@ export function ProjectsView() {
       {showNew ? (
         <div className="cos-surface mb-4 p-4">
           <input value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && create()} autoFocus placeholder="Project name..." className="cos-input w-full px-3 py-2 text-sm" />
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <select value={domainId} onChange={(event) => setDomainId(event.target.value)} className="cos-input px-3 py-2 text-sm">
+          <div className="mt-3 grid gap-3 sm:flex sm:flex-wrap sm:items-center">
+            <select value={domainId} onChange={(event) => setDomainId(event.target.value)} className="cos-input w-full px-3 py-2 text-sm sm:w-auto">
               {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
             </select>
-            <button onClick={create} className="text-sm font-semibold text-[var(--cos-primary-text)]">Create</button>
-            <button onClick={() => setShowNew(false)} className="text-sm text-[var(--cos-text-muted)]">Cancel</button>
+            <button onClick={create} className="cos-btn cos-btn-primary px-4 py-2 text-sm">Create</button>
+            <button onClick={() => setShowNew(false)} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
           </div>
         </div>
       ) : null}
@@ -1005,7 +1005,7 @@ function ProjectIndexRow({
           type="button"
           onClick={() => children.length ? onToggle(project.id) : onOpen(project.id)}
           aria-label={children.length ? (isOpen ? `Collapse ${project.name}` : `Expand ${project.name}`) : `Open ${project.name}`}
-          className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-elevated)] hover:text-[var(--cos-primary-text)]"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-elevated)] hover:text-[var(--cos-primary-text)] sm:mt-0.5 sm:h-8 sm:w-8"
         >
           {children.length ? (isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />) : <FolderKanban className="h-4 w-4" />}
         </button>
@@ -1061,7 +1061,7 @@ function AreaProjectTree({
   return (
     <div className="space-y-1">
       <div
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-[var(--cos-bg-elevated)]"
+        className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-[var(--cos-bg-elevated)]"
         style={{ paddingLeft: `${0.5 + depth * 1.1}rem` }}
       >
         <Layers className="h-3.5 w-3.5 shrink-0 text-[var(--cos-text-subtle)]" />
@@ -1069,7 +1069,7 @@ function AreaProjectTree({
         {project.nextAction ? <span className="hidden max-w-36 truncate text-[11px] text-[var(--cos-primary-text)] sm:inline">Next: {project.nextAction}</span> : null}
         {taskCount ? <span className="cos-pill cos-pill-muted">{taskCount} task{taskCount > 1 ? "s" : ""}</span> : null}
         {deadlineCount ? <span className="cos-pill cos-pill-warning">{deadlineCount} date{deadlineCount > 1 ? "s" : ""}</span> : null}
-        <button type="button" onClick={() => onDelete(project.id)} aria-label={`Delete ${project.name}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger-text)]">
+        <button type="button" onClick={() => onDelete(project.id)} aria-label={`Delete ${project.name}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger-text)] sm:h-7 sm:w-7">
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -1117,7 +1117,7 @@ export function AreasView() {
                   type="button"
                   aria-label={open ? `Close ${domain.name}` : `Open ${domain.name}`}
                   onClick={() => setOpenAreaId(open ? null : domain.id)}
-                  className="rounded-md p-1 text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-primary-text)]"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-primary-text)]"
                 >
                   {open ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                 </button>
@@ -1129,7 +1129,7 @@ export function AreasView() {
               </div>
               <div className="mt-4 space-y-2">
                 {(!open ? roots.slice(0, 3) : []).map((project) => (
-                  <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-[var(--cos-bg-soft)]">
+                  <button key={project.id} onClick={() => router.push(`/projects/${project.id}`)} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-[var(--cos-bg-soft)]">
                     <FolderKanban className="h-3.5 w-3.5 text-[var(--cos-text-subtle)]" />
                     <span className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--cos-text)]">{project.name}</span>
                     {childProjects(data.projects, project.id).length ? <span className="text-[10px] text-[var(--cos-text-subtle)]">{childProjects(data.projects, project.id).length} sub</span> : null}
@@ -1166,7 +1166,7 @@ export function AreasView() {
                     placeholder={`New project in ${domain.name}...`}
                     className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--cos-text-subtle)]"
                   />
-                  <button type="button" onClick={() => createAreaProject(domain.id)} disabled={!newProjectByArea[domain.id]?.trim()} className="cos-btn cos-btn-primary px-3 py-1.5 text-xs disabled:bg-[var(--cos-border)]">Add</button>
+                  <button type="button" onClick={() => createAreaProject(domain.id)} disabled={!newProjectByArea[domain.id]?.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 py-1.5 text-xs disabled:bg-[var(--cos-border)]">Add</button>
                 </div>
               ) : null}
               <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-[var(--cos-text-subtle)]">
@@ -1206,9 +1206,9 @@ export function ResourcesView() {
     <Page title="Resources" subtitle="Standalone markdown notes, reference lists, and knowledge you may want searchable later.">
       <div className="cos-surface mb-4 p-4">
         <SectionTitle icon={FileText} title="New Resource" tone="indigo" />
-        <div className="mt-3 flex flex-wrap items-center gap-3">
+        <div className="mt-3 grid gap-3 sm:flex sm:flex-wrap sm:items-center">
           <input value={newTitle} disabled={loading || !activeDomains.length} onChange={(event) => setNewTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && createResource()} placeholder={loading ? "Loading resources..." : "Resource title..."} className="cos-input min-w-0 flex-1 px-3 py-2 text-sm disabled:bg-[var(--cos-bg-inset)] disabled:text-[var(--cos-text-subtle)]" />
-          <select value={newDomainId} disabled={loading || !activeDomains.length} onChange={(event) => setNewDomainId(event.target.value)} className="cos-input px-3 py-2 text-sm disabled:bg-[var(--cos-bg-inset)] disabled:text-[var(--cos-text-subtle)]">
+          <select value={newDomainId} disabled={loading || !activeDomains.length} onChange={(event) => setNewDomainId(event.target.value)} className="cos-input w-full px-3 py-2 text-sm disabled:bg-[var(--cos-bg-inset)] disabled:text-[var(--cos-text-subtle)] sm:w-auto">
             {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
           </select>
           <button onClick={createResource} disabled={loading || !activeDomains.length || !newTitle.trim()} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-40">Add</button>
@@ -1216,9 +1216,9 @@ export function ResourcesView() {
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        <button onClick={() => setDomainId("")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${selectedDomain === "all" ? "bg-[var(--cos-text-strong)] text-[var(--cos-text-inverse)]" : "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)]"}`}>All</button>
+        <button onClick={() => setDomainId("")} className={`min-h-10 rounded-lg px-3 py-1.5 text-xs font-semibold ${selectedDomain === "all" ? "bg-[var(--cos-text-strong)] text-[var(--cos-text-inverse)]" : "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)]"}`}>All</button>
         {activeDomains.map((domain) => (
-          <button key={domain.id} onClick={() => setDomainId(domain.id)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${selectedDomain === domain.id ? "bg-[var(--cos-text-strong)] text-[var(--cos-text-inverse)]" : "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)]"}`}>{domain.name}</button>
+          <button key={domain.id} onClick={() => setDomainId(domain.id)} className={`min-h-10 rounded-lg px-3 py-1.5 text-xs font-semibold ${selectedDomain === domain.id ? "bg-[var(--cos-text-strong)] text-[var(--cos-text-inverse)]" : "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)]"}`}>{domain.name}</button>
         ))}
       </div>
 
@@ -1589,21 +1589,21 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
 
   return (
     <div data-testid="project-command-page" className="cos-page mx-auto max-w-3xl">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <button onClick={() => router.push("/projects")} className="text-sm font-semibold text-[var(--cos-primary-text)]">Back</button>
-        <div className="flex flex-wrap justify-end gap-2">
-          <button onClick={exportMarkdown} className="cos-btn cos-btn-ghost min-h-9 px-3 py-1 text-xs"><Download className="h-4 w-4" /> Export</button>
-          <button aria-label={project.status === "archived" ? "Unarchive project" : "Archive project"} onClick={() => updateProject(project.id, { status: project.status === "archived" ? "active" : "archived", archivedAt: project.status === "archived" ? null : new Date().toISOString() })} className="cos-btn cos-btn-ghost min-h-9 px-3 py-1 text-xs"><Archive className="h-4 w-4" /> {project.status === "archived" ? "Unarchive" : "Archive"}</button>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <button onClick={() => router.push("/projects")} className="cos-btn cos-btn-ghost min-h-10 w-full justify-center px-3 py-2 text-sm sm:w-auto">Back</button>
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
+          <button onClick={exportMarkdown} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-xs"><Download className="h-4 w-4" /> Export</button>
+          <button aria-label={project.status === "archived" ? "Unarchive project" : "Archive project"} onClick={() => updateProject(project.id, { status: project.status === "archived" ? "active" : "archived", archivedAt: project.status === "archived" ? null : new Date().toISOString() })} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-xs"><Archive className="h-4 w-4" /> {project.status === "archived" ? "Unarchive" : "Archive"}</button>
         </div>
       </div>
 
       <header className="mb-5">
         <EditableField value={project.name} placeholder="Project name" onSave={(value) => updateProject(project.id, { name: value })} inputClassName="text-3xl font-bold tracking-tight text-[var(--cos-text-strong)]" />
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <select value={project.status} onChange={(event) => updateProject(project.id, { status: event.target.value as any, archivedAt: event.target.value === "archived" ? new Date().toISOString() : null })} className={`rounded-full border-0 px-3 py-1 text-xs font-medium ${projectStatus[project.status].color}`}>
+        <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+          <select value={project.status} onChange={(event) => updateProject(project.id, { status: event.target.value as any, archivedAt: event.target.value === "archived" ? new Date().toISOString() : null })} className={`min-h-10 w-full rounded-md border-0 px-3 py-2 text-sm font-medium sm:min-h-0 sm:w-auto sm:rounded-full sm:py-1 sm:text-xs ${projectStatus[project.status].color}`}>
             {Object.entries(projectStatus).map(([value, config]) => <option key={value} value={value}>{config.label}</option>)}
           </select>
-          <select value={project.domainId} onChange={(event) => updateProject(project.id, { domainId: event.target.value })} className={`rounded-full border-0 px-2 py-1 text-[11px] font-medium ${domainColor(data.domains, project.domainId)}`}>
+          <select value={project.domainId} onChange={(event) => updateProject(project.id, { domainId: event.target.value })} className={`min-h-10 w-full rounded-md border-0 px-3 py-2 text-sm font-medium sm:min-h-0 sm:w-auto sm:rounded-full sm:px-2 sm:py-1 sm:text-[11px] ${domainColor(data.domains, project.domainId)}`}>
             {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
           </select>
           {project.parentProjectId ? <span className="cos-pill cos-pill-muted">Parent: {projectName(data.projects, project.parentProjectId)}</span> : null}
@@ -1631,7 +1631,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
               aria-expanded={showTaskComposer}
               aria-controls="project-task-composer"
               onClick={() => setShowTaskComposer((open) => !open)}
-              className="cos-btn cos-btn-secondary min-h-9 px-3 py-1 text-xs"
+              className="cos-btn cos-btn-secondary min-h-10 w-full justify-center px-3 py-2 text-sm sm:w-auto sm:min-h-9 sm:py-1 sm:text-xs"
             >
               <Plus className="h-4 w-4" /> Add task
             </button>
@@ -1676,8 +1676,8 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                   onChange={(event) => setNewTaskScheduledTime(event.target.value)}
                   className="cos-input px-3 py-2 text-sm"
                 />
-                <button type="submit" className="cos-btn cos-btn-primary px-3 py-2 text-sm">Add task</button>
-                <button type="button" onClick={() => setShowTaskComposer(false)} className="cos-btn cos-btn-ghost px-3 py-2 text-sm">Cancel</button>
+                <button type="submit" className="cos-btn cos-btn-primary min-h-10 px-3 py-2 text-sm">Add task</button>
+                <button type="button" onClick={() => setShowTaskComposer(false)} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-sm">Cancel</button>
               </div>
             </form>
           ) : null}
@@ -1694,7 +1694,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
               aria-expanded={showDateComposer}
               aria-controls="project-date-composer"
               onClick={() => setShowDateComposer((open) => !open)}
-              className="cos-btn cos-btn-secondary min-h-9 px-3 py-1 text-xs"
+              className="cos-btn cos-btn-secondary min-h-10 w-full justify-center px-3 py-2 text-sm sm:w-auto sm:min-h-9 sm:py-1 sm:text-xs"
             >
               <Plus className="h-4 w-4" /> Add Date
             </button>
@@ -1733,8 +1733,8 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                   onChange={(event) => setNewDateTime(event.target.value)}
                   className="cos-input px-3 py-2 text-sm"
                 />
-                <button type="submit" className="cos-btn cos-btn-primary px-3 py-2 text-sm">Add Date</button>
-                <button type="button" onClick={() => setShowDateComposer(false)} className="cos-btn cos-btn-ghost px-3 py-2 text-sm">Cancel</button>
+                <button type="submit" className="cos-btn cos-btn-primary min-h-10 px-3 py-2 text-sm">Add Date</button>
+                <button type="button" onClick={() => setShowDateComposer(false)} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-sm">Cancel</button>
               </div>
             </form>
           ) : null}
@@ -1794,16 +1794,16 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
             );
           })}
           {!subcontexts.length ? <p className="text-sm italic text-[var(--cos-text-subtle)]">No subcontexts yet.</p> : null}
-          <div className="flex items-center gap-2 pt-2">
-            <input value={newSubcontext} onChange={(event) => setNewSubcontext(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addSubcontext()} placeholder="Add subcontext, course, assignment, or duty..." className="flex-1 border-b border-[var(--cos-border)] bg-transparent py-1 text-sm outline-none focus:border-[var(--cos-primary-border)]" />
-            <button onClick={addSubcontext} className="text-[var(--cos-primary-text)]"><Plus className="h-4 w-4" /></button>
+          <div className="grid gap-2 pt-2 sm:grid-cols-[1fr_auto] sm:items-center">
+            <input value={newSubcontext} onChange={(event) => setNewSubcontext(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addSubcontext()} placeholder="Add subcontext, course, assignment, or duty..." className="cos-input w-full px-3 py-2 text-sm" />
+            <button onClick={addSubcontext} className="cos-btn cos-btn-secondary min-h-10 justify-center px-3 py-2 text-sm"><Plus className="h-4 w-4" /> Add</button>
           </div>
           </div>
         </LiveBlock>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-3 border-t border-[var(--cos-border)] pt-4">
-        <button onClick={() => { updateProject(project.id, { trashedAt: new Date().toISOString() }); router.push("/projects"); }} className="cos-btn px-3 py-2 text-sm text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)]"><Trash2 className="h-4 w-4" /> Delete</button>
+        <button onClick={() => { updateProject(project.id, { trashedAt: new Date().toISOString() }); router.push("/projects"); }} className="cos-btn min-h-10 w-full justify-center px-3 py-2 text-sm text-[var(--cos-danger-text)] hover:bg-[var(--cos-danger-soft)] sm:w-auto"><Trash2 className="h-4 w-4" /> Delete</button>
       </div>
     </div>
   );
@@ -1917,7 +1917,21 @@ export function DatesView() {
 
   return (
     <Page title="Dates" subtitle="Important real-world dates, kept separate from task due dates." action={<button onClick={() => setShowAdd(true)} className="cos-btn cos-btn-primary px-4 py-2 text-sm"><Plus className="h-4 w-4" /> Add Date</button>}>
-      {showAdd ? <div className="cos-surface mb-4 p-4"><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Date title..." className="cos-input w-full px-3 py-2 text-sm" /><div className="mt-3 flex flex-wrap gap-3"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="cos-input px-3 py-2 text-sm" /><input aria-label="Date time" type="time" value={time} onChange={(event) => setTime(event.target.value)} className="cos-input px-3 py-2 text-sm" /><input aria-label="Date location" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Location" className="cos-input min-w-0 flex-1 px-3 py-2 text-sm" /><select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input px-3 py-2 text-sm"><option value="">No project</option>{activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select><button onClick={create} className="text-sm font-semibold text-[var(--cos-primary-text)]">Add</button></div></div> : null}
+      {showAdd ? (
+        <div className="cos-surface mb-4 p-4">
+          <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Date title..." className="cos-input w-full px-3 py-2 text-sm" />
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:flex lg:items-center">
+            <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="cos-input w-full px-3 py-2 text-sm lg:w-auto" />
+            <input aria-label="Date time" type="time" value={time} onChange={(event) => setTime(event.target.value)} className="cos-input w-full px-3 py-2 text-sm lg:w-auto" />
+            <input aria-label="Date location" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Location" className="cos-input min-w-0 px-3 py-2 text-sm lg:flex-1" />
+            <select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input w-full px-3 py-2 text-sm lg:w-auto">
+              <option value="">No project</option>
+              {activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+            </select>
+            <button onClick={create} className="cos-btn cos-btn-primary px-4 py-2 text-sm">Add</button>
+          </div>
+        </div>
+      ) : null}
       <div className="space-y-2">
         {deadlines.map((deadline) => {
           const overdue = deadline.date < localDateKey() && !deadline.archivedAt;
@@ -1933,17 +1947,19 @@ export function DatesView() {
                     {projectName(data.projects, deadline.projectId) ? <span>{projectName(data.projects, deadline.projectId)}</span> : null}
                   </div>
                 </div>
-                <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="cos-input mt-2 px-2 py-1 text-xs" />
-                <input aria-label={`${deadline.title} time`} type="time" value={deadline.time ?? ""} onChange={(event) => updateDeadline(deadline.id, { time: event.target.value || null })} className="cos-input mt-2 px-2 py-1 text-xs" />
-                <div className="mt-2 max-w-36"><EditableField value={deadline.location} placeholder="Location" onSave={(location) => updateDeadline(deadline.id, { location })} inputClassName="px-2 py-1 text-xs" /></div>
-                <select aria-label={`${deadline.title} project`} value={deadline.projectId ?? ""} onChange={(event) => updateDeadline(deadline.id, { projectId: event.target.value || null })} className="cos-input mt-2 max-w-40 px-2 py-1 text-xs">
+              </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:flex lg:items-start lg:pl-7">
+                <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="cos-input w-full px-3 py-2 text-sm lg:w-auto lg:px-2 lg:py-1 lg:text-xs" />
+                <input aria-label={`${deadline.title} time`} type="time" value={deadline.time ?? ""} onChange={(event) => updateDeadline(deadline.id, { time: event.target.value || null })} className="cos-input w-full px-3 py-2 text-sm lg:w-auto lg:px-2 lg:py-1 lg:text-xs" />
+                <div className="min-w-0 lg:w-36"><EditableField value={deadline.location} placeholder="Location" onSave={(location) => updateDeadline(deadline.id, { location })} inputClassName="px-3 py-2 text-sm lg:px-2 lg:py-1 lg:text-xs" /></div>
+                <select aria-label={`${deadline.title} project`} value={deadline.projectId ?? ""} onChange={(event) => updateDeadline(deadline.id, { projectId: event.target.value || null })} className="cos-input w-full px-3 py-2 text-sm lg:w-40 lg:px-2 lg:py-1 lg:text-xs">
                   <option value="">No project</option>
                   {activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
                 </select>
-                <button aria-label={deadline.archivedAt ? `Restore ${deadline.title}` : `Archive ${deadline.title}`} onClick={() => updateDeadline(deadline.id, { archivedAt: deadline.archivedAt ? null : new Date().toISOString() })} className="mt-2 text-xs font-medium text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]">{deadline.archivedAt ? "Restore" : "Archive"}</button>
-                <button aria-label={`Delete ${deadline.title}`} onClick={() => updateDeadline(deadline.id, { trashedAt: new Date().toISOString() })} className="mt-2 text-[var(--cos-text-subtle)] hover:text-[var(--cos-danger)]"><Trash2 className="h-4 w-4" /></button>
+                <button aria-label={deadline.archivedAt ? `Restore ${deadline.title}` : `Archive ${deadline.title}`} onClick={() => updateDeadline(deadline.id, { archivedAt: deadline.archivedAt ? null : new Date().toISOString() })} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs">{deadline.archivedAt ? "Restore" : "Archive"}</button>
+                <button aria-label={`Delete ${deadline.title}`} onClick={() => updateDeadline(deadline.id, { trashedAt: new Date().toISOString() })} className="grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger)]"><Trash2 className="h-4 w-4" /></button>
               </div>
-              <div className="mt-3 pl-7">
+              <div className="mt-3 lg:pl-7">
                 <MarkdownEditor
                   value={deadline.notes}
                   placeholder="Date notes..."
@@ -2036,7 +2052,69 @@ export function ArchiveView() {
     ...data.deadlines.filter((item) => item.trashedAt).map((item) => ({ id: item.id, type: "Date", title: item.title, restore: () => updateDeadline(item.id, { trashedAt: null, archivedAt: null }) }))
   ];
 
-  return <Page title="Archive" subtitle="Archived records and soft-deleted trash."><div className="mb-4 flex gap-1 rounded-lg bg-[var(--cos-bg-inset)] p-1"><button onClick={() => setTab("archived")} className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium ${tab === "archived" ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)]"}`}>Archived ({archived.length})</button><button onClick={() => setTab("trash")} className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium ${tab === "trash" ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)]"}`}>Trash ({trash.length})</button></div>{tab === "archived" ? <div className="space-y-2">{archived.map((project) => <div key={project.id} className="cos-surface flex items-center gap-3 p-4"><FolderKanban className="h-4 w-4 text-[var(--cos-text-subtle)]" /><div className="flex-1"><p className="text-sm font-medium text-[var(--cos-text)]">{project.name}</p><p className="text-xs text-[var(--cos-text-subtle)]">{domainName(data.domains, project.domainId)}</p></div><button onClick={() => router.push(`/projects/${project.id}`)} className="text-xs font-medium text-[var(--cos-primary-text)]">View</button><button aria-label={`Restore ${project.name}`} onClick={() => updateProject(project.id, { status: "active" as any, archivedAt: null })} className="text-xs font-medium text-[var(--cos-success-text)]">Restore</button></div>)}{!archived.length ? <EmptyState icon={Archive} title="No archived projects" /> : null}</div> : <div className="space-y-2">{trash.map((item) => <div key={`${item.type}-${item.id}`} className="cos-surface flex items-center gap-3 p-4"><FileText className="h-4 w-4 text-[var(--cos-text-subtle)]" /><div className="flex-1"><p className="text-sm text-[var(--cos-text)]">{item.title}</p><p className="text-xs text-[var(--cos-text-subtle)]">{item.type}</p></div><button onClick={item.restore} className="flex items-center gap-1 text-xs font-medium text-[var(--cos-success-text)]"><RotateCcw className="h-3 w-3" /> Restore</button></div>)}{!trash.length ? <EmptyState icon={Trash2} title="Trash is empty" /> : null}</div>}</Page>;
+  return (
+    <Page title="Archive" subtitle="Archived records and soft-deleted trash.">
+      <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-[var(--cos-bg-inset)] p-1">
+        <button
+          onClick={() => setTab("archived")}
+          className={`min-h-10 rounded-md px-3 py-2 text-sm font-medium ${tab === "archived" ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)]"}`}
+        >
+          Archived ({archived.length})
+        </button>
+        <button
+          onClick={() => setTab("trash")}
+          className={`min-h-10 rounded-md px-3 py-2 text-sm font-medium ${tab === "trash" ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)]"}`}
+        >
+          Trash ({trash.length})
+        </button>
+      </div>
+
+      {tab === "archived" ? (
+        <div className="space-y-2">
+          {archived.map((project) => (
+            <div key={project.id} className="cos-surface p-4">
+              <div className="flex items-start gap-3">
+                <FolderKanban className="mt-0.5 h-4 w-4 shrink-0 text-[var(--cos-text-subtle)]" />
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-sm font-medium text-[var(--cos-text)]">{project.name}</p>
+                  <p className="text-xs text-[var(--cos-text-subtle)]">{domainName(data.domains, project.domainId)}</p>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:ml-7 sm:flex sm:justify-end">
+                <button onClick={() => router.push(`/projects/${project.id}`)} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-sm">
+                  View
+                </button>
+                <button aria-label={`Restore ${project.name}`} onClick={() => updateProject(project.id, { status: "active" as any, archivedAt: null })} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-sm text-[var(--cos-success-text)]">
+                  Restore
+                </button>
+              </div>
+            </div>
+          ))}
+          {!archived.length ? <EmptyState icon={Archive} title="No archived projects" /> : null}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {trash.map((item) => (
+            <div key={`${item.type}-${item.id}`} className="cos-surface p-4">
+              <div className="flex items-start gap-3">
+                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-[var(--cos-text-subtle)]" />
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-sm text-[var(--cos-text)]">{item.title}</p>
+                  <p className="text-xs text-[var(--cos-text-subtle)]">{item.type}</p>
+                </div>
+              </div>
+              <div className="mt-3 grid sm:ml-7 sm:flex sm:justify-end">
+                <button onClick={item.restore} className="cos-btn cos-btn-ghost min-h-10 justify-center px-3 py-2 text-sm text-[var(--cos-success-text)]">
+                  <RotateCcw className="h-4 w-4" /> Restore
+                </button>
+              </div>
+            </div>
+          ))}
+          {!trash.length ? <EmptyState icon={Trash2} title="Trash is empty" /> : null}
+        </div>
+      )}
+    </Page>
+  );
 }
 
 export function SettingsView() {

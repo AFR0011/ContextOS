@@ -267,7 +267,7 @@ export function DashboardView() {
   return <Dashboard2View />;
 }
 
-type InboxFilter = "unprocessed" | "processed" | "archived" | "all";
+type InboxFilter = "unprocessed" | "suggestions" | "processed" | "archived" | "all";
 type TriageMode = "task" | "date" | "project" | "note" | "attach-project";
 type QuickCaptureTarget = Exclude<TriageMode, "attach-project">;
 
@@ -388,12 +388,17 @@ export function InboxView() {
     () => data.captures.filter((capture) => capture.status === "unprocessed").sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     [data.captures]
   );
+  const suggestionCount = useMemo(
+    () => data.captures.filter((capture) => capture.status === "unprocessed" && Boolean(capture.parsedData?.handoffId)).length,
+    [data.captures]
+  );
   const captures = useMemo(
     () =>
       data.captures
         .filter((capture) => capture.status !== "deleted")
         .filter((capture) => {
           if (filter === "all") return true;
+          if (filter === "suggestions") return capture.status === "unprocessed" && Boolean(capture.parsedData?.handoffId);
           if (filter === "processed") return capture.status === "converted" || capture.status === "attached";
           return capture.status === filter;
         })
@@ -414,6 +419,7 @@ export function InboxView() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const active = new URLSearchParams(window.location.search).get("review") === "1";
+    if (new URLSearchParams(window.location.search).get("filter") === "suggestions") setFilter("suggestions");
     setReviewMode(active);
     if (active) setReviewProgress({ done: 0, total: unprocessed.length });
   }, []);
@@ -495,8 +501,8 @@ export function InboxView() {
         </button>
       </div>
       <div className="mt-4 flex gap-1 rounded-lg bg-[var(--cos-bg-inset)] p-1">
-        {(["unprocessed", "processed", "archived", "all"] as const).map((tab) => (
-          <button key={tab} onClick={() => setFilter(tab)} className={`min-h-10 flex-1 rounded-md px-3 py-2 text-sm font-medium capitalize ${filter === tab ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]"}`}>{tab}</button>
+        {(["unprocessed", "suggestions", "processed", "archived", "all"] as const).map((tab) => (
+          <button key={tab} onClick={() => setFilter(tab)} className={`min-h-10 flex-1 rounded-md px-3 py-2 text-sm font-medium capitalize ${filter === tab ? "bg-[var(--cos-bg-elevated)] text-[var(--cos-text-strong)] shadow-sm" : "text-[var(--cos-text-muted)] hover:text-[var(--cos-text-strong)]"}`}>{tab}{tab === "suggestions" && suggestionCount ? ` (${suggestionCount})` : ""}</button>
         ))}
       </div>
       <div className="mt-4 space-y-2">
@@ -549,6 +555,7 @@ function CaptureCard({
             <span className="cos-pill cos-pill-primary">{detected}</span>
             <span className="text-[11px] text-[var(--cos-text-subtle)]">{formatDistanceToNow(parseISO(capture.createdAt), { addSuffix: true })}</span>
             {capture.status !== "unprocessed" ? <span className="cos-pill cos-pill-success">{capture.status}</span> : null}
+            {capture.parsedData?.handoffId ? <span className="cos-pill cos-pill-primary">Suggestion</span> : null}
           </div>
         </div>
         {capture.status === "unprocessed" ? (

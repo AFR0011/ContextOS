@@ -1,5 +1,13 @@
 # ContextOS Product Specification v1
 
+## LifeOS proposal intake
+
+- Authenticated `/handoff` previews `lifeos-handoff/v1` URL-fragment payloads and removes the fragment from browser history immediately.
+- The user may edit the proposed title and body before approval.
+- Approval is idempotent and creates only an unprocessed Inbox capture with source metadata.
+- Suggestions remain subject to manual triage; intake never creates a task or changes a project directly.
+- `/reviews` is the canonical destination for weekly reviews started from The Ledger.
+
 ## Status
 
 **Version:** v1.0 (implementation batch v0.2.8)

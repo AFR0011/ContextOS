@@ -10,6 +10,7 @@
 - `docs/archive/`: historical prototypes, superseded plans, old audits, and archived operational artifacts excluded from app typecheck.
 
 ## App
+- `src/app/(workspace)/handoff`: authenticated LifeOS proposal preview and explicit approval.
 - `src/app`: Next App Router routes.
 - `src/app/(auth)`: login and register pages.
 - `src/app/(workspace)`: protected application routes, including canonical `/dates` and compatibility `/deadlines` redirect.
@@ -25,6 +26,8 @@
 - `src/components/workspace/DailySchedule.tsx`: compact editable task-list surface retained for compatibility views.
 
 ## Server And Data
+- `src/lib/lifeos-handoff.ts`: shared `lifeos-handoff/v1` validation and URL-fragment decoding.
+- `docs/fixtures/lifeos-handoff-v1.json`: cross-repository conformance fixture.
 - `prisma/schema.prisma`: PostgreSQL schema, including nullable task `scheduledTime` and project `parentProjectId`.
 - `prisma/migrations`: database migrations.
 - `src/lib/prisma.ts`: Prisma client singleton with PostgreSQL adapter.

@@ -16,6 +16,7 @@ Complete Notion-style command page verification for Dashboard and Project detail
 - Metadata uses an explicit deployment/local `metadataBase` instead of implicit localhost build defaults.
 
 ## Current Product State
+- LifeOS integration includes authenticated `/handoff` preview, immediate URL-fragment scrubbing, idempotent unprocessed captures, and an Inbox Suggestions filter. Acceptance never creates tasks or mutates projects directly.
 - Package and shell version: `0.2.8`.
 - Core visible routes: Dashboard, Inbox, Projects, Project Detail, and Search. Utility routes remain valid for Areas, Resources, Dates, Reviews, Archive, and Settings.
 - `/today` and `/this-week` redirect to `/dashboard`; Dashboard is canonical for daily work selection.
@@ -65,6 +66,8 @@ Complete Notion-style command page verification for Dashboard and Project detail
 - Moderate dependency advisories still require a safe upstream upgrade review.
 
 ## Latest Verification
+
+- LifeOS handoff batch on 2026-07-15: direct TypeScript check and Next production build passed. The normal pnpm script wrapper was blocked before execution by the existing ignored-build-script policy, so installed binaries were invoked directly.
 
 - Notion-style command-page checks on 2026-07-01: `npm run typecheck` passed, `npm run build` passed, `npx prisma validate` passed, `PLAYWRIGHT_PORT=3001 npx playwright test tests/e2e/contextos.spec.ts -g "command page parser" --workers=1` passed with 1 test, and `git diff --check` passed with line-ending normalization warnings only.
 - DB-backed command-page verification remains blocked on 2026-07-01 because Docker Desktop's Linux engine pipe is unavailable and `npm run db:migrate` cannot reach PostgreSQL at `localhost:5432`.

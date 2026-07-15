@@ -22,6 +22,7 @@ import type {
 } from "./types";
 import { localDateKey } from "./dates";
 import { readJsonResponse, responseErrorMessage } from "./http-client";
+import type { LifeOsHandoffV1 } from "./lifeos-handoff";
 
 const DB_NAME = "contextos-offline-v1";
 const DB_VERSION = 1;
@@ -243,6 +244,7 @@ interface StoreApi {
   forceRefreshFromServer: () => Promise<void>;
   resetDemoData: () => Promise<void>;
   addCapture: (text: string) => void;
+  addHandoffCapture: (handoff: LifeOsHandoffV1) => "created" | "existing";
   updateCapture: (id: string, updates: Partial<Capture>) => void;
   triageCapture: (id: string, action: TriageCaptureAction) => void;
   convertCapture: (id: string, target: "task" | "project" | "note" | "deadline") => void;
@@ -646,6 +648,36 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           createdAt: ts,
           updatedAt: ts
         } satisfies Capture);
+      },
+      addHandoffCapture: (handoff) => {
+        const existing = dataRef.current.captures.find((capture) => capture.parsedData?.handoffId === handoff.id);
+        if (existing) return "existing";
+        const ts = now();
+        const type: CaptureType = handoff.kind === "next-action" || handoff.kind === "follow-up"
+          ? "task"
+          : handoff.kind === "project-update"
+            ? "status"
+            : "note";
+        mutate("captures", {
+          id: `cap-handoff-${handoff.id}`,
+          text: `${handoff.title.trim()}\n\n${handoff.body.trim()}`,
+          status: "unprocessed",
+          type,
+          parsedData: {
+            handoffId: handoff.id,
+            sourceSystem: handoff.source,
+            handoffKind: handoff.kind,
+            sourceEntryId: handoff.sourceRef.entryId ?? "",
+            sourceEntryType: handoff.sourceRef.entryType ?? "",
+            sourceDate: handoff.sourceRef.date ?? "",
+            sourceLifeOsPath: handoff.sourceRef.lifeosPath ?? "",
+            area: handoff.area ?? ""
+          },
+          convertedToId: null,
+          createdAt: ts,
+          updatedAt: ts
+        } satisfies Capture);
+        return "created";
       },
       updateCapture: (id, updates) => {
         const capture = byId(dataRef.current.captures, id);

@@ -1,0 +1,18 @@
+{
+  "schema": "lifeos-handoff",
+  "version": 1,
+  "id": "fixture-2026-07-15-social-reflection",
+  "source": "the-ledger",
+  "target": "socialos",
+  "kind": "social-reflection",
+  "title": "A relationship reflection",
+  "body": "A deliberately selected excerpt.",
+  "area": "relationships-social",
+  "sourceRef": {
+    "entryId": "daily-2026-07-15",
+    "entryType": "daily",
+    "date": "2026-07-15"
+  },
+  "createdAt": "2026-07-15T12:00:00.000Z",
+  "sensitivity": "private"
+}

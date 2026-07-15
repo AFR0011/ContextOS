@@ -1,6 +1,6 @@
 export const DATABASE_UNAVAILABLE_CODE = "database_unavailable";
 export const DATABASE_UNAVAILABLE_MESSAGE =
-  "ContextOS cannot reach PostgreSQL right now. Start Postgres with docker compose up -d, then retry.";
+  "ContextOS cannot reach its database right now. Please try again shortly.";
 
 const PRISMA_CONNECTION_CODES = new Set(["P1000", "P1001", "P1002", "P1008", "P1010", "P1011", "P1017", "P2024"]);
 const NODE_CONNECTION_CODES = new Set(["ECONNREFUSED", "ECONNRESET", "ENOTFOUND", "ETIMEDOUT", "EHOSTUNREACH", "ENETUNREACH"]);
@@ -14,6 +14,7 @@ const CONNECTION_MESSAGE_PATTERNS = [
   "database connection",
   "failed to connect",
   "fetching a new connection",
+  "control plane request failed",
   "server closed the connection",
   "terminating connection"
 ];

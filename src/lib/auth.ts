@@ -109,7 +109,12 @@ export async function getAuthPageStatus() {
 }
 
 export async function requireUser() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-  return user;
+  try {
+    const user = await getCurrentUser();
+    if (!user) redirect("/login");
+    return user;
+  } catch (error) {
+    if (isDatabaseUnavailableError(error)) redirect("/login");
+    throw error;
+  }
 }

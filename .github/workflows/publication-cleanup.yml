@@ -19,15 +19,13 @@ jobs:
           ref: chore/publication-readiness
           fetch-depth: 0
 
-      - name: Sanitize public fixtures and repository history docs
+      - name: Finish publication sanitization
         shell: python
         run: |
           from pathlib import Path
           import shutil
 
           root = Path('.')
-
-          # Replace personal/workflow-specific demo labels with neutral public fixtures.
           replacements = [
               ('Career / PhD Applications', 'Release Planning'),
               ('Career / PhD', 'Planning'),
@@ -35,7 +33,8 @@ jobs:
               ('Piano / Content', 'Creative Work'),
               ('MSc Thesis', 'Benchmark Evaluation'),
               ('Rerun RF baseline with corrected threshold logic', 'Validate benchmark regression'),
-              ('RF baseline still needs rerun with corrected threshold logic', 'one benchmark regression scenario still needs validation'),
+              ('RF baseline still needs rerun with corrected threshold logic', 'One benchmark regression scenario still needs validation'),
+              ('Benchmark support audit is complete. one benchmark regression scenario still needs validation.', 'Benchmark support audit is complete. One benchmark regression scenario still needs validation.'),
               ('Protocol B support audit is complete.', 'Benchmark support audit is complete.'),
               ('compare calibration tables after the RF rerun finishes', 'compare benchmark outputs after the regression run finishes'),
               ('Confirm corrected threshold logic', 'Confirm regression behavior'),
@@ -57,15 +56,19 @@ jobs:
               ('task-rf', 'task-benchmark'),
               ('thesisProjectId', 'benchmarkProjectId'),
               ('careerProjectId', 'releaseProjectId'),
+              ('proj-thesis', 'proj-benchmark'),
+              ('proj-career', 'proj-release'),
               ('domains.piano', 'domains.creative'),
               ('["piano", "Creative Work"]', '["creative", "Creative Work"]'),
               ('["piano", "Piano / Content"]', '["creative", "Creative Work"]'),
+              ('ContextOS v0.1 verification pass', 'ContextOS verification pass'),
+              ('The user-supplied `Notion-style editor demo/` folder remains a reference artifact only and is excluded from app TypeScript compilation.\n', ''),
           ]
 
           text_suffixes = {'.md', '.ts', '.tsx', '.js', '.mjs', '.json', '.yml', '.yaml'}
           excluded_parts = {'.git', 'node_modules', '.next'}
-
           changed = []
+
           for path in root.rglob('*'):
               if not path.is_file() or path.suffix.lower() not in text_suffixes:
                   continue
@@ -84,31 +87,40 @@ jobs:
                   path.write_text(updated, encoding='utf-8')
                   changed.append(path.as_posix())
 
-          # The imported editor reference is not application source and has unclear
-          # redistribution provenance. Remove it from the publication tree.
-          reference_dir = root / 'Notion-style editor demo'
-          if reference_dir.exists():
-              shutil.rmtree(reference_dir)
-              changed.append(reference_dir.as_posix() + '/')
+          # Remove the imported reference prototype and stale internal execution/audit material.
+          for relative in ['Notion-style editor demo', 'docs/archive']:
+              target = root / relative
+              if target.exists():
+                  shutil.rmtree(target)
+                  changed.append(relative + '/')
 
-          # Internal execution logs are useful while building but add noise and
-          # stale claims to a public portfolio repository.
-          for relative in ['DEV_LOG.md', 'DEV_STATE.md', 'QA_REPORT.md', 'RISK_REGISTER.md']:
+          for relative in [
+              'DEV_LOG.md',
+              'DEV_STATE.md',
+              'QA_REPORT.md',
+              'RISK_REGISTER.md',
+              'docs/AUDIT_2026-06-15.md',
+              'docs/MIGRATION_BACKLOG.md',
+              'docs/VERSION_LOG.md',
+          ]:
               target = root / relative
               if target.exists():
                   target.unlink()
                   changed.append(relative)
 
-          print('Publication cleanup touched:')
+          print('Final publication cleanup touched:')
           for item in changed:
               print(f' - {item}')
 
-      - name: Verify no targeted personal fixture labels remain
+      - name: Verify publication tree
         shell: bash
         run: |
           set -euo pipefail
-          ! git grep -n -E 'Dev / Freelance|Career / PhD|MSc Thesis|Rerun RF baseline with corrected threshold logic|Piano Schedule|Piano / Content' -- ':!docs/archive/**'
+          ! git grep -n -E 'Dev / Freelance|Career / PhD|MSc Thesis|Rerun RF baseline with corrected threshold logic|Piano Schedule|Piano / Content|KPMG Application|Semester 12-3 Assistantship'
           ! test -e 'Notion-style editor demo'
+          ! test -e 'DEV_LOG.md'
+          ! test -e 'DEV_STATE.md'
+          ! test -e 'QA_REPORT.md'
           git diff --check
 
       - name: Commit cleanup back to publication branch
@@ -122,5 +134,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'Complete publication fixture sanitization'
+          git commit -m 'Finalize public repository sanitization'
           git push origin HEAD:chore/publication-readiness

@@ -13,13 +13,13 @@ function idFor(userId: string, key: string) {
 }
 
 export const defaultDomainTemplates = [
+  ["product", "Product Development"],
   ["research", "Research"],
-  ["dev", "Dev / Freelance"],
-  ["university", "University"],
-  ["career", "Career / PhD"],
-  ["longterm", "Long-Term Goals"],
-  ["ai", "AI Agent Context"],
-  ["piano", "Piano / Content"],
+  ["operations", "Operations"],
+  ["learning", "Learning"],
+  ["planning", "Planning"],
+  ["personal", "Personal"],
+  ["archive", "Reference"],
   ["notes", "Notes"]
 ] as const;
 
@@ -58,76 +58,76 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
     skipDuplicates: true
   });
 
-  const contextProjectId = idFor(userId, "proj-contextos");
-  const contextDashboardProjectId = idFor(userId, "proj-contextos-dashboard");
-  const contextOfflineProjectId = idFor(userId, "proj-contextos-offline");
-  const thesisProjectId = idFor(userId, "proj-thesis");
-  const careerProjectId = idFor(userId, "proj-career");
+  const launchProjectId = idFor(userId, "proj-launch");
+  const dashboardProjectId = idFor(userId, "proj-dashboard");
+  const offlineProjectId = idFor(userId, "proj-offline");
+  const researchProjectId = idFor(userId, "proj-research");
+  const planningProjectId = idFor(userId, "proj-planning");
 
   await tx.project.createMany({
     data: [
       {
-        id: contextProjectId,
+        id: launchProjectId,
         userId,
-        name: "ContextOS Demo",
-        domainId: domains.dev,
+        name: "Product Launch Demo",
+        domainId: domains.product,
         parentProjectId: null,
         status: "active",
-        currentObjective: "Turn the blueprint into a daily-use system for capture, execution, and recovery.",
-        nextAction: "Run one real workday through Dashboard, Inbox, Today, and project recovery.",
-        latestStatus: "Next/Postgres direction chosen. Offline core views and local auth are part of v0.1.",
-        recoveryNotes: "## Working notes\n- Keep dashboard capture fast.\n- Keep project recovery structured but editable.\n\n## Demo handoff\n- Auth should feel real locally\n- Offline capture should not lose anything\n- Project pages should answer what to do next",
-        openLoops: ["Verify offline sync after reconnect", "Replace demo notes with real project context"]
+        currentObjective: "Prepare a small product release while keeping decisions, tasks, and open loops recoverable.",
+        nextAction: "Triage the latest captures and confirm this week's release checklist.",
+        latestStatus: "Core workflow is ready for a final verification pass.",
+        recoveryNotes: "## Working notes\n- Keep capture fast.\n- Keep project recovery concise.\n\n## Release handoff\n- Verify the critical path\n- Keep offline edits durable\n- Record decisions where they can be recovered later",
+        openLoops: ["Verify offline sync after reconnect", "Confirm the release checklist"]
       },
       {
-        id: contextDashboardProjectId,
+        id: dashboardProjectId,
         userId,
-        name: "Dashboard 2.0 Foundation",
-        domainId: domains.dev,
-        parentProjectId: contextProjectId,
+        name: "Dashboard Workflow",
+        domainId: domains.product,
+        parentProjectId: launchProjectId,
         status: "active",
-        currentObjective: "Make the dashboard feel like a daily command page with a markdown canvas plus fixed widgets.",
-        nextAction: "Use the dashboard canvas during the next real work session.",
-        latestStatus: "Dashboard canvas is being validated as the Notion-style layer for v0.1.x.",
+        currentObjective: "Make the dashboard a fast command page for daily execution.",
+        nextAction: "Run one complete capture-to-completion workflow.",
+        latestStatus: "The dashboard editor and live task/date blocks are ready for review.",
         recoveryNotes: "",
-        openLoops: ["Confirm canvas is useful without replacing Today widgets"]
+        openLoops: ["Confirm the dashboard remains useful at mobile width"]
       },
       {
-        id: contextOfflineProjectId,
+        id: offlineProjectId,
         userId,
-        name: "Offline Sync Trust",
-        domainId: domains.dev,
-        parentProjectId: contextProjectId,
+        name: "Offline Sync Reliability",
+        domainId: domains.operations,
+        parentProjectId: launchProjectId,
         status: "active",
         currentObjective: "Keep offline edits durable, visible, and recoverable.",
-        nextAction: "Run an offline edit and confirm pending sync clears.",
-        latestStatus: "Draft-save warnings and stale mutation warnings are visible in v0.1.4.",
+        nextAction: "Make one offline edit and confirm the pending mutation clears after reconnect.",
+        latestStatus: "Queued mutations and stale-write warnings are visible to the user.",
         recoveryNotes: "",
-        openLoops: ["Production offline hydration still needs a production-build smoke"]
+        openLoops: ["Run a production-build offline smoke test"]
       },
       {
-        id: thesisProjectId,
+        id: researchProjectId,
         userId,
-        name: "MSc Thesis",
+        name: "User Research Sprint",
         domainId: domains.research,
         parentProjectId: null,
         status: "active",
-        currentObjective: "Keep experiments and handoffs recoverable after breaks.",
-        nextAction: "Write the next verifiable experiment packet.",
-        latestStatus: "Protocol B support audit is complete. RF baseline still needs rerun with corrected threshold logic.",
-        recoveryNotes: "## Experiment recovery note\nLast useful context: compare calibration tables after the RF rerun finishes.",
-        openLoops: ["Confirm corrected threshold logic", "Decide whether calibration table belongs in appendix"]
+        currentObjective: "Collect and summarize feedback from a small usability study.",
+        nextAction: "Review the latest session notes and extract recurring friction points.",
+        latestStatus: "Initial sessions are complete; synthesis is the next step.",
+        recoveryNotes: "## Research note\nCompare repeated navigation issues before changing the information architecture.",
+        openLoops: ["Group feedback by workflow stage", "Decide which issue is release-blocking"]
       },
       {
-        id: careerProjectId,
+        id: planningProjectId,
         userId,
-        name: "Career / PhD Applications",
-        domainId: domains.career,
+        name: "Quarterly Planning",
+        domainId: domains.planning,
         parentProjectId: null,
         status: "paused",
-        currentObjective: "Keep application materials ready without letting them invade daily execution.",
-        nextAction: "Review one application date and update the checklist.",
-        latestStatus: "Draft materials exist; next useful move is to identify date risk.",
+        currentObjective: "Keep upcoming milestones visible without crowding daily execution.",
+        nextAction: "Review one milestone and update its next action.",
+        latestStatus: "Planning notes are captured; no immediate action is required.",
         recoveryNotes: "",
         openLoops: []
       }
@@ -144,41 +144,41 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         plannedDate: dateOnly(0),
         dueDate: null,
         scheduledTime: "09:30",
-        projectId: contextProjectId,
-        domainId: domains.dev,
+        projectId: launchProjectId,
+        domainId: domains.product,
         status: "todo"
       },
       {
         id: idFor(userId, "task-status"),
         userId,
-        title: "Write one clean latest-status note",
+        title: "Write one concise project status update",
         plannedDate: dateOnly(0),
         dueDate: dateOnly(1),
         scheduledTime: "10:30",
-        projectId: contextDashboardProjectId,
-        domainId: domains.dev,
+        projectId: dashboardProjectId,
+        domainId: domains.product,
         status: "in-progress"
       },
       {
-        id: idFor(userId, "task-rf"),
+        id: idFor(userId, "task-offline"),
         userId,
-        title: "Rerun RF baseline with corrected threshold logic",
+        title: "Verify an offline edit after reconnect",
         plannedDate: dateOnly(1),
         dueDate: dateOnly(3),
         scheduledTime: null,
-        projectId: thesisProjectId,
-        domainId: domains.research,
+        projectId: offlineProjectId,
+        domainId: domains.operations,
         status: "blocked"
       },
       {
-        id: idFor(userId, "task-deadlines"),
+        id: idFor(userId, "task-milestones"),
         userId,
-        title: "Review important dates and identify risk points",
+        title: "Review upcoming milestones and flag risks",
         plannedDate: null,
         dueDate: dateOnly(0),
         scheduledTime: "15:00",
-        projectId: careerProjectId,
-        domainId: domains.career,
+        projectId: planningProjectId,
+        domainId: domains.planning,
         status: "todo"
       }
     ],
@@ -190,13 +190,13 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
       {
         id: idFor(userId, "deadline-demo"),
         userId,
-        title: "ContextOS v0.1 verification pass",
+        title: "Release verification pass",
         date: dateOnly(4),
         time: null,
         location: "",
-        projectId: contextOfflineProjectId,
+        projectId: offlineProjectId,
         taskIds: [],
-        notes: "Run the full capture -> triage -> today -> recovery loop."
+        notes: "Run the full capture -> triage -> execution -> recovery loop."
       },
       {
         id: idFor(userId, "deadline-weekly"),
@@ -218,7 +218,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
       {
         id: idFor(userId, "capture-task"),
         userId,
-        text: "/task Clean up deployment checklist",
+        text: "/task Clean up the release checklist",
         status: "unprocessed",
         type: "task",
         convertedToId: null
@@ -226,7 +226,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
       {
         id: idFor(userId, "capture-status"),
         userId,
-        text: "/status ContextOS Demo: auth and offline sync need a verification pass",
+        text: "/status Product Launch Demo: auth and offline sync need a verification pass",
         status: "unprocessed",
         type: "status",
         convertedToId: null
@@ -241,29 +241,29 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         id: idFor(userId, "note-dashboard-canvas"),
         userId,
         title: "Dashboard Canvas",
-        content: "## Notepad\n- Try using this as the Dashboard 2.0 scratch layer.\n- Keep widgets for execution; keep loose thoughts here.\n\n## Dates\n- Add one real exam, flight, event, or final milestone\n\n## Goals\n- [ ] Decide whether this canvas reduces Notion dashboard use",
+        content: "## Notepad\n- Capture loose thoughts here.\n- Keep executable work in the live task and date blocks.\n\n## Dates\n- Add one meaningful milestone\n\n## Goals\n- [ ] Complete the demo workflow without losing context",
         projectId: null,
         domainId: domains.notes
       },
       {
-        id: idFor(userId, "note-piano-schedule"),
+        id: idFor(userId, "note-release-checklist"),
         userId,
-        title: "Piano Schedule",
+        title: "Release Checklist",
         content: [
-          "| Index | Song | Today? | Status |",
-          "| --- | --- | --- | --- |",
-          "| 1 | Current warmup piece | Yes | Refine |",
-          "| 2 | Harder variation study | Yes | Learn Harder Variation |",
-          "| 3 | Repertoire maintenance | No | Perfect |",
+          "| Item | Today? | Status |",
+          "| --- | --- | --- |",
+          "| Verify critical workflow | Yes | In progress |",
+          "| Review mobile layout | Yes | Ready |",
+          "| Update release notes | No | Planned |",
           "",
           "## Status options",
-          "- New",
-          "- Learn Harder Variation",
-          "- Refine",
-          "- Perfect"
+          "- Planned",
+          "- Ready",
+          "- In progress",
+          "- Done"
         ].join("\n"),
         projectId: null,
-        domainId: domains.piano
+        domainId: domains.notes
       }
     ],
     skipDuplicates: true
@@ -277,7 +277,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         type: "daily-startup",
         date: new Date(),
         responses: {
-          focus: "Verify the ContextOS core loop, process stale captures, and update one project status."
+          focus: "Verify the core workflow, process stale captures, and update one project status."
         }
       }
     ],
@@ -310,5 +310,4 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
     ],
     skipDuplicates: true
   });
-
 }

@@ -1,0 +1,126 @@
+name: One-time publication cleanup
+
+on:
+  push:
+    branches:
+      - chore/publication-readiness
+
+permissions:
+  contents: write
+
+jobs:
+  sanitize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out publication branch
+        uses: actions/checkout@v4
+        with:
+          ref: chore/publication-readiness
+          fetch-depth: 0
+
+      - name: Sanitize public fixtures and repository history docs
+        shell: python
+        run: |
+          from pathlib import Path
+          import shutil
+
+          root = Path('.')
+
+          # Replace personal/workflow-specific demo labels with neutral public fixtures.
+          replacements = [
+              ('Career / PhD Applications', 'Release Planning'),
+              ('Career / PhD', 'Planning'),
+              ('Dev / Freelance', 'Engineering'),
+              ('Piano / Content', 'Creative Work'),
+              ('MSc Thesis', 'Benchmark Evaluation'),
+              ('Rerun RF baseline with corrected threshold logic', 'Validate benchmark regression'),
+              ('RF baseline still needs rerun with corrected threshold logic', 'one benchmark regression scenario still needs validation'),
+              ('Protocol B support audit is complete.', 'Benchmark support audit is complete.'),
+              ('compare calibration tables after the RF rerun finishes', 'compare benchmark outputs after the regression run finishes'),
+              ('Confirm corrected threshold logic', 'Confirm regression behavior'),
+              ('Decide whether calibration table belongs in appendix', 'Decide whether the benchmark table belongs in release notes'),
+              ('Keep application materials ready without letting them invade daily execution.', 'Keep release tasks ready without crowding daily execution.'),
+              ('Review one application date and update the checklist.', 'Review one release milestone and update the checklist.'),
+              ('Draft materials exist; next useful move is to identify date risk.', 'Draft release materials exist; next useful move is to identify schedule risk.'),
+              ('Review important dates and identify risk points', 'Review release milestones and identify risk points'),
+              ('Piano Schedule', 'Practice Schedule'),
+              ('Piano song repertoire', 'Skill practice repertoire'),
+              ('KPMG Application', 'Product Launch'),
+              ('Orbit Wars Week 4', 'Prototype Iteration'),
+              ('Semester 12-3 Assistantship', 'Support Rotation'),
+              ('Assistantship -> CMPE211', 'Support Rotation -> Queue Review'),
+              ('University Course -> Assignment 2', 'Learning Track -> Module 2'),
+              ('piano-schedule-table', 'practice-schedule-table'),
+              ('PianoSchedule', 'PracticeSchedule'),
+              ('note-piano-schedule', 'note-practice-schedule'),
+              ('task-rf', 'task-benchmark'),
+              ('thesisProjectId', 'benchmarkProjectId'),
+              ('careerProjectId', 'releaseProjectId'),
+              ('domains.piano', 'domains.creative'),
+              ('["piano", "Creative Work"]', '["creative", "Creative Work"]'),
+              ('["piano", "Piano / Content"]', '["creative", "Creative Work"]'),
+          ]
+
+          text_suffixes = {'.md', '.ts', '.tsx', '.js', '.mjs', '.json', '.yml', '.yaml'}
+          excluded_parts = {'.git', 'node_modules', '.next'}
+
+          changed = []
+          for path in root.rglob('*'):
+              if not path.is_file() or path.suffix.lower() not in text_suffixes:
+                  continue
+              if any(part in excluded_parts for part in path.parts):
+                  continue
+              if path.as_posix() == '.github/workflows/publication-cleanup.yml':
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              updated = text
+              for old, new in replacements:
+                  updated = updated.replace(old, new)
+              if updated != text:
+                  path.write_text(updated, encoding='utf-8')
+                  changed.append(path.as_posix())
+
+          # The imported editor reference is not application source and has unclear
+          # redistribution provenance. Remove it from the publication tree.
+          reference_dir = root / 'Notion-style editor demo'
+          if reference_dir.exists():
+              shutil.rmtree(reference_dir)
+              changed.append(reference_dir.as_posix() + '/')
+
+          # Internal execution logs are useful while building but add noise and
+          # stale claims to a public portfolio repository.
+          for relative in ['DEV_LOG.md', 'DEV_STATE.md', 'QA_REPORT.md', 'RISK_REGISTER.md']:
+              target = root / relative
+              if target.exists():
+                  target.unlink()
+                  changed.append(relative)
+
+          print('Publication cleanup touched:')
+          for item in changed:
+              print(f' - {item}')
+
+      - name: Verify no targeted personal fixture labels remain
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! git grep -n -E 'Dev / Freelance|Career / PhD|MSc Thesis|Rerun RF baseline with corrected threshold logic|Piano Schedule|Piano / Content' -- ':!docs/archive/**'
+          ! test -e 'Notion-style editor demo'
+          git diff --check
+
+      - name: Commit cleanup back to publication branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet && git diff --cached --quiet; then
+            echo 'No cleanup changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Complete publication fixture sanitization'
+          git push origin HEAD:chore/publication-readiness

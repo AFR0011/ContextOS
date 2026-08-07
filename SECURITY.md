@@ -33,6 +33,18 @@ The application currently assumes:
 
 The application includes local authentication, HTTP-only sessions, user-scoped persistence, basic auth abuse throttling, baseline response security headers, bounded sync payload handling, and ownership checks during synchronization.
 
+## Dependency audit status
+
+The publication branch is pinned to stable Next.js 16.2.12 and Prisma 7.9.1. `npm audit --omit=dev` currently reports three high-severity transitive advisories from packages bundled through stable Next.js (`postcss` and `sharp`). npm's available automated remediation moves Next.js to the 16.3 line rather than another stable 16.2 patch.
+
+CI therefore:
+
+- prints the full production dependency audit on every run;
+- fails on any critical production advisory;
+- keeps the known upstream high advisories visible rather than suppressing or silently force-upgrading the framework.
+
+These advisories should be re-evaluated when a stable Next.js release containing the fixed dependency versions is available. This is one reason ContextOS is described as portfolio-stage rather than production-hardened software.
+
 ## Known boundaries
 
 The project does not currently provide:

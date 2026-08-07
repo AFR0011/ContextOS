@@ -219,12 +219,12 @@ Default domains:
 
 ```text
 Research
-Dev / Freelance
+Engineering
 University
-Career / PhD
+Planning
 Long-Term Goals
 AI Agent Context
-Piano / Content
+Creative Work
 Notes
 ```
 
@@ -245,7 +245,7 @@ Resources are standalone notes and reference lists that do not belong to a singl
 Examples:
 
 ```text
-Piano song repertoire
+Skill practice repertoire
 Vocabulary list
 Useful tools / links
 Practice theory notes
@@ -303,11 +303,11 @@ A project is a larger container with an outcome.
 Examples:
 
 ```text
-MSc Thesis
+Benchmark Evaluation
 ContextOS
-KPMG Application
-Orbit Wars Week 4
-Semester 12-3 Assistantship
+Product Launch
+Prototype Iteration
+Support Rotation
 ```
 
 Smaller work items belong as tasks, not separate projects. However, large projects may contain subcontexts when the child has its own recovery context, next action, recovery notes, dates, or open loops.
@@ -315,8 +315,8 @@ Smaller work items belong as tasks, not separate projects. However, large projec
 Examples of valid subcontexts:
 
 ```text
-Assistantship -> CMPE211
-University Course -> Assignment 2
+Support Rotation -> Queue Review
+Learning Track -> Module 2
 ContextOS -> Dashboard 2.0 Foundation
 Research -> Medical XAI Paper
 ```
@@ -400,7 +400,7 @@ This model supports massive projects without introducing a separate subproject o
 Example:
 
 ```text
-Protocol B support audit is complete. RF baseline still needs rerun with corrected threshold logic.
+Benchmark support audit is complete. one benchmark regression scenario still needs validation.
 ```
 
 ### 8.8 Open Loops / Blockers
@@ -506,7 +506,7 @@ Example:
 ```text
 Date: Submit thesis proposal
 Date: June 10
-Related project: MSc Thesis
+Related project: Benchmark Evaluation
 Related tasks:
 - Finish methodology
 - Proofread
@@ -549,7 +549,7 @@ Examples:
 /note dashboard should show overdue before inbox
 /project ContextOS
 /date final exam June 10
-/status MSc Thesis: RF rerun done, next action is compare calibration tables
+/status Benchmark Evaluation: RF rerun done, next action is compare calibration tables
 ```
 
 ### 11.3 Capture Parsing
@@ -855,12 +855,12 @@ Default readable domains:
 
 ```text
 Research
-Dev / Freelance
+Engineering
 University
-Career / PhD
+Planning
 Long-Term Goals
 AI Agent Context
-Piano / Content
+Creative Work
 Notes, except private notes
 ```
 

@@ -540,10 +540,10 @@ Make Quick Capture powerful enough to create structured records quickly.
 ### Supported syntax
 
 ```txt
-/task Finish report @MSc Thesis #University due:2026-06-10 plan:today
+/task Finish report @Benchmark Evaluation #University due:2026-06-10 plan:today
 /note @ContextOS Draft-save bug in notes
 /project ContextOS v0.2 #Personal objective:Use daily for one week
-/deadline Submit report date:2026-06-15 @MSc Thesis
+/deadline Submit report date:2026-06-15 @Benchmark Evaluation
 /status @ContextOS Offline sync works. Next: task editor.
 ```
 

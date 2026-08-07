@@ -19,10 +19,10 @@
 ## What Is Failing Or Weak
 
 - The app is database-hard at render time. If Postgres is down, even `/login` can fail because server-rendered auth checks call Prisma before rendering the form.
-- Local browser cache can drift after external database reset/seed. A clean Playwright context saw the seeded Piano Schedule, but the already-open in-app browser kept stale IndexedDB data until refresh-from-server/reset behavior is used.
+- Local browser cache can drift after external database reset/seed. A clean Playwright context saw the seeded Practice Schedule, but the already-open in-app browser kept stale IndexedDB data until refresh-from-server/reset behavior is used.
 - `npm audit --audit-level=moderate` reports 5 moderate vulnerabilities through current `next`/`postcss` and `prisma` dev dependencies. The suggested fixes are breaking/incorrect downgrades, so they need dependency review rather than `npm audit fix --force`.
 - The dashboard notepad now renders Markdown, but it is still a lightweight textarea plus preview, not a full rich text editor with inline block rendering or table editing.
-- Piano Schedule is implemented as a Markdown-backed Resource/table pattern, not as a dynamic Notion-like database with formulas, relations, today filters, drag sorting, or reusable status properties.
+- Practice Schedule is implemented as a Markdown-backed Resource/table pattern, not as a dynamic Notion-like database with formulas, relations, today filters, drag sorting, or reusable status properties.
 - Daily timeline time ranges are task fields and display/edit in the Dashboard, but there is no calendar/grid layout, duration validation, conflict detection, recurrence, or drag/drop rescheduling.
 
 ## What Is Missing
@@ -42,7 +42,7 @@
 2. Add an obvious stale-cache recovery path after demo reset/seed and document when to use Settings -> refresh from server.
 3. Review dependency advisories and track safe upgrades for Next/PostCSS and Prisma once upstream versions resolve the moderate audit warnings without forced downgrades.
 4. Decide whether Daily timeline should stay list-based for v0.1 or graduate to a true day schedule grid in v0.2.
-5. Decide whether Piano Schedule remains a resource template or becomes the first specialized personal-system surface in v0.2.
+5. Decide whether Practice Schedule remains a resource template or becomes the first specialized personal-system surface in v0.2.
 
 ## Verification Evidence
 

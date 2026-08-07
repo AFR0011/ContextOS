@@ -369,7 +369,7 @@ test("seeded demo account can log in and render dashboard", async ({ page }) => 
   await expect(tasks.getByLabel("Task title Process inbox captures")).toBeVisible();
   await expect(tasks.getByLabel("Process inbox captures scheduled time")).toHaveValue("09:30");
   await expect(tasks.getByLabel("Task title Write one clean latest-status note")).toBeVisible();
-  await expect(tasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toBeVisible();
+  await expect(tasks.getByLabel("Task title Validate benchmark regression")).toBeVisible();
 });
 
 test("simplified navigation shows core surfaces and hides utility routes from primary nav", async ({ page }) => {
@@ -684,11 +684,11 @@ test("dashboard view menu can scope and group active records", async ({ page }) 
   await page.getByTestId("dashboard-group-select").selectOption("area");
   await page.getByTestId("dashboard-scope-select").selectOption({ label: "Research" });
   const tasks = page.getByTestId("dashboard-live-tasks");
-  await expect(tasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toBeVisible();
+  await expect(tasks.getByLabel("Task title Validate benchmark regression")).toBeVisible();
   await expect(tasks.getByLabel("Task title Process inbox captures")).toHaveCount(0);
   await page.reload();
   await expect(page.getByTestId("dashboard-scope-select")).toHaveValue(/.+/);
-  await expect(tasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toBeVisible();
+  await expect(tasks.getByLabel("Task title Validate benchmark regression")).toBeVisible();
 });
 
 test("dashboard command tasks support one time, inline editing, crossing, and deletion", async ({ page }) => {
@@ -795,7 +795,7 @@ test("dashboard command tasks support untimed and same-time tasks without an emp
 
 test("dashboard shows all active workspace tasks without restoring allTasks chrome", async ({ page }) => {
   await login(page);
-  const title = "Rerun RF baseline with corrected threshold logic";
+  const title = "Validate benchmark regression";
   await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
   await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${title}`)).toBeVisible();
   await page.getByRole("button", { name: "Search", exact: true }).click();
@@ -882,28 +882,28 @@ test("search results open surfaces where task and standalone note records are vi
   await login(page);
   await page.getByRole("button", { name: "Search", exact: true }).click();
 
-  const taskTitle = "Rerun RF baseline with corrected threshold logic";
+  const taskTitle = "Validate benchmark regression";
   await page.getByPlaceholder("Search workspace...").fill(taskTitle);
   await page.getByRole("button", { name: new RegExp(`Task ${taskTitle}`) }).click();
   await expect(page).toHaveURL(/\/projects\//);
   await expect(page.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
 
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page.getByPlaceholder("Search workspace...").fill("Piano Schedule");
-  await page.getByRole("button", { name: /Note Piano Schedule/ }).click();
+  await page.getByPlaceholder("Search workspace...").fill("Practice Schedule");
+  await page.getByRole("button", { name: /Note Practice Schedule/ }).click();
   await expect(page).toHaveURL(/\/resources$/);
-  await expect(page.getByText("Piano Schedule")).toBeVisible();
+  await expect(page.getByText("Practice Schedule")).toBeVisible();
 });
 
 test("areas and resources expose PARA navigation", async ({ page }) => {
   await login(page);
   await page.goto("/areas");
   await expect(page.getByRole("heading", { name: "Areas" })).toBeVisible();
-  await expect(page.getByText("Dev / Freelance")).toBeVisible();
-  await page.getByRole("button", { name: "Open Dev / Freelance" }).click();
+  await expect(page.getByText("Engineering")).toBeVisible();
+  await page.getByRole("button", { name: "Open Engineering" }).click();
   await expect(page.getByText("Next: Use the dashboard canvas during the next real work session.")).toBeVisible();
   const areaProject = `Area project ${Date.now()}`;
-  await page.getByPlaceholder("New project in Dev / Freelance...").fill(areaProject);
+  await page.getByPlaceholder("New project in Engineering...").fill(areaProject);
   await page.getByRole("button", { name: "Add", exact: true }).click();
   await expect(page.getByText(areaProject)).toBeVisible();
   await page.getByRole("button", { name: `Delete ${areaProject}` }).click();
@@ -911,9 +911,9 @@ test("areas and resources expose PARA navigation", async ({ page }) => {
 
   await page.goto("/resources");
   await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();
-  await expect(page.getByText("Piano Schedule")).toBeVisible();
-  await expect(page.getByTestId("piano-schedule-table")).toContainText("Status");
-  await expect(page.getByTestId("piano-schedule-table")).toContainText("Refine");
+  await expect(page.getByText("Practice Schedule")).toBeVisible();
+  await expect(page.getByTestId("practice-schedule-table")).toContainText("Status");
+  await expect(page.getByTestId("practice-schedule-table")).toContainText("Refine");
   const title = `Vocabulary resource ${Date.now()}`;
   await page.getByPlaceholder("Resource title...").fill(title);
   await page.getByRole("button", { name: "Add", exact: true }).click();

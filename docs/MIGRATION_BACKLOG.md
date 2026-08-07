@@ -55,9 +55,9 @@ This file captures concerns that should survive beyond v0.2.8. It is not an acti
 - Future work: rename the internal model only in a deliberately compatibility-breaking migration with cache/outbox handling.
 - Acceptance signal: no visible legacy terminology leaks while old clients can still drain queued mutations.
 
-### Piano Schedule Scope
+### Practice Schedule Scope
 
-- Current issue: Piano Schedule is a Markdown-backed Resource table, not a dynamic Notion-like database with formulas, relations, today filters, or sort controls.
+- Current issue: Practice Schedule is a Markdown-backed Resource table, not a dynamic Notion-like database with formulas, relations, today filters, or sort controls.
 - Future work: decide whether piano practice remains a resource template or becomes the first specialized personal-system surface.
 - Acceptance signal: one week of usage determines whether table editing is enough or whether scheduling logic is justified.
 

@@ -1,0 +1,44 @@
+name: One-time stable dependency refresh
+
+on:
+  push:
+    branches:
+      - chore/publication-readiness
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chore/publication-readiness
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Move framework and Prisma to current stable patch releases
+        run: |
+          npm install next@16.2.12 @prisma/client@7.9.1 @prisma/adapter-pg@7.9.1 --save-exact
+          npm install prisma@7.9.1 --save-dev --save-exact
+      - name: Apply non-breaking audit fixes
+        run: npm audit fix || true
+      - name: Report production audit
+        run: npm audit --omit=dev || true
+      - name: Commit refreshed dependency graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet package.json package-lock.json; then
+            echo 'Dependency graph already current.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json
+          git commit -m 'Refresh stable framework and Prisma dependencies'
+          git push origin HEAD:chore/publication-readiness

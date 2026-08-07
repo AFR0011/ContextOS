@@ -1,0 +1,40 @@
+name: One-time dependency upgrade
+
+on:
+  push:
+    branches:
+      - chore/publication-readiness
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade-next:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chore/publication-readiness
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Upgrade Next.js to July 2026 security release
+        run: npm install next@16.2.11 --save-exact
+      - name: Production dependency audit
+        run: npm audit --omit=dev || true
+      - name: Commit dependency update
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet package.json package-lock.json; then
+            echo 'Dependency files are already current.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json
+          git commit -m 'Upgrade Next.js security release to 16.2.11'
+          git push origin HEAD:chore/publication-readiness

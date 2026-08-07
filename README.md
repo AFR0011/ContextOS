@@ -1,20 +1,74 @@
 # ContextOS
 
-ContextOS is an execution-first context recovery system for fast capture, inbox triage, daily execution, project recovery, reviews, search, archive/trash, and offline-safe core usage.
+ContextOS is a local-first workspace for capturing loose context, turning it into executable work, and recovering project state after interruptions.
 
-This repo is now a Next.js + PostgreSQL demo with:
+It combines a Next.js application with PostgreSQL-backed user data and an offline mutation outbox so core work can continue through temporary network failures and synchronize safely when connectivity returns.
 
-- real local email/password auth
-- Prisma-backed user-scoped data
-- seeded demo data by default
-- IndexedDB cached core views
-- offline mutation outbox with idempotent sync
-- service-worker app-shell caching
+## Engineering highlights
 
-## Quick Start
+- **User-scoped persistence:** PostgreSQL + Prisma with authenticated, user-owned records.
+- **Offline-first core workflow:** IndexedDB caches core views and queues mutations locally.
+- **Idempotent synchronization:** queued mutations are replayed through `/api/sync` with per-user mutation IDs and ownership validation.
+- **Authentication hardening:** hashed passwords, HTTP-only sessions, registration controls, failed-login throttling, and structured outage handling.
+- **Failure-aware UX:** database and synchronization failures are surfaced as recoverable states instead of silent data loss.
+- **Automated verification:** GitHub Actions runs PostgreSQL-backed migrations, seed, type checking, production build, and Playwright E2E tests.
+
+## Architecture
+
+```text
+Browser
+  ├─ Next.js App Router UI
+  ├─ IndexedDB cache
+  └─ Offline mutation outbox
+          │
+          ▼
+      Next.js API
+          │
+          ├─ authentication / authorization
+          ├─ idempotent sync replay
+          └─ validation
+          │
+          ▼
+   PostgreSQL + Prisma
+```
+
+The server is canonical after synchronization. Offline support is intentionally focused on durable CRUD-style workspace mutations rather than collaborative conflict-resolution UI.
+
+## Product surface
+
+ContextOS currently supports:
+
+- Dashboard command page and scratchpad
+- Inbox capture and triage
+- Projects and nested subcontexts
+- Tasks and important dates
+- Search and recovery surfaces
+- Notes/resources
+- Archive and review flows
+- Offline-safe edits with visible pending-sync state
+- Authenticated LifeOS-style handoff previews
+
+## Tech stack
+
+- Next.js 16 / React 19 / TypeScript
+- PostgreSQL / Prisma 7
+- IndexedDB for client-side cache and queued mutations
+- Playwright for end-to-end verification
+- Docker Compose for local PostgreSQL
+- GitHub Actions CI
+
+## Quick start
+
+### Prerequisites
+
+- Node.js 22+
+- Docker with Docker Compose
+
+### Run locally
 
 ```bash
 npm install
+cp .env.example .env
 docker compose up -d
 npm run db:migrate
 npm run db:seed
@@ -23,34 +77,16 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-Demo login:
+The default seed creates a disposable demo workspace. The credentials are defined in `.env.example` and are intended only for local/demo use.
 
-- Email: `demo@contextos.local`
-- Password: `contextos-demo-v011`
+## Configuration
 
-## Commands
-
-```bash
-npm run dev
-npm run build
-npm run typecheck
-npm run db:migrate
-npm run db:deploy
-npm run db:seed
-npm run db:reset
-npm run test:e2e
-```
-
-## Environment
-
-Copy `.env.example` to `.env` if needed.
-
-Required variables:
+Required:
 
 - `DATABASE_URL`
 - `AUTH_SECRET`
 
-Optional deployment/local controls:
+Optional deployment/demo controls include:
 
 - `NEXT_PUBLIC_APP_URL` or `APP_URL`
 - `AUTH_RATE_LIMIT_WINDOW_MS`
@@ -61,28 +97,52 @@ Optional deployment/local controls:
 - `ALLOW_PUBLIC_REGISTRATION`
 - `ALLOW_DEMO_RESET`
 
-Generate a fresh `AUTH_SECRET` for every deployed environment. Never reuse a secret from a shared archive, chat transcript, or local demo file.
+Generate a fresh `AUTH_SECRET` for every deployed environment. Do not reuse the example value outside local development.
 
-## Seeding And Deploy Safety
+## Verification
 
-`npm run db:seed` resets the seeded demo workspace. Use it for local demo setup or an intentional one-off demo reset only. It should not run during normal production deploys.
+```bash
+npm run typecheck
+npm run build
+npm run test:e2e
+```
 
-The Vercel build command builds the app only. Run `npm run db:deploy` deliberately when committed migrations need to be applied. `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is explicitly set.
+The CI workflow additionally starts PostgreSQL 16, validates and generates the Prisma client, applies committed migrations, seeds the demo workspace, builds the application, and runs Playwright against the database-backed app.
 
-## Offline Sync
+## Deployment notes
 
-Core workspace data is cached in IndexedDB. Edits are written locally first, queued as idempotent mutations, and synced to `/api/sync` when online. Settings shows online/offline status, pending changes, last sync time, and sync errors.
+- `npm run db:seed` resets the configured demo workspace and should never run automatically against production data.
+- `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is deliberately enabled.
+- Public registration is closed by default in production unless explicitly enabled.
+- `GET /api/health` reports application/database availability with `Cache-Control: no-store`.
 
-## Health And CI
+See `docs/DEPLOYMENT.md` and `docs/RUN_PROTOCOL.md` for the deeper operational workflow.
 
-`GET /api/health` reports app/database availability and returns `Cache-Control: no-store`.
+## Scope and limitations
 
-The GitHub Actions workflow in `.github/workflows/ci.yml` runs Prisma validation/generation, migration deploy, seed, typecheck, build, and Playwright e2e against PostgreSQL 16.
+ContextOS is a portfolio-stage application, not a hosted multi-tenant SaaS service.
 
-## Docs
+Current boundaries include:
 
-- `BLUEPRINT.md`: product specification
-- `docs/PROJECT_STATE.md`: current implementation state
-- `docs/REPO_MAP.md`: repo structure
-- `docs/RUN_PROTOCOL.md`: setup and verification ladder
-- `docs/DEPLOYMENT.md`: local and Vercel deployment notes
+- no collaborative merge interface;
+- no email verification or password-reset flow;
+- no OAuth;
+- no calendar integration or task recurrence;
+- no external AI dependency for core operation;
+- offline behavior covers cached workspace views and queued mutations, not arbitrary offline server functionality.
+
+These limits are intentional and are documented rather than hidden behind the traditional software-development strategy of pretending unfinished things are a roadmap.
+
+## Repository documentation
+
+- `BLUEPRINT.md` — product specification and design intent
+- `docs/PROJECT_STATE.md` — current implementation state and known boundaries
+- `docs/REPO_MAP.md` — code/data-flow map
+- `docs/RUN_PROTOCOL.md` — setup and verification ladder
+- `docs/DEPLOYMENT.md` — deployment guidance
+- `SECURITY.md` — vulnerability reporting and security assumptions
+- `CONTRIBUTING.md` — contribution and verification expectations
+
+## License
+
+MIT. See `LICENSE`.

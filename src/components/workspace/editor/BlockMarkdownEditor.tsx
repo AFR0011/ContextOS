@@ -443,9 +443,16 @@ export function BlockMarkdownEditor({
       }
       if (event.key === "Enter") {
         event.preventDefault();
-        const selected = filteredCommands[slashSelectedIndex];
-        if (selected) applyCommandToBlock(block.id, selected, slashCommand.triggerIndex, liveText);
-        else setSlashCommand(null);
+        // `fill()`/fast typing can leave the slash-menu state one render behind the
+        // textarea value. Prefer a complete typed command from the live value before
+        // falling back to the currently selected menu entry.
+        const typedCommand = commandForLine(liveText, commands);
+        if (typedCommand) applyCommandToBlock(block.id, typedCommand, 0, liveText);
+        else {
+          const selected = filteredCommands[slashSelectedIndex];
+          if (selected) applyCommandToBlock(block.id, selected, slashCommand.triggerIndex, liveText);
+          else setSlashCommand(null);
+        }
         return;
       }
       if (event.key === "Escape") {

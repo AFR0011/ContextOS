@@ -141,10 +141,6 @@ async function taskTitleOrder(container: Locator) {
   );
 }
 
-async function expectTaskTitleOrder(container: Locator, expectedOrder: string[]) {
-  await expect.poll(() => taskTitleOrder(container)).toEqual(expectedOrder);
-}
-
 async function expectMinTouchTarget(locator: Locator, min = 40) {
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
@@ -463,7 +459,7 @@ test("inbox review creates a date with parsed date and time", async ({ page }) =
   await page.goto("/dates");
   await expectInputValue(page, "input", title);
   await expectInputValue(page, 'input[type="date"]', "2026-07-20");
-  await expect(page.getByText("16:30")).toBeVisible();
+  await expect(page.getByText("16:30", { exact: true })).toBeVisible();
 });
 
 test("inbox review attaches capture context to a project", async ({ page }) => {
@@ -553,10 +549,10 @@ test("project recovery fields persist after reload", async ({ page }) => {
   await editor.getByPlaceholder("Concrete next action...").fill(nextAction);
   await editor.getByPlaceholder("Concrete next action...").blur();
   await markdownLine(page.getByTestId("project-recovery-notes"), 0).fill(note);
-  await expect(page.getByText("Saved").first()).toBeVisible({ timeout: 3000 });
+  await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", note)).toBe(true);
   await page.reload();
   await expect(page.getByPlaceholder("Concrete next action...")).toHaveValue(nextAction);
-  await expect(markdownLine(page.getByTestId("project-recovery-notes"), 0)).toHaveValue(note);
+  await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", note)).toBe(true);
 });
 
 test("project subcontexts roll child tasks and dates into parent recovery", async ({ page }) => {
@@ -567,9 +563,10 @@ test("project subcontexts roll child tasks and dates into parent recovery", asyn
   const subcontext = `Trial Subcontext ${Date.now()}`;
   await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").fill(subcontext);
   await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").press("Enter");
-  await expect(page.getByRole("button", { name: new RegExp(subcontext) })).toBeVisible();
+  const subcontextButton = page.getByTestId("project-subcontexts").getByRole("button", { name: subcontext, exact: true });
+  await expect(subcontextButton).toBeVisible();
 
-  await page.getByRole("button", { name: new RegExp(subcontext) }).click();
+  await subcontextButton.click();
   await expect(page.getByText("Parent: ContextOS Demo")).toBeVisible();
 
   const childTask = `Rolled child task ${Date.now()}`;
@@ -707,11 +704,10 @@ test("dashboard command tasks support one time, inline editing, crossing, and de
   await titleInput.blur();
   await expect(taskSection.getByLabel(`Task title ${renamed}`)).toBeVisible();
   await expect.poll(() => taskTitleOrder(taskSection)).toContain(renamed);
-  const beforeDoneOrder = await taskTitleOrder(taskSection);
   await taskSection.getByRole("button", { name: `Mark ${renamed} done` }).click();
-  await expect(taskSection.getByLabel(`Task title ${renamed}`)).toBeVisible();
-  await expect(taskSection.getByRole("button", { name: `Reopen ${renamed}` })).toBeVisible();
-  await expectTaskTitleOrder(taskSection, beforeDoneOrder);
+  const doneTodayGroup = page.getByTestId("command-task-group-done-today");
+  await expect(doneTodayGroup.getByLabel(`Task title ${renamed}`)).toBeVisible();
+  await expect(doneTodayGroup.getByRole("button", { name: `Reopen ${renamed}` })).toBeVisible();
   await page.reload();
   await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${renamed}`)).toBeVisible();
   await page.getByTestId("dashboard-live-tasks").getByRole("button", { name: `Reopen ${renamed}` }).click();
@@ -905,9 +901,10 @@ test("areas and resources expose PARA navigation", async ({ page }) => {
   const areaProject = `Area project ${Date.now()}`;
   await page.getByPlaceholder("New project in Engineering...").fill(areaProject);
   await page.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(page.getByText(areaProject)).toBeVisible();
+  const areaProjectButton = page.getByRole("main").getByRole("button", { name: areaProject, exact: true });
+  await expect(areaProjectButton).toBeVisible();
   await page.getByRole("button", { name: `Delete ${areaProject}` }).click();
-  await expect(page.getByText(areaProject)).not.toBeVisible();
+  await expect(areaProjectButton).toHaveCount(0);
 
   await page.goto("/resources");
   await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();

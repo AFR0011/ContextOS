@@ -563,7 +563,7 @@ test("project subcontexts roll child tasks and dates into parent recovery", asyn
   const subcontext = `Trial Subcontext ${Date.now()}`;
   await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").fill(subcontext);
   await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").press("Enter");
-  const subcontextButton = page.getByTestId("project-subcontexts").getByRole("button", { name: subcontext, exact: true });
+  const subcontextButton = page.getByTestId("project-subcontexts").getByRole("button", { name: new RegExp(`^${subcontext}`) });
   await expect(subcontextButton).toBeVisible();
 
   await subcontextButton.click();

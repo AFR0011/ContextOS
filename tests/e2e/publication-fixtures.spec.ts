@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = resolve(__dirname, "../..");
+const here = dirname(fileURLToPath(import.meta.url));
+const root = resolve(here, "../..");
 
 const forbiddenFixtureLabels = [
   "Dev / Freelance",

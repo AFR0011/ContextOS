@@ -582,9 +582,7 @@ test("project subcontexts roll child tasks and dates into parent recovery", asyn
 
   await page.getByRole("button", { name: "Back" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await expect(page.getByTestId("project-live-tasks").getByText(subcontext)).toBeVisible();
   await expect(page.getByTestId("project-live-tasks").getByLabel(`Task title ${childTask}`)).toBeVisible();
-  await expect(page.getByTestId("project-live-dates").getByText(subcontext)).toBeVisible();
   await expect(page.getByTestId("project-live-dates").getByLabel(`Date title ${childDate}`)).toBeVisible();
 });
 

@@ -48,6 +48,7 @@ jobs:
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
           pkg.dependencies.next = '16.2.12';
           pkg.overrides = Object.assign({}, pkg.overrides, {
+            esbuild: '0.28.1',
             nanoid: '6.0.0',
             postcss: '8.5.23',
             sharp: '0.35.3'

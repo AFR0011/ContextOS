@@ -35,15 +35,11 @@ The application includes local authentication, HTTP-only sessions, user-scoped p
 
 ## Dependency audit status
 
-The publication branch is pinned to stable Next.js 16.2.12 and Prisma 7.9.1. `npm audit --omit=dev` currently reports three high-severity transitive advisories from packages bundled through stable Next.js (`postcss` and `sharp`). npm's available automated remediation moves Next.js to the 16.3 line rather than another stable 16.2 patch.
+ContextOS is pinned to stable Next.js 16.2.12 and Prisma 7.9.1. The lockfile uses explicit patched transitive overrides for `esbuild` 0.28.1, `nanoid` 6.0.0, `postcss` 8.5.23, and `sharp` 0.35.3 while remaining on the stable Next.js 16.2 line.
 
-CI therefore:
+The verified dependency graph reports **0 npm audit vulnerabilities**. Permanent CI runs `npm audit --audit-level=low`, so any future advisory at low severity or above fails the verification job rather than being silently accepted.
 
-- prints the full production dependency audit on every run;
-- fails on any critical production advisory;
-- keeps the known upstream high advisories visible rather than suppressing or silently force-upgrading the framework.
-
-These advisories should be re-evaluated when a stable Next.js release containing the fixed dependency versions is available. This is one reason ContextOS is described as portfolio-stage rather than production-hardened software.
+The dependency graph is still subject to normal upstream maintenance. Security updates should be reviewed as dependencies publish new stable releases, and overrides should be removed when the direct dependency graph no longer needs them.
 
 ## Known boundaries
 

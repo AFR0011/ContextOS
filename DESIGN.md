@@ -903,7 +903,7 @@ Examples:
 ```text
 /task Fix ContextOS local date bug @ContextOS due:2026-06-06
 /note Ask IT about server Docker support @EMU RAG
-/status @MSc Thesis RF weighted baseline done; next run LOAO scenarios.
+/status @Benchmark Evaluation RF weighted baseline done; next run LOAO scenarios.
 /deadline Submit final report date:2026-06-18
 ```
 

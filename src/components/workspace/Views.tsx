@@ -1842,15 +1842,15 @@ function NoteCard({ note, domains = [], editing, onEdit, onDone, onUpdate }: { n
     <button onClick={onEdit} className="w-full rounded-lg border border-[var(--cos-border-soft)] p-3 text-left hover:bg-[var(--cos-bg-soft)]">
       <h4 className="text-sm font-semibold text-[var(--cos-text-strong)]">{note.title}</h4>
       {note.content ? (
-        isPianoScheduleNote(note, domains) ? <PianoSchedulePreview content={note.content} /> : <SharedMarkdownPreview content={note.content} />
+        isPracticeScheduleNote(note, domains) ? <PracticeSchedulePreview content={note.content} /> : <SharedMarkdownPreview content={note.content} />
       ) : <p className="mt-1 text-xs text-[var(--cos-text-subtle)]">Empty note</p>}
     </button>
   );
 }
 
-function isPianoScheduleNote(note: Note, domains: Domain[]) {
+function isPracticeScheduleNote(note: Note, domains: Domain[]) {
   const domain = domains.find((item) => item.id === note.domainId);
-  return note.title.toLowerCase().includes("piano schedule") || domain?.name === "Piano / Content";
+  return note.title.toLowerCase().includes("piano schedule") || domain?.name === "Creative Work";
 }
 
 function parseMarkdownTables(content: string) {
@@ -1891,11 +1891,11 @@ function MarkdownTable({ headers, rows }: { headers: string[]; rows: string[][] 
   );
 }
 
-function PianoSchedulePreview({ content }: { content: string }) {
+function PracticeSchedulePreview({ content }: { content: string }) {
   const table = parseMarkdownTables(content)[0];
   if (!table) return <SharedMarkdownPreview content={content} />;
   return (
-    <div data-testid="piano-schedule-table" className="mt-2">
+    <div data-testid="practice-schedule-table" className="mt-2">
       <MarkdownTable headers={table.headers} rows={table.rows} />
     </div>
   );

@@ -14,12 +14,12 @@ function idFor(userId: string, key: string) {
 
 export const defaultDomainTemplates = [
   ["research", "Research"],
-  ["dev", "Dev / Freelance"],
+  ["dev", "Engineering"],
   ["university", "University"],
-  ["career", "Career / PhD"],
+  ["career", "Planning"],
   ["longterm", "Long-Term Goals"],
   ["ai", "AI Agent Context"],
-  ["piano", "Piano / Content"],
+  ["creative", "Creative Work"],
   ["notes", "Notes"]
 ] as const;
 
@@ -61,8 +61,8 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
   const contextProjectId = idFor(userId, "proj-contextos");
   const contextDashboardProjectId = idFor(userId, "proj-contextos-dashboard");
   const contextOfflineProjectId = idFor(userId, "proj-contextos-offline");
-  const thesisProjectId = idFor(userId, "proj-thesis");
-  const careerProjectId = idFor(userId, "proj-career");
+  const benchmarkProjectId = idFor(userId, "proj-thesis");
+  const releaseProjectId = idFor(userId, "proj-career");
 
   await tx.project.createMany({
     data: [
@@ -106,28 +106,28 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         openLoops: ["Production offline hydration still needs a production-build smoke"]
       },
       {
-        id: thesisProjectId,
+        id: benchmarkProjectId,
         userId,
-        name: "MSc Thesis",
+        name: "Benchmark Evaluation",
         domainId: domains.research,
         parentProjectId: null,
         status: "active",
         currentObjective: "Keep experiments and handoffs recoverable after breaks.",
         nextAction: "Write the next verifiable experiment packet.",
-        latestStatus: "Protocol B support audit is complete. RF baseline still needs rerun with corrected threshold logic.",
-        recoveryNotes: "## Experiment recovery note\nLast useful context: compare calibration tables after the RF rerun finishes.",
-        openLoops: ["Confirm corrected threshold logic", "Decide whether calibration table belongs in appendix"]
+        latestStatus: "Benchmark support audit is complete. one benchmark regression scenario still needs validation.",
+        recoveryNotes: "## Experiment recovery note\nLast useful context: compare benchmark outputs after the regression run finishes.",
+        openLoops: ["Confirm regression behavior", "Decide whether the benchmark table belongs in release notes"]
       },
       {
-        id: careerProjectId,
+        id: releaseProjectId,
         userId,
-        name: "Career / PhD Applications",
+        name: "Release Planning",
         domainId: domains.career,
         parentProjectId: null,
         status: "paused",
-        currentObjective: "Keep application materials ready without letting them invade daily execution.",
-        nextAction: "Review one application date and update the checklist.",
-        latestStatus: "Draft materials exist; next useful move is to identify date risk.",
+        currentObjective: "Keep release tasks ready without crowding daily execution.",
+        nextAction: "Review one release milestone and update the checklist.",
+        latestStatus: "Draft release materials exist; next useful move is to identify schedule risk.",
         recoveryNotes: "",
         openLoops: []
       }
@@ -160,24 +160,24 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         status: "in-progress"
       },
       {
-        id: idFor(userId, "task-rf"),
+        id: idFor(userId, "task-benchmark"),
         userId,
-        title: "Rerun RF baseline with corrected threshold logic",
+        title: "Validate benchmark regression",
         plannedDate: dateOnly(1),
         dueDate: dateOnly(3),
         scheduledTime: null,
-        projectId: thesisProjectId,
+        projectId: benchmarkProjectId,
         domainId: domains.research,
         status: "blocked"
       },
       {
         id: idFor(userId, "task-deadlines"),
         userId,
-        title: "Review important dates and identify risk points",
+        title: "Review release milestones and identify risk points",
         plannedDate: null,
         dueDate: dateOnly(0),
         scheduledTime: "15:00",
-        projectId: careerProjectId,
+        projectId: releaseProjectId,
         domainId: domains.career,
         status: "todo"
       }
@@ -246,9 +246,9 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         domainId: domains.notes
       },
       {
-        id: idFor(userId, "note-piano-schedule"),
+        id: idFor(userId, "note-practice-schedule"),
         userId,
-        title: "Piano Schedule",
+        title: "Practice Schedule",
         content: [
           "| Index | Song | Today? | Status |",
           "| --- | --- | --- | --- |",
@@ -263,7 +263,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
           "- Perfect"
         ].join("\n"),
         projectId: null,
-        domainId: domains.piano
+        domainId: domains.creative
       }
     ],
     skipDuplicates: true
@@ -310,5 +310,4 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
     ],
     skipDuplicates: true
   });
-
 }

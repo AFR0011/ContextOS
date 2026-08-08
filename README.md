@@ -1,20 +1,76 @@
 # ContextOS
 
-ContextOS is an execution-first context recovery system for fast capture, inbox triage, daily execution, project recovery, reviews, search, archive/trash, and offline-safe core usage.
+ContextOS is a local-first workspace for capturing loose context, turning it into executable work, and recovering project state after interruptions.
 
-This repo is now a Next.js + PostgreSQL demo with:
+It combines a Next.js application with PostgreSQL-backed user data and an offline mutation outbox so core work can continue through temporary network failures and synchronize safely when connectivity returns.
 
-- real local email/password auth
-- Prisma-backed user-scoped data
-- seeded demo data by default
-- IndexedDB cached core views
-- offline mutation outbox with idempotent sync
-- service-worker app-shell caching
+> **Project status:** portfolio-stage application and engineering demonstration. It is not presented as a hosted production SaaS service.
 
-## Quick Start
+## Engineering highlights
+
+- **User-scoped persistence:** PostgreSQL + Prisma with authenticated, user-owned records.
+- **Offline-safe core workflow:** IndexedDB caches core views and queues mutations locally.
+- **Idempotent synchronization:** queued mutations are replayed through `/api/sync` with per-user mutation IDs, ownership validation, stale-update handling, and bounded payloads.
+- **Authentication hardening:** hashed passwords, HTTP-only sessions, registration controls, failed-login throttling, and structured database-outage handling.
+- **Failure-aware UX:** database and synchronization failures are surfaced as recoverable states instead of silent data loss.
+- **Automated verification:** GitHub Actions provisions PostgreSQL, applies migrations, seeds a disposable workspace, type-checks, builds, and runs Playwright E2E tests.
+
+## Architecture
+
+```text
+Browser
+  ├─ Next.js App Router UI
+  ├─ IndexedDB workspace cache
+  └─ Offline mutation outbox
+          │
+          ▼
+      Next.js API
+          ├─ authentication / authorization
+          ├─ idempotent sync replay
+          ├─ ownership + payload validation
+          └─ health / failure handling
+          │
+          ▼
+   PostgreSQL + Prisma
+```
+
+The server is canonical after synchronization. Offline support is intentionally focused on durable CRUD-style workspace mutations rather than collaborative conflict-resolution UI.
+
+## Product surface
+
+ContextOS currently supports:
+
+- Dashboard command page and scratchpad;
+- Inbox capture and triage;
+- Projects and nested subcontexts;
+- Tasks and important dates;
+- Areas and Markdown-backed resources;
+- Search and recovery surfaces;
+- Archive and review flows;
+- offline-safe edits with visible pending-sync state;
+- authenticated handoff previews that require user approval before creating Inbox suggestions.
+
+## Tech stack
+
+- Next.js 16 / React 19 / TypeScript
+- PostgreSQL / Prisma 7
+- IndexedDB for client-side cache and queued mutations
+- Playwright for end-to-end verification
+- Docker Compose for local PostgreSQL
+- GitHub Actions CI
+
+## Quick start
+
+### Prerequisites
+
+- Node.js 22+
+- Docker with Docker Compose
+
+### Run locally
 
 ```bash
 npm install
+cp .env.example .env
 docker compose up -d
 npm run db:migrate
 npm run db:seed
@@ -23,34 +79,16 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-Demo login:
+The default seed creates a disposable demo workspace. Its projects, tasks, areas, and resources are fictional sample data and are not personal, employment, academic, or client records. Demo credentials are defined in `.env.example` and are intended only for local or disposable preview use.
 
-- Email: `demo@contextos.local`
-- Password: `contextos-demo-v011`
+## Configuration
 
-## Commands
-
-```bash
-npm run dev
-npm run build
-npm run typecheck
-npm run db:migrate
-npm run db:deploy
-npm run db:seed
-npm run db:reset
-npm run test:e2e
-```
-
-## Environment
-
-Copy `.env.example` to `.env` if needed.
-
-Required variables:
+Required:
 
 - `DATABASE_URL`
 - `AUTH_SECRET`
 
-Optional deployment/local controls:
+Optional deployment/demo controls include:
 
 - `NEXT_PUBLIC_APP_URL` or `APP_URL`
 - `AUTH_RATE_LIMIT_WINDOW_MS`
@@ -61,28 +99,53 @@ Optional deployment/local controls:
 - `ALLOW_PUBLIC_REGISTRATION`
 - `ALLOW_DEMO_RESET`
 
-Generate a fresh `AUTH_SECRET` for every deployed environment. Never reuse a secret from a shared archive, chat transcript, or local demo file.
+Generate a fresh `AUTH_SECRET` for every deployed environment. Do not reuse example or demo values outside local development.
 
-## Seeding And Deploy Safety
+## Verification
 
-`npm run db:seed` resets the seeded demo workspace. Use it for local demo setup or an intentional one-off demo reset only. It should not run during normal production deploys.
+```bash
+npm run typecheck
+npm run build
+npm run test:e2e
+```
 
-The Vercel build command builds the app only. Run `npm run db:deploy` deliberately when committed migrations need to be applied. `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is explicitly set.
+The CI workflow additionally starts PostgreSQL 16, validates and generates the Prisma client, applies committed migrations, seeds the demo workspace, installs Chromium, and runs the database-backed Playwright suite.
 
-## Offline Sync
+`tests/e2e/publication-fixtures.spec.ts` also guards the public fixture contract so personal/workflow-specific seed labels removed during publication cleanup are not accidentally reintroduced.
 
-Core workspace data is cached in IndexedDB. Edits are written locally first, queued as idempotent mutations, and synced to `/api/sync` when online. Settings shows online/offline status, pending changes, last sync time, and sync errors.
+## Deployment notes
 
-## Health And CI
+- `npm run db:seed` resets the configured demo workspace and should never run automatically against production data.
+- `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is deliberately enabled.
+- Public registration is closed by default in production unless explicitly enabled.
+- `GET /api/health` reports application/database availability with `Cache-Control: no-store`.
 
-`GET /api/health` reports app/database availability and returns `Cache-Control: no-store`.
+See `docs/DEPLOYMENT.md` and `docs/RUN_PROTOCOL.md` for the deeper operational workflow.
 
-The GitHub Actions workflow in `.github/workflows/ci.yml` runs Prisma validation/generation, migration deploy, seed, typecheck, build, and Playwright e2e against PostgreSQL 16.
+## Scope and limitations
 
-## Docs
+Current boundaries include:
 
-- `BLUEPRINT.md`: product specification
-- `docs/PROJECT_STATE.md`: current implementation state
-- `docs/REPO_MAP.md`: repo structure
-- `docs/RUN_PROTOCOL.md`: setup and verification ladder
-- `docs/DEPLOYMENT.md`: local and Vercel deployment notes
+- no collaborative merge interface;
+- no email verification or self-service password-reset flow;
+- no OAuth;
+- no calendar-provider integration or task recurrence;
+- no semantic search;
+- no external AI dependency for core operation;
+- offline behavior covers cached workspace views and queued mutations, not arbitrary offline server functionality.
+
+These boundaries are documented so the repository distinguishes implemented behavior from future production hardening.
+
+## Repository documentation
+
+- `BLUEPRINT.md` — product specification and design intent
+- `docs/PROJECT_STATE.md` — current implementation state and known boundaries
+- `docs/REPO_MAP.md` — code/data-flow map
+- `docs/RUN_PROTOCOL.md` — setup and verification ladder
+- `docs/DEPLOYMENT.md` — deployment guidance
+- `SECURITY.md` — vulnerability reporting and security assumptions
+- `CONTRIBUTING.md` — contribution and verification expectations
+
+## License
+
+MIT. See `LICENSE`.

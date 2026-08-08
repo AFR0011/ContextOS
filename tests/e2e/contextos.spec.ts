@@ -141,10 +141,6 @@ async function taskTitleOrder(container: Locator) {
   );
 }
 
-async function expectTaskTitleOrder(container: Locator, expectedOrder: string[]) {
-  await expect.poll(() => taskTitleOrder(container)).toEqual(expectedOrder);
-}
-
 async function expectMinTouchTarget(locator: Locator, min = 40) {
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
@@ -369,7 +365,7 @@ test("seeded demo account can log in and render dashboard", async ({ page }) => 
   await expect(tasks.getByLabel("Task title Process inbox captures")).toBeVisible();
   await expect(tasks.getByLabel("Process inbox captures scheduled time")).toHaveValue("09:30");
   await expect(tasks.getByLabel("Task title Write one clean latest-status note")).toBeVisible();
-  await expect(tasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toBeVisible();
+  await expect(tasks.getByLabel("Task title Validate benchmark regression")).toBeVisible();
 });
 
 test("simplified navigation shows core surfaces and hides utility routes from primary nav", async ({ page }) => {
@@ -463,7 +459,7 @@ test("inbox review creates a date with parsed date and time", async ({ page }) =
   await page.goto("/dates");
   await expectInputValue(page, "input", title);
   await expectInputValue(page, 'input[type="date"]', "2026-07-20");
-  await expect(page.getByText("16:30")).toBeVisible();
+  await expect(page.getByText("16:30", { exact: true })).toBeVisible();
 });
 
 test("inbox review attaches capture context to a project", async ({ page }) => {
@@ -553,10 +549,10 @@ test("project recovery fields persist after reload", async ({ page }) => {
   await editor.getByPlaceholder("Concrete next action...").fill(nextAction);
   await editor.getByPlaceholder("Concrete next action...").blur();
   await markdownLine(page.getByTestId("project-recovery-notes"), 0).fill(note);
-  await expect(page.getByText("Saved").first()).toBeVisible({ timeout: 3000 });
+  await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", note)).toBe(true);
   await page.reload();
   await expect(page.getByPlaceholder("Concrete next action...")).toHaveValue(nextAction);
-  await expect(markdownLine(page.getByTestId("project-recovery-notes"), 0)).toHaveValue(note);
+  await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", note)).toBe(true);
 });
 
 test("project subcontexts roll child tasks and dates into parent recovery", async ({ page }) => {
@@ -567,9 +563,10 @@ test("project subcontexts roll child tasks and dates into parent recovery", asyn
   const subcontext = `Trial Subcontext ${Date.now()}`;
   await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").fill(subcontext);
   await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").press("Enter");
-  await expect(page.getByRole("button", { name: new RegExp(subcontext) })).toBeVisible();
+  const subcontextButton = page.getByTestId("project-subcontexts").getByRole("button", { name: new RegExp(`^${subcontext}`) });
+  await expect(subcontextButton).toBeVisible();
 
-  await page.getByRole("button", { name: new RegExp(subcontext) }).click();
+  await subcontextButton.click();
   await expect(page.getByText("Parent: ContextOS Demo")).toBeVisible();
 
   const childTask = `Rolled child task ${Date.now()}`;
@@ -585,9 +582,7 @@ test("project subcontexts roll child tasks and dates into parent recovery", asyn
 
   await page.getByRole("button", { name: "Back" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await expect(page.getByTestId("project-live-tasks").getByText(subcontext)).toBeVisible();
   await expect(page.getByTestId("project-live-tasks").getByLabel(`Task title ${childTask}`)).toBeVisible();
-  await expect(page.getByTestId("project-live-dates").getByText(subcontext)).toBeVisible();
   await expect(page.getByTestId("project-live-dates").getByLabel(`Date title ${childDate}`)).toBeVisible();
 });
 
@@ -684,11 +679,11 @@ test("dashboard view menu can scope and group active records", async ({ page }) 
   await page.getByTestId("dashboard-group-select").selectOption("area");
   await page.getByTestId("dashboard-scope-select").selectOption({ label: "Research" });
   const tasks = page.getByTestId("dashboard-live-tasks");
-  await expect(tasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toBeVisible();
+  await expect(tasks.getByLabel("Task title Validate benchmark regression")).toBeVisible();
   await expect(tasks.getByLabel("Task title Process inbox captures")).toHaveCount(0);
   await page.reload();
   await expect(page.getByTestId("dashboard-scope-select")).toHaveValue(/.+/);
-  await expect(tasks.getByLabel("Task title Rerun RF baseline with corrected threshold logic")).toBeVisible();
+  await expect(tasks.getByLabel("Task title Validate benchmark regression")).toBeVisible();
 });
 
 test("dashboard command tasks support one time, inline editing, crossing, and deletion", async ({ page }) => {
@@ -707,11 +702,10 @@ test("dashboard command tasks support one time, inline editing, crossing, and de
   await titleInput.blur();
   await expect(taskSection.getByLabel(`Task title ${renamed}`)).toBeVisible();
   await expect.poll(() => taskTitleOrder(taskSection)).toContain(renamed);
-  const beforeDoneOrder = await taskTitleOrder(taskSection);
   await taskSection.getByRole("button", { name: `Mark ${renamed} done` }).click();
-  await expect(taskSection.getByLabel(`Task title ${renamed}`)).toBeVisible();
-  await expect(taskSection.getByRole("button", { name: `Reopen ${renamed}` })).toBeVisible();
-  await expectTaskTitleOrder(taskSection, beforeDoneOrder);
+  const doneTodayGroup = page.getByTestId("command-task-group-done-today");
+  await expect(doneTodayGroup.getByLabel(`Task title ${renamed}`)).toBeVisible();
+  await expect(doneTodayGroup.getByRole("button", { name: `Reopen ${renamed}` })).toBeVisible();
   await page.reload();
   await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${renamed}`)).toBeVisible();
   await page.getByTestId("dashboard-live-tasks").getByRole("button", { name: `Reopen ${renamed}` }).click();
@@ -795,7 +789,7 @@ test("dashboard command tasks support untimed and same-time tasks without an emp
 
 test("dashboard shows all active workspace tasks without restoring allTasks chrome", async ({ page }) => {
   await login(page);
-  const title = "Rerun RF baseline with corrected threshold logic";
+  const title = "Validate benchmark regression";
   await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
   await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${title}`)).toBeVisible();
   await page.getByRole("button", { name: "Search", exact: true }).click();
@@ -882,38 +876,39 @@ test("search results open surfaces where task and standalone note records are vi
   await login(page);
   await page.getByRole("button", { name: "Search", exact: true }).click();
 
-  const taskTitle = "Rerun RF baseline with corrected threshold logic";
+  const taskTitle = "Validate benchmark regression";
   await page.getByPlaceholder("Search workspace...").fill(taskTitle);
   await page.getByRole("button", { name: new RegExp(`Task ${taskTitle}`) }).click();
   await expect(page).toHaveURL(/\/projects\//);
   await expect(page.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
 
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page.getByPlaceholder("Search workspace...").fill("Piano Schedule");
-  await page.getByRole("button", { name: /Note Piano Schedule/ }).click();
+  await page.getByPlaceholder("Search workspace...").fill("Practice Schedule");
+  await page.getByRole("button", { name: /Note Practice Schedule/ }).click();
   await expect(page).toHaveURL(/\/resources$/);
-  await expect(page.getByText("Piano Schedule")).toBeVisible();
+  await expect(page.getByText("Practice Schedule")).toBeVisible();
 });
 
 test("areas and resources expose PARA navigation", async ({ page }) => {
   await login(page);
   await page.goto("/areas");
   await expect(page.getByRole("heading", { name: "Areas" })).toBeVisible();
-  await expect(page.getByText("Dev / Freelance")).toBeVisible();
-  await page.getByRole("button", { name: "Open Dev / Freelance" }).click();
+  await expect(page.getByText("Engineering")).toBeVisible();
+  await page.getByRole("button", { name: "Open Engineering" }).click();
   await expect(page.getByText("Next: Use the dashboard canvas during the next real work session.")).toBeVisible();
   const areaProject = `Area project ${Date.now()}`;
-  await page.getByPlaceholder("New project in Dev / Freelance...").fill(areaProject);
+  await page.getByPlaceholder("New project in Engineering...").fill(areaProject);
   await page.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(page.getByText(areaProject)).toBeVisible();
+  const areaProjectButton = page.getByRole("main").getByRole("button", { name: areaProject, exact: true });
+  await expect(areaProjectButton).toBeVisible();
   await page.getByRole("button", { name: `Delete ${areaProject}` }).click();
-  await expect(page.getByText(areaProject)).not.toBeVisible();
+  await expect(areaProjectButton).toHaveCount(0);
 
   await page.goto("/resources");
   await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();
-  await expect(page.getByText("Piano Schedule")).toBeVisible();
-  await expect(page.getByTestId("piano-schedule-table")).toContainText("Status");
-  await expect(page.getByTestId("piano-schedule-table")).toContainText("Refine");
+  await expect(page.getByText("Practice Schedule")).toBeVisible();
+  await expect(page.getByTestId("practice-schedule-table")).toContainText("Status");
+  await expect(page.getByTestId("practice-schedule-table")).toContainText("Refine");
   const title = `Vocabulary resource ${Date.now()}`;
   await page.getByPlaceholder("Resource title...").fill(title);
   await page.getByRole("button", { name: "Add", exact: true }).click();

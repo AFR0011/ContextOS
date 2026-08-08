@@ -44,6 +44,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Report production dependency advisories
+        run: npm audit --omit=dev || true
+
+      - name: Gate critical production dependency advisories
+        run: npm audit --omit=dev --audit-level=critical
+
       - name: Validate Prisma schema
         run: npx prisma validate
 

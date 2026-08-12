@@ -24,6 +24,7 @@ import { localDateKey } from "./dates";
 import { readJsonResponse, responseErrorMessage } from "./http-client";
 import type { LifeOsHandoffV1 } from "./lifeos-handoff";
 import {
+  commitLocalMutationBatch,
   readLocalOutbox,
   readLocalWorkspace,
   rememberLocalUser,
@@ -133,6 +134,13 @@ export type TriageCaptureAction =
   | { type: "archive" }
   | { type: "delete" };
 
+type WorkspaceRecord = Domain | Project | Task | Capture | Note | Deadline | Review | DashboardScratchpad | DashboardPreference;
+
+interface LocalRecordChange {
+  collection: CollectionName;
+  record: WorkspaceRecord;
+}
+
 function replaceIn<T extends { id: string }>(items: T[], record: T) {
   const exists = items.some((item) => item.id === record.id);
   return exists ? items.map((item) => (item.id === record.id ? record : item)) : [record, ...items];
@@ -220,7 +228,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
   const [lastWarningAt, setLastWarningAt] = useState<string | null>(null);
   const [staleMutationCount, setStaleMutationCount] = useState(0);
   const syncInFlight = useRef(false);
-  const outboxWrite = useRef<Promise<void>>(Promise.resolve());
+  const localWrite = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     dataRef.current = data;
@@ -251,7 +259,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
     setSyncing(true);
     setError(null);
     try {
-      await outboxWrite.current;
+      await localWrite.current;
       const outbox = await readLocalOutbox(user);
       const response = await fetch("/api/sync", {
         method: "POST",
@@ -263,13 +271,13 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         throw new Error(response.status === 401 ? "Sign in again to sync." : responseErrorMessage(response, result, "Sync failed"));
       }
       const applied = new Set(result.appliedMutationIds);
-      const reconcile = outboxWrite.current.then(async () => {
+      const reconcile = localWrite.current.then(async () => {
         const latestOutbox = await readLocalOutbox(user);
         const remaining = latestOutbox.filter((mutation) => !applied.has(mutation.mutationId));
         await writeLocalOutbox(user, remaining);
         return remaining;
       });
-      outboxWrite.current = reconcile.then(() => undefined, () => undefined);
+      localWrite.current = reconcile.then(() => undefined, () => undefined);
       const remaining = await reconcile;
       await saveWorkspace(remaining.length ? overlayPendingMutations(result.data, remaining) : result.data);
       setPendingCount(remaining.length);
@@ -300,7 +308,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
     }
     setOnline(true);
 
-    await outboxWrite.current;
+    await localWrite.current;
     const outbox = await readLocalOutbox(user);
     if (outbox.length > 0) {
       setError("Sync pending changes before refreshing from server.");
@@ -327,44 +335,57 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
     }
   }, [saveWorkspace, user]);
 
-  const queueMutation = useCallback(
-    async (mutation: Omit<QueuedMutation, "mutationId" | "createdAt">) => {
-      const queued: QueuedMutation = {
-        ...mutation,
-        mutationId: newId("mut"),
-        createdAt: now()
-      };
-      const write = outboxWrite.current.then(async () => {
-        const outbox = await readLocalOutbox(user);
-        const next = [...outbox, queued];
-        await writeLocalOutbox(user, next);
-        setPendingCount(next.length);
+  const mutateBatch = useCallback(
+    (changes: LocalRecordChange[]) => {
+      if (changes.length === 0) return;
+
+      const committedAt = now();
+      let next = dataRef.current;
+      const mutations: QueuedMutation[] = [];
+
+      for (const change of changes) {
+        const touched = { ...change.record, updatedAt: committedAt } as WorkspaceRecord;
+        next = {
+          ...next,
+          [change.collection]: replaceIn(next[change.collection] as WorkspaceRecord[], touched)
+        } as WorkspaceData;
+        mutations.push({
+          mutationId: newId("mut"),
+          entityType: change.collection,
+          entityId: touched.id,
+          operation: "upsert",
+          payload: touched,
+          createdAt: committedAt
+        });
+      }
+
+      const normalized = normalizeWorkspace(next);
+      dataRef.current = normalized;
+      setData(normalized);
+
+      const write = localWrite.current.then(async () => {
+        const committed = await commitLocalMutationBatch(user, normalized, mutations);
+        setPendingCount(committed.outbox.length);
       });
-      outboxWrite.current = write.catch(() => undefined);
-      await write;
-      window.setTimeout(() => void syncNow(), 80);
+      localWrite.current = write.catch(() => undefined);
+
+      void write
+        .then(() => {
+          window.setTimeout(() => void syncNow(), 80);
+        })
+        .catch((reason) => {
+          setError(reason instanceof Error ? reason.message : "Could not persist local workspace change.");
+          setLastErrorAt(now());
+        });
     },
     [syncNow, user]
   );
 
   const mutate = useCallback(
-    <T extends { id: string }>(collection: CollectionName, record: T) => {
-      const touched = { ...record, updatedAt: now() } as T;
-      const next = {
-        ...dataRef.current,
-        [collection]: replaceIn(dataRef.current[collection] as any[], touched)
-      } as WorkspaceData;
-      void (async () => {
-        await saveWorkspace(next);
-        await queueMutation({
-          entityType: collection,
-          entityId: touched.id,
-          operation: "upsert",
-          payload: touched as any
-        });
-      })();
+    <T extends WorkspaceRecord>(collection: CollectionName, record: T) => {
+      mutateBatch([{ collection, record }]);
     },
-    [queueMutation, saveWorkspace]
+    [mutateBatch]
   );
 
   useEffect(() => {
@@ -452,88 +473,106 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
       if (action.type === "attach-project") {
         const project = byId(dataRef.current.projects, action.projectId);
         if (!project) return;
-        mutate("projects", { ...project, recoveryNotes: appendInboxContext(project.recoveryNotes, capture) });
-        mutate("captures", { ...capture, status: "attached", convertedToId: project.id });
+        mutateBatch([
+          { collection: "projects", record: { ...project, recoveryNotes: appendInboxContext(project.recoveryNotes, capture) } },
+          { collection: "captures", record: { ...capture, status: "attached", convertedToId: project.id } }
+        ]);
         return;
       }
 
       const ts = now();
       const fallbackTitle = captureTitle(capture);
       let convertedToId = "";
+      const changes: LocalRecordChange[] = [];
 
       if (action.type === "task") {
         convertedToId = newId("task");
         const projectId = action.projectId || null;
-        mutate("tasks", {
-          id: convertedToId,
-          title: action.title.trim() || fallbackTitle,
-          plannedDate: action.plannedDate || null,
-          dueDate: action.dueDate || null,
-          scheduledTime: action.scheduledTime || null,
-          projectId,
-          domainId: action.domainId ?? projectDomainId(projectId),
-          status: "todo",
-          createdAt: ts,
-          updatedAt: ts,
-          archivedAt: null,
-          trashedAt: null
-        } satisfies Task);
+        changes.push({
+          collection: "tasks",
+          record: {
+            id: convertedToId,
+            title: action.title.trim() || fallbackTitle,
+            plannedDate: action.plannedDate || null,
+            dueDate: action.dueDate || null,
+            scheduledTime: action.scheduledTime || null,
+            projectId,
+            domainId: action.domainId ?? projectDomainId(projectId),
+            status: "todo",
+            createdAt: ts,
+            updatedAt: ts,
+            archivedAt: null,
+            trashedAt: null
+          } satisfies Task
+        });
       }
 
       if (action.type === "date") {
         convertedToId = newId("deadline");
-        mutate("deadlines", {
-          id: convertedToId,
-          title: action.title.trim() || fallbackTitle,
-          date: action.date,
-          time: action.time || null,
-          location: "",
-          projectId: action.projectId || null,
-          taskIds: [],
-          notes: action.notes ?? "",
-          createdAt: ts,
-          updatedAt: ts,
-          archivedAt: null,
-          trashedAt: null
-        } satisfies Deadline);
+        changes.push({
+          collection: "deadlines",
+          record: {
+            id: convertedToId,
+            title: action.title.trim() || fallbackTitle,
+            date: action.date,
+            time: action.time || null,
+            location: "",
+            projectId: action.projectId || null,
+            taskIds: [],
+            notes: action.notes ?? "",
+            createdAt: ts,
+            updatedAt: ts,
+            archivedAt: null,
+            trashedAt: null
+          } satisfies Deadline
+        });
       }
 
       if (action.type === "project") {
         convertedToId = newId("proj");
-        mutate("projects", {
-          id: convertedToId,
-          name: action.name.trim() || fallbackTitle,
-          domainId: action.domainId || notesDomainId(),
-          parentProjectId: null,
-          status: "active",
-          currentObjective: action.currentObjective ?? "",
-          nextAction: action.nextAction ?? "",
-          latestStatus: "",
-          recoveryNotes: "",
-          openLoops: [],
-          createdAt: ts,
-          updatedAt: ts,
-          archivedAt: null,
-          trashedAt: null
-        } satisfies Project);
+        changes.push({
+          collection: "projects",
+          record: {
+            id: convertedToId,
+            name: action.name.trim() || fallbackTitle,
+            domainId: action.domainId || notesDomainId(),
+            parentProjectId: null,
+            status: "active",
+            currentObjective: action.currentObjective ?? "",
+            nextAction: action.nextAction ?? "",
+            latestStatus: "",
+            recoveryNotes: "",
+            openLoops: [],
+            createdAt: ts,
+            updatedAt: ts,
+            archivedAt: null,
+            trashedAt: null
+          } satisfies Project
+        });
       }
 
       if (action.type === "note") {
         convertedToId = newId("note");
-        mutate("notes", {
-          id: convertedToId,
-          title: action.title.trim() || fallbackTitle,
-          content: action.content ?? capture.text,
-          projectId: action.projectId || null,
-          domainId: action.domainId || notesDomainId(),
-          createdAt: ts,
-          updatedAt: ts,
-          archivedAt: null,
-          trashedAt: null
-        } satisfies Note);
+        changes.push({
+          collection: "notes",
+          record: {
+            id: convertedToId,
+            title: action.title.trim() || fallbackTitle,
+            content: action.content ?? capture.text,
+            projectId: action.projectId || null,
+            domainId: action.domainId || notesDomainId(),
+            createdAt: ts,
+            updatedAt: ts,
+            archivedAt: null,
+            trashedAt: null
+          } satisfies Note
+        });
       }
 
-      if (convertedToId) mutate("captures", { ...capture, status: "converted", convertedToId });
+      if (convertedToId) {
+        changes.push({ collection: "captures", record: { ...capture, status: "converted", convertedToId } });
+        mutateBatch(changes);
+      }
     };
 
     return {
@@ -793,9 +832,9 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
     lastWarningAt,
     loading,
     mutate,
+    mutateBatch,
     online,
     pendingCount,
-    queueMutation,
     refreshing,
     refreshPendingCount,
     saveWorkspace,

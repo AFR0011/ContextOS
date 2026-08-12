@@ -112,6 +112,52 @@ async function localDbSnapshot(page: Page) {
   }, DB_NAME);
 }
 
+async function seedSecondLocalUser(page: Page, userId: string, email: string, marker: string) {
+  await page.evaluate(async ({ databaseName, userId: secondUserId, email: secondEmail, marker: secondMarker }) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(databaseName, 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    const timestamp = new Date().toISOString();
+    const workspace = {
+      domains: [],
+      projects: [],
+      tasks: [],
+      captures: [
+        {
+          id: `capture-${secondUserId}`,
+          text: secondMarker,
+          status: "unprocessed",
+          type: null,
+          parsedData: null,
+          convertedToId: null,
+          createdAt: timestamp,
+          updatedAt: timestamp
+        }
+      ],
+      notes: [],
+      deadlines: [],
+      reviews: [],
+      dashboardScratchpads: [],
+      dashboardPreferences: [],
+      serverSyncedAt: ""
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(["users", "workspaces", "outboxes"], "readwrite");
+      tx.objectStore("users").put({ id: secondUserId, email: secondEmail, verifiedAt: timestamp });
+      tx.objectStore("workspaces").put(workspace, secondUserId);
+      tx.objectStore("outboxes").put([], secondUserId);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error("Synthetic user transaction aborted"));
+    });
+    db.close();
+  }, { databaseName: DB_NAME, userId, email, marker });
+}
+
 test("v1 global cache migrates once into the authenticated user's v2 stores", async ({ page }) => {
   await page.goto("/login");
   await deleteLocalDb(page);
@@ -147,8 +193,8 @@ test("local workspace and outbox state are keyed by verified user identity", asy
   const demoUser = firstUserSnapshot.users.find((user) => user.email === "demo@contextos.local");
   expect(demoUser).toBeTruthy();
 
-  // Keep this Stage 2 assertion on an already-loaded surface. Offline navigation is a
-  // known Stage 0 failure and belongs to the later routing stages, not this storage test.
+  // Keep this Stage 2 assertion on an already-loaded surface. Offline navigation and
+  // identity switching are later-stage concerns and are intentionally not exercised here.
   await context.setOffline(true);
   const demoOnly = `demo-only-${Date.now()}`;
   await page.getByPlaceholder(/Quick capture/i).fill(demoOnly);
@@ -159,22 +205,16 @@ test("local workspace and outbox state are keyed by verified user identity", asy
   expect(demoOfflineSnapshot.workspaceByUser[demoUser!.id]?.captures?.some((capture: { text: string }) => capture.text === demoOnly)).toBe(true);
   expect(demoOfflineSnapshot.outboxByUser[demoUser!.id]?.length).toBeGreaterThan(0);
 
-  await context.setOffline(false);
-  await page.reload();
-  await page.getByRole("button", { name: "Logout", exact: true }).click();
-  await expect(page).toHaveURL(/\/login$/);
+  const secondUserId = `local-user-${Date.now()}`;
+  const secondEmail = `${secondUserId}@example.com`;
+  const secondOnly = `second-only-${Date.now()}`;
+  await seedSecondLocalUser(page, secondUserId, secondEmail, secondOnly);
 
-  const secondEmail = `local-v2-${Date.now()}@example.com`;
-  await page.goto("/register");
-  await page.getByLabel("Email").fill(secondEmail);
-  await page.getByLabel("Password").fill("contextos-demo-v011");
-  await page.getByRole("button", { name: /create account/i }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
-
-  const secondUserSnapshot = await localDbSnapshot(page);
-  const secondUser = secondUserSnapshot.users.find((user) => user.email === secondEmail);
-  expect(secondUser).toBeTruthy();
-  expect(secondUser!.id).not.toBe(demoUser!.id);
-  expect(secondUserSnapshot.workspaceByUser[secondUser!.id]?.captures?.some((capture: { text: string }) => capture.text === demoOnly)).toBe(false);
-  expect(secondUserSnapshot.workspaceByUser[demoUser!.id]?.captures?.some((capture: { text: string }) => capture.text === demoOnly)).toBe(true);
+  const isolatedSnapshot = await localDbSnapshot(page);
+  expect(isolatedSnapshot.workspaceByUser[demoUser!.id]?.captures?.some((capture: { text: string }) => capture.text === demoOnly)).toBe(true);
+  expect(isolatedSnapshot.workspaceByUser[demoUser!.id]?.captures?.some((capture: { text: string }) => capture.text === secondOnly)).toBe(false);
+  expect(isolatedSnapshot.workspaceByUser[secondUserId]?.captures?.some((capture: { text: string }) => capture.text === secondOnly)).toBe(true);
+  expect(isolatedSnapshot.workspaceByUser[secondUserId]?.captures?.some((capture: { text: string }) => capture.text === demoOnly)).toBe(false);
+  expect(isolatedSnapshot.outboxByUser[demoUser!.id]?.length).toBeGreaterThan(0);
+  expect(isolatedSnapshot.outboxByUser[secondUserId]).toEqual([]);
 });

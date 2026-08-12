@@ -23,11 +23,14 @@ import type {
 import { localDateKey } from "./dates";
 import { readJsonResponse, responseErrorMessage } from "./http-client";
 import type { LifeOsHandoffV1 } from "./lifeos-handoff";
-
-const DB_NAME = "contextos-offline-v1";
-const DB_VERSION = 1;
-const WORKSPACE_KEY = "workspace";
-const OUTBOX_KEY = "outbox";
+import {
+  readLocalOutbox,
+  readLocalWorkspace,
+  rememberLocalUser,
+  writeLocalOutbox,
+  writeLocalWorkspace,
+  type LocalVerifiedUser
+} from "./local-db";
 
 export const emptyWorkspace = (): WorkspaceData => ({
   domains: [],
@@ -130,70 +133,6 @@ export type TriageCaptureAction =
   | { type: "archive" }
   | { type: "delete" };
 
-function openDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-async function idbGet<T>(key: string): Promise<T | null> {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction("kv", "readonly");
-    const request = tx.objectStore("kv").get(key);
-    let result: T | null = null;
-    request.onsuccess = () => {
-      result = (request.result as T | undefined) ?? null;
-    };
-    tx.oncomplete = () => {
-      db.close();
-      resolve(result);
-    };
-    tx.onerror = () => {
-      db.close();
-      reject(tx.error ?? request.error);
-    };
-  });
-}
-
-async function idbSet<T>(key: string, value: T) {
-  const db = await openDb();
-  return new Promise<void>((resolve, reject) => {
-    const tx = db.transaction("kv", "readwrite");
-    tx.objectStore("kv").put(value, key);
-    tx.oncomplete = () => {
-      db.close();
-      resolve();
-    };
-    tx.onerror = () => {
-      db.close();
-      reject(tx.error);
-    };
-  });
-}
-
-async function idbDelete(key: string) {
-  const db = await openDb();
-  return new Promise<void>((resolve, reject) => {
-    const tx = db.transaction("kv", "readwrite");
-    tx.objectStore("kv").delete(key);
-    tx.oncomplete = () => {
-      db.close();
-      resolve();
-    };
-    tx.onerror = () => {
-      db.close();
-      reject(tx.error);
-    };
-  });
-}
-
 function replaceIn<T extends { id: string }>(items: T[], record: T) {
   const exists = items.some((item) => item.id === record.id);
   return exists ? items.map((item) => (item.id === record.id ? record : item)) : [record, ...items];
@@ -265,7 +204,7 @@ interface StoreApi {
 
 const StoreContext = createContext<StoreApi | null>(null);
 
-export function WorkspaceProvider({ children }: { children: ReactNode }) {
+export function WorkspaceProvider({ children, user }: { children: ReactNode; user: LocalVerifiedUser }) {
   const [data, setData] = useState<WorkspaceData>(emptyWorkspace);
   const dataRef = useRef(data);
   const [loading, setLoading] = useState(true);
@@ -291,13 +230,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     const normalized = normalizeWorkspace(next);
     dataRef.current = normalized;
     setData(normalized);
-    await idbSet(WORKSPACE_KEY, normalized);
-  }, []);
+    await writeLocalWorkspace(user, normalized);
+  }, [user]);
 
   const refreshPendingCount = useCallback(async () => {
-    const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+    const outbox = await readLocalOutbox(user);
     setPendingCount(outbox.length);
-  }, []);
+  }, [user]);
 
   const syncNow = useCallback(async () => {
     if (syncInFlight.current || typeof window === "undefined") return;
@@ -313,7 +252,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await outboxWrite.current;
-      const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+      const outbox = await readLocalOutbox(user);
       const response = await fetch("/api/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -325,9 +264,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }
       const applied = new Set(result.appliedMutationIds);
       const reconcile = outboxWrite.current.then(async () => {
-        const latestOutbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+        const latestOutbox = await readLocalOutbox(user);
         const remaining = latestOutbox.filter((mutation) => !applied.has(mutation.mutationId));
-        await idbSet(OUTBOX_KEY, remaining);
+        await writeLocalOutbox(user, remaining);
         return remaining;
       });
       outboxWrite.current = reconcile.then(() => undefined, () => undefined);
@@ -349,7 +288,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setSyncing(false);
       syncInFlight.current = false;
     }
-  }, [saveWorkspace]);
+  }, [saveWorkspace, user]);
 
   const forceRefreshFromServer = useCallback(async () => {
     if (typeof window === "undefined") return;
@@ -362,7 +301,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setOnline(true);
 
     await outboxWrite.current;
-    const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+    const outbox = await readLocalOutbox(user);
     if (outbox.length > 0) {
       setError("Sync pending changes before refreshing from server.");
       setLastErrorAt(now());
@@ -386,7 +325,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } finally {
       setRefreshing(false);
     }
-  }, [saveWorkspace]);
+  }, [saveWorkspace, user]);
 
   const queueMutation = useCallback(
     async (mutation: Omit<QueuedMutation, "mutationId" | "createdAt">) => {
@@ -396,16 +335,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         createdAt: now()
       };
       const write = outboxWrite.current.then(async () => {
-        const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+        const outbox = await readLocalOutbox(user);
         const next = [...outbox, queued];
-        await idbSet(OUTBOX_KEY, next);
+        await writeLocalOutbox(user, next);
         setPendingCount(next.length);
       });
       outboxWrite.current = write.catch(() => undefined);
       await write;
       window.setTimeout(() => void syncNow(), 80);
     },
-    [syncNow]
+    [syncNow, user]
   );
 
   const mutate = useCallback(
@@ -432,7 +371,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setOnline(typeof navigator === "undefined" ? true : navigator.onLine);
 
     async function boot() {
-      const cached = await idbGet<WorkspaceData>(WORKSPACE_KEY);
+      await rememberLocalUser(user);
+      const cached = await readLocalWorkspace(user);
       if (cached) {
         const normalized = normalizeWorkspace(cached);
         setData(normalized);
@@ -440,7 +380,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         setLastSyncedAt(normalized.serverSyncedAt || null);
         setLoading(false);
       }
-      const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+      const outbox = await readLocalOutbox(user);
       setPendingCount(outbox.length);
 
       if (navigator.onLine) {
@@ -488,7 +428,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [refreshPendingCount, saveWorkspace, syncNow]);
+  }, [refreshPendingCount, saveWorkspace, syncNow, user]);
 
   const api = useMemo<StoreApi>(() => {
     const defaultDomainId = () => dataRef.current.domains.find((domain) => !domain.archived)?.id || "";
@@ -631,7 +571,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           setError(responseErrorMessage(response, result, "Could not reset demo data"));
           setLastErrorAt(now());
         }
-        await idbSet(OUTBOX_KEY, []);
+        await writeLocalOutbox(user, []);
         await refreshPendingCount();
       },
       addCapture: (text) => {
@@ -857,10 +797,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     pendingCount,
     queueMutation,
     refreshing,
+    refreshPendingCount,
     saveWorkspace,
     staleMutationCount,
     syncNow,
-    syncing
+    syncing,
+    user
   ]);
 
   return <StoreContext.Provider value={api}>{children}</StoreContext.Provider>;

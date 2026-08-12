@@ -32,14 +32,25 @@ async function warmOfflineShell(page: Page) {
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
 }
 
-async function deleteLocalDb(page: Page) {
+async function clearLocalIdentityAndWorkspace(page: Page) {
   await page.evaluate(async (databaseName) => {
-    await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.deleteDatabase(databaseName);
-      request.onsuccess = () => resolve();
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(databaseName, 2);
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
-      request.onblocked = () => reject(new Error("IndexedDB deletion was blocked."));
     });
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(["users", "workspaces", "outboxes", "kv"], "readwrite");
+      tx.objectStore("users").clear();
+      tx.objectStore("workspaces").clear();
+      tx.objectStore("outboxes").clear();
+      tx.objectStore("kv").clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error("IndexedDB clear was aborted."));
+    });
+    db.close();
   }, DB_NAME);
 }
 
@@ -98,7 +109,7 @@ test("a single previously verified local workspace can reopen after remote verif
 
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
-  await expect(page.getByTestId("global-sync-indicator")).toContainText("Offline");
+  await expect(page.getByTestId("global-sync-indicator").first()).toContainText("Offline");
 });
 
 test("offline startup without a previously authenticated local workspace is blocked clearly", async ({ page, context }) => {
@@ -109,7 +120,7 @@ test("offline startup without a previously authenticated local workspace is bloc
   // but has no verified local identity/workspace. It is not exercising logout semantics,
   // which remain deferred to Stage 9.
   await clearRemoteSession(context);
-  await deleteLocalDb(page);
+  await clearLocalIdentityAndWorkspace(page);
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });
 

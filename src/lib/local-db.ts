@@ -78,7 +78,11 @@ function migrateLegacyV1ForUser(db: IDBDatabase, user: LocalVerifiedUser): Promi
     let migrationQueued = false;
 
     const fail = (error: DOMException | null) => {
-      if (tx.readyState !== "done") tx.abort();
+      try {
+        tx.abort();
+      } catch {
+        // The transaction may already have aborted because of the request failure.
+      }
       reject(error ?? new Error("Could not migrate the legacy ContextOS local database."));
     };
 

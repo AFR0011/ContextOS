@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Download,
@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type { PublicUser } from "@/lib/auth";
 import { useWorkspace } from "@/lib/client-store";
+import { useLocalRouter } from "@/lib/local-router";
 import type { Project } from "@/lib/types";
 
 const mobileBottomNav = [
@@ -138,8 +139,8 @@ function SyncIndicator({ sync, compact = false, onRefreshFromServer }: { sync: S
 export default function WorkspaceShell({ user, children }: { user: PublicUser; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [darkMode, setDarkMode] = useState<boolean | null>(null);
-  const pathname = usePathname();
-  const currentPath = pathname ?? "";
+  const localRouter = useLocalRouter();
+  const currentPath = localRouter.location.pathname;
   const router = useRouter();
   const { data, sync, forceRefreshFromServer } = useWorkspace();
   const inboxCount = data.captures.filter((capture) => capture.status === "unprocessed").length;
@@ -166,7 +167,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
   }
 
   function goTo(href: string) {
-    router.push(href);
+    localRouter.push(href);
     setOpen(false);
   }
 
@@ -340,7 +341,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
                 <button
                   key={item.href}
                   type="button"
-                  onClick={() => router.push(item.href)}
+                  onClick={() => goTo(item.href)}
                   aria-current={active ? "page" : undefined}
                   className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium ${
                     active

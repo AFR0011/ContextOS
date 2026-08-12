@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Zap } from "lucide-react";
 import { readJsonResponse, responseErrorMessage } from "@/lib/http-client";
+import { rememberLocalUser, type LocalVerifiedUser } from "@/lib/local-db";
 
 export default function AuthForm({ mode, serviceStatus, registrationEnabled = true }: { mode: "login" | "register"; serviceStatus?: string; registrationEnabled?: boolean }) {
   const router = useRouter();
@@ -29,8 +30,10 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
-      const result = await readJsonResponse<{ error?: string; user?: unknown }>(response);
+      const result = await readJsonResponse<{ error?: string; user?: LocalVerifiedUser }>(response);
       if (!response.ok) throw new Error(responseErrorMessage(response, result, "Authentication failed"));
+      if (!result?.user) throw new Error("Authentication succeeded without a user identity.");
+      await rememberLocalUser(result.user);
       router.push(safeNext);
       router.refresh();
     } catch (err) {

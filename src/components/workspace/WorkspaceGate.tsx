@@ -13,10 +13,10 @@ import {
 } from "@/lib/local-db";
 import WorkspaceShell from "./WorkspaceShell";
 
-type GateState =
-  | { status: "checking" }
-  | { status: "ready"; user: LocalVerifiedUser; source: "server" | "local" }
-  | { status: "blocked"; title: string; message: string };
+type ReadyGateState = { status: "ready"; user: LocalVerifiedUser; source: "server" | "local" };
+type BlockedGateState = { status: "blocked"; title: string; message: string };
+type GateState = { status: "checking" } | ReadyGateState | BlockedGateState;
+type LocalRecoveryState = ReadyGateState | BlockedGateState;
 
 const AUTH_CHECK_TIMEOUT_MS = 10_000;
 
@@ -30,7 +30,7 @@ async function localUsersWithWorkspaces(): Promise<StoredLocalUser[]> {
   return candidates;
 }
 
-async function recoverLocalIdentity(): Promise<GateState> {
+async function recoverLocalIdentity(): Promise<LocalRecoveryState> {
   const candidates = await localUsersWithWorkspaces();
 
   if (candidates.length === 1) {

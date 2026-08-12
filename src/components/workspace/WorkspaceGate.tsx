@@ -11,6 +11,8 @@ import {
   type LocalVerifiedUser,
   type StoredLocalUser
 } from "@/lib/local-db";
+import { LocalRouterProvider } from "@/lib/local-router";
+import LocalWorkspaceRouter from "./LocalWorkspaceRouter";
 import WorkspaceShell from "./WorkspaceShell";
 
 type ReadyGateState = { status: "ready"; user: LocalVerifiedUser; source: "server" | "local" };
@@ -54,7 +56,7 @@ async function recoverLocalIdentity(): Promise<LocalRecoveryState> {
 
 export default function WorkspaceGate({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() || "/dashboard";
   const [state, setState] = useState<GateState>({ status: "checking" });
   const [attempt, setAttempt] = useState(0);
 
@@ -84,7 +86,8 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
         }
 
         if (!result?.user) {
-          const next = pathname && pathname.startsWith("/") ? pathname : "/dashboard";
+          const current = `${window.location.pathname}${window.location.search}`;
+          const next = current.startsWith("/") ? current : "/dashboard";
           router.replace(`/login?next=${encodeURIComponent(next)}`);
           return;
         }
@@ -92,9 +95,6 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
         await rememberLocalUser(result.user);
         if (active) setState({ status: "ready", user: result.user, source: "server" });
       } catch (reason) {
-        // A reachable browser can still lose access to the ContextOS server. In that
-        // case, fall back to a single unambiguous local workspace rather than making
-        // cached work unavailable because remote verification could not complete.
         const local = await recoverLocalIdentity();
         if (!active) return;
 
@@ -131,12 +131,16 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [attempt, pathname, router]);
+  }, [attempt, router]);
 
   if (state.status === "ready") {
     return (
       <WorkspaceProvider user={state.user}>
-        <WorkspaceShell user={state.user}>{children}</WorkspaceShell>
+        <LocalRouterProvider initialPathname={pathname}>
+          <WorkspaceShell user={state.user}>
+            <LocalWorkspaceRouter fallback={children} />
+          </WorkspaceShell>
+        </LocalRouterProvider>
       </WorkspaceProvider>
     );
   }

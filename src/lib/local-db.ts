@@ -16,7 +16,7 @@ export interface LocalVerifiedUser {
   verifiedAt?: string;
 }
 
-interface StoredLocalUser {
+export interface StoredLocalUser {
   id: string;
   email: string;
   verifiedAt: string;
@@ -61,35 +61,77 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-async function migrateLegacyV1ForUser(db: IDBDatabase, user: LocalVerifiedUser) {
-  if (!db.objectStoreNames.contains(LEGACY_STORE)) return;
+function migrateLegacyV1ForUser(db: IDBDatabase, user: LocalVerifiedUser): Promise<void> {
+  if (!db.objectStoreNames.contains(LEGACY_STORE)) return Promise.resolve();
 
-  const tx = db.transaction([LEGACY_STORE, USER_STORE, WORKSPACE_STORE, OUTBOX_STORE], "readwrite");
-  const legacy = tx.objectStore(LEGACY_STORE);
-  const workspaces = tx.objectStore(WORKSPACE_STORE);
-  const outboxes = tx.objectStore(OUTBOX_STORE);
-  const users = tx.objectStore(USER_STORE);
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([LEGACY_STORE, WORKSPACE_STORE, OUTBOX_STORE], "readwrite");
+    const legacy = tx.objectStore(LEGACY_STORE);
+    const workspaces = tx.objectStore(WORKSPACE_STORE);
+    const outboxes = tx.objectStore(OUTBOX_STORE);
 
-  const [legacyWorkspace, legacyOutbox, currentWorkspace, currentOutbox] = await Promise.all([
-    requestValue(legacy.get(LEGACY_WORKSPACE_KEY)),
-    requestValue(legacy.get(LEGACY_OUTBOX_KEY)),
-    requestValue(workspaces.get(user.id)),
-    requestValue(outboxes.get(user.id))
-  ]);
+    let legacyWorkspace: unknown;
+    let legacyOutbox: unknown;
+    let currentWorkspace: unknown;
+    let currentOutbox: unknown;
+    let completedReads = 0;
+    let migrationQueued = false;
 
-  if (currentWorkspace === undefined && legacyWorkspace !== undefined) {
-    workspaces.put(legacyWorkspace, user.id);
-  }
-  if (currentOutbox === undefined && legacyOutbox !== undefined) {
-    outboxes.put(legacyOutbox, user.id);
-  }
+    const fail = (error: DOMException | null) => {
+      if (tx.readyState !== "done") tx.abort();
+      reject(error ?? new Error("Could not migrate the legacy ContextOS local database."));
+    };
 
-  users.put(storedUser(user));
+    const maybeQueueMigration = () => {
+      completedReads += 1;
+      if (completedReads !== 4 || migrationQueued) return;
+      migrationQueued = true;
 
-  if (legacyWorkspace !== undefined) legacy.delete(LEGACY_WORKSPACE_KEY);
-  if (legacyOutbox !== undefined) legacy.delete(LEGACY_OUTBOX_KEY);
+      // Queue writes synchronously from the final request callback. This keeps the
+      // readwrite transaction active across browsers, including stricter IndexedDB
+      // implementations that may auto-commit after an awaited request callback.
+      if (currentWorkspace === undefined && legacyWorkspace !== undefined) {
+        workspaces.put(legacyWorkspace, user.id);
+      }
+      if (currentOutbox === undefined && legacyOutbox !== undefined) {
+        outboxes.put(legacyOutbox, user.id);
+      }
+      if (legacyWorkspace !== undefined) legacy.delete(LEGACY_WORKSPACE_KEY);
+      if (legacyOutbox !== undefined) legacy.delete(LEGACY_OUTBOX_KEY);
+    };
 
-  await transactionDone(tx);
+    const legacyWorkspaceRequest = legacy.get(LEGACY_WORKSPACE_KEY);
+    legacyWorkspaceRequest.onsuccess = () => {
+      legacyWorkspace = legacyWorkspaceRequest.result;
+      maybeQueueMigration();
+    };
+    legacyWorkspaceRequest.onerror = () => fail(legacyWorkspaceRequest.error);
+
+    const legacyOutboxRequest = legacy.get(LEGACY_OUTBOX_KEY);
+    legacyOutboxRequest.onsuccess = () => {
+      legacyOutbox = legacyOutboxRequest.result;
+      maybeQueueMigration();
+    };
+    legacyOutboxRequest.onerror = () => fail(legacyOutboxRequest.error);
+
+    const currentWorkspaceRequest = workspaces.get(user.id);
+    currentWorkspaceRequest.onsuccess = () => {
+      currentWorkspace = currentWorkspaceRequest.result;
+      maybeQueueMigration();
+    };
+    currentWorkspaceRequest.onerror = () => fail(currentWorkspaceRequest.error);
+
+    const currentOutboxRequest = outboxes.get(user.id);
+    currentOutboxRequest.onsuccess = () => {
+      currentOutbox = currentOutboxRequest.result;
+      maybeQueueMigration();
+    };
+    currentOutboxRequest.onerror = () => fail(currentOutboxRequest.error);
+
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("Could not migrate the legacy ContextOS local database."));
+    tx.onabort = () => reject(tx.error ?? new Error("ContextOS local database migration was aborted."));
+  });
 }
 
 async function withUserDb<T>(user: LocalVerifiedUser, operation: (db: IDBDatabase) => Promise<T>): Promise<T> {
@@ -114,16 +156,18 @@ async function withDb<T>(operation: (db: IDBDatabase) => Promise<T>): Promise<T>
 export async function rememberLocalUser(user: LocalVerifiedUser) {
   await withUserDb(user, async (db) => {
     const tx = db.transaction(USER_STORE, "readwrite");
+    const done = transactionDone(tx);
     tx.objectStore(USER_STORE).put(storedUser(user));
-    await transactionDone(tx);
+    await done;
   });
 }
 
 export async function readLocalUser(userId: string): Promise<StoredLocalUser | null> {
   return withDb(async (db) => {
     const tx = db.transaction(USER_STORE, "readonly");
+    const done = transactionDone(tx);
     const value = await requestValue(tx.objectStore(USER_STORE).get(userId));
-    await transactionDone(tx);
+    await done;
     return (value as StoredLocalUser | undefined) ?? null;
   });
 }
@@ -131,8 +175,9 @@ export async function readLocalUser(userId: string): Promise<StoredLocalUser | n
 export async function listLocalUsers(): Promise<StoredLocalUser[]> {
   return withDb(async (db) => {
     const tx = db.transaction(USER_STORE, "readonly");
+    const done = transactionDone(tx);
     const values = await requestValue(tx.objectStore(USER_STORE).getAll());
-    await transactionDone(tx);
+    await done;
     return (values as StoredLocalUser[]).sort((a, b) => b.verifiedAt.localeCompare(a.verifiedAt));
   });
 }
@@ -140,8 +185,9 @@ export async function listLocalUsers(): Promise<StoredLocalUser[]> {
 export async function readLocalWorkspace(user: LocalVerifiedUser): Promise<WorkspaceData | null> {
   return withUserDb(user, async (db) => {
     const tx = db.transaction(WORKSPACE_STORE, "readonly");
+    const done = transactionDone(tx);
     const value = await requestValue(tx.objectStore(WORKSPACE_STORE).get(user.id));
-    await transactionDone(tx);
+    await done;
     return (value as WorkspaceData | undefined) ?? null;
   });
 }
@@ -149,16 +195,18 @@ export async function readLocalWorkspace(user: LocalVerifiedUser): Promise<Works
 export async function writeLocalWorkspace(user: LocalVerifiedUser, workspace: WorkspaceData) {
   await withUserDb(user, async (db) => {
     const tx = db.transaction(WORKSPACE_STORE, "readwrite");
+    const done = transactionDone(tx);
     tx.objectStore(WORKSPACE_STORE).put(workspace, user.id);
-    await transactionDone(tx);
+    await done;
   });
 }
 
 export async function readLocalOutbox(user: LocalVerifiedUser): Promise<QueuedMutation[]> {
   return withUserDb(user, async (db) => {
     const tx = db.transaction(OUTBOX_STORE, "readonly");
+    const done = transactionDone(tx);
     const value = await requestValue(tx.objectStore(OUTBOX_STORE).get(user.id));
-    await transactionDone(tx);
+    await done;
     return (value as QueuedMutation[] | undefined) ?? [];
   });
 }
@@ -166,8 +214,9 @@ export async function readLocalOutbox(user: LocalVerifiedUser): Promise<QueuedMu
 export async function writeLocalOutbox(user: LocalVerifiedUser, outbox: QueuedMutation[]) {
   await withUserDb(user, async (db) => {
     const tx = db.transaction(OUTBOX_STORE, "readwrite");
+    const done = transactionDone(tx);
     tx.objectStore(OUTBOX_STORE).put(outbox, user.id);
-    await transactionDone(tx);
+    await done;
   });
 }
 

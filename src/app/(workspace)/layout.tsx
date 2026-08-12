@@ -1,12 +1,5 @@
-import { requireUser } from "@/lib/auth";
-import { WorkspaceProvider } from "@/lib/client-store";
-import WorkspaceShell from "@/components/workspace/WorkspaceShell";
+import WorkspaceGate from "@/components/workspace/WorkspaceGate";
 
-export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireUser();
-  return (
-    <WorkspaceProvider user={user}>
-      <WorkspaceShell user={user}>{children}</WorkspaceShell>
-    </WorkspaceProvider>
-  );
+export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
+  return <WorkspaceGate>{children}</WorkspaceGate>;
 }

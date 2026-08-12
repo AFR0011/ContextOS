@@ -22,6 +22,10 @@ export interface StoredLocalUser {
   verifiedAt: string;
 }
 
+export interface LocalMutationCommitResult {
+  outbox: QueuedMutation[];
+}
+
 function storedUser(user: LocalVerifiedUser): StoredLocalUser {
   return {
     id: user.id,
@@ -222,6 +226,47 @@ export async function writeLocalOutbox(user: LocalVerifiedUser, outbox: QueuedMu
     tx.objectStore(OUTBOX_STORE).put(outbox, user.id);
     await done;
   });
+}
+
+export async function commitLocalMutationBatch(
+  user: LocalVerifiedUser,
+  workspace: WorkspaceData,
+  mutations: QueuedMutation[]
+): Promise<LocalMutationCommitResult> {
+  if (mutations.length === 0) {
+    throw new Error("A local mutation commit requires at least one queued mutation.");
+  }
+
+  return withUserDb(user, (db) =>
+    new Promise<LocalMutationCommitResult>((resolve, reject) => {
+      const tx = db.transaction([WORKSPACE_STORE, OUTBOX_STORE], "readwrite");
+      const workspaces = tx.objectStore(WORKSPACE_STORE);
+      const outboxes = tx.objectStore(OUTBOX_STORE);
+      const outboxRequest = outboxes.get(user.id);
+      let committedOutbox: QueuedMutation[] = [];
+
+      outboxRequest.onsuccess = () => {
+        const existing = (outboxRequest.result as QueuedMutation[] | undefined) ?? [];
+        committedOutbox = [...existing, ...mutations];
+
+        // Workspace and outbox writes are queued inside the same IndexedDB transaction.
+        // Either both become durable or neither does.
+        workspaces.put(workspace, user.id);
+        outboxes.put(committedOutbox, user.id);
+      };
+      outboxRequest.onerror = () => {
+        try {
+          tx.abort();
+        } catch {
+          // Request failure may already have aborted the transaction.
+        }
+      };
+
+      tx.oncomplete = () => resolve({ outbox: committedOutbox });
+      tx.onerror = () => reject(tx.error ?? outboxRequest.error ?? new Error("Could not commit local workspace mutation."));
+      tx.onabort = () => reject(tx.error ?? outboxRequest.error ?? new Error("Local workspace mutation transaction was aborted."));
+    })
+  );
 }
 
 export const LOCAL_DB_INFO = {

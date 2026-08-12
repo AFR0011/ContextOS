@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { CalendarDays, CheckSquare, Inbox } from "lucide-react";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import {
@@ -16,6 +15,7 @@ import {
 import { parseCommandPageLine } from "@/lib/command-page-commands";
 import { localDateKey } from "@/lib/dates";
 import { useWorkspace } from "@/lib/client-store";
+import { useLocalRouter } from "@/lib/local-router";
 import type { Capture, Deadline, Domain, Project, Task } from "@/lib/types";
 
 type DashboardGroupMode = "time" | "area" | "project";
@@ -249,7 +249,7 @@ function DashboardInboxPreview({ captures, count, onReview }: { captures: Captur
 }
 
 export function Dashboard2View() {
-  const router = useRouter();
+  const router = useLocalRouter();
   const { data, loading, sync, addTask, addDeadline, updateDashboardScratchpad } = useWorkspace();
   const today = localDateKey();
   const scratchpad = data.dashboardScratchpads[0];

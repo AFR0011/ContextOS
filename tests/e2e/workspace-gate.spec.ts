@@ -2,6 +2,7 @@ import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 
 const DB_NAME = "contextos-offline-v1";
 
+// Stage 4 keeps authentication verification separate from the Stage 5 navigation work.
 async function login(page: Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill("demo@contextos.local");

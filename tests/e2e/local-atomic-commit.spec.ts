@@ -8,6 +8,7 @@ async function loginAndOpenInbox(page: Page) {
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto("/inbox");
   await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
+  await expect.poll(async () => Boolean((await currentLocalState(page)).workspace)).toBe(true);
 }
 
 async function currentLocalState(page: Page) {

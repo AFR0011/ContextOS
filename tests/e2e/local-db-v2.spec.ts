@@ -201,9 +201,15 @@ test("local workspace and outbox state are keyed by verified user identity", asy
   await page.getByPlaceholder(/Quick capture/i).press("Enter");
   await expect(page.getByText(demoOnly)).toBeVisible();
 
-  const demoOfflineSnapshot = await localDbSnapshot(page);
-  expect(demoOfflineSnapshot.workspaceByUser[demoUser!.id]?.captures?.some((capture: { text: string }) => capture.text === demoOnly)).toBe(true);
-  expect(demoOfflineSnapshot.outboxByUser[demoUser!.id]?.length).toBeGreaterThan(0);
+  await expect
+    .poll(async () => {
+      const snapshot = await localDbSnapshot(page);
+      const captureStored = Boolean(
+        snapshot.workspaceByUser[demoUser!.id]?.captures?.some((capture: { text: string }) => capture.text === demoOnly)
+      );
+      return { captureStored, pendingCount: snapshot.outboxByUser[demoUser!.id]?.length ?? 0 };
+    })
+    .toMatchObject({ captureStored: true, pendingCount: 1 });
 
   const secondUserId = `local-user-${Date.now()}`;
   const secondEmail = `${secondUserId}@example.com`;

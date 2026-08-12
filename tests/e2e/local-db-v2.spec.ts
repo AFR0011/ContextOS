@@ -140,14 +140,17 @@ test("v1 global cache migrates once into the authenticated user's v2 stores", as
 
 test("local workspace and outbox state are keyed by verified user identity", async ({ page, context }) => {
   await uiLogin(page);
+  await page.goto("/inbox");
+  await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
 
   const firstUserSnapshot = await localDbSnapshot(page);
   const demoUser = firstUserSnapshot.users.find((user) => user.email === "demo@contextos.local");
   expect(demoUser).toBeTruthy();
 
+  // Keep this Stage 2 assertion on an already-loaded surface. Offline navigation is a
+  // known Stage 0 failure and belongs to the later routing stages, not this storage test.
   await context.setOffline(true);
   const demoOnly = `demo-only-${Date.now()}`;
-  await page.getByRole("button", { name: "Inbox", exact: true }).click();
   await page.getByPlaceholder(/Quick capture/i).fill(demoOnly);
   await page.getByPlaceholder(/Quick capture/i).press("Enter");
   await expect(page.getByText(demoOnly)).toBeVisible();

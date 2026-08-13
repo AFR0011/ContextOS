@@ -1,7 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: "./tests/offline-production",
+  testDir: ".",
+  testMatch: [
+    "tests/offline-production/**/*.spec.ts",
+    "tests/e2e/local-first-characterization.spec.ts",
+    "tests/e2e/workspace-gate.spec.ts"
+  ],
   timeout: 60_000,
   expect: {
     timeout: 15_000

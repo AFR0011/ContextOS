@@ -1,0 +1,21 @@
+name: Stage 6 readiness test patch
+on: [push]
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.ref == 'refs/heads/feat/local-first-completion-stage6'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feat/local-first-completion-stage6
+      - run: python scripts/patch-stage6-readiness-tests.py
+      - run: |
+          rm scripts/patch-stage6-readiness-tests.py
+          rm .github/workflows/stage6-readiness-test-patch.yml
+          git config user.name "Ali Farrokhnejad"
+          git config user.email "farrokh445@gmail.com"
+          git add tests/e2e/contextos.spec.ts tests/e2e/local-first-characterization.spec.ts tests/e2e/workspace-gate.spec.ts scripts/patch-stage6-readiness-tests.py .github/workflows/stage6-readiness-test-patch.yml
+          git commit -m "test: wait for verified Stage 6 shell readiness"
+          git push origin HEAD:feat/local-first-completion-stage6

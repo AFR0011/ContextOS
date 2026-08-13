@@ -35,11 +35,21 @@ function trackedFiles() {
     .filter(Boolean);
 }
 
+function isAuditableTextFile(relative) {
+  const extension = path.extname(relative).toLowerCase();
+  const textExtensions = new Set([
+    ".cjs", ".css", ".env", ".html", ".js", ".json", ".jsx", ".md", ".mjs",
+    ".prisma", ".ps1", ".sh", ".sql", ".toml", ".ts", ".tsx", ".txt", ".yaml", ".yml"
+  ]);
+  return textExtensions.has(extension) || ["Dockerfile", ".env.example", ".gitignore"].includes(path.basename(relative));
+}
+
 const tracked = trackedFiles();
 const gitignore = read(".gitignore");
 const auth = read("src/lib/auth.ts");
 const registration = read("src/lib/registration.ts");
 const rateLimit = read("src/lib/rate-limit.ts");
+const ssoBridge = read("src/lib/sso-bridge.ts");
 const loginRoute = read("src/app/api/auth/login/route.ts");
 const registerRoute = read("src/app/api/auth/register/route.ts");
 const logoutRoute = read("src/app/api/auth/logout/route.ts");
@@ -96,6 +106,31 @@ record(
   "Restore npm audit --audit-level=low to the required CI path."
 );
 
+const secretSignatures = [
+  ["private-key", /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g],
+  ["github-token", /(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})/g],
+  ["aws-access-key", /AKIA[0-9A-Z]{16}/g],
+  ["google-api-key", /AIza[0-9A-Za-z_-]{35}/g],
+  ["stripe-live-secret", /sk_live_[0-9A-Za-z]{16,}/g],
+  ["openai-secret", /sk-(?:proj-)?[A-Za-z0-9_-]{20,}/g]
+];
+const secretHits = [];
+for (const file of tracked.filter(isAuditableTextFile)) {
+  const absolute = path.join(root, file);
+  if (fs.statSync(absolute).size > 1_000_000) continue;
+  const source = fs.readFileSync(absolute, "utf8");
+  for (const [name, pattern] of secretSignatures) {
+    pattern.lastIndex = 0;
+    if (pattern.test(source)) secretHits.push(`${file}:${name}`);
+  }
+}
+record(
+  "REP-006",
+  secretHits.length === 0,
+  secretHits.length ? `High-confidence secret signatures found: ${secretHits.join(", ")}` : "No high-confidence private-key or provider-token signatures found in tracked text files under 1 MB.",
+  "Remove the credential from Git, rotate it immediately, and scrub history where exposure warrants it."
+);
+
 record(
   "AUTH-001",
   includesAll(auth, ["randomBytes(32)", "createHmac(\"sha256\"", "sessionHashSecret()", "tokenHash: hashToken(token)", "AUTH_SECRET"]),
@@ -142,6 +177,17 @@ record(
   includesAll(rateLimit, ["PRUNE_INTERVAL_MS", "function pruneExpiredBuckets", "bucket.resetAt <= now", "buckets.delete(key)", "pruneExpiredBuckets(now)"]),
   "Authentication limiter periodically removes expired in-memory buckets.",
   "Prune expired rate-limit buckets so stale high-cardinality keys are not retained indefinitely."
+);
+
+const ssoTtl = /const SSO_TTL_MS = (\d+) \* (\d+) \* (\d+)/.exec(ssoBridge);
+const ssoTtlMs = ssoTtl ? Number(ssoTtl[1]) * Number(ssoTtl[2]) * Number(ssoTtl[3]) : Number.NaN;
+record(
+  "AUTH-009",
+  includesAll(ssoBridge, ["MIN_SSO_SECRET_LENGTH = 32", "secret.length >= MIN_SSO_SECRET_LENGTH", "target.origin === allowedOrigin.origin", "createHmac('sha256'"]) && ssoTtlMs <= 5 * 60 * 1000,
+  Number.isFinite(ssoTtlMs)
+    ? `Optional SSO bridge uses exact-origin return validation, a minimum 32-character secret, HMAC-SHA256, and ${ssoTtlMs / 1000}s token expiry.`
+    : "Optional SSO bridge controls could not be statically verified.",
+  "Keep optional SSO fail-closed with exact-origin return validation, a strong signing secret, and a short expiry."
 );
 
 const originGuardedRoutes = [loginRoute, registerRoute, logoutRoute, resetRoute, syncRoute];

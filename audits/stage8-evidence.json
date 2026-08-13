@@ -1,0 +1,139 @@
+{
+  "stage": 8,
+  "title": "Deployment and operational hardening evidence registry",
+  "baseline": {
+    "stage7Branch": "feat/local-first-completion-stage7",
+    "stage7ClosingCommit": "ef2cd38c325a80597b49a0c55b35ad5451530454",
+    "stage7ClosingCiRun": 31684900302,
+    "stage7ToMainPr": 5
+  },
+  "statusValues": ["pending", "in-progress", "passed", "blocked-external", "documented-boundary"],
+  "evidence": [
+    {
+      "id": "DEP-001",
+      "stage": "8.0",
+      "title": "Stage 7 baseline frozen and deployment inventory recorded",
+      "status": "passed",
+      "artifacts": ["docs/stage8/STAGE8_BASELINE.md"]
+    },
+    {
+      "id": "DEP-002",
+      "stage": "8.1",
+      "title": "Production-like deployment configuration preflight",
+      "status": "pending",
+      "artifacts": ["scripts/deployment-preflight.mjs", ".github/workflows/ci.yml"]
+    },
+    {
+      "id": "DEP-003",
+      "stage": "8.1",
+      "title": "Build, migration, and seed responsibilities remain separated",
+      "status": "pending",
+      "artifacts": ["vercel.json", "docs/DEPLOYMENT.md"]
+    },
+    {
+      "id": "PREVIEW-001",
+      "stage": "8.2",
+      "title": "Candidate commit deployed to HTTPS hosted preview with dedicated non-production database",
+      "status": "blocked-external",
+      "requires": ["preview provider/project", "preview database target"]
+    },
+    {
+      "id": "PREVIEW-002",
+      "stage": "8.2",
+      "title": "Hosted critical workflow smoke passes against exact preview deployment",
+      "status": "blocked-external",
+      "artifacts": ["tests/hosted-preview/**"],
+      "requires": ["preview base URL", "test account/fixture strategy"]
+    },
+    {
+      "id": "PWA-001",
+      "stage": "8.3",
+      "title": "Installed/service-worker client upgrades without shell stranding or IndexedDB/outbox loss",
+      "status": "pending",
+      "artifacts": ["tests/offline-production/**", "docs/stage8/**"]
+    },
+    {
+      "id": "DB-RESTORE-001",
+      "stage": "8.4",
+      "title": "Provider-neutral PostgreSQL backup restores into a fresh target",
+      "status": "pending",
+      "artifacts": ["scripts/stage8-db-backup-restore.*", "docs/stage8/**"]
+    },
+    {
+      "id": "DB-RESTORE-002",
+      "stage": "8.4",
+      "title": "Restored database passes application-level integrity and authenticated bootstrap checks",
+      "status": "pending"
+    },
+    {
+      "id": "DB-NATIVE-001",
+      "stage": "8.4",
+      "title": "Provider-native backup/snapshot rehearsal",
+      "status": "blocked-external",
+      "requires": ["database provider", "explicit non-production target approval"]
+    },
+    {
+      "id": "ROLLBACK-001",
+      "stage": "8.5",
+      "title": "Stage 7 to Stage 8 migration path rehearsed against disposable infrastructure",
+      "status": "pending"
+    },
+    {
+      "id": "ROLLBACK-002",
+      "stage": "8.5",
+      "title": "Application-only rollback compatibility is measured rather than assumed",
+      "status": "pending"
+    },
+    {
+      "id": "ROLLBACK-003",
+      "stage": "8.5",
+      "title": "Backup/restore rollback path verified when application-only rollback is incompatible",
+      "status": "pending"
+    },
+    {
+      "id": "OPS-001",
+      "stage": "8.6",
+      "title": "Health target remains minimal, public, no-store, and usable by monitoring",
+      "status": "pending"
+    },
+    {
+      "id": "OPS-002",
+      "stage": "8.6",
+      "title": "Running preview can be correlated to a non-sensitive deployment/build identifier",
+      "status": "pending"
+    },
+    {
+      "id": "OPS-003",
+      "stage": "8.6",
+      "title": "Failure-evidence runbook avoids secrets and raw database diagnostics",
+      "status": "pending"
+    },
+    {
+      "id": "CLOSE-001",
+      "stage": "8.7",
+      "title": "Stage 7 verification ladder remains green on Stage 8 candidate",
+      "status": "pending"
+    },
+    {
+      "id": "CLOSE-002",
+      "stage": "8.7",
+      "title": "Exact preview, CI, PWA upgrade, restore, and rollback evidence recorded",
+      "status": "pending",
+      "artifacts": ["docs/stage8/STAGE8_VERIFICATION.md"]
+    },
+    {
+      "id": "BOUNDARY-009",
+      "stage": "8",
+      "title": "Lifecycle/destructive local-data semantics remain reserved for Stage 9",
+      "status": "documented-boundary",
+      "artifacts": ["docs/LOCAL_FIRST_CONTRACT.md", "docs/stage8-implementation-plan.md"]
+    },
+    {
+      "id": "BOUNDARY-010",
+      "stage": "8",
+      "title": "Final local-first acceptance remains reserved for Stage 10",
+      "status": "documented-boundary",
+      "artifacts": ["docs/LOCAL_FIRST_CONTRACT.md", "docs/stage8-implementation-plan.md"]
+    }
+  ]
+}

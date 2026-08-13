@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         error:
-          'CONTEXTOS_SSO_SECRET is not configured. Set the same secret on SocialOS and ContextOS.',
+          'CONTEXTOS_SSO_SECRET is missing or too short. Configure the same secret with at least 32 characters on SocialOS and ContextOS.',
       },
       { status: 503 }
     );

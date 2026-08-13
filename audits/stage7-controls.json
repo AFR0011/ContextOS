@@ -30,7 +30,7 @@
     {"id":"AUTH-009","lane":"authentication","severity":"high","mode":"static","requirement":"Optional ContextOS-to-SocialOS SSO uses an exact-origin return allowlist, a short expiry, and refuses secrets shorter than 32 characters."},
     {"id":"AUTH-010","lane":"authentication","severity":"medium","mode":"runtime","requirement":"Optional SSO redirect rejects non-allowlisted return origins and fails closed when its signing secret is absent or inadequate."},
 
-    {"id":"API-001","lane":"api","severity":"critical","mode":"runtime","requirement":"Unauthenticated bootstrap and sync access is rejected."},
+    {"id":"API-001","lane":"api","severity":"critical","mode":"runtime","requirement":"Unauthenticated bootstrap, sync, current-user, and enabled demo-reset access is rejected."},
     {"id":"API-002","lane":"api","severity":"high","mode":"runtime","requirement":"Browser cross-origin workspace mutation requests are rejected."},
     {"id":"API-003","lane":"api","severity":"high","mode":"static","requirement":"All API responses are explicitly no-store at the HTTP header layer."},
     {"id":"API-004","lane":"api","severity":"medium","mode":"runtime","requirement":"Database unavailability is surfaced structurally without raw database exceptions."},
@@ -74,9 +74,10 @@
     {"id":"UX-001","lane":"ui-accessibility","severity":"medium","mode":"runtime","requirement":"Mobile hit-target, menu semantics, keyboard/editor and long-title tests remain green."},
     {"id":"UX-002","lane":"ui-accessibility","severity":"high","mode":"runtime","requirement":"Offline, pending-sync, conflict and shell-readiness states remain visible."},
     {"id":"UX-003","lane":"ui-accessibility","severity":"medium","mode":"runtime","requirement":"Network-required actions fail explicitly while offline."},
+    {"id":"UX-004","lane":"ui-accessibility","severity":"medium","mode":"runtime","requirement":"Audit hardening does not regress the simplified desktop/mobile navigation or reintroduce removed Today/This Week utility navigation."},
 
     {"id":"DOC-001","lane":"documentation","severity":"high","mode":"static","requirement":"Local-first contract, project state, security and deployment docs do not overclaim production or offline scope."},
-    {"id":"DOC-002","lane":"documentation","severity":"medium","mode":"static","requirement":"Deployment environment switches include registration, demo reset, canonical origin and auth secret guidance."},
+    {"id":"DOC-002","lane":"documentation","severity":"medium","mode":"static","requirement":"Deployment environment switches include registration, demo reset, canonical origin, auth secret, rate-limit, seed, and optional SSO guidance."},
     {"id":"DOC-003","lane":"documentation","severity":"medium","mode":"manual","requirement":"Final stage report distinguishes automated evidence from later operational work."},
 
     {"id":"CI-001","lane":"verification","severity":"high","mode":"static","requirement":"CI includes dependency audit, Stage 7 static audit, Prisma, typecheck, build, production browser matrix, and development browser suite."},

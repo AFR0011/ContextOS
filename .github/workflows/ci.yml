@@ -48,6 +48,9 @@ jobs:
       - name: Audit dependency graph
         run: npm audit --audit-level=low
 
+      - name: Run Stage 7 repository audit
+        run: npm run audit:stage7
+
       - name: Validate Prisma schema
         run: npx prisma validate
 
@@ -69,7 +72,7 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run production offline matrix
+      - name: Run production offline and Stage 7 matrix
         run: npx playwright test --config=playwright.production.config.ts --workers=1
 
       - name: Run Playwright e2e

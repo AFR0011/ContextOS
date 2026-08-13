@@ -1,7 +1,7 @@
 import "server-only";
 
 import bcrypt from "bcryptjs";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes, createHmac } from "crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { checkDatabaseAvailability, isDatabaseUnavailableError } from "./database-health";
@@ -9,14 +9,24 @@ import { prisma } from "./prisma";
 
 const SESSION_COOKIE = "contextos_session";
 const SESSION_DAYS = 30;
+const DEVELOPMENT_AUTH_SECRET = "contextos-development-only-session-secret";
 
 export interface PublicUser {
   id: string;
   email: string;
 }
 
+function sessionHashSecret() {
+  const configured = process.env.AUTH_SECRET?.trim();
+  if (configured && configured.length >= 32) return configured;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET must be configured with at least 32 characters in production.");
+  }
+  return DEVELOPMENT_AUTH_SECRET;
+}
+
 function hashToken(token: string) {
-  return createHash("sha256").update(token).digest("hex");
+  return createHmac("sha256", sessionHashSecret()).update(token).digest("hex");
 }
 
 function sessionExpiry() {

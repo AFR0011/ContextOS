@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import packageJson from "../../../../package.json";
-import { checkDatabaseAvailability, DATABASE_UNAVAILABLE_CODE, isDatabaseUnavailableError } from "@/lib/database-health";
+import {
+  checkDatabaseAvailability,
+  DATABASE_UNAVAILABLE_CODE,
+  getNeonDatabaseBranchId,
+  isDatabaseUnavailableError
+} from "@/lib/database-health";
 
 const noStoreHeaders = { "Cache-Control": "no-store" };
 
@@ -19,6 +24,11 @@ export async function GET() {
         },
         { status: 503, headers: noStoreHeaders }
       );
+    }
+
+    if (process.env.VERCEL_ENV === "preview") {
+      const branchId = await getNeonDatabaseBranchId();
+      console.info(`[stage8-preview-db] branch=${branchId ?? "unknown"}`);
     }
 
     return NextResponse.json(

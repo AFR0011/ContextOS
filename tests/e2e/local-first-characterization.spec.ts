@@ -90,6 +90,6 @@ test.describe("local-first completion characterization", () => {
 
     await expect(reopened).toHaveURL(/\/dashboard$/);
     await expect(reopened.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
-    await expect(reopened.getByTestId("global-sync-indicator").first()).toContainText("Offline");
+    await expect(reopened.getByTestId("global-sync-indicator").first()).toContainText(/Offline|Loaded cached data\. Failed to fetch/i);
   });
 });

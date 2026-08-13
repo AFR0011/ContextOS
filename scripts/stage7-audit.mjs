@@ -39,6 +39,7 @@ const tracked = trackedFiles();
 const gitignore = read(".gitignore");
 const auth = read("src/lib/auth.ts");
 const registration = read("src/lib/registration.ts");
+const rateLimit = read("src/lib/rate-limit.ts");
 const loginRoute = read("src/app/api/auth/login/route.ts");
 const registerRoute = read("src/app/api/auth/register/route.ts");
 const logoutRoute = read("src/app/api/auth/logout/route.ts");
@@ -134,6 +135,13 @@ record(
   authInputsBounded,
   authInputsBounded ? "Login and registration email/password schemas have explicit maximum lengths." : "One or more authentication fields lack an explicit maximum length.",
   "Bound authentication input sizes before database lookup or password hashing."
+);
+
+record(
+  "AUTH-008",
+  includesAll(rateLimit, ["PRUNE_INTERVAL_MS", "function pruneExpiredBuckets", "bucket.resetAt <= now", "buckets.delete(key)", "pruneExpiredBuckets(now)"]),
+  "Authentication limiter periodically removes expired in-memory buckets.",
+  "Prune expired rate-limit buckets so stale high-cardinality keys are not retained indefinitely."
 );
 
 const originGuardedRoutes = [loginRoute, registerRoute, logoutRoute, resetRoute, syncRoute];

@@ -30,7 +30,7 @@
     {"id":"AUTH-009","lane":"authentication","severity":"high","mode":"static","requirement":"Optional ContextOS-to-SocialOS SSO uses an exact-origin return allowlist, a short expiry, and refuses secrets shorter than 32 characters."},
     {"id":"AUTH-010","lane":"authentication","severity":"medium","mode":"runtime","requirement":"Optional SSO redirect rejects non-allowlisted return origins and fails closed when its signing secret is absent or inadequate."},
 
-    {"id":"API-001","lane":"api","severity":"critical","mode":"runtime","requirement":"Unauthenticated bootstrap, sync, current-user, and enabled demo-reset access is rejected."},
+    {"id":"API-001","lane":"api","severity":"critical","mode":"runtime","requirement":"Unauthenticated bootstrap, sync, and enabled demo-reset access is rejected."},
     {"id":"API-002","lane":"api","severity":"high","mode":"runtime","requirement":"Browser cross-origin workspace mutation requests are rejected."},
     {"id":"API-003","lane":"api","severity":"high","mode":"static","requirement":"All API responses are explicitly no-store at the HTTP header layer."},
     {"id":"API-004","lane":"api","severity":"medium","mode":"runtime","requirement":"Database unavailability is surfaced structurally without raw database exceptions."},

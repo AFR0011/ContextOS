@@ -200,3 +200,17 @@ test("sync payload limits count UTF-8 bytes rather than JavaScript code units", 
 
   expect(response.status).toBe(400);
 });
+
+test("optional SSO bridge rejects untrusted return origins and fails closed without a strong signing secret", async ({ page }) => {
+  const invalid = await page.request.get(
+    "/api/auth/sso/redirect?returnUrl=https%3A%2F%2Fattacker.example%2Fcallback",
+    { maxRedirects: 0 }
+  );
+  expect(invalid.status()).toBe(400);
+
+  await browserLogin(page);
+  const allowedReturnUrl = encodeURIComponent("https://social-os-tau.vercel.app/callback");
+  const unsigned = await page.request.get(`/api/auth/sso/redirect?returnUrl=${allowedReturnUrl}`, { maxRedirects: 0 });
+  expect(unsigned.status()).toBe(503);
+  await expect(unsigned.json()).resolves.toMatchObject({ error: expect.stringContaining("CONTEXTOS_SSO_SECRET") });
+});

@@ -71,10 +71,9 @@
     {"id":"DB-003","lane":"database","severity":"high","mode":"ci","requirement":"Prisma validate/generate/migrate/seed run against disposable PostgreSQL in CI."},
     {"id":"DB-004","lane":"database","severity":"medium","mode":"manual","requirement":"Backup/restore and rollback rehearsal remain explicitly unclaimed until performed."},
 
-    {"id":"UX-001","lane":"ui-accessibility","severity":"medium","mode":"runtime","requirement":"Mobile hit-target, menu semantics, keyboard/editor and long-title tests remain green."},
+    {"id":"UX-001","lane":"ui-accessibility","severity":"medium","mode":"runtime","requirement":"Mobile hit-target, menu semantics, keyboard/editor, long-title, and simplified desktop/mobile navigation regression tests remain green."},
     {"id":"UX-002","lane":"ui-accessibility","severity":"high","mode":"runtime","requirement":"Offline, pending-sync, conflict and shell-readiness states remain visible."},
     {"id":"UX-003","lane":"ui-accessibility","severity":"medium","mode":"runtime","requirement":"Network-required actions fail explicitly while offline."},
-    {"id":"UX-004","lane":"ui-accessibility","severity":"medium","mode":"runtime","requirement":"Audit hardening does not regress the simplified desktop/mobile navigation or reintroduce removed Today/This Week utility navigation."},
 
     {"id":"DOC-001","lane":"documentation","severity":"high","mode":"static","requirement":"Local-first contract, project state, security and deployment docs do not overclaim production or offline scope."},
     {"id":"DOC-002","lane":"documentation","severity":"medium","mode":"static","requirement":"Deployment environment switches include registration, demo reset, canonical origin, auth secret, rate-limit, seed, and optional SSO guidance."},

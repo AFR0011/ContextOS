@@ -4,13 +4,17 @@ import { prisma } from "@/lib/prisma";
 import { createSession, publicUser, verifyPassword } from "@/lib/auth";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
 import { authRateLimitResponse, checkAuthRateLimit, recordAuthRateLimitAttempt, resetAuthRateLimit } from "@/lib/rate-limit";
+import { rejectCrossOriginMutation } from "@/lib/request-security";
 
 const loginSchema = z.object({
-  email: z.string().email().transform((v) => v.toLowerCase()),
-  password: z.string().min(1)
+  email: z.string().max(254).email().transform((v) => v.toLowerCase()),
+  password: z.string().min(1).max(256)
 });
 
 export async function POST(request: Request) {
+  const originRejection = rejectCrossOriginMutation(request);
+  if (originRejection) return originRejection;
+
   try {
     const parsed = loginSchema.safeParse(await request.json().catch(() => null));
     const identity = parsed.success ? parsed.data.email : undefined;

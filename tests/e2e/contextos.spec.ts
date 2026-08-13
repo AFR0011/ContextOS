@@ -55,83 +55,119 @@ async function fillMarkdownEditor(editor: Locator, lines: string[]) {
   }
 }
 
-async function offlineCacheState(page: Page, text: string) {
-  return page.evaluate(async (expectedText) => {
+async function currentLocalState(page: Page) {
+  return page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("contextos-offline-v1", 1);
-      request.onupgradeneeded = () => {
-        const database = request.result;
-        if (!database.objectStoreNames.contains("kv")) database.createObjectStore("kv");
-      };
+      const request = indexedDB.open("contextos-offline-v1");
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
 
-    function get<T>(key: string) {
-      return new Promise<T | null>((resolve, reject) => {
-        const tx = db.transaction("kv", "readonly");
-        const request = tx.objectStore("kv").get(key);
-        request.onsuccess = () => resolve((request.result as T | undefined) ?? null);
-        request.onerror = () => reject(request.error);
-      });
+    const users = await new Promise<{ id: string; email: string }[]>((resolve, reject) => {
+      const tx = db.transaction("users", "readonly");
+      const request = tx.objectStore("users").getAll();
+      request.onsuccess = () => resolve(request.result as { id: string; email: string }[]);
+      request.onerror = () => reject(request.error);
+    });
+    const user = users.find((candidate) => candidate.email === "demo@contextos.local") ?? users[0];
+    if (!user) {
+      db.close();
+      throw new Error("No locally verified user is available for the test workspace.");
     }
 
-    const workspace = await get<{ captures?: { text: string }[]; dashboardScratchpads?: { content: string }[] }>("workspace");
-    const outbox = await get<{ payload?: { text?: string; content?: string } }[]>("outbox");
+    const state = await new Promise<{ workspace: any; outbox: any[] }>((resolve, reject) => {
+      const tx = db.transaction(["workspaces", "outboxes"], "readonly");
+      const workspaceRequest = tx.objectStore("workspaces").get(user.id);
+      const outboxRequest = tx.objectStore("outboxes").get(user.id);
+      let workspace: any;
+      let outbox: any[] = [];
+      workspaceRequest.onsuccess = () => {
+        workspace = workspaceRequest.result;
+      };
+      workspaceRequest.onerror = () => reject(workspaceRequest.error);
+      outboxRequest.onsuccess = () => {
+        outbox = (outboxRequest.result as any[] | undefined) ?? [];
+      };
+      outboxRequest.onerror = () => reject(outboxRequest.error);
+      tx.oncomplete = () => resolve({ workspace, outbox });
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error("Local state read transaction aborted."));
+    });
+
     db.close();
-    return {
-      hasCapture: Boolean(workspace?.captures?.some((capture) => capture.text === expectedText)),
-      hasScratchpad: Boolean(workspace?.dashboardScratchpads?.some((scratchpad) => scratchpad.content === expectedText)),
-      pendingCount: outbox?.length ?? 0
-    };
-  }, text);
+    return { userId: user.id, ...state };
+  });
+}
+
+async function offlineCacheState(page: Page, text: string) {
+  const { workspace, outbox } = await currentLocalState(page);
+  return {
+    hasCapture: Boolean(workspace?.captures?.some((capture: { text: string }) => capture.text === text)),
+    hasScratchpad: Boolean(workspace?.dashboardScratchpads?.some((scratchpad: { content: string }) => scratchpad.content === text)),
+    pendingCount: outbox.length
+  };
 }
 
 async function workspaceProjectRecoveryIncludes(page: Page, projectName: string, text: string) {
-  return page.evaluate(async ({ projectName: expectedProjectName, text: expectedText }) => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("contextos-offline-v1", 1);
-      request.onupgradeneeded = () => {
-        const database = request.result;
-        if (!database.objectStoreNames.contains("kv")) database.createObjectStore("kv");
-      };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-
-    const workspace = await new Promise<{ projects?: { name: string; recoveryNotes: string }[] } | null>((resolve, reject) => {
-      const tx = db.transaction("kv", "readonly");
-      const request = tx.objectStore("kv").get("workspace");
-      request.onsuccess = () => resolve((request.result as { projects?: { name: string; recoveryNotes: string }[] } | undefined) ?? null);
-      request.onerror = () => reject(request.error);
-    });
-
-    db.close();
-    return Boolean(workspace?.projects?.some((project) => project.name === expectedProjectName && project.recoveryNotes.includes(expectedText)));
-  }, { projectName, text });
+  const { workspace } = await currentLocalState(page);
+  return Boolean(
+    workspace?.projects?.some(
+      (project: { name: string; recoveryNotes: string }) => project.name === projectName && project.recoveryNotes.includes(text)
+    )
+  );
 }
 
 async function dashboardScratchpadContent(page: Page) {
-  return page.evaluate(async () => {
+  const { workspace } = await currentLocalState(page);
+  return workspace?.dashboardScratchpads?.[0]?.content ?? "";
+}
+
+async function injectLegacyDashboardPreferences(page: Page) {
+  await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("contextos-offline-v1", 1);
-      request.onupgradeneeded = () => {
-        const database = request.result;
-        if (!database.objectStoreNames.contains("kv")) database.createObjectStore("kv");
-      };
+      const request = indexedDB.open("contextos-offline-v1");
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
 
-    const workspace = await new Promise<{ dashboardScratchpads?: { content: string }[] } | null>((resolve, reject) => {
-      const tx = db.transaction("kv", "readonly");
-      const request = tx.objectStore("kv").get("workspace");
-      request.onsuccess = () => resolve((request.result as { dashboardScratchpads?: { content: string }[] } | undefined) ?? null);
+    const users = await new Promise<{ id: string; email: string }[]>((resolve, reject) => {
+      const tx = db.transaction("users", "readonly");
+      const request = tx.objectStore("users").getAll();
+      request.onsuccess = () => resolve(request.result as { id: string; email: string }[]);
       request.onerror = () => reject(request.error);
     });
+    const user = users.find((candidate) => candidate.email === "demo@contextos.local") ?? users[0];
+    if (!user) {
+      db.close();
+      throw new Error("No locally verified user is available for the test workspace.");
+    }
 
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("workspaces", "readwrite");
+      const store = tx.objectStore("workspaces");
+      const get = store.get(user.id);
+      get.onerror = () => reject(get.error);
+      get.onsuccess = () => {
+        const current = get.result;
+        if (!current) {
+          tx.abort();
+          reject(new Error("Current user's local workspace was not found."));
+          return;
+        }
+        current.dashboardPreferences = [
+          {
+            ...current.dashboardPreferences[0],
+            sectionOrder: ["allTasks", "projects", "notepad", "dates", "tasks"],
+            collapsedSections: []
+          }
+        ];
+        store.put(current, user.id);
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error("Local workspace update transaction aborted."));
+    });
     db.close();
-    return workspace?.dashboardScratchpads?.[0]?.content ?? "";
   });
 }
 
@@ -150,26 +186,13 @@ async function expectMinTouchTarget(locator: Locator, min = 40) {
 }
 
 async function warmOfflineShell(page: Page) {
-  await page.evaluate(async () => {
-    if (!("serviceWorker" in navigator)) return;
-    await navigator.serviceWorker.ready;
-    if (navigator.serviceWorker.controller) return;
-
-    await new Promise<void>((resolve) => {
-      const timeout = window.setTimeout(resolve, 2000);
-      navigator.serviceWorker.addEventListener(
-        "controllerchange",
-        () => {
-          window.clearTimeout(timeout);
-          resolve();
-        },
-        { once: true }
-      );
-    });
-  });
+  const readiness = page.getByTestId("offline-shell-readiness");
+  await expect(readiness).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
   await page.reload();
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 }
+
 
 test("date utilities keep date-only values on the local calendar day", async () => {
   const originalTimeZone = process.env.TZ;
@@ -276,9 +299,13 @@ test("deployment headers, metadata, and service worker cache routes are configur
 
   const swResponse = await page.request.get("/sw.js");
   const serviceWorker = await swResponse.text();
-  expect(serviceWorker).toContain('const CACHE_NAME = "contextos-shell-v2"');
+  expect(serviceWorker).toContain('const SHELL_VERSION = "v3"');
+  expect(serviceWorker).toContain('const SHELL_MANIFEST_KEY = "/__contextos_shell_manifest__"');
   expect(serviceWorker).toContain('"/dates"');
-  expect(serviceWorker).not.toContain('"/deadlines"');
+  expect(serviceWorker).toContain('"/deadlines"');
+  expect(serviceWorker).toContain('url.pathname.startsWith("/api/")');
+  expect(serviceWorker).toContain('CONTEXTOS_SHELL_STATUS');
+  expect(serviceWorker).toContain('CONTEXTOS_SHELL_PRIME');
 });
 
 test("health endpoint reports database availability", async ({ page }) => {
@@ -625,7 +652,6 @@ test("dashboard command page autosaves local Markdown without creating records",
   await login(page);
   const heading = `Scratchpad check ${Date.now()}`;
   const localTask = `Local checkbox ${Date.now()}`;
-  const content = `## ${heading}\n\n- [ ] Render markdown`;
   const scratchpad = page.getByTestId("dashboard-scratchpad");
   await expect(page.getByTestId("dashboard-markdown-preview")).toHaveCount(0);
   await fillMarkdownEditor(scratchpad, [`## ${heading}`, `- [ ] ${localTask}`]);
@@ -843,28 +869,7 @@ test("dashboard ignores legacy allTasks preferences and hides backlog controls",
   await expect(page.getByRole("button", { name: "Show completed" })).toHaveCount(0);
   await expect(page.getByTestId("dashboard-add-task-input")).toHaveCount(0);
   await expect(page.getByTestId("dashboard-add-deadline-input")).toHaveCount(0);
-  await page.evaluate(() => new Promise<void>((resolve, reject) => {
-    const request = indexedDB.open("contextos-offline-v1");
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => {
-      const db = request.result;
-      const tx = db.transaction("kv", "readwrite");
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      const store = tx.objectStore("kv");
-      const get = store.get("workspace");
-      get.onerror = () => reject(get.error);
-      get.onsuccess = () => {
-        const current = get.result;
-        current.dashboardPreferences = [{
-          ...current.dashboardPreferences[0],
-          sectionOrder: ["allTasks", "projects", "notepad", "dates", "tasks"],
-          collapsedSections: []
-        }];
-        store.put(current, "workspace");
-      };
-    };
-  }));
+  await injectLegacyDashboardPreferences(page);
   await page.reload();
   await expect(page.getByTestId("dashboard-section-allTasks")).toHaveCount(0);
   await expect(page.getByTestId("dashboard-live-tasks")).toBeVisible();
@@ -934,25 +939,6 @@ test("workspace dark mode toggles and persists", async ({ page }) => {
   await expect(page.locator("html")).toHaveClass(/dark/);
   await page.getByRole("button", { name: "Switch to light mode" }).first().click();
   await expect(page.locator("html")).not.toHaveClass(/dark/);
-});
-
-test("offline notepad edit is stored locally and sync state shows pending work", async ({ page, context }) => {
-  await login(page);
-  await warmOfflineShell(page);
-  await context.setOffline(true);
-  const text = `offline scratchpad ${Date.now()}`;
-  await fillMarkdownEditor(page.getByTestId("dashboard-scratchpad"), [text]);
-  await expect(page.getByText(/pending/i).first()).toBeVisible({ timeout: 4000 });
-  await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(text);
-  await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
-  await context.setOffline(false);
-  await page.reload();
-  await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(text);
-  await page.getByRole("button", { name: "Settings" }).click();
-  await page.getByRole("button", { name: /sync now/i }).click();
-  await expect(page.getByTestId("pending-count")).toHaveText("0");
 });
 
 test("draft-saved domain edit queues one offline mutation", async ({ page, context }) => {

@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -47,6 +48,12 @@ jobs:
       - name: Audit dependency graph
         run: npm audit --audit-level=low
 
+      - name: Run Stage 7 repository audit
+        run: npm run audit:stage7
+
+      - name: Validate Stage 7 evidence mapping
+        run: npm run audit:stage7:evidence
+
       - name: Validate Prisma schema
         run: npx prisma validate
 
@@ -68,5 +75,38 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
+      - name: Run production offline and Stage 7 matrix
+        run: npx playwright test --config=playwright.production.config.ts --workers=1
+
       - name: Run Playwright e2e
         run: npm run test:e2e -- --workers=1
+
+      - name: Run database-outage smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          POSTGRES_ID="$(docker ps -q --filter ancestor=postgres:16-alpine | head -n 1)"
+          if [ -z "$POSTGRES_ID" ]; then
+            echo "Could not identify the disposable PostgreSQL service container." >&2
+            exit 1
+          fi
+          docker stop "$POSTGRES_ID"
+
+          npm run start -- --hostname 127.0.0.1 --port 3102 > /tmp/contextos-stage7-db-outage.log 2>&1 &
+          APP_PID=$!
+          trap 'kill "$APP_PID" 2>/dev/null || true' EXIT
+
+          READY=0
+          for _ in $(seq 1 30); do
+            if curl -sS -o /dev/null http://127.0.0.1:3102/login; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            cat /tmp/contextos-stage7-db-outage.log >&2 || true
+            exit 1
+          fi
+
+          STAGE7_BASE_URL=http://127.0.0.1:3102 node scripts/stage7-db-outage-smoke.mjs

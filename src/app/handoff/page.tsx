@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Inbox, ShieldCheck } from "lucide-react";
 import { WorkspaceProvider, useWorkspace } from "@/lib/client-store";
 import { handoffFromFragment, validateLifeOsHandoff, type LifeOsHandoffV1 } from "@/lib/lifeos-handoff";
+import type { LocalVerifiedUser } from "@/lib/local-db";
 
 const PENDING_HANDOFF_KEY = "contextos:pending-handoff";
 
@@ -95,6 +96,7 @@ export default function HandoffPage() {
   const router = useRouter();
   const [authState, setAuthState] = useState<"checking" | "ready" | "error">("checking");
   const [authError, setAuthError] = useState("");
+  const [user, setUser] = useState<LocalVerifiedUser | null>(null);
 
   useEffect(() => {
     if (window.location.hash) {
@@ -107,12 +109,13 @@ export default function HandoffPage() {
 
     void fetch("/api/auth/me", { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
-        const result = await response.json().catch(() => null) as { user?: unknown; error?: string } | null;
+        const result = await response.json().catch(() => null) as { user?: LocalVerifiedUser; error?: string } | null;
         if (!response.ok) throw new Error(result?.error || `Could not verify sign-in (${response.status}).`);
         if (!result?.user) {
           router.replace("/login?next=/handoff");
           return;
         }
+        setUser(result.user);
         setAuthState("ready");
       })
       .catch((reason) => {
@@ -127,8 +130,8 @@ export default function HandoffPage() {
     };
   }, [router]);
 
-  if (authState === "ready") {
-    return <WorkspaceProvider><HandoffPreview /></WorkspaceProvider>;
+  if (authState === "ready" && user) {
+    return <WorkspaceProvider user={user}><HandoffPreview /></WorkspaceProvider>;
   }
 
   return (

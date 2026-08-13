@@ -3,10 +3,11 @@ import 'server-only';
 import { createHmac } from 'crypto';
 
 const SSO_TTL_MS = 5 * 60 * 1000;
+const MIN_SSO_SECRET_LENGTH = 32;
 
 export function getContextOsSsoSecret(): string | null {
   const secret = process.env.CONTEXTOS_SSO_SECRET?.trim();
-  return secret || null;
+  return secret && secret.length >= MIN_SSO_SECRET_LENGTH ? secret : null;
 }
 
 export function getSocialOsAppUrl(): string {

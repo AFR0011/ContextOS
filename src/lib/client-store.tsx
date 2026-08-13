@@ -23,11 +23,15 @@ import type {
 import { localDateKey } from "./dates";
 import { readJsonResponse, responseErrorMessage } from "./http-client";
 import type { LifeOsHandoffV1 } from "./lifeos-handoff";
-
-const DB_NAME = "contextos-offline-v1";
-const DB_VERSION = 1;
-const WORKSPACE_KEY = "workspace";
-const OUTBOX_KEY = "outbox";
+import {
+  commitLocalMutationBatch,
+  readLocalOutbox,
+  readLocalWorkspace,
+  rememberLocalUser,
+  writeLocalOutbox,
+  writeLocalWorkspace,
+  type LocalVerifiedUser
+} from "./local-db";
 
 export const emptyWorkspace = (): WorkspaceData => ({
   domains: [],
@@ -130,68 +134,11 @@ export type TriageCaptureAction =
   | { type: "archive" }
   | { type: "delete" };
 
-function openDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
+type WorkspaceRecord = Domain | Project | Task | Capture | Note | Deadline | Review | DashboardScratchpad | DashboardPreference;
 
-async function idbGet<T>(key: string): Promise<T | null> {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction("kv", "readonly");
-    const request = tx.objectStore("kv").get(key);
-    let result: T | null = null;
-    request.onsuccess = () => {
-      result = (request.result as T | undefined) ?? null;
-    };
-    tx.oncomplete = () => {
-      db.close();
-      resolve(result);
-    };
-    tx.onerror = () => {
-      db.close();
-      reject(tx.error ?? request.error);
-    };
-  });
-}
-
-async function idbSet<T>(key: string, value: T) {
-  const db = await openDb();
-  return new Promise<void>((resolve, reject) => {
-    const tx = db.transaction("kv", "readwrite");
-    tx.objectStore("kv").put(value, key);
-    tx.oncomplete = () => {
-      db.close();
-      resolve();
-    };
-    tx.onerror = () => {
-      db.close();
-      reject(tx.error);
-    };
-  });
-}
-
-async function idbDelete(key: string) {
-  const db = await openDb();
-  return new Promise<void>((resolve, reject) => {
-    const tx = db.transaction("kv", "readwrite");
-    tx.objectStore("kv").delete(key);
-    tx.oncomplete = () => {
-      db.close();
-      resolve();
-    };
-    tx.onerror = () => {
-      db.close();
-      reject(tx.error);
-    };
-  });
+interface LocalRecordChange {
+  collection: CollectionName;
+  record: WorkspaceRecord;
 }
 
 function replaceIn<T extends { id: string }>(items: T[], record: T) {
@@ -265,7 +212,7 @@ interface StoreApi {
 
 const StoreContext = createContext<StoreApi | null>(null);
 
-export function WorkspaceProvider({ children }: { children: ReactNode }) {
+export function WorkspaceProvider({ children, user }: { children: ReactNode; user: LocalVerifiedUser }) {
   const [data, setData] = useState<WorkspaceData>(emptyWorkspace);
   const dataRef = useRef(data);
   const [loading, setLoading] = useState(true);
@@ -281,7 +228,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [lastWarningAt, setLastWarningAt] = useState<string | null>(null);
   const [staleMutationCount, setStaleMutationCount] = useState(0);
   const syncInFlight = useRef(false);
-  const outboxWrite = useRef<Promise<void>>(Promise.resolve());
+  const localWrite = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     dataRef.current = data;
@@ -291,13 +238,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     const normalized = normalizeWorkspace(next);
     dataRef.current = normalized;
     setData(normalized);
-    await idbSet(WORKSPACE_KEY, normalized);
-  }, []);
+    await writeLocalWorkspace(user, normalized);
+  }, [user]);
 
   const refreshPendingCount = useCallback(async () => {
-    const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+    const outbox = await readLocalOutbox(user);
     setPendingCount(outbox.length);
-  }, []);
+  }, [user]);
 
   const syncNow = useCallback(async () => {
     if (syncInFlight.current || typeof window === "undefined") return;
@@ -312,8 +259,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setSyncing(true);
     setError(null);
     try {
-      await outboxWrite.current;
-      const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+      await localWrite.current;
+      const outbox = await readLocalOutbox(user);
       const response = await fetch("/api/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -324,13 +271,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         throw new Error(response.status === 401 ? "Sign in again to sync." : responseErrorMessage(response, result, "Sync failed"));
       }
       const applied = new Set(result.appliedMutationIds);
-      const reconcile = outboxWrite.current.then(async () => {
-        const latestOutbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+      const reconcile = localWrite.current.then(async () => {
+        const latestOutbox = await readLocalOutbox(user);
         const remaining = latestOutbox.filter((mutation) => !applied.has(mutation.mutationId));
-        await idbSet(OUTBOX_KEY, remaining);
+        await writeLocalOutbox(user, remaining);
         return remaining;
       });
-      outboxWrite.current = reconcile.then(() => undefined, () => undefined);
+      localWrite.current = reconcile.then(() => undefined, () => undefined);
       const remaining = await reconcile;
       await saveWorkspace(remaining.length ? overlayPendingMutations(result.data, remaining) : result.data);
       setPendingCount(remaining.length);
@@ -349,7 +296,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setSyncing(false);
       syncInFlight.current = false;
     }
-  }, [saveWorkspace]);
+  }, [saveWorkspace, user]);
 
   const forceRefreshFromServer = useCallback(async () => {
     if (typeof window === "undefined") return;
@@ -361,8 +308,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
     setOnline(true);
 
-    await outboxWrite.current;
-    const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+    await localWrite.current;
+    const outbox = await readLocalOutbox(user);
     if (outbox.length > 0) {
       setError("Sync pending changes before refreshing from server.");
       setLastErrorAt(now());
@@ -386,53 +333,67 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } finally {
       setRefreshing(false);
     }
-  }, [saveWorkspace]);
+  }, [saveWorkspace, user]);
 
-  const queueMutation = useCallback(
-    async (mutation: Omit<QueuedMutation, "mutationId" | "createdAt">) => {
-      const queued: QueuedMutation = {
-        ...mutation,
-        mutationId: newId("mut"),
-        createdAt: now()
-      };
-      const write = outboxWrite.current.then(async () => {
-        const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
-        const next = [...outbox, queued];
-        await idbSet(OUTBOX_KEY, next);
-        setPendingCount(next.length);
+  const mutateBatch = useCallback(
+    (changes: LocalRecordChange[]) => {
+      if (changes.length === 0) return;
+
+      const committedAt = now();
+      let next = dataRef.current;
+      const mutations: QueuedMutation[] = [];
+
+      for (const change of changes) {
+        const touched = { ...change.record, updatedAt: committedAt } as WorkspaceRecord;
+        next = {
+          ...next,
+          [change.collection]: replaceIn(next[change.collection] as WorkspaceRecord[], touched)
+        } as WorkspaceData;
+        mutations.push({
+          mutationId: newId("mut"),
+          entityType: change.collection,
+          entityId: touched.id,
+          operation: "upsert",
+          payload: touched,
+          createdAt: committedAt
+        });
+      }
+
+      const normalized = normalizeWorkspace(next);
+      dataRef.current = normalized;
+      setData(normalized);
+
+      const write = localWrite.current.then(async () => {
+        const committed = await commitLocalMutationBatch(user, normalized, mutations);
+        setPendingCount(committed.outbox.length);
       });
-      outboxWrite.current = write.catch(() => undefined);
-      await write;
-      window.setTimeout(() => void syncNow(), 80);
+      localWrite.current = write.catch(() => undefined);
+
+      void write
+        .then(() => {
+          window.setTimeout(() => void syncNow(), 80);
+        })
+        .catch((reason) => {
+          setError(reason instanceof Error ? reason.message : "Could not persist local workspace change.");
+          setLastErrorAt(now());
+        });
     },
-    [syncNow]
+    [syncNow, user]
   );
 
   const mutate = useCallback(
-    <T extends { id: string }>(collection: CollectionName, record: T) => {
-      const touched = { ...record, updatedAt: now() } as T;
-      const next = {
-        ...dataRef.current,
-        [collection]: replaceIn(dataRef.current[collection] as any[], touched)
-      } as WorkspaceData;
-      void (async () => {
-        await saveWorkspace(next);
-        await queueMutation({
-          entityType: collection,
-          entityId: touched.id,
-          operation: "upsert",
-          payload: touched as any
-        });
-      })();
+    <T extends WorkspaceRecord>(collection: CollectionName, record: T) => {
+      mutateBatch([{ collection, record }]);
     },
-    [queueMutation, saveWorkspace]
+    [mutateBatch]
   );
 
   useEffect(() => {
     setOnline(typeof navigator === "undefined" ? true : navigator.onLine);
 
     async function boot() {
-      const cached = await idbGet<WorkspaceData>(WORKSPACE_KEY);
+      await rememberLocalUser(user);
+      const cached = await readLocalWorkspace(user);
       if (cached) {
         const normalized = normalizeWorkspace(cached);
         setData(normalized);
@@ -440,7 +401,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         setLastSyncedAt(normalized.serverSyncedAt || null);
         setLoading(false);
       }
-      const outbox = (await idbGet<QueuedMutation[]>(OUTBOX_KEY)) ?? [];
+      const outbox = await readLocalOutbox(user);
       setPendingCount(outbox.length);
 
       if (navigator.onLine) {
@@ -488,7 +449,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [refreshPendingCount, saveWorkspace, syncNow]);
+  }, [refreshPendingCount, saveWorkspace, syncNow, user]);
 
   const api = useMemo<StoreApi>(() => {
     const defaultDomainId = () => dataRef.current.domains.find((domain) => !domain.archived)?.id || "";
@@ -512,88 +473,106 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (action.type === "attach-project") {
         const project = byId(dataRef.current.projects, action.projectId);
         if (!project) return;
-        mutate("projects", { ...project, recoveryNotes: appendInboxContext(project.recoveryNotes, capture) });
-        mutate("captures", { ...capture, status: "attached", convertedToId: project.id });
+        mutateBatch([
+          { collection: "projects", record: { ...project, recoveryNotes: appendInboxContext(project.recoveryNotes, capture) } },
+          { collection: "captures", record: { ...capture, status: "attached", convertedToId: project.id } }
+        ]);
         return;
       }
 
       const ts = now();
       const fallbackTitle = captureTitle(capture);
       let convertedToId = "";
+      const changes: LocalRecordChange[] = [];
 
       if (action.type === "task") {
         convertedToId = newId("task");
         const projectId = action.projectId || null;
-        mutate("tasks", {
-          id: convertedToId,
-          title: action.title.trim() || fallbackTitle,
-          plannedDate: action.plannedDate || null,
-          dueDate: action.dueDate || null,
-          scheduledTime: action.scheduledTime || null,
-          projectId,
-          domainId: action.domainId ?? projectDomainId(projectId),
-          status: "todo",
-          createdAt: ts,
-          updatedAt: ts,
-          archivedAt: null,
-          trashedAt: null
-        } satisfies Task);
+        changes.push({
+          collection: "tasks",
+          record: {
+            id: convertedToId,
+            title: action.title.trim() || fallbackTitle,
+            plannedDate: action.plannedDate || null,
+            dueDate: action.dueDate || null,
+            scheduledTime: action.scheduledTime || null,
+            projectId,
+            domainId: action.domainId ?? projectDomainId(projectId),
+            status: "todo",
+            createdAt: ts,
+            updatedAt: ts,
+            archivedAt: null,
+            trashedAt: null
+          } satisfies Task
+        });
       }
 
       if (action.type === "date") {
         convertedToId = newId("deadline");
-        mutate("deadlines", {
-          id: convertedToId,
-          title: action.title.trim() || fallbackTitle,
-          date: action.date,
-          time: action.time || null,
-          location: "",
-          projectId: action.projectId || null,
-          taskIds: [],
-          notes: action.notes ?? "",
-          createdAt: ts,
-          updatedAt: ts,
-          archivedAt: null,
-          trashedAt: null
-        } satisfies Deadline);
+        changes.push({
+          collection: "deadlines",
+          record: {
+            id: convertedToId,
+            title: action.title.trim() || fallbackTitle,
+            date: action.date,
+            time: action.time || null,
+            location: "",
+            projectId: action.projectId || null,
+            taskIds: [],
+            notes: action.notes ?? "",
+            createdAt: ts,
+            updatedAt: ts,
+            archivedAt: null,
+            trashedAt: null
+          } satisfies Deadline
+        });
       }
 
       if (action.type === "project") {
         convertedToId = newId("proj");
-        mutate("projects", {
-          id: convertedToId,
-          name: action.name.trim() || fallbackTitle,
-          domainId: action.domainId || notesDomainId(),
-          parentProjectId: null,
-          status: "active",
-          currentObjective: action.currentObjective ?? "",
-          nextAction: action.nextAction ?? "",
-          latestStatus: "",
-          recoveryNotes: "",
-          openLoops: [],
-          createdAt: ts,
-          updatedAt: ts,
-          archivedAt: null,
-          trashedAt: null
-        } satisfies Project);
+        changes.push({
+          collection: "projects",
+          record: {
+            id: convertedToId,
+            name: action.name.trim() || fallbackTitle,
+            domainId: action.domainId || notesDomainId(),
+            parentProjectId: null,
+            status: "active",
+            currentObjective: action.currentObjective ?? "",
+            nextAction: action.nextAction ?? "",
+            latestStatus: "",
+            recoveryNotes: "",
+            openLoops: [],
+            createdAt: ts,
+            updatedAt: ts,
+            archivedAt: null,
+            trashedAt: null
+          } satisfies Project
+        });
       }
 
       if (action.type === "note") {
         convertedToId = newId("note");
-        mutate("notes", {
-          id: convertedToId,
-          title: action.title.trim() || fallbackTitle,
-          content: action.content ?? capture.text,
-          projectId: action.projectId || null,
-          domainId: action.domainId || notesDomainId(),
-          createdAt: ts,
-          updatedAt: ts,
-          archivedAt: null,
-          trashedAt: null
-        } satisfies Note);
+        changes.push({
+          collection: "notes",
+          record: {
+            id: convertedToId,
+            title: action.title.trim() || fallbackTitle,
+            content: action.content ?? capture.text,
+            projectId: action.projectId || null,
+            domainId: action.domainId || notesDomainId(),
+            createdAt: ts,
+            updatedAt: ts,
+            archivedAt: null,
+            trashedAt: null
+          } satisfies Note
+        });
       }
 
-      if (convertedToId) mutate("captures", { ...capture, status: "converted", convertedToId });
+      if (convertedToId) {
+        changes.push({ collection: "captures", record: { ...capture, status: "converted", convertedToId } });
+        mutateBatch(changes);
+      }
     };
 
     return {
@@ -631,7 +610,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           setError(responseErrorMessage(response, result, "Could not reset demo data"));
           setLastErrorAt(now());
         }
-        await idbSet(OUTBOX_KEY, []);
+        await writeLocalOutbox(user, []);
         await refreshPendingCount();
       },
       addCapture: (text) => {
@@ -853,14 +832,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     lastWarningAt,
     loading,
     mutate,
+    mutateBatch,
     online,
     pendingCount,
-    queueMutation,
     refreshing,
+    refreshPendingCount,
     saveWorkspace,
     staleMutationCount,
     syncNow,
-    syncing
+    syncing,
+    user
   ]);
 
   return <StoreContext.Provider value={api}>{children}</StoreContext.Provider>;

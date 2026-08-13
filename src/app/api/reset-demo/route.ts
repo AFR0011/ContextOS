@@ -4,8 +4,12 @@ import { getWorkspaceData } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { createStarterWorkspace } from "@/lib/starter";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
+import { rejectCrossOriginMutation } from "@/lib/request-security";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const originRejection = rejectCrossOriginMutation(request);
+  if (originRejection) return originRejection;
+
   const resetEnabled = process.env.NODE_ENV !== "production" || process.env.ALLOW_DEMO_RESET === "true";
   if (!resetEnabled) {
     return NextResponse.json({ error: "Demo reset is disabled in production." }, { status: 403 });

@@ -4,14 +4,15 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Zap } from "lucide-react";
 import { readJsonResponse, responseErrorMessage } from "@/lib/http-client";
+import { rememberLocalUser, type LocalVerifiedUser } from "@/lib/local-db";
 
 export default function AuthForm({ mode, serviceStatus, registrationEnabled = true }: { mode: "login" | "register"; serviceStatus?: string; registrationEnabled?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams?.get("next") || "/dashboard";
   const safeNext = nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/dashboard";
-  const [email, setEmail] = useState(mode === "login" ? "demo@contextos.local" : "");
-  const [password, setPassword] = useState(mode === "login" ? "contextos-demo-v011" : "");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,8 +30,10 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
-      const result = await readJsonResponse<{ error?: string; user?: unknown }>(response);
+      const result = await readJsonResponse<{ error?: string; user?: LocalVerifiedUser }>(response);
       if (!response.ok) throw new Error(responseErrorMessage(response, result, "Authentication failed"));
+      if (!result?.user) throw new Error("Authentication succeeded without a user identity.");
+      await rememberLocalUser(result.user);
       router.push(safeNext);
       router.refresh();
     } catch (err) {
@@ -75,6 +78,8 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               type="email"
+              autoComplete="username"
+              maxLength={254}
               required
               className="cos-input mt-1 w-full px-3 py-2 text-sm"
             />
@@ -86,6 +91,8 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               type="password"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              maxLength={mode === "login" ? 256 : 128}
               required
               minLength={mode === "register" ? 8 : undefined}
               className="cos-input mt-1 w-full px-3 py-2 text-sm"

@@ -1,0 +1,86 @@
+{
+  "stage": 7,
+  "name": "Comprehensive audits and guardrails",
+  "policy": {
+    "blockingSeverities": ["critical", "high"],
+    "closureRequires": [
+      "all automated controls pass",
+      "zero open critical findings",
+      "zero open high findings",
+      "all medium findings fixed or documented as later-stage boundaries",
+      "final CI evidence recorded"
+    ]
+  },
+  "controls": [
+    {"id":"REP-001","lane":"repository","severity":"critical","mode":"static","requirement":"No tracked .env or credential-bearing environment file other than .env.example."},
+    {"id":"REP-002","lane":"repository","severity":"medium","mode":"static","requirement":"Generated build/test output is ignored and not tracked."},
+    {"id":"REP-003","lane":"repository","severity":"medium","mode":"static","requirement":"No one-shot Stage 5/6/7 patch/bootstrap workflow or temporary patch script remains tracked."},
+    {"id":"REP-004","lane":"repository","severity":"high","mode":"runtime","requirement":"Publication fixtures remain neutral and imported private reference material remains absent."},
+    {"id":"REP-005","lane":"repository","severity":"high","mode":"ci","requirement":"npm dependency audit fails CI at low severity or above."},
+    {"id":"REP-006","lane":"repository","severity":"critical","mode":"static","requirement":"Tracked text files contain no high-confidence private-key or provider-token signatures."},
+
+    {"id":"AUTH-001","lane":"authentication","severity":"critical","mode":"static","requirement":"Session tokens are cryptographically random and only AUTH_SECRET-keyed token hashes are persisted server-side."},
+    {"id":"AUTH-002","lane":"authentication","severity":"high","mode":"static","requirement":"Session cookie is HttpOnly, SameSite, Secure in production, root-scoped, and time-bounded."},
+    {"id":"AUTH-003","lane":"authentication","severity":"high","mode":"static","requirement":"Password hashes use bcrypt with an intentional work factor of at least 12."},
+    {"id":"AUTH-004","lane":"authentication","severity":"high","mode":"runtime","requirement":"Login failure remains non-enumerating and abuse-limited."},
+    {"id":"AUTH-005","lane":"authentication","severity":"high","mode":"static","requirement":"Registration is closed by default in production."},
+    {"id":"AUTH-006","lane":"authentication","severity":"high","mode":"runtime","requirement":"Browser cross-origin login, registration, and logout requests are rejected."},
+    {"id":"AUTH-007","lane":"authentication","severity":"medium","mode":"static","requirement":"Authentication email/password inputs are length-bounded."},
+    {"id":"AUTH-008","lane":"authentication","severity":"medium","mode":"static","requirement":"Expired in-memory authentication rate-limit buckets are periodically pruned rather than retained indefinitely."},
+    {"id":"AUTH-009","lane":"authentication","severity":"high","mode":"static","requirement":"Optional ContextOS-to-SocialOS SSO uses an exact-origin return allowlist, a short expiry, and refuses secrets shorter than 32 characters."},
+    {"id":"AUTH-010","lane":"authentication","severity":"medium","mode":"runtime","requirement":"Optional SSO redirect rejects non-allowlisted return origins and fails closed when its signing secret is absent or inadequate."},
+
+    {"id":"API-001","lane":"api","severity":"critical","mode":"runtime","requirement":"Unauthenticated bootstrap, sync, and enabled demo-reset access is rejected."},
+    {"id":"API-002","lane":"api","severity":"high","mode":"runtime","requirement":"Browser cross-origin workspace mutation requests are rejected."},
+    {"id":"API-003","lane":"api","severity":"high","mode":"static","requirement":"All API responses are explicitly no-store at the HTTP header layer."},
+    {"id":"API-004","lane":"api","severity":"medium","mode":"runtime","requirement":"Database unavailability is surfaced structurally without raw database exceptions."},
+    {"id":"API-005","lane":"api","severity":"critical","mode":"static","requirement":"Demo reset is production-disabled unless ALLOW_DEMO_RESET is explicitly true."},
+
+    {"id":"SYNC-001","lane":"sync","severity":"high","mode":"static","requirement":"Sync request bytes, mutation count, payload bytes, IDs, and field-key lengths are bounded."},
+    {"id":"SYNC-002","lane":"sync","severity":"high","mode":"runtime","requirement":"Byte limits use UTF-8 bytes and reject oversized multibyte payloads."},
+    {"id":"SYNC-003","lane":"sync","severity":"high","mode":"runtime","requirement":"Upsert entityId must equal payload.id."},
+    {"id":"SYNC-004","lane":"sync","severity":"medium","mode":"runtime","requirement":"Synchronization timestamps are bounded and parseable."},
+    {"id":"SYNC-005","lane":"sync","severity":"critical","mode":"runtime","requirement":"Cross-user record and relationship references are rejected."},
+    {"id":"SYNC-006","lane":"sync","severity":"high","mode":"schema","requirement":"Mutation IDs are unique per user."},
+    {"id":"SYNC-007","lane":"sync","severity":"high","mode":"runtime","requirement":"Accepted mutation replay is idempotent."},
+    {"id":"SYNC-008","lane":"sync","severity":"high","mode":"runtime","requirement":"Stale mutations are surfaced and do not silently overwrite newer server state."},
+    {"id":"SYNC-009","lane":"sync","severity":"high","mode":"runtime","requirement":"Local workspace and outbox commit atomically."},
+    {"id":"SYNC-010","lane":"sync","severity":"medium","mode":"manual","requirement":"Legacy delete-operation no-op is documented and not redefined before Stage 9 lifecycle semantics."},
+
+    {"id":"LOCAL-001","lane":"local-storage","severity":"critical","mode":"runtime","requirement":"Local workspace and outbox are scoped by verified user identity."},
+    {"id":"LOCAL-002","lane":"local-storage","severity":"critical","mode":"runtime","requirement":"Legacy local-store migration cannot mix users."},
+    {"id":"LOCAL-003","lane":"local-storage","severity":"high","mode":"runtime","requirement":"Offline startup refuses to guess among multiple local identities."},
+    {"id":"LOCAL-004","lane":"local-storage","severity":"high","mode":"runtime","requirement":"Offline startup without a previously verified local workspace is blocked clearly."},
+    {"id":"LOCAL-005","lane":"local-storage","severity":"critical","mode":"static","requirement":"Client local-storage implementation never persists passwords, session tokens, AUTH_SECRET, or reusable server credentials."},
+
+    {"id":"OFF-001","lane":"offline-shell","severity":"high","mode":"runtime","requirement":"Offline-ready UI is backed by a complete verified shell manifest."},
+    {"id":"OFF-002","lane":"offline-shell","severity":"critical","mode":"runtime","requirement":"API responses are absent from shell caches and never replaced by HTML shell fallback."},
+    {"id":"OFF-003","lane":"offline-shell","severity":"high","mode":"runtime","requirement":"Previously authenticated workspace cold-reopens offline."},
+    {"id":"OFF-004","lane":"offline-shell","severity":"high","mode":"runtime","requirement":"Core and dynamic project routes cold-open and hard-refresh offline."},
+    {"id":"OFF-005","lane":"offline-shell","severity":"high","mode":"runtime","requirement":"Pending local edits survive offline hard reload."},
+    {"id":"OFF-006","lane":"offline-shell","severity":"medium","mode":"runtime","requirement":"Back/forward and search-to-record routing remain local while offline."},
+
+    {"id":"HTTP-001","lane":"http-pwa","severity":"high","mode":"runtime","requirement":"Production CSP excludes unsafe-eval."},
+    {"id":"HTTP-002","lane":"http-pwa","severity":"medium","mode":"runtime","requirement":"Frame, MIME, referrer, permissions, opener/resource isolation headers are present."},
+    {"id":"HTTP-003","lane":"http-pwa","severity":"medium","mode":"runtime","requirement":"Production HSTS is explicit."},
+    {"id":"HTTP-004","lane":"http-pwa","severity":"high","mode":"static","requirement":"Shell caches are versioned and old caches are removed only after new-shell verification."},
+    {"id":"HTTP-005","lane":"http-pwa","severity":"medium","mode":"runtime","requirement":"Health response is public, minimal, and no-store."},
+
+    {"id":"DB-001","lane":"database","severity":"critical","mode":"schema","requirement":"Every user-owned model, including sessions and primary workspace records, has explicit userId ownership, a User relation with onDelete: Cascade, and a userId index."},
+    {"id":"DB-002","lane":"database","severity":"high","mode":"runtime","requirement":"Sync ownership checks cover target records and relationship references."},
+    {"id":"DB-003","lane":"database","severity":"high","mode":"ci","requirement":"Prisma validate/generate/migrate/seed run against disposable PostgreSQL in CI."},
+    {"id":"DB-004","lane":"database","severity":"medium","mode":"manual","requirement":"Backup/restore and rollback rehearsal remain explicitly unclaimed until performed."},
+
+    {"id":"UX-001","lane":"ui-accessibility","severity":"medium","mode":"runtime","requirement":"Mobile hit-target, menu semantics, keyboard/editor, long-title, and simplified desktop/mobile navigation regression tests remain green."},
+    {"id":"UX-002","lane":"ui-accessibility","severity":"high","mode":"runtime","requirement":"Offline, pending-sync, conflict and shell-readiness states remain visible."},
+    {"id":"UX-003","lane":"ui-accessibility","severity":"medium","mode":"runtime","requirement":"Network-required actions fail explicitly while offline."},
+
+    {"id":"DOC-001","lane":"documentation","severity":"high","mode":"static","requirement":"Local-first contract, project state, security and deployment docs do not overclaim production or offline scope."},
+    {"id":"DOC-002","lane":"documentation","severity":"medium","mode":"static","requirement":"Deployment environment switches include registration, demo reset, canonical origin, auth secret, rate-limit, seed, and optional SSO guidance."},
+    {"id":"DOC-003","lane":"documentation","severity":"medium","mode":"manual","requirement":"Final stage report distinguishes automated evidence from later operational work."},
+
+    {"id":"CI-001","lane":"verification","severity":"high","mode":"static","requirement":"CI includes dependency audit, Stage 7 static audit, Prisma, typecheck, build, production browser matrix, and development browser suite."},
+    {"id":"CI-002","lane":"verification","severity":"high","mode":"ci","requirement":"Production/offline tests run against next start rather than development HMR runtime."},
+    {"id":"CI-003","lane":"verification","severity":"high","mode":"ci","requirement":"Stage 7 closes only on a full green branch run with exact test counts recorded."}
+  ]
+}

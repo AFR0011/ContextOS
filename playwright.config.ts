@@ -5,6 +5,7 @@ const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  testIgnore: ["**/local-first-characterization.spec.ts", "**/workspace-gate.spec.ts"],
   timeout: 45_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,

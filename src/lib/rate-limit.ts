@@ -26,6 +26,8 @@ const buckets = new Map<string, RateLimitBucket>();
 const DEFAULT_WINDOW_MS = 10 * 60 * 1000;
 const DEFAULT_LOGIN_FAILURES = 5;
 const DEFAULT_REGISTER_ATTEMPTS = 3;
+const PRUNE_INTERVAL_MS = 60 * 1000;
+let nextPruneAt = 0;
 
 function envNumber(name: string, fallback: number) {
   const raw = process.env[name];
@@ -62,7 +64,16 @@ function keysFor(request: Request, scope: AuthRateLimitScope, identity?: string 
   return keys;
 }
 
+function pruneExpiredBuckets(now: number) {
+  if (now < nextPruneAt) return;
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt <= now) buckets.delete(key);
+  }
+  nextPruneAt = now + PRUNE_INTERVAL_MS;
+}
+
 function getBucket(key: string, windowMs: number, now: number) {
+  pruneExpiredBuckets(now);
   const current = buckets.get(key);
   if (current && current.resetAt > now) return current;
 

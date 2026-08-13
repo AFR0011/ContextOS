@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Download,
@@ -19,8 +19,10 @@ import {
   X,
   Zap
 } from "lucide-react";
+import { OfflineReadiness } from "@/components/workspace/OfflineReadiness";
 import type { PublicUser } from "@/lib/auth";
 import { useWorkspace } from "@/lib/client-store";
+import { useLocalRouter } from "@/lib/local-router";
 import type { Project } from "@/lib/types";
 
 const mobileBottomNav = [
@@ -138,8 +140,8 @@ function SyncIndicator({ sync, compact = false, onRefreshFromServer }: { sync: S
 export default function WorkspaceShell({ user, children }: { user: PublicUser; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [darkMode, setDarkMode] = useState<boolean | null>(null);
-  const pathname = usePathname();
-  const currentPath = pathname ?? "";
+  const localRouter = useLocalRouter();
+  const currentPath = localRouter.location.pathname;
   const router = useRouter();
   const { data, sync, forceRefreshFromServer } = useWorkspace();
   const inboxCount = data.captures.filter((capture) => capture.status === "unprocessed").length;
@@ -166,7 +168,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
   }
 
   function goTo(href: string) {
-    router.push(href);
+    localRouter.push(href);
     setOpen(false);
   }
 
@@ -236,6 +238,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
                   key={item.href}
                   type="button"
                   onClick={() => goTo(item.href)}
+                  aria-label={item.label}
                   className={`mb-0.5 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium ${
                     active
                       ? "border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
@@ -258,6 +261,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             <button
               type="button"
               onClick={() => goTo("/projects")}
+              aria-label="Projects"
               className={`mb-1 flex min-h-10 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold ${
                 currentPath === "/projects"
                   ? "border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
@@ -292,6 +296,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             ))}
           </div>
           <SyncIndicator sync={sync} onRefreshFromServer={forceRefreshFromServer} />
+          <OfflineReadiness />
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium text-[var(--cos-text)]">{user.email}</p>
@@ -340,7 +345,8 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
                 <button
                   key={item.href}
                   type="button"
-                  onClick={() => router.push(item.href)}
+                  onClick={() => goTo(item.href)}
+                  aria-label={item.label}
                   aria-current={active ? "page" : undefined}
                   className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium ${
                     active

@@ -20,15 +20,19 @@
       "id": "DEP-002",
       "stage": "8.1",
       "title": "Production-like deployment configuration preflight",
-      "status": "pending",
-      "artifacts": ["scripts/deployment-preflight.mjs", ".github/workflows/ci.yml"]
+      "status": "passed",
+      "ciRun": 31688233623,
+      "verifiedCommit": "7137130c6bd7846550d0865e04d28f31485e24d2",
+      "artifacts": ["scripts/deployment-preflight.mjs", "scripts/deployment-preflight-tests.mjs", ".github/workflows/ci.yml", "docs/DEPLOYMENT.md"]
     },
     {
       "id": "DEP-003",
       "stage": "8.1",
       "title": "Build, migration, and seed responsibilities remain separated",
-      "status": "pending",
-      "artifacts": ["vercel.json", "docs/DEPLOYMENT.md"]
+      "status": "passed",
+      "ciRun": 31688233623,
+      "verifiedCommit": "7137130c6bd7846550d0865e04d28f31485e24d2",
+      "artifacts": ["vercel.json", "package.json", "scripts/deployment-preflight.mjs", "docs/DEPLOYMENT.md"]
     },
     {
       "id": "PREVIEW-001",

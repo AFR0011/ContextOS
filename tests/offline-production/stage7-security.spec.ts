@@ -210,7 +210,7 @@ test("optional SSO bridge rejects untrusted return origins and fails closed with
 
   await browserLogin(page);
   const allowedReturnUrl = encodeURIComponent("https://social-os-tau.vercel.app/callback");
-  const unsigned = await page.request.get(`/api/auth/sso/redirect?returnUrl=${allowedReturnUrl}`, { maxRedirects: 0 });
-  expect(unsigned.status()).toBe(503);
-  await expect(unsigned.json()).resolves.toMatchObject({ error: expect.stringContaining("CONTEXTOS_SSO_SECRET") });
+  const unsigned = await page.goto(`/api/auth/sso/redirect?returnUrl=${allowedReturnUrl}`, { waitUntil: "domcontentloaded" });
+  expect(unsigned?.status()).toBe(503);
+  await expect(unsigned?.json()).resolves.toMatchObject({ error: expect.stringContaining("CONTEXTOS_SSO_SECRET") });
 });

@@ -66,7 +66,7 @@
     {"id":"HTTP-004","lane":"http-pwa","severity":"high","mode":"static","requirement":"Shell caches are versioned and old caches are removed only after new-shell verification."},
     {"id":"HTTP-005","lane":"http-pwa","severity":"medium","mode":"runtime","requirement":"Health response is public, minimal, and no-store."},
 
-    {"id":"DB-001","lane":"database","severity":"critical","mode":"schema","requirement":"Every user-owned primary model is explicitly user-scoped."},
+    {"id":"DB-001","lane":"database","severity":"critical","mode":"schema","requirement":"Every user-owned model, including sessions and primary workspace records, has explicit userId ownership, a User relation with onDelete: Cascade, and a userId index."},
     {"id":"DB-002","lane":"database","severity":"high","mode":"runtime","requirement":"Sync ownership checks cover target records and relationship references."},
     {"id":"DB-003","lane":"database","severity":"high","mode":"ci","requirement":"Prisma validate/generate/migrate/seed run against disposable PostgreSQL in CI."},
     {"id":"DB-004","lane":"database","severity":"medium","mode":"manual","requirement":"Backup/restore and rollback rehearsal remain explicitly unclaimed until performed."},

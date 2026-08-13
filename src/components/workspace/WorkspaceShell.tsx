@@ -19,6 +19,7 @@ import {
   X,
   Zap
 } from "lucide-react";
+import { OfflineReadiness } from "@/components/workspace/OfflineReadiness";
 import type { PublicUser } from "@/lib/auth";
 import { useWorkspace } from "@/lib/client-store";
 import { useLocalRouter } from "@/lib/local-router";
@@ -295,6 +296,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             ))}
           </div>
           <SyncIndicator sync={sync} onRefreshFromServer={forceRefreshFromServer} />
+          <OfflineReadiness />
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium text-[var(--cos-text)]">{user.email}</p>

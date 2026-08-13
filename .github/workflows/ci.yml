@@ -51,6 +51,9 @@ jobs:
       - name: Run Stage 7 repository audit
         run: npm run audit:stage7
 
+      - name: Validate Stage 7 evidence mapping
+        run: npm run audit:stage7:evidence
+
       - name: Validate Prisma schema
         run: npx prisma validate
 

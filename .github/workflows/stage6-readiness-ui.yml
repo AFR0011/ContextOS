@@ -1,0 +1,45 @@
+name: Stage 6 readiness UI
+
+on:
+  push:
+    branches:
+      - feat/local-first-completion-stage6
+    paths:
+      - .github/workflows/stage6-readiness-ui.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feat/local-first-completion-stage6
+      - name: Add verified offline readiness to workspace shell
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/components/workspace/WorkspaceShell.tsx')
+          text = path.read_text()
+          import_anchor = 'import type { PublicUser } from "@/lib/auth";\n'
+          if 'OfflineReadiness' not in text:
+              if import_anchor not in text:
+                  raise SystemExit('import anchor not found')
+              text = text.replace(import_anchor, 'import { OfflineReadiness } from "@/components/workspace/OfflineReadiness";\n' + import_anchor, 1)
+          render_anchor = '          <SyncIndicator sync={sync} onRefreshFromServer={forceRefreshFromServer} />\n'
+          if '<OfflineReadiness />' not in text:
+              if render_anchor not in text:
+                  raise SystemExit('render anchor not found')
+              text = text.replace(render_anchor, render_anchor + '          <OfflineReadiness />\n', 1)
+          path.write_text(text)
+          PY
+      - name: Remove one-shot workflow and commit
+        run: |
+          rm .github/workflows/stage6-readiness-ui.yml
+          git config user.name "Ali Farrokhnejad"
+          git config user.email "farrokh445@gmail.com"
+          git add src/components/workspace/WorkspaceShell.tsx .github/workflows/stage6-readiness-ui.yml
+          git commit -m "feat: show verified offline shell readiness"
+          git push origin HEAD:feat/local-first-completion-stage6

@@ -186,26 +186,13 @@ async function expectMinTouchTarget(locator: Locator, min = 40) {
 }
 
 async function warmOfflineShell(page: Page) {
-  await page.evaluate(async () => {
-    if (!("serviceWorker" in navigator)) return;
-    await navigator.serviceWorker.ready;
-    if (navigator.serviceWorker.controller) return;
-
-    await new Promise<void>((resolve) => {
-      const timeout = window.setTimeout(resolve, 2000);
-      navigator.serviceWorker.addEventListener(
-        "controllerchange",
-        () => {
-          window.clearTimeout(timeout);
-          resolve();
-        },
-        { once: true }
-      );
-    });
-  });
+  const readiness = page.getByTestId("offline-shell-readiness");
+  await expect(readiness).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
   await page.reload();
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 }
+
 
 test("date utilities keep date-only values on the local calendar day", async () => {
   const originalTimeZone = process.env.TZ;

@@ -10,27 +10,13 @@ async function login(page: Page) {
 }
 
 async function warmServiceWorker(page: Page) {
-  await page.evaluate(async () => {
-    if (!("serviceWorker" in navigator)) return;
-    await navigator.serviceWorker.ready;
-    if (navigator.serviceWorker.controller) return;
-
-    await new Promise<void>((resolve) => {
-      const timeout = window.setTimeout(resolve, 2_000);
-      navigator.serviceWorker.addEventListener(
-        "controllerchange",
-        () => {
-          window.clearTimeout(timeout);
-          resolve();
-        },
-        { once: true }
-      );
-    });
-  });
-
+  const readiness = page.getByTestId("offline-shell-readiness");
+  await expect(readiness).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
   await page.reload();
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 }
+
 
 async function activeDemoProjectId(page: Page) {
   return page.evaluate(async () => {
@@ -104,6 +90,6 @@ test.describe("local-first completion characterization", () => {
 
     await expect(reopened).toHaveURL(/\/dashboard$/);
     await expect(reopened.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
-    await expect(reopened.getByTestId("global-sync-indicator")).toContainText("Offline");
+    await expect(reopened.getByTestId("global-sync-indicator").first()).toContainText("Offline");
   });
 });

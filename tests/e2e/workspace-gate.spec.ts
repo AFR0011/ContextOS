@@ -13,25 +13,13 @@ async function login(page: Page) {
 }
 
 async function warmOfflineShell(page: Page) {
-  await page.evaluate(async () => {
-    if (!("serviceWorker" in navigator)) throw new Error("Service workers are unavailable in this browser.");
-    await navigator.serviceWorker.ready;
-    if (navigator.serviceWorker.controller) return;
-    await new Promise<void>((resolve) => {
-      const timeout = window.setTimeout(resolve, 2000);
-      navigator.serviceWorker.addEventListener(
-        "controllerchange",
-        () => {
-          window.clearTimeout(timeout);
-          resolve();
-        },
-        { once: true }
-      );
-    });
-  });
+  const readiness = page.getByTestId("offline-shell-readiness");
+  await expect(readiness).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
   await page.reload();
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 }
+
 
 async function clearLocalIdentityAndWorkspace(page: Page) {
   await page.evaluate(async (databaseName) => {

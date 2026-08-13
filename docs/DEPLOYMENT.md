@@ -42,6 +42,34 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 
 Treat any credential that appeared in a shared archive, chat, screenshot, or committed file as leaked. Rotate the database password and update `DATABASE_URL` in the provider before deploying.
 
+## Stage 8 Deployment Preflight
+
+Before a production-like preview or production promotion, run:
+
+```bash
+npm run audit:stage8:preflight
+```
+
+The preflight fails closed when the deployment boundary is unsafe. It validates:
+
+- a PostgreSQL `DATABASE_URL` is present;
+- `AUTH_SECRET` contains at least 32 UTF-8 bytes;
+- the canonical application origin is HTTPS and contains no path, query, fragment, or embedded credentials;
+- `ALLOW_PUBLIC_REGISTRATION` and `ALLOW_DEMO_RESET` are false/unset for the production-like gate;
+- an enabled `CONTEXTOS_SSO_SECRET` is strong, distinct from `AUTH_SECRET`, and paired with an exact HTTPS `SOCIALOS_APP_URL` origin;
+- `vercel.json` remains build-only with `npm run build`;
+- `db:deploy` and `db:seed` remain explicit operations rather than side effects of the build.
+
+CI also runs:
+
+```bash
+npm run audit:stage8:preflight:test
+```
+
+This regression suite proves that unsafe examples are rejected, including weak auth/SSO secrets, HTTP or path-bearing canonical origins, enabled public registration/demo reset, secret reuse, and a path-bearing SSO destination.
+
+Seed credentials may exist in local/disposable verification environments, but the preflight does not require them and warns when they are present. Their presence must never trigger seeding automatically.
+
 ## Local Development
 
 ```bash
@@ -77,11 +105,12 @@ Before the first deploy:
 
 1. Create or select the production PostgreSQL database.
 2. Add the production environment variables in Vercel.
-3. Ensure `ALLOW_PUBLIC_REGISTRATION` and `ALLOW_DEMO_RESET` are unset or `false` unless the deployment deliberately needs them.
-4. Complete the Current Release Gate above.
-5. Deploy to a preview environment first.
-6. Confirm the full critical workflow and operational checks against the preview database.
-7. Promote the verified preview to production.
+3. Run `npm run audit:stage8:preflight` against the intended production-like environment values.
+4. Ensure `ALLOW_PUBLIC_REGISTRATION` and `ALLOW_DEMO_RESET` are unset or `false` unless the deployment deliberately needs them.
+5. Complete the Current Release Gate above.
+6. Deploy to a preview environment first.
+7. Confirm the full critical workflow and operational checks against the preview database.
+8. Promote the verified preview to production.
 
 ## Health Check
 

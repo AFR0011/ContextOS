@@ -6,13 +6,17 @@ import { createStarterWorkspace } from "@/lib/starter";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
 import { isPublicRegistrationEnabled } from "@/lib/registration";
 import { authRateLimitResponse, checkAuthRateLimit, recordAuthRateLimitAttempt } from "@/lib/rate-limit";
+import { rejectCrossOriginMutation } from "@/lib/request-security";
 
 const registerSchema = z.object({
-  email: z.string().email().transform((v) => v.toLowerCase()),
-  password: z.string().min(8)
+  email: z.string().max(254).email().transform((v) => v.toLowerCase()),
+  password: z.string().min(8).max(128)
 });
 
 export async function POST(request: Request) {
+  const originRejection = rejectCrossOriginMutation(request);
+  if (originRejection) return originRejection;
+
   try {
     if (!isPublicRegistrationEnabled()) {
       return NextResponse.json({ error: "Registration is closed for this deployment." }, { status: 403 });
@@ -27,7 +31,7 @@ export async function POST(request: Request) {
     recordAuthRateLimitAttempt(request, "register", identity);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: "Use a valid email and a password of at least 8 characters." }, { status: 400 });
+      return NextResponse.json({ error: "Use a valid email and a password between 8 and 128 characters." }, { status: 400 });
     }
 
     const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });

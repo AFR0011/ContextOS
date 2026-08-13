@@ -23,23 +23,27 @@ jobs:
           from pathlib import Path
           path = Path('src/components/workspace/WorkspaceShell.tsx')
           text = path.read_text()
-          old = '''                  onClick={() => goTo(item.href)}\n                  className={`mb-0.5 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium ${'''
-          new = '''                  onClick={() => goTo(item.href)}\n                  aria-label={item.label}\n                  className={`mb-0.5 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium ${'''
-          if old not in text:
-              raise SystemExit('primary nav insertion point not found')
-          text = text.replace(old, new, 1)
 
-          old = '''              onClick={() => goTo("/projects")}\n              className={`mb-1 flex min-h-10 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold ${'''
-          new = '''              onClick={() => goTo("/projects")}\n              aria-label="Projects"\n              className={`mb-1 flex min-h-10 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold ${'''
-          if old not in text:
-              raise SystemExit('projects nav insertion point not found')
-          text = text.replace(old, new, 1)
+          replacements = [
+              (
+                  '                  onClick={() => goTo(item.href)}\n                  className={`mb-0.5 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium ${',
+                  '                  onClick={() => goTo(item.href)}\n                  aria-label={item.label}\n                  className={`mb-0.5 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium ${'
+              ),
+              (
+                  '              onClick={() => goTo("/projects")}\n              className={`mb-1 flex min-h-10 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold ${',
+                  '              onClick={() => goTo("/projects")}\n              aria-label="Projects"\n              className={`mb-1 flex min-h-10 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold ${'
+              ),
+              (
+                  '                  onClick={() => goTo(item.href)}\n                  aria-current={active ? "page" : undefined}\n                  className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium ${',
+                  '                  onClick={() => goTo(item.href)}\n                  aria-label={item.label}\n                  aria-current={active ? "page" : undefined}\n                  className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium ${'
+              ),
+          ]
 
-          old = '''                  onClick={() => router.push(item.href)}\n                  aria-current={active ? "page" : undefined}\n                  className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium ${'''
-          new = '''                  onClick={() => localRouter.push(item.href)}\n                  aria-label={item.label}\n                  aria-current={active ? "page" : undefined}\n                  className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium ${'''
-          if old not in text:
-              raise SystemExit('mobile nav insertion point not found')
-          text = text.replace(old, new, 1)
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'insertion point not found: {old[:80]!r}')
+              text = text.replace(old, new, 1)
+
           path.write_text(text)
           PY
       - name: Remove one-shot workflow and commit fix
@@ -48,5 +52,5 @@ jobs:
           git config user.name "Ali Farrokhnejad"
           git config user.email "farrokh445@gmail.com"
           git add src/components/workspace/WorkspaceShell.tsx .github/workflows/stage5-nav-label-fix.yml
-          git commit -m "fix: keep Stage 5 workspace nav local and accessible"
+          git commit -m "fix: stabilize Stage 5 workspace navigation"
           git push origin HEAD:feat/local-first-completion-stage5

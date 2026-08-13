@@ -13,6 +13,7 @@ import {
 } from "@/lib/local-db";
 import { LocalRouterProvider } from "@/lib/local-router";
 import LocalWorkspaceRouter from "./LocalWorkspaceRouter";
+import ReconnectSyncWatchdog from "./ReconnectSyncWatchdog";
 import WorkspaceShell from "./WorkspaceShell";
 
 type ReadyGateState = { status: "ready"; user: LocalVerifiedUser; source: "server" | "local" };
@@ -136,6 +137,7 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
   if (state.status === "ready") {
     return (
       <WorkspaceProvider user={state.user}>
+        <ReconnectSyncWatchdog />
         <LocalRouterProvider initialPathname={pathname}>
           <WorkspaceShell user={state.user}>
             <LocalWorkspaceRouter fallback={children} />

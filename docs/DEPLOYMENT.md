@@ -29,6 +29,10 @@ Set these variables in the deployment provider before building:
 - `AUTH_REGISTER_MAX_ATTEMPTS`: optional registration attempt limit override; default is 3 per window.
 - `SEED_DEMO_EMAIL`: optional demo account email for intentional seeding.
 - `SEED_DEMO_PASSWORD`: optional demo account password for intentional seeding.
+- `CONTEXTOS_SSO_SECRET`: optional shared signing secret for the ContextOS-to-SocialOS bridge. Leave unset/empty when the bridge is not used. When enabled, use a distinct random value of at least 32 characters and configure the same value on the receiving SocialOS deployment.
+- `SOCIALOS_APP_URL`: exact SocialOS application origin allowed to receive the optional bridge redirect. Configure the intended deployment origin; the bridge compares origins rather than accepting arbitrary return hosts.
+
+The SSO bridge is optional and is not part of the core ContextOS authentication requirement. If `CONTEXTOS_SSO_SECRET` is absent or shorter than 32 characters, token issuance fails closed. Do not reuse `AUTH_SECRET` as the SSO secret.
 
 Generate a fresh auth secret with:
 

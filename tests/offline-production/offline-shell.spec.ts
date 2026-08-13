@@ -101,7 +101,7 @@ test("verified readiness means the complete versioned shell is cached", async ({
 
   const snapshot = await page.evaluate(async () => {
     const cacheNames = await caches.keys();
-    const cacheName = cacheNames.find((name) => name === "contextos-shell-v3");
+    const cacheName = cacheNames.find((name) => name === "contextos-shell-v4");
     if (!cacheName) return { cacheName: null, version: null, resources: [] as string[], missing: ["cache"] };
 
     const cache = await caches.open(cacheName);
@@ -117,8 +117,8 @@ test("verified readiness means the complete versioned shell is cached", async ({
     return { cacheName, version: manifest.version ?? null, resources, missing };
   });
 
-  expect(snapshot.cacheName).toBe("contextos-shell-v3");
-  expect(snapshot.version).toBe("v3");
+  expect(snapshot.cacheName).toBe("contextos-shell-v4");
+  expect(snapshot.version).toBe("v4");
   expect(snapshot.resources).toContain("/dashboard");
   expect(snapshot.resources).toContain("/manifest.webmanifest");
   expect(snapshot.resources.some((resource) => resource.startsWith("/_next/static/"))).toBe(true);

@@ -237,6 +237,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
                   key={item.href}
                   type="button"
                   onClick={() => goTo(item.href)}
+                  aria-label={item.label}
                   className={`mb-0.5 flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium ${
                     active
                       ? "border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
@@ -259,6 +260,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             <button
               type="button"
               onClick={() => goTo("/projects")}
+              aria-label="Projects"
               className={`mb-1 flex min-h-10 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold ${
                 currentPath === "/projects"
                   ? "border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
@@ -342,6 +344,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
                   key={item.href}
                   type="button"
                   onClick={() => goTo(item.href)}
+                  aria-label={item.label}
                   aria-current={active ? "page" : undefined}
                   className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium ${
                     active

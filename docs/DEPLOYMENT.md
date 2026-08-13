@@ -6,14 +6,14 @@ As of v0.2.8 on 2026-06-17, the first deployment-hardening slices and branch CI 
 
 1. Sync writes and mutation-ledger lookups are user-scoped and pass two-user isolation tests. DONE in v0.2.3.
 2. Production registration is closed or invitation-controlled; demo credentials and reset actions are not presented as normal production UX. CLOSED BY DEFAULT in v0.2.3.
-3. Sync requests have request-size, mutation-count, entity, and field-length limits. DONE in v0.2.3.
+3. Sync requests have request-size, mutation-count, entity, and field-length limits. DONE in v0.2.3; Stage 7 additionally verifies UTF-8 byte limits, record-ID consistency, and timestamp parsing.
 4. Login/register have rate limiting or equivalent provider protection. APP-LEVEL DONE in v0.2.6; provider/WAF defense in depth still recommended for public production.
-5. Security headers, `metadataBase`, and the corrected service-worker cache/routes are verified. DONE in v0.2.5.
+5. Security headers, `metadataBase`, and the corrected service-worker cache/routes are verified. DONE in v0.2.5; Stage 7 hardens production CSP, HSTS, opener/resource policy, API no-store, and same-origin mutation checks.
 6. CI workflow exists for Prisma validation/generation, migration deploy, seed, typecheck, build, and sequential Playwright against disposable PostgreSQL. The first `main` run failed on a Dashboard Notepad editor timing path; v0.2.8 fixed that path and branch CI passed: `https://github.com/AFR0011/ContextOS/actions/runs/27678139692`.
 7. A production-like preview passes auth, capture, offline/reconnect, search, project recovery, Dates, mobile, and installed-PWA smoke.
 8. Database backup/restore, monitoring/health checks, migration handling, and application/database rollback are rehearsed and recorded.
 
-See `docs/AUDIT_2026-06-15.md` for evidence and priorities.
+The Stage 7 repository assurance scope is defined in `docs/stage7-audit-plan.md`. Historical audits remain under `docs/archive/audits/`.
 
 ## Production Environment
 
@@ -21,13 +21,14 @@ Set these variables in the deployment provider before building:
 
 - `DATABASE_URL`: production PostgreSQL connection string.
 - `AUTH_SECRET`: fresh random secret with at least 32 bytes of entropy.
-- `NEXT_PUBLIC_APP_URL` or `APP_URL`: canonical public origin used for metadata. `VERCEL_URL` is accepted as a platform fallback.
+- `NEXT_PUBLIC_APP_URL` or `APP_URL`: canonical public origin used for metadata and as an allowed exact origin for browser mutation requests. `VERCEL_URL` is accepted as a platform fallback.
+- `ALLOW_PUBLIC_REGISTRATION`: keep unset or `false` in production unless public account creation is intentionally enabled.
+- `ALLOW_DEMO_RESET`: keep unset or `false` in production unless an explicit demo reset endpoint is intended.
 - `AUTH_RATE_LIMIT_WINDOW_MS`: optional auth limiter window override; default is 10 minutes.
 - `AUTH_LOGIN_MAX_FAILURES`: optional failed-login limit override; default is 5 per window.
 - `AUTH_REGISTER_MAX_ATTEMPTS`: optional registration attempt limit override; default is 3 per window.
 - `SEED_DEMO_EMAIL`: optional demo account email for intentional seeding.
 - `SEED_DEMO_PASSWORD`: optional demo account password for intentional seeding.
-- `ALLOW_DEMO_RESET`: keep unset or `false` in production unless an explicit demo reset endpoint is intended.
 
 Generate a fresh auth secret with:
 
@@ -72,7 +73,7 @@ Before the first deploy:
 
 1. Create or select the production PostgreSQL database.
 2. Add the production environment variables in Vercel.
-3. Ensure `ALLOW_DEMO_RESET` is unset or `false`.
+3. Ensure `ALLOW_PUBLIC_REGISTRATION` and `ALLOW_DEMO_RESET` are unset or `false` unless the deployment deliberately needs them.
 4. Complete the Current Release Gate above.
 5. Deploy to a preview environment first.
 6. Confirm the full critical workflow and operational checks against the preview database.

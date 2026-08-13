@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import { expect, test, type BrowserContext, type Locator, type Page } from "@playwright/test";
 
 async function login(page: Page) {
   await page.goto("/login");
@@ -13,6 +13,61 @@ async function waitForOfflineReady(page: Page) {
   const readiness = page.getByTestId("offline-shell-readiness");
   await expect(readiness).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
   await expect(readiness).toContainText("Offline ready");
+}
+
+function markdownLine(editor: Locator, index: number) {
+  return editor.locator(`[data-testid$="-line-${index}"]`).first();
+}
+
+async function fillMarkdownEditor(editor: Locator, lines: string[]) {
+  await markdownLine(editor, 0).fill(lines[0] ?? "");
+  for (let index = 1; index < lines.length; index += 1) {
+    await markdownLine(editor, index - 1).press("Enter");
+    await markdownLine(editor, index).fill(lines[index] ?? "");
+  }
+}
+
+async function offlineCacheState(page: Page, text: string) {
+  return page.evaluate(async (expectedText) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("contextos-offline-v1");
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    const users = await new Promise<{ id: string; email: string }[]>((resolve, reject) => {
+      const tx = db.transaction("users", "readonly");
+      const request = tx.objectStore("users").getAll();
+      request.onsuccess = () => resolve(request.result as { id: string; email: string }[]);
+      request.onerror = () => reject(request.error);
+    });
+    const user = users.find((candidate) => candidate.email === "demo@contextos.local") ?? users[0];
+    if (!user) {
+      db.close();
+      throw new Error("No locally verified user is available for the production offline test.");
+    }
+
+    const state = await new Promise<{ workspace: any; outbox: any[] }>((resolve, reject) => {
+      const tx = db.transaction(["workspaces", "outboxes"], "readonly");
+      const workspaceRequest = tx.objectStore("workspaces").get(user.id);
+      const outboxRequest = tx.objectStore("outboxes").get(user.id);
+      let workspace: any;
+      let outbox: any[] = [];
+      workspaceRequest.onsuccess = () => { workspace = workspaceRequest.result; };
+      workspaceRequest.onerror = () => reject(workspaceRequest.error);
+      outboxRequest.onsuccess = () => { outbox = (outboxRequest.result as any[] | undefined) ?? []; };
+      outboxRequest.onerror = () => reject(outboxRequest.error);
+      tx.oncomplete = () => resolve({ workspace, outbox });
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error("Local state read transaction aborted."));
+    });
+
+    db.close();
+    return {
+      hasScratchpad: Boolean(state.workspace?.dashboardScratchpads?.some((scratchpad: { content: string }) => scratchpad.content === expectedText)),
+      pendingCount: state.outbox.length
+    };
+  }, text);
 }
 
 async function activeProjectId(page: Page) {
@@ -83,6 +138,21 @@ test("previously authenticated workspace cold-reopens offline without route warm
   await expect(reopened.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   await expect(reopened.getByTestId("global-sync-indicator").first()).toContainText("Offline");
   await expect(reopened.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
+});
+
+test("offline scratchpad edit survives hard reload with its queued mutation", async ({ page, context }) => {
+  await login(page);
+  await waitForOfflineReady(page);
+  await context.setOffline(true);
+
+  const text = `offline scratchpad ${Date.now()}`;
+  await fillMarkdownEditor(page.getByTestId("dashboard-scratchpad"), [text]);
+  await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(text);
+  await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
 });
 
 test("core workspace routes and a dynamic project cold-open and hard-refresh offline", async ({ page, context }) => {

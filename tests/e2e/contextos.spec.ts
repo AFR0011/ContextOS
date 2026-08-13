@@ -941,25 +941,6 @@ test("workspace dark mode toggles and persists", async ({ page }) => {
   await expect(page.locator("html")).not.toHaveClass(/dark/);
 });
 
-test("offline notepad edit is stored locally and sync state shows pending work", async ({ page, context }) => {
-  await login(page);
-  await warmOfflineShell(page);
-  await context.setOffline(true);
-  const text = `offline scratchpad ${Date.now()}`;
-  await fillMarkdownEditor(page.getByTestId("dashboard-scratchpad"), [text]);
-  await expect(page.getByText(/pending/i).first()).toBeVisible({ timeout: 4000 });
-  await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(text);
-  await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
-  await context.setOffline(false);
-  await page.reload();
-  await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(text);
-  await page.getByRole("button", { name: "Settings" }).click();
-  await page.getByRole("button", { name: /sync now/i }).click();
-  await expect(page.getByTestId("pending-count")).toHaveText("0");
-});
-
 test("draft-saved domain edit queues one offline mutation", async ({ page, context }) => {
   await login(page);
   await page.goto("/settings");

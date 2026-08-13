@@ -36,58 +36,58 @@ function askWorker(worker: ServiceWorker, type: "CONTEXTOS_SHELL_STATUS" | "CONT
 }
 
 function workerFor(registration: ServiceWorkerRegistration) {
-  return navigator.serviceWorker.controller ?? registration.active ?? registration.waiting ?? registration.installing;
+  return registration.active ?? navigator.serviceWorker.controller ?? registration.waiting ?? registration.installing;
 }
 
 export function OfflineReadiness() {
   const [state, setState] = useState<ReadinessState>({ status: "checking" });
-  const checkInFlight = useRef<Promise<void> | null>(null);
+  const latestCheck = useRef(0);
 
-  const check = useCallback((allowPrime: boolean) => {
-    if (checkInFlight.current) return checkInFlight.current;
+  const check = useCallback(async (allowPrime: boolean) => {
+    const attempt = ++latestCheck.current;
+    const isCurrent = () => latestCheck.current === attempt;
 
-    const run = (async () => {
-      if (!("serviceWorker" in navigator)) {
-        setState({ status: "unsupported" });
+    if (!("serviceWorker" in navigator)) {
+      if (isCurrent()) setState({ status: "unsupported" });
+      return;
+    }
+
+    if (isCurrent()) {
+      setState((current) => ({ status: "checking", version: "version" in current ? current.version : undefined }));
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
+      const readyRegistration = await navigator.serviceWorker.ready;
+      const worker = workerFor(registration) ?? workerFor(readyRegistration);
+      if (!worker) {
+        if (isCurrent()) setState({ status: "incomplete", missing: 1 });
         return;
       }
 
-      setState((current) => ({ status: "checking", version: "version" in current ? current.version : undefined }));
-
-      try {
-        const registration = await navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
-        const readyRegistration = await navigator.serviceWorker.ready;
-        const worker = workerFor(readyRegistration) ?? workerFor(registration);
-        if (!worker) {
-          setState({ status: "incomplete", missing: 1 });
-          return;
-        }
-
-        let status = await askWorker(worker, "CONTEXTOS_SHELL_STATUS");
-        if (!status.ready && allowPrime && navigator.onLine) {
-          status = await askWorker(worker, "CONTEXTOS_SHELL_PRIME");
-        }
-
-        if (status.ready) {
-          setState({ status: "ready", version: status.version });
-          return;
-        }
-
-        setState({ status: "incomplete", version: status.version, missing: status.missing?.length ?? 1 });
-      } catch {
-        setState({ status: "incomplete", missing: 1 });
+      let status = await askWorker(worker, "CONTEXTOS_SHELL_STATUS");
+      if (!status.ready && allowPrime && navigator.onLine) {
+        status = await askWorker(worker, "CONTEXTOS_SHELL_PRIME");
       }
-    })().finally(() => {
-      checkInFlight.current = null;
-    });
 
-    checkInFlight.current = run;
-    return run;
+      if (!isCurrent()) return;
+      if (status.ready) {
+        setState({ status: "ready", version: status.version });
+        return;
+      }
+
+      setState({ status: "incomplete", version: status.version, missing: status.missing?.length ?? 1 });
+    } catch {
+      if (isCurrent()) setState({ status: "incomplete", missing: 1 });
+    }
   }, []);
 
   useEffect(() => {
     void check(true);
 
+    // A newly activated worker can replace an older controller while a status request
+    // to that older worker is still timing out. Each controller change starts a newer
+    // check; the sequence guard prevents the stale request from overwriting the result.
     const handleControllerChange = () => void check(true);
     const handleOnline = () => void check(true);
     const handleOffline = () => void check(false);
@@ -97,6 +97,7 @@ export function OfflineReadiness() {
     window.addEventListener("offline", handleOffline);
 
     return () => {
+      latestCheck.current += 1;
       navigator.serviceWorker?.removeEventListener("controllerchange", handleControllerChange);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);

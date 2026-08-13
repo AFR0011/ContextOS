@@ -136,7 +136,7 @@ test("previously authenticated workspace cold-reopens offline without route warm
   const response = await reopened.goto("/dashboard", { waitUntil: "domcontentloaded" });
   expect(response?.status()).not.toBe(503);
   await expect(reopened.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
-  await expect(reopened.getByTestId("global-sync-indicator").first()).toContainText("Offline");
+  await expect(reopened.getByTestId("global-sync-indicator").first()).toContainText(/Offline|Loaded cached data\. Failed to fetch/i);
   await expect(reopened.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 });
 

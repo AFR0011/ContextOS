@@ -18,13 +18,14 @@
     {"id":"REP-004","lane":"repository","severity":"high","mode":"runtime","requirement":"Publication fixtures remain neutral and imported private reference material remains absent."},
     {"id":"REP-005","lane":"repository","severity":"high","mode":"ci","requirement":"npm dependency audit fails CI at low severity or above."},
 
-    {"id":"AUTH-001","lane":"authentication","severity":"critical","mode":"static","requirement":"Session tokens are random and only token hashes are persisted server-side."},
+    {"id":"AUTH-001","lane":"authentication","severity":"critical","mode":"static","requirement":"Session tokens are cryptographically random and only AUTH_SECRET-keyed token hashes are persisted server-side."},
     {"id":"AUTH-002","lane":"authentication","severity":"high","mode":"static","requirement":"Session cookie is HttpOnly, SameSite, Secure in production, root-scoped, and time-bounded."},
     {"id":"AUTH-003","lane":"authentication","severity":"high","mode":"static","requirement":"Password hashes use bcrypt with an intentional work factor of at least 12."},
     {"id":"AUTH-004","lane":"authentication","severity":"high","mode":"runtime","requirement":"Login failure remains non-enumerating and abuse-limited."},
     {"id":"AUTH-005","lane":"authentication","severity":"high","mode":"static","requirement":"Registration is closed by default in production."},
     {"id":"AUTH-006","lane":"authentication","severity":"high","mode":"runtime","requirement":"Browser cross-origin login, registration, and logout requests are rejected."},
     {"id":"AUTH-007","lane":"authentication","severity":"medium","mode":"static","requirement":"Authentication email/password inputs are length-bounded."},
+    {"id":"AUTH-008","lane":"authentication","severity":"medium","mode":"static","requirement":"Expired in-memory authentication rate-limit buckets are periodically pruned rather than retained indefinitely."},
 
     {"id":"API-001","lane":"api","severity":"critical","mode":"runtime","requirement":"Unauthenticated bootstrap and sync access is rejected."},
     {"id":"API-002","lane":"api","severity":"high","mode":"runtime","requirement":"Browser cross-origin workspace mutation requests are rejected."},

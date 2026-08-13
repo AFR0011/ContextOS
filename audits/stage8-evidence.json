@@ -38,16 +38,18 @@
       "id": "PREVIEW-001",
       "stage": "8.2",
       "title": "Candidate commit deployed to HTTPS hosted preview with dedicated non-production database",
-      "status": "blocked-external",
-      "requires": ["preview provider/project", "preview database target"]
+      "status": "passed",
+      "verifiedCommit": "01486d4abede22717dff1c28db1ff54623057c1e",
+      "artifacts": ["docs/stage8/STAGE8_PREVIEW_TARGET.md", "docs/stage8/STAGE8_2_VERIFICATION.md"]
     },
     {
       "id": "PREVIEW-002",
       "stage": "8.2",
       "title": "Hosted critical workflow smoke passes against exact preview deployment",
-      "status": "blocked-external",
-      "artifacts": ["tests/hosted-preview/**"],
-      "requires": ["preview base URL", "test account/fixture strategy"]
+      "status": "passed",
+      "ciRun": 31745028396,
+      "verifiedCommit": "01486d4abede22717dff1c28db1ff54623057c1e",
+      "artifacts": ["docs/stage8/STAGE8_2_VERIFICATION.md"]
     },
     {
       "id": "PWA-001",

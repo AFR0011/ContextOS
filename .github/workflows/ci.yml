@@ -63,6 +63,9 @@ jobs:
           SOCIALOS_APP_URL: https://socialos-preview.example
         run: npm run audit:stage8:preflight
 
+      - name: Test Stage 8 deployment preflight rejection cases
+        run: npm run audit:stage8:preflight:test
+
       - name: Validate Prisma schema
         run: npx prisma validate
 

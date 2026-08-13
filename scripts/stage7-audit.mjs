@@ -6,7 +6,6 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
-const exists = (relative) => fs.existsSync(path.join(root, relative));
 const manifest = JSON.parse(read("audits/stage7-controls.json"));
 const controlById = new Map(manifest.controls.map((control) => [control.id, control]));
 const results = [];
@@ -38,15 +37,14 @@ function trackedFiles() {
 
 const tracked = trackedFiles();
 const gitignore = read(".gitignore");
-const envExample = read(".env.example");
-const packageJson = JSON.parse(read("package.json"));
 const auth = read("src/lib/auth.ts");
 const registration = read("src/lib/registration.ts");
 const loginRoute = read("src/app/api/auth/login/route.ts");
 const registerRoute = read("src/app/api/auth/register/route.ts");
+const logoutRoute = read("src/app/api/auth/logout/route.ts");
 const resetRoute = read("src/app/api/reset-demo/route.ts");
 const syncRoute = read("src/app/api/sync/route.ts");
-const syncServer = read("src/lib/sync-server.ts");
+const requestSecurity = read("src/lib/request-security.ts");
 const serviceWorker = read("public/sw.js");
 const nextConfig = read("next.config.ts");
 const schema = read("prisma/schema.prisma");
@@ -99,9 +97,9 @@ record(
 
 record(
   "AUTH-001",
-  includesAll(auth, ["randomBytes(32)", "createHash(\"sha256\")", "tokenHash: hashToken(token)"]),
-  "Session implementation uses a 32-byte random token and persists SHA-256 token hashes rather than raw tokens.",
-  "Use cryptographically random session tokens and persist only a one-way token hash."
+  includesAll(auth, ["randomBytes(32)", "createHmac(\"sha256\"", "sessionHashSecret()", "tokenHash: hashToken(token)", "AUTH_SECRET"]),
+  "Session implementation uses a 32-byte random token and persists an AUTH_SECRET-keyed SHA-256 HMAC rather than the raw token.",
+  "Use cryptographically random session tokens and persist only a keyed one-way token hash."
 );
 
 record(
@@ -138,6 +136,15 @@ record(
   "Bound authentication input sizes before database lookup or password hashing."
 );
 
+const originGuardedRoutes = [loginRoute, registerRoute, logoutRoute, resetRoute, syncRoute];
+record(
+  "API-002",
+  originGuardedRoutes.every((source) => source.includes("rejectCrossOriginMutation(request)")) &&
+    includesAll(requestSecurity, ["origin === \"null\"", "sec-fetch-site", "same-origin", "Cross-origin request rejected."]),
+  "All state-changing API routes use the exact-origin browser mutation guard; cross-site fetch metadata is rejected.",
+  "Apply rejectCrossOriginMutation(request) to every state-changing API route."
+);
+
 record(
   "API-003",
   /source:\s*["']\/api\/:path\*["']/.test(nextConfig) && /Cache-Control/.test(nextConfig) && /no-store/.test(nextConfig),
@@ -157,6 +164,20 @@ record(
   includesAll(syncRoute, ["MAX_SYNC_BYTES", "MAX_MUTATIONS", "MAX_PAYLOAD_BYTES", "mutationId", "entityId", "z.string().max(80)"]),
   "Sync route contains request, mutation-count, payload, identifier, and field-key bounds.",
   "Restore explicit synchronization request and field bounds."
+);
+
+record(
+  "SYNC-002",
+  includesAll(syncRoute, ["const utf8Bytes", "new TextEncoder()", "utf8Bytes(rawBody)", "utf8Bytes(JSON.stringify"]),
+  "Sync request and per-mutation payload size checks use UTF-8 byte counts.",
+  "Measure byte-denominated limits in encoded bytes, not JavaScript string length."
+);
+
+record(
+  "SYNC-003",
+  includesAll(syncRoute, ["payloadId !== mutation.entityId", "Sync mutation entityId must match payload.id"]),
+  "Sync schema rejects ledger entityId/payload.id disagreement before applying mutations.",
+  "Require entityId to describe the exact record changed by an upsert."
 );
 
 const localClientFiles = tracked.filter((file) =>
@@ -180,6 +201,13 @@ record(
   localCredentialHits.length === 0,
   localCredentialHits.length ? `Credential-like persistence patterns found: ${localCredentialHits.join(", ")}` : "Client/local-storage implementation contains no password hash, AUTH_SECRET, session-cookie, or token-hash persistence fields.",
   "Remove reusable server credentials from IndexedDB/local persistence."
+);
+
+record(
+  "HTTP-001",
+  nextConfig.includes("isProduction ? \"script-src 'self' 'unsafe-inline'\"") && nextConfig.includes("'unsafe-eval'") && nextConfig.includes("process.env.NODE_ENV === \"production\""),
+  "Production CSP branch omits unsafe-eval while the development branch retains it for tooling.",
+  "Keep unsafe-eval out of the production CSP."
 );
 
 record(
@@ -250,7 +278,7 @@ const failed = results.filter((result) => result.status === "fail");
 const passed = results.filter((result) => result.status === "pass");
 
 console.log("Stage 7 static audit");
-console.log(`Controls evaluated: ${results.length} | passed: ${passed.length} | failed: ${failed.length} | blocking: ${blocking.length}`);
+console.log(`Controls evaluated: ${results.length}/${manifest.controls.length} | passed: ${passed.length} | failed: ${failed.length} | blocking: ${blocking.length}`);
 for (const result of results) {
   const marker = result.status === "pass" ? "PASS" : "FAIL";
   console.log(`${marker} ${result.id} [${result.severity}] ${result.evidence}`);
@@ -265,4 +293,4 @@ if (jsonPathArg) {
   console.log(`JSON report: ${path.relative(root, outputPath)}`);
 }
 
-if (blocking.length > 0 || failed.length > 0) process.exitCode = 1;
+if (failed.length > 0) process.exitCode = 1;

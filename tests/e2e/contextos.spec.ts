@@ -312,9 +312,13 @@ test("deployment headers, metadata, and service worker cache routes are configur
 
   const swResponse = await page.request.get("/sw.js");
   const serviceWorker = await swResponse.text();
-  expect(serviceWorker).toContain('const CACHE_NAME = "contextos-shell-v2"');
+  expect(serviceWorker).toContain('const SHELL_VERSION = "v3"');
+  expect(serviceWorker).toContain('const SHELL_MANIFEST_KEY = "/__contextos_shell_manifest__"');
   expect(serviceWorker).toContain('"/dates"');
-  expect(serviceWorker).not.toContain('"/deadlines"');
+  expect(serviceWorker).toContain('"/deadlines"');
+  expect(serviceWorker).toContain('url.pathname.startsWith("/api/")');
+  expect(serviceWorker).toContain('CONTEXTOS_SHELL_STATUS');
+  expect(serviceWorker).toContain('CONTEXTOS_SHELL_PRIME');
 });
 
 test("health endpoint reports database availability", async ({ page }) => {

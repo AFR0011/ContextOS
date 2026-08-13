@@ -299,7 +299,7 @@ test("deployment headers, metadata, and service worker cache routes are configur
 
   const swResponse = await page.request.get("/sw.js");
   const serviceWorker = await swResponse.text();
-  expect(serviceWorker).toContain('const SHELL_VERSION = "v3"');
+  expect(serviceWorker).toContain('const SHELL_VERSION = "v4"');
   expect(serviceWorker).toContain('const SHELL_MANIFEST_KEY = "/__contextos_shell_manifest__"');
   expect(serviceWorker).toContain('"/dates"');
   expect(serviceWorker).toContain('"/deadlines"');

@@ -1,0 +1,37 @@
+name: Stage 6 move dev offline spec
+on:
+  push:
+    branches:
+      - feat/local-first-completion-stage6
+    paths:
+      - .github/workflows/stage6-move-dev-offline-spec.yml
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feat/local-first-completion-stage6
+      - name: Remove production-only hard reload case from dev suite
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('tests/e2e/contextos.spec.ts')
+          text = path.read_text()
+          start = text.find('test("offline notepad edit is stored locally and sync state shows pending work"')
+          end = text.find('test("draft-saved domain edit queues one offline mutation"', start)
+          if start < 0 or end < 0:
+              raise SystemExit('offline notepad test markers not found')
+          text = text[:start] + text[end:]
+          path.write_text(text)
+          PY
+      - name: Remove one-shot workflow and commit
+        run: |
+          rm .github/workflows/stage6-move-dev-offline-spec.yml
+          git config user.name "Ali Farrokhnejad"
+          git config user.email "farrokh445@gmail.com"
+          git add tests/e2e/contextos.spec.ts .github/workflows/stage6-move-dev-offline-spec.yml
+          git commit -m "test: keep hard reload persistence in production matrix"
+          git push origin HEAD:feat/local-first-completion-stage6

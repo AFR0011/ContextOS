@@ -54,6 +54,15 @@ jobs:
       - name: Validate Stage 7 evidence mapping
         run: npm run audit:stage7:evidence
 
+      - name: Run Stage 8 deployment preflight
+        env:
+          NEXT_PUBLIC_APP_URL: https://contextos-preview.example
+          ALLOW_PUBLIC_REGISTRATION: "false"
+          ALLOW_DEMO_RESET: "false"
+          CONTEXTOS_SSO_SECRET: ""
+          SOCIALOS_APP_URL: https://socialos-preview.example
+        run: npm run audit:stage8:preflight
+
       - name: Validate Prisma schema
         run: npx prisma validate
 

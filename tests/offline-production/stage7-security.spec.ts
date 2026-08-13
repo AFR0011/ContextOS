@@ -43,8 +43,6 @@ test("browser cross-origin state-changing API requests are rejected before mutat
     Origin: "https://attacker.example",
     "Sec-Fetch-Site": "cross-site"
   };
-  const requests: Array<Promise<ReturnType<Page["request"]["post"]>> | any> = [];
-  void requests;
 
   const responses = [
     await page.request.post("/api/auth/login", {

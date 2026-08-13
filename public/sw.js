@@ -160,6 +160,20 @@ async function cachedShellResponse(request) {
   return null;
 }
 
+async function cachedAssetResponse(request) {
+  const current = await caches.open(CACHE_NAME);
+  const exact = await current.match(request);
+  if (exact) return exact;
+
+  const keys = await caches.keys();
+  for (const key of keys.filter((value) => value.startsWith(CACHE_PREFIX) && value !== CACHE_NAME).reverse()) {
+    const cache = await caches.open(key);
+    const fallback = await cache.match(request);
+    if (fallback) return fallback;
+  }
+  return null;
+}
+
 function isCoreWorkspacePath(pathname) {
   return CORE_WORKSPACE_ROUTES.has(pathname) || pathname.startsWith("/projects/");
 }
@@ -232,8 +246,8 @@ self.addEventListener("fetch", (event) => {
   if (isShellAsset(url.pathname)) {
     event.respondWith(
       (async () => {
-        const cached = await cachedShellResponse(request);
-        if (cached && cached.url !== new URL(SHELL_ENTRY, self.location.origin).href) return cached;
+        const cached = await cachedAssetResponse(request);
+        if (cached) return cached;
         const response = await fetch(request);
         if (response.ok) {
           const cache = await caches.open(CACHE_NAME);

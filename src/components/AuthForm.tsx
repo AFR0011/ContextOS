@@ -11,8 +11,8 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
   const searchParams = useSearchParams();
   const nextPath = searchParams?.get("next") || "/dashboard";
   const safeNext = nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/dashboard";
-  const [email, setEmail] = useState(mode === "login" ? "demo@contextos.local" : "");
-  const [password, setPassword] = useState(mode === "login" ? "contextos-demo-v011" : "");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -78,6 +78,8 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               type="email"
+              autoComplete="username"
+              maxLength={254}
               required
               className="cos-input mt-1 w-full px-3 py-2 text-sm"
             />
@@ -89,6 +91,8 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               type="password"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              maxLength={mode === "login" ? 256 : 128}
               required
               minLength={mode === "register" ? 8 : undefined}
               className="cos-input mt-1 w-full px-3 py-2 text-sm"

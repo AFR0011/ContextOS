@@ -17,6 +17,7 @@
     {"id":"REP-003","lane":"repository","severity":"medium","mode":"static","requirement":"No one-shot Stage 5/6/7 patch/bootstrap workflow or temporary patch script remains tracked."},
     {"id":"REP-004","lane":"repository","severity":"high","mode":"runtime","requirement":"Publication fixtures remain neutral and imported private reference material remains absent."},
     {"id":"REP-005","lane":"repository","severity":"high","mode":"ci","requirement":"npm dependency audit fails CI at low severity or above."},
+    {"id":"REP-006","lane":"repository","severity":"critical","mode":"static","requirement":"Tracked text files contain no high-confidence private-key or provider-token signatures."},
 
     {"id":"AUTH-001","lane":"authentication","severity":"critical","mode":"static","requirement":"Session tokens are cryptographically random and only AUTH_SECRET-keyed token hashes are persisted server-side."},
     {"id":"AUTH-002","lane":"authentication","severity":"high","mode":"static","requirement":"Session cookie is HttpOnly, SameSite, Secure in production, root-scoped, and time-bounded."},
@@ -26,6 +27,8 @@
     {"id":"AUTH-006","lane":"authentication","severity":"high","mode":"runtime","requirement":"Browser cross-origin login, registration, and logout requests are rejected."},
     {"id":"AUTH-007","lane":"authentication","severity":"medium","mode":"static","requirement":"Authentication email/password inputs are length-bounded."},
     {"id":"AUTH-008","lane":"authentication","severity":"medium","mode":"static","requirement":"Expired in-memory authentication rate-limit buckets are periodically pruned rather than retained indefinitely."},
+    {"id":"AUTH-009","lane":"authentication","severity":"high","mode":"static","requirement":"Optional ContextOS-to-SocialOS SSO uses an exact-origin return allowlist, a short expiry, and refuses secrets shorter than 32 characters."},
+    {"id":"AUTH-010","lane":"authentication","severity":"medium","mode":"runtime","requirement":"Optional SSO redirect rejects non-allowlisted return origins and fails closed when its signing secret is absent or inadequate."},
 
     {"id":"API-001","lane":"api","severity":"critical","mode":"runtime","requirement":"Unauthenticated bootstrap and sync access is rejected."},
     {"id":"API-002","lane":"api","severity":"high","mode":"runtime","requirement":"Browser cross-origin workspace mutation requests are rejected."},

@@ -26,8 +26,10 @@ test("core workspace navigation changes local history without network access", a
   await expectPath(page, "/projects");
   await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
 
-  // Exercise navigation initiated inside a core view, not only the shell.
-  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
+  // Exercise navigation initiated inside a core view, not only the shell. Use any
+  // visible project instead of a named fixture because earlier E2E cases may leave
+  // one seeded project temporarily archived while its queued sync is still draining.
+  await page.locator("main").getByRole("button", { name: /Next:/ }).first().click();
   await expect.poll(() => page.evaluate(() => window.location.pathname.startsWith("/projects/"))).toBe(true);
   await expect(page.getByTestId("project-command-page")).toBeVisible();
 

@@ -74,6 +74,30 @@ test("browser cross-origin state-changing API requests are rejected before mutat
   }
 });
 
+test("production login failure does not reveal whether the account exists", async ({ page }) => {
+  const unknown = await page.request.post("/api/auth/login", {
+    headers: { "x-forwarded-for": `stage7-unknown-${Date.now()}` },
+    data: { email: `unknown-${Date.now()}@example.test`, password: "wrong-password" }
+  });
+  const known = await page.request.post("/api/auth/login", {
+    headers: { "x-forwarded-for": `stage7-known-${Date.now()}` },
+    data: { email: demoEmail, password: "wrong-password" }
+  });
+
+  expect(unknown.status()).toBe(401);
+  expect(known.status()).toBe(401);
+  expect(await unknown.json()).toEqual({ error: "Invalid email or password." });
+  expect(await known.json()).toEqual({ error: "Invalid email or password." });
+});
+
+test("public registration is closed by default in production", async ({ page }) => {
+  const response = await page.request.post("/api/auth/register", {
+    data: { email: `closed-${Date.now()}@example.test`, password: "not-a-real-password" }
+  });
+  expect(response.status()).toBe(403);
+  await expect(response.json()).resolves.toEqual({ error: "Registration is closed for this deployment." });
+});
+
 test("same-origin authentication still succeeds with bounded inputs and secure session cookie", async ({ page, context }) => {
   const oversized = await page.request.post("/api/auth/login", {
     data: { email: `${"a".repeat(255)}@example.test`, password: "x".repeat(257) }

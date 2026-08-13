@@ -25,8 +25,8 @@ jobs:
 
           path = Path("tests/e2e/contextos.spec.ts")
           text = path.read_text()
-          old = "expect(serviceWorker).toContain('const SHELL_VERSION = \\\"v3\\\"');"
-          new = "expect(serviceWorker).toContain('const SHELL_VERSION = \\\"v4\\\"');"
+          old = '''expect(serviceWorker).toContain('const SHELL_VERSION = "v3"');'''
+          new = '''expect(serviceWorker).toContain('const SHELL_VERSION = "v4"');'''
           count = text.count(old)
           if count != 1:
               raise SystemExit(f"Expected exactly one stale v3 assertion, found {count}")

@@ -27,7 +27,6 @@ requireMatch(
 requireMatch("readme", /provider-native (?:PITR|backup\/PITR)/i, "must retain the provider-native recovery boundary");
 requireMatch("readme", /irreversible[^\n]*per-record purge/i, "must retain the irreversible record-purge boundary");
 
-requireMatch("state", /complete through \*\*Stage 9/i, "must preserve the Stage 9 closure provenance");
 requireMatch("state", /31798664757/, "must preserve exact Stage 9 verified runtime CI provenance");
 
 requireMatch("contract", /Offline workspace access is allowed only for an identity that was previously authenticated successfully on that device/i, "must preserve the offline identity boundary");
@@ -50,10 +49,11 @@ requireMatch("security", /provider-native backup\/PITR rehearsal/i, "must retain
 
 if (stage10Closed) {
   requireMatch("readme", /Stage 10[^\n]*(?:closed|complete)/i, "must record final Stage 10 closure after CLOSE-001 passes");
-  requireMatch("state", /Stage 10[^\n]*(?:closed|complete)/i, "must record Stage 10 as closed after CLOSE-001 passes");
+  requireMatch("state", /(?:complete through \*\*Stage 10|Stage 10[^\n]*(?:closed|complete))/i, "must record Stage 10 as closed after CLOSE-001 passes");
   requireMatch("contract", /Stage 10[^\n]*(?:closed|complete|final acceptance)/i, "must record final acceptance provenance after closure");
   requireMatch("security", /Stage 10[^\n]*(?:closed|complete|final acceptance)/i, "must record Stage 10 assurance closure while retaining security non-claims");
 } else {
+  requireMatch("state", /complete through \*\*Stage 9/i, "must preserve the Stage 9 closure provenance while Stage 10 remains open");
   requireMatch("readme", /Stage 10[^\n]*(?:in progress|remain(?:s)? open|remain(?:s)? in progress)/i, "must state that Stage 10 final acceptance is still open");
   requireMatch("state", /Stage 10[^\n]*(?:remain(?:s)?|open)/i, "must keep Stage 10 open before final closure");
   requireMatch("contract", /Stage 10[^\n]*final/i, "must reserve final acceptance for Stage 10 while it remains open");

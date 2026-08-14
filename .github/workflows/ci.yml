@@ -69,6 +69,9 @@ jobs:
       - name: Run Stage 8 operational log audit
         run: npm run audit:stage8:ops
 
+      - name: Run Stage 9 lifecycle audit
+        run: npm run audit:stage9:lifecycle
+
       - name: Validate Prisma schema
         run: npx prisma validate
 

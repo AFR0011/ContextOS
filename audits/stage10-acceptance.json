@@ -162,7 +162,9 @@
       "id": "CLOSE-001",
       "stage": "10.6",
       "title": "Final accumulated branch passes the complete acceptance ladder with no pending Stage 10 evidence",
-      "status": "pending",
+      "status": "passed",
+      "verifiedCommit": "f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40",
+      "ciRun": 31800346837,
       "artifacts": [".github/workflows/ci.yml", "docs/stage10/STAGE10_ACCEPTANCE.md"]
     }
   ]

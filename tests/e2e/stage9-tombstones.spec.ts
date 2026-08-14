@@ -162,14 +162,14 @@ test("a stale startup bootstrap cannot overwrite a newer cached local mutation",
   await page.getByRole("button", { name: "Add Date", exact: true }).click();
   await page.getByPlaceholder("Date title...").fill(title);
   await page.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(page.getByText(title, { exact: true })).toBeVisible();
+  await expect(page.getByDisplayValue(title, { exact: true })).toBeVisible();
   await expect.poll(async () => localDeadlineExists(page, title), { timeout: 5_000 }).toBe(true);
 
   const staleBootstrapDelivered = page.waitForResponse((response) => response.url().includes("/api/bootstrap") && response.request().method() === "GET");
   releaseBootstrap();
   await staleBootstrapDelivered;
   await expect.poll(async () => localDeadlineExists(page, title), { timeout: 2_000 }).toBe(true);
-  await expect(page.getByText(title, { exact: true })).toBeVisible();
+  await expect(page.getByDisplayValue(title, { exact: true })).toBeVisible();
 
   releaseSync();
   await expect.poll(async () => Boolean(await serverDeadlineByTitle(page, title)), { timeout: 15_000 }).toBe(true);
@@ -185,13 +185,13 @@ test("an offline date tombstone survives reload, synchronizes after reconnect, a
   await page.getByRole("button", { name: "Add Date", exact: true }).click();
   await page.getByPlaceholder("Date title...").fill(title);
   await page.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(page.getByText(title, { exact: true })).toBeVisible();
+  await expect(page.getByDisplayValue(title, { exact: true })).toBeVisible();
 
   await expect.poll(async () => Boolean(await serverDeadlineByTitle(page, title)), { timeout: 15_000 }).toBe(true);
 
   await context.setOffline(true);
   await page.getByRole("button", { name: `Delete ${title}` }).click();
-  await expect(page.getByText(title, { exact: true })).toHaveCount(0);
+  await expect(page.getByDisplayValue(title, { exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Archive", exact: true }).click();
   await page.getByRole("button", { name: /Trash \(/ }).click();

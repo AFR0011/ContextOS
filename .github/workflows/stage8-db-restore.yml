@@ -52,6 +52,8 @@ jobs:
           cache: npm
 
       - name: Install application dependencies
+        env:
+          DATABASE_URL: ${{ secrets.STAGE8_BACKUP_RESTORE_DATABASE_URL }}
         run: npm ci
 
       - name: Generate ephemeral local auth secret

@@ -165,8 +165,9 @@ test("a stale startup bootstrap cannot overwrite a newer cached local mutation",
   await expect(page.getByText(title, { exact: true })).toBeVisible();
   await expect.poll(async () => localDeadlineExists(page, title), { timeout: 5_000 }).toBe(true);
 
+  const staleBootstrapDelivered = page.waitForResponse((response) => response.url().includes("/api/bootstrap") && response.request().method() === "GET");
   releaseBootstrap();
-  await page.waitForResponse((response) => response.url().includes("/api/bootstrap") && response.request().method() === "GET");
+  await staleBootstrapDelivered;
   await expect.poll(async () => localDeadlineExists(page, title), { timeout: 2_000 }).toBe(true);
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 

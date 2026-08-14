@@ -229,6 +229,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
   const [staleMutationCount, setStaleMutationCount] = useState(0);
   const syncInFlight = useRef(false);
   const localWrite = useRef<Promise<void>>(Promise.resolve());
+  const localMutationVersion = useRef(0);
 
   useEffect(() => {
     dataRef.current = data;
@@ -316,6 +317,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
       return;
     }
 
+    const refreshMutationVersion = localMutationVersion.current;
     setRefreshing(true);
     setError(null);
     try {
@@ -323,6 +325,14 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
       const result = await readJsonResponse<{ data: WorkspaceData }>(response);
       if (!response.ok || !result?.data) {
         throw new Error(response.status === 401 ? "Sign in again to refresh." : responseErrorMessage(response, result, "Refresh failed"));
+      }
+      await localWrite.current;
+      if (localMutationVersion.current !== refreshMutationVersion) {
+        const latestOutbox = await readLocalOutbox(user);
+        setPendingCount(latestOutbox.length);
+        setError("Server refresh was skipped because local changes were made while it was in progress. Sync pending changes first.");
+        setLastErrorAt(now());
+        return;
       }
       await saveWorkspace(result.data);
       setLastSyncedAt(result.data.serverSyncedAt);
@@ -338,6 +348,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
   const mutateBatch = useCallback(
     (changes: LocalRecordChange[]) => {
       if (changes.length === 0) return;
+      localMutationVersion.current += 1;
 
       const committedAt = now();
       let next = dataRef.current;
@@ -409,11 +420,18 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
           if (outbox.length > 0) {
             await syncNow();
           } else {
+            const bootMutationVersion = localMutationVersion.current;
             const response = await fetch("/api/bootstrap");
             const result = await readJsonResponse<{ data?: WorkspaceData; error?: string }>(response);
             if (response.ok && result?.data) {
-              await saveWorkspace(result.data);
-              setLastSyncedAt(result.data.serverSyncedAt);
+              await localWrite.current;
+              if (localMutationVersion.current === bootMutationVersion) {
+                await saveWorkspace(result.data);
+                setLastSyncedAt(result.data.serverSyncedAt);
+              } else {
+                const latestOutbox = await readLocalOutbox(user);
+                setPendingCount(latestOutbox.length);
+              }
             } else if (!response.ok) {
               throw new Error(response.status === 401 ? "Sign in again to load workspace." : responseErrorMessage(response, result, "Server refresh unavailable"));
             }

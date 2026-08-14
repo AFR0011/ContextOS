@@ -6,6 +6,7 @@ import {
   getNeonDatabaseBranchId,
   isDatabaseUnavailableError
 } from "@/lib/database-health";
+import { logOperationalError } from "@/lib/operational-log";
 
 const noStoreHeaders = { "Cache-Control": "no-store" };
 
@@ -53,7 +54,7 @@ export async function GET() {
       );
     }
 
-    console.error("Health check failed", error);
+    logOperationalError("health_unexpected_error", error);
     return NextResponse.json(
       {
         status: "error",

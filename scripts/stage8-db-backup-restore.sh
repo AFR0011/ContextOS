@@ -66,8 +66,8 @@ diff -u "$source_tables" "$restore_tables"
 while IFS= read -r table; do
   [[ -z "$table" ]] && continue
   escaped_table="${table//\"/\"\"}"
-  source_count="$(psql "$SOURCE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM \"$escaped_table\";")"
-  restore_count="$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM \"$escaped_table\";")"
+  source_count="$(psql "$SOURCE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM public.\"$escaped_table\";")"
+  restore_count="$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM public.\"$escaped_table\";")"
   if [[ "$source_count" != "$restore_count" ]]; then
     echo "Row-count mismatch for $table: source=$source_count restore=$restore_count" >&2
     exit 1
@@ -75,13 +75,13 @@ while IFS= read -r table; do
   printf 'verified %-28s %s rows\n' "$table" "$source_count"
 done < "$source_tables"
 
-fixture_count="$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM \"User\" WHERE email = 'stage8.preview@contextos.local';")"
+fixture_count="$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM public.\"User\" WHERE email = 'stage8.preview@contextos.local';")"
 if [[ "$fixture_count" != "1" ]]; then
   echo "Restored Stage 8 preview identity was not found exactly once." >&2
   exit 1
 fi
 
-project_count="$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM \"Project\" p JOIN \"User\" u ON u.id = p.\"userId\" WHERE u.email = 'stage8.preview@contextos.local';")"
+project_count="$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM public.\"Project\" p JOIN public.\"User\" u ON u.id = p.\"userId\" WHERE u.email = 'stage8.preview@contextos.local';")"
 if [[ "$project_count" -lt 1 ]]; then
   echo "Restored Stage 8 preview identity has no project data." >&2
   exit 1

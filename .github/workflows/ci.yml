@@ -66,6 +66,9 @@ jobs:
       - name: Test Stage 8 deployment preflight rejection cases
         run: npm run audit:stage8:preflight:test
 
+      - name: Run Stage 8 operational log audit
+        run: npm run audit:stage8:ops
+
       - name: Validate Prisma schema
         run: npx prisma validate
 

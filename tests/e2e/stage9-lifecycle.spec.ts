@@ -44,6 +44,42 @@ async function localStateForEmail(page: Page, email: string) {
   }, { databaseName: DB_NAME, targetEmail: email });
 }
 
+async function seedOtherLocalUser(page: Page) {
+  return page.evaluate(async (databaseName) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(databaseName, 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const id = `stage9-other-${Date.now()}`;
+    const email = `${id}@example.com`;
+    const verifiedAt = new Date().toISOString();
+    const workspace = {
+      domains: [],
+      projects: [],
+      tasks: [],
+      captures: [],
+      notes: [],
+      deadlines: [],
+      reviews: [],
+      dashboardScratchpads: [],
+      dashboardPreferences: [],
+      serverSyncedAt: verifiedAt
+    };
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(["users", "workspaces", "outboxes"], "readwrite");
+      tx.objectStore("users").put({ id, email, verifiedAt });
+      tx.objectStore("workspaces").put(workspace, id);
+      tx.objectStore("outboxes").put([], id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error("Other-user lifecycle seed aborted."));
+    });
+    db.close();
+    return { id, email };
+  }, DB_NAME);
+}
+
 async function registerDisposableUser(page: Page) {
   const email = `stage9-delete-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
   const password = "stage9-delete-password";
@@ -84,8 +120,12 @@ test("remove-from-device logout clears only the current user's local lifecycle s
   await login(page);
 
   const before = await localStateForEmail(page, DEMO_EMAIL);
+  const other = await seedOtherLocalUser(page);
+  const otherBefore = await localStateForEmail(page, other.email);
   expect(before.user).not.toBeNull();
   expect(before.workspace).not.toBeNull();
+  expect(otherBefore.user?.id).toBe(other.id);
+  expect(otherBefore.workspace).not.toBeNull();
 
   await page.getByRole("button", { name: "Log out", exact: true }).click();
   await expect(page.getByTestId("logout-dialog")).toBeVisible();
@@ -93,9 +133,13 @@ test("remove-from-device logout clears only the current user's local lifecycle s
 
   await expect(page).toHaveURL(/\/login$/);
   const after = await localStateForEmail(page, DEMO_EMAIL);
+  const otherAfter = await localStateForEmail(page, other.email);
   expect(after.user).toBeNull();
   expect(after.workspace).toBeNull();
   expect(after.outbox).toBeNull();
+  expect(otherAfter.user?.id).toBe(other.id);
+  expect(otherAfter.workspace).not.toBeNull();
+  expect(otherAfter.outbox).toEqual([]);
 });
 
 test("logout refuses to pretend an offline browser invalidated its HttpOnly server session", async ({ page, context }) => {

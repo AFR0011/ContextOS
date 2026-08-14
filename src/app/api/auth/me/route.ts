@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
+import { logOperationalError } from "@/lib/operational-log";
 
 export async function GET() {
   try {
@@ -10,7 +11,7 @@ export async function GET() {
     if (isDatabaseUnavailableError(error)) {
       return databaseUnavailableResponse();
     }
-    console.error("Current user lookup failed", error);
+    logOperationalError("current_user_unexpected_error", error);
     return NextResponse.json({ error: "Could not load the current user." }, { status: 500 });
   }
 }

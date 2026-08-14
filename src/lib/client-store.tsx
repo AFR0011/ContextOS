@@ -403,6 +403,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
     setOnline(typeof navigator === "undefined" ? true : navigator.onLine);
 
     async function boot() {
+      const bootMutationVersion = localMutationVersion.current;
       await rememberLocalUser(user);
       const cached = await readLocalWorkspace(user);
       if (cached) {
@@ -420,7 +421,6 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
           if (outbox.length > 0) {
             await syncNow();
           } else {
-            const bootMutationVersion = localMutationVersion.current;
             const response = await fetch("/api/bootstrap");
             const result = await readJsonResponse<{ data?: WorkspaceData; error?: string }>(response);
             if (response.ok && result?.data) {

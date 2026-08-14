@@ -56,8 +56,12 @@ jobs:
       - name: Generate ephemeral auth secrets
         shell: bash
         run: |
-          echo "STAGE7_AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
-          echo "STAGE8_AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          stage7_secret="$(openssl rand -hex 32)"
+          stage8_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$stage7_secret"
+          echo "::add-mask::$stage8_secret"
+          echo "STAGE7_AUTH_SECRET=$stage7_secret" >> "$GITHUB_ENV"
+          echo "STAGE8_AUTH_SECRET=$stage8_secret" >> "$GITHUB_ENV"
 
       - name: Build Stage 7 release
         working-directory: stage7

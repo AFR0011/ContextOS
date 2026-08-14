@@ -36,7 +36,7 @@ The starter workspace is neutral test/demo data. Do not point `db:seed` at a dat
 
 Run verification commands sequentially. `npm run build` can rewrite generated `.next` route types while `npm run typecheck` is reading them, and Playwright suites start their own runtime boundaries. Parallelizing these steps creates impressive-looking failures with very little informational value.
 
-The accumulated Stage 10 ladder is:
+The accepted Stage 10 ladder is:
 
 1. Dependency advisory gate:
    ```bash
@@ -59,9 +59,10 @@ The accumulated Stage 10 ladder is:
    npm run audit:stage9:lifecycle
    npm run audit:stage9:evidence
    ```
-5. Stage 10 acceptance-registry integrity:
+5. Stage 10 acceptance-registry integrity and public-claims audit:
    ```bash
    npm run audit:stage10:acceptance
+   npm run audit:stage10:claims
    ```
 6. Prisma schema/client verification and migration application:
    ```bash
@@ -86,7 +87,7 @@ The accumulated Stage 10 ladder is:
    ```
 10. Deliberate database-outage smoke, as implemented in `.github/workflows/ci.yml`.
 
-The committed GitHub Actions workflow runs this ladder against disposable PostgreSQL 16. The Stage 10 registry remains open until the exact accumulated branch passes the full ladder and the public claims audit is complete.
+The committed GitHub Actions workflow runs this ladder against disposable PostgreSQL 16. Stage 10 final acceptance is closed against verified candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, which passed every gate in the accumulated ladder.
 
 ## Runtime Ownership
 
@@ -133,7 +134,7 @@ Automated tests are the acceptance evidence; manual checks remain useful for hum
 
 ## Offline Verification
 
-The local-first contract is `docs/LOCAL_FIRST_CONTRACT.md`. After prior successful authentication and verified local preparation, the production matrix must prove:
+The local-first contract is `docs/LOCAL_FIRST_CONTRACT.md`. After prior successful authentication and verified local preparation, the production matrix proves:
 
 - the workspace cold-reopens offline;
 - core routes and dynamic project URLs cold-open/hard-refresh offline;
@@ -166,7 +167,7 @@ The historical `operation: "delete"` wire value remains compatibility-only and r
 
 ## Lifecycle Verification
 
-Stage 9 closed the lifecycle boundary and Stage 10 reruns it as part of final acceptance:
+Stage 9 closed the lifecycle boundary and Stage 10 reran it as part of final acceptance:
 
 - ordinary online logout preserves isolated local workspace/outbox state by default;
 - pending changes expose explicit sync/retain/discard/remove-device choices;

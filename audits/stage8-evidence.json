@@ -145,13 +145,17 @@
       "id": "CLOSE-001",
       "stage": "8.7",
       "title": "Stage 7 verification ladder remains green on Stage 8 candidate",
-      "status": "pending"
+      "status": "passed",
+      "ciRun": 31789959516,
+      "verifiedCommit": "b01e65b08bcb09b597b2f7a778eaa966d77cfac6",
+      "artifacts": ["docs/stage8/STAGE8_VERIFICATION.md"]
     },
     {
       "id": "CLOSE-002",
       "stage": "8.7",
       "title": "Exact preview, CI, PWA upgrade, restore, and rollback evidence recorded",
-      "status": "pending",
+      "status": "passed",
+      "verifiedCommit": "b76db7c4ff590aaaf24ef67d1344d4bf2bd40f68",
       "artifacts": ["docs/stage8/STAGE8_VERIFICATION.md"]
     },
     {

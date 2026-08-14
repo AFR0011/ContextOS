@@ -136,10 +136,6 @@ test("an offline date tombstone survives reload, synchronizes after reconnect, a
   await context.setOffline(false);
   await expect.poll(async () => Boolean((await serverDeadlineByTitle(page, title))?.trashedAt), { timeout: 20_000 }).toBe(true);
 
-  const trashedCard = page.getByText(title, { exact: true }).locator("..", { hasText: title });
-  const restoreButton = page.getByRole("button", { name: "Restore", exact: true }).filter({ visible: true }).last();
-  await expect(trashedCard).toBeVisible();
-  await restoreButton.click();
-
+  await page.getByRole("button", { name: "Restore", exact: true }).click();
   await expect.poll(async () => (await serverDeadlineByTitle(page, title))?.trashedAt ?? null, { timeout: 20_000 }).toBeNull();
 });

@@ -14,6 +14,7 @@
     "audit:stage8:preflight:test": "node scripts/deployment-preflight-tests.mjs",
     "audit:stage8:ops": "tsx scripts/stage8-operational-log-tests.ts",
     "audit:stage9:lifecycle": "node scripts/stage9-lifecycle-audit.mjs",
+    "audit:stage9:evidence": "node scripts/stage9-evidence-check.mjs",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",

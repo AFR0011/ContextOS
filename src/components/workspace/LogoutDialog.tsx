@@ -42,6 +42,7 @@ export function LogoutDialog({ open, user, sync, syncNow, onClose }: LogoutDialo
     if (busy) return;
     setWorking(action);
     setError(null);
+    let localCleanupCompleted = false;
 
     try {
       if (!sync.online) {
@@ -56,20 +57,30 @@ export function LogoutDialog({ open, user, sync, syncNow, onClose }: LogoutDialo
         }
       }
 
-      await destroyServerSession();
-
+      // When the user explicitly asks to discard/remove local state, complete
+      // that privacy-sensitive operation before revoking the remote session.
+      // A failed local cleanup therefore leaves the still-authenticated account
+      // recoverable instead of logging the user out while sensitive cache remains.
       if (action === "discard") {
         await clearLocalWorkspaceState(user.id);
+        localCleanupCompleted = true;
       }
 
       if (action === "remove") {
         await removeLocalUserDeviceData(user.id);
+        localCleanupCompleted = true;
       }
+
+      await destroyServerSession();
 
       router.replace("/login");
       router.refresh();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not complete logout safely.");
+      if (localCleanupCompleted) {
+        setError("Local data was removed as requested, but the server session could not be ended. Reconnect and retry logout; if the session is still valid, signing in online can rebuild the local workspace.");
+      } else {
+        setError(reason instanceof Error ? reason.message : "Could not complete logout safely.");
+      }
       setWorking(null);
     }
   }

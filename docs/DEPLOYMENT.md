@@ -39,7 +39,7 @@ Set these variables in the deployment provider before building:
 - `CONTEXTOS_SSO_SECRET`: optional ContextOS→SocialOS bridge signing secret; use a distinct high-entropy value of at least 32 characters.
 - `SOCIALOS_APP_URL`: exact HTTPS SocialOS origin for that optional bridge.
 
-The SSO bridge is optional and is not part of core ContextOS authentication. It fails closed without a valid signing secret and exact destination origin. Do not reuse `AUTH_SECRET` as the SSO signing secret.
+The SSO bridge is optional and is not part of core ContextOS authentication. If `CONTEXTOS_SSO_SECRET` is absent or shorter than 32 characters, token issuance fails closed. Do not reuse `AUTH_SECRET` as the SSO secret. The exact destination origin must also be configured; the bridge does not accept an arbitrary return host.
 
 Generate a fresh auth secret with:
 

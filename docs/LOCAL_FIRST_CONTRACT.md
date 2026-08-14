@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the product boundary for completing ContextOS as a single-user-at-a-time local-first workspace with server-backed synchronization and user-scoped local persistence.
+This document defines the product boundary for completing ContextOS as a single-user local-first workspace at any one active identity, with server-backed synchronization and user-scoped local persistence.
 
 The contract is intentionally narrower than "all functionality works without a server." It defines which product surfaces and behaviors remain usable after a user has successfully authenticated on a device at least once, which operations require connectivity, and how logout, local-device data, account deletion, and recoverable record deletion behave.
 

@@ -64,14 +64,19 @@
       "id": "DB-RESTORE-001",
       "stage": "8.4",
       "title": "Provider-neutral PostgreSQL backup restores into a fresh target",
-      "status": "pending",
-      "artifacts": ["scripts/stage8-db-backup-restore.*", "docs/stage8/**"]
+      "status": "passed",
+      "ciRun": 31787773777,
+      "verifiedCommit": "c84d6e7e3d9afded98454aea669824e32e2cf3e2",
+      "artifacts": ["scripts/stage8-db-backup-restore.sh", ".github/workflows/stage8-db-restore.yml", "docs/stage8/STAGE8_4_VERIFICATION.md"]
     },
     {
       "id": "DB-RESTORE-002",
       "stage": "8.4",
       "title": "Restored database passes application-level integrity and authenticated bootstrap checks",
-      "status": "pending"
+      "status": "passed",
+      "ciRun": 31787773777,
+      "verifiedCommit": "c84d6e7e3d9afded98454aea669824e32e2cf3e2",
+      "artifacts": [".github/workflows/stage8-db-restore.yml", "docs/stage8/STAGE8_4_VERIFICATION.md"]
     },
     {
       "id": "DB-NATIVE-001",
@@ -131,14 +136,14 @@
     },
     {
       "id": "BOUNDARY-009",
-      "stage": "8",
+      "stage": 8,
       "title": "Lifecycle/destructive local-data semantics remain reserved for Stage 9",
       "status": "documented-boundary",
       "artifacts": ["docs/LOCAL_FIRST_CONTRACT.md", "docs/stage8-implementation-plan.md"]
     },
     {
       "id": "BOUNDARY-010",
-      "stage": "8",
+      "stage": 8,
       "title": "Final local-first acceptance remains reserved for Stage 10",
       "status": "documented-boundary",
       "artifacts": ["docs/LOCAL_FIRST_CONTRACT.md", "docs/stage8-implementation-plan.md"]

@@ -10,7 +10,8 @@ const SESSION_COOKIE = "contextos_session";
 
 const deleteAccountSchema = z.object({
   password: z.string().min(1).max(256),
-  confirmation: z.literal("DELETE")
+  confirmation: z.literal("DELETE"),
+  verifyOnly: z.boolean().optional().default(false)
 });
 
 export async function POST(request: Request) {
@@ -38,6 +39,10 @@ export async function POST(request: Request) {
 
     if (!account || !(await verifyPassword(parsed.data.password, account.passwordHash))) {
       return NextResponse.json({ error: "Current password is incorrect." }, { status: 403 });
+    }
+
+    if (parsed.data.verifyOnly) {
+      return NextResponse.json({ verified: true });
     }
 
     // User-owned records and all sessions are removed by the schema's verified

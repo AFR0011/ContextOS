@@ -78,6 +78,9 @@ jobs:
       - name: Validate Stage 10 acceptance registry
         run: npm run audit:stage10:acceptance
 
+      - name: Audit Stage 10 public claims
+        run: npm run audit:stage10:claims
+
       - name: Validate Prisma schema
         run: npx prisma validate
 

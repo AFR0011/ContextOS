@@ -41,22 +41,30 @@ async function bootstrap(page: Page): Promise<WorkspaceData> {
   });
 }
 
-async function localDeadlineExists(page: Page, title: string) {
+async function localDeadlineSnapshot(page: Page, title: string) {
   return page.evaluate(async ({ databaseName, title }) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(databaseName, 2);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
-    const workspaces = await new Promise<Array<{ deadlines?: Array<{ title?: string }> }>>((resolve, reject) => {
+    const workspaces = await new Promise<Array<{ deadlines?: Array<{ title?: string; trashedAt?: string | null }> }>>((resolve, reject) => {
       const tx = db.transaction("workspaces", "readonly");
       const request = tx.objectStore("workspaces").getAll();
-      request.onsuccess = () => resolve(request.result as Array<{ deadlines?: Array<{ title?: string }> }>);
+      request.onsuccess = () => resolve(request.result as Array<{ deadlines?: Array<{ title?: string; trashedAt?: string | null }> }>);
       request.onerror = () => reject(request.error);
     });
     db.close();
-    return workspaces.some((workspace) => workspace.deadlines?.some((deadline) => deadline.title === title));
+    for (const workspace of workspaces) {
+      const deadline = workspace.deadlines?.find((candidate) => candidate.title === title);
+      if (deadline) return deadline;
+    }
+    return null;
   }, { databaseName: "contextos-offline-v1", title });
+}
+
+async function localDeadlineExists(page: Page, title: string) {
+  return Boolean(await localDeadlineSnapshot(page, title));
 }
 
 async function editableInputValueCount(page: Page, title: string) {
@@ -198,12 +206,16 @@ test("an offline date tombstone survives reload, synchronizes after reconnect, a
   await context.setOffline(true);
   await page.getByRole("button", { name: `Delete ${title}` }).click();
   await expect.poll(async () => editableInputValueCount(page, title)).toBe(0);
+  await expect.poll(async () => Boolean((await localDeadlineSnapshot(page, title))?.trashedAt), { timeout: 5_000 }).toBe(true);
 
   await page.getByRole("button", { name: "Archive", exact: true }).click();
   await page.getByRole("button", { name: /Trash \(/ }).click();
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 
   await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/archive$/);
+  await expect(page.getByRole("heading", { name: "Archive", exact: true })).toBeVisible();
+  await expect.poll(async () => Boolean((await localDeadlineSnapshot(page, title))?.trashedAt), { timeout: 5_000 }).toBe(true);
   await expect(page.getByText(title, { exact: true })).toBeVisible();
   await expect(page.getByTestId("global-sync-indicator").first()).toContainText(/Offline|pending/);
 

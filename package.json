@@ -16,6 +16,7 @@
     "audit:stage9:lifecycle": "node scripts/stage9-lifecycle-audit.mjs",
     "audit:stage9:evidence": "node scripts/stage9-evidence-check.mjs",
     "audit:stage10:acceptance": "node scripts/stage10-acceptance-check.mjs",
+    "audit:stage10:claims": "node scripts/stage10-claims-audit.mjs",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",

@@ -11,6 +11,8 @@ function check(name, condition, detail) {
 
 const localLifecycle = read("src/lib/local-lifecycle.ts");
 const logoutDialog = read("src/components/workspace/LogoutDialog.tsx");
+const workspaceGate = read("src/components/workspace/WorkspaceGate.tsx");
+const accountPanel = read("src/components/workspace/AccountDeletionPanel.tsx");
 const accountDelete = read("src/app/api/account/delete/route.ts");
 const clientStore = read("src/lib/client-store.tsx");
 const syncServer = read("src/lib/sync-server.ts");
@@ -40,6 +42,13 @@ check(
   "Offline browser code cannot truthfully claim to revoke the server-side HttpOnly session."
 );
 check(
+  "multiple local identities require explicit selection",
+  workspaceGate.includes('data-testid="local-account-chooser"') &&
+    workspaceGate.includes("ContextOS will not guess which identity to open") &&
+    workspaceGate.includes('setState({ status: "ready", user: candidate, source: "local" })'),
+  "Multiple eligible offline workspaces must be chosen explicitly rather than selected implicitly."
+);
+check(
   "account deletion is authenticated and same-origin guarded",
   accountDelete.includes("rejectCrossOriginMutation(request)") && accountDelete.includes("getCurrentUser()"),
   "Account deletion must require both the authenticated session and the existing origin guard."
@@ -54,6 +63,14 @@ check(
   accountDelete.includes("verifyOnly") && accountDelete.includes("verified: true"),
   "The browser must be able to verify credentials before removing its local copy."
 );
+const verifyIndex = accountPanel.indexOf("await requestDeletion(true)");
+const localRemovalIndex = accountPanel.indexOf("await removeLocalUserDeviceData(user.id)");
+const deleteIndex = accountPanel.indexOf("await requestDeletion(false)");
+check(
+  "account deletion failure ordering",
+  verifyIndex >= 0 && localRemovalIndex > verifyIndex && deleteIndex > localRemovalIndex,
+  "Credentials must be verified before local cleanup, and irreversible server deletion must happen only after local cleanup succeeds."
+);
 check(
   "server account deletion remains one cascade root",
   accountDelete.includes("prisma.user.delete") && schema.includes("onDelete: Cascade"),
@@ -63,6 +80,11 @@ check(
   "client writes do not produce legacy hard-delete mutations",
   !/operation\s*:\s*["']delete["']/.test(clientStore),
   "Current clients must express ordinary deletion as synchronized tombstone state, not the legacy delete operation."
+);
+check(
+  "capture deletion remains synchronized state",
+  clientStore.includes('status: "deleted"') && clientStore.includes('mutate("captures"'),
+  "Inbox deletion must remain a versioned capture-state upsert rather than a physical delete."
 );
 check(
   "legacy delete remains compatibility-only",

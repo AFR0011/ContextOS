@@ -48,13 +48,41 @@ Failed login and registration attempts are throttled by fixed-window buckets key
 
 The limiter is intentionally application-local and in-memory. It is not a distributed global rate limiter across multiple serverless/process instances, and its client-IP value depends on trusted reverse-proxy forwarding headers. Public production should therefore add provider/WAF-level abuse protection rather than treating the application limiter as the only bot-defense layer.
 
-## Synchronization boundary
+## Synchronization and deletion boundary
 
 Synchronization requests enforce a total request-size limit, mutation-count limit, per-mutation UTF-8 payload-byte limit, bounded identifiers/field keys, parseable bounded timestamps, and `entityId === payload.id` consistency for upserts. Server application then revalidates ownership of target records and user-owned references before writing.
 
 Per-user mutation IDs are unique in PostgreSQL, accepted replays are idempotent, and stale updates are surfaced as warnings rather than silently overwriting newer server state.
 
-The sync schema still accepts the historical `delete` operation for compatibility. The current server treats that operation as a mutation-ledger compatibility no-op; product deletion/archival currently travels through record-state upserts. Final hard-delete, logout/local-data removal, and pending-change lifecycle semantics are deliberately deferred to the later lifecycle stage and must not be inferred from the compatibility operation.
+The sync schema still accepts the historical `delete` operation for compatibility. The current server treats that operation as a mutation-ledger compatibility no-op. Current client code does not use it for ordinary user-facing deletion.
+
+Projects, Tasks, standalone Notes, and Dates use synchronized `trashedAt` state for recoverable deletion. Inbox captures use synchronized `status = "deleted"`. These state changes retain the normal updated-at conflict rule, so an older offline update is rejected rather than silently resurrecting a newer tombstone. ContextOS does not claim irreversible per-record purge until an anti-resurrection/version-generation protocol is implemented and verified.
+
+## Logout and local-device boundary
+
+A normal logout invalidates the server session but preserves that user's isolated IndexedDB identity/workspace/outbox by default. The user can instead explicitly remove that account's local data from the current browser. Local cleanup deletes only entries keyed to the verified user ID; it does not clear the IndexedDB stores globally.
+
+When pending mutations exist, logout makes synchronization, local retention, and discard/device-removal behavior explicit. Discarding unsynchronized state removes the cached workspace together with its outbox rather than clearing only the mutation queue and leaving locally modified state behind.
+
+ContextOS blocks logout while offline. The application cannot truthfully revoke an HttpOnly server session without reaching the server and does not present a local-only state transition as completed logout.
+
+If multiple previously verified workspaces exist and server identity verification is unavailable, ContextOS does not choose one implicitly. The user must select one of the eligible verified local identities explicitly.
+
+## Account-deletion boundary
+
+Permanent account deletion requires:
+
+1. an authenticated same-origin request;
+2. current-password verification;
+3. an exact destructive confirmation;
+4. successful current-device user-scoped local cleanup; and
+5. a second password-verified server deletion commit.
+
+The verification and deletion calls are intentionally separate. The browser removes its local copy only after credentials are verified, while the server account still exists. If local cleanup fails, the irreversible server deletion does not run. If the final server deletion fails after local cleanup, the server account remains and can rebuild local state after a later successful online sign-in.
+
+The server deletes the authenticated `User` row as the cascade root. Schema-enforced `onDelete: Cascade` relations remove sessions and user-owned persistence. The response also expires the session cookie.
+
+A server cannot remotely wipe an offline browser's IndexedDB. Other offline devices may therefore retain stale local copies after account deletion. Those copies cannot authenticate or synchronize once the account is gone and are keyed by the deleted user ID so they are not implicitly rebound to a later account with the same email address.
 
 ## HTTP and PWA hardening
 
@@ -70,11 +98,13 @@ The verified dependency graph reports **0 npm audit vulnerabilities** at the las
 
 The dependency graph is still subject to normal upstream maintenance. Security updates should be reviewed as dependencies publish new stable releases, and overrides should be removed when the direct dependency graph no longer needs them.
 
-## Stage 7 assurance controls
+## Assurance controls
 
-The repository's local assurance framework is defined in `docs/stage7-audit-plan.md` and `audits/stage7-controls.json`. `npm run audit:stage7` executes repository/static controls in CI, while production-mode and development-mode Playwright suites cover runtime boundaries.
+The repository's Stage 7 local assurance framework is defined in `docs/stage7-audit-plan.md` and `audits/stage7-controls.json`. Stage 8 adds deployment, hosted-preview, backup/restore, rollback, and operational evidence. Stage 9 adds lifecycle-specific static controls and browser tests for logout/device cleanup, multi-user selection, account deletion, and recoverable tombstones.
 
-This is an engineering audit framework, not an independent security certification. It does not turn automated project tests into a penetration test or compliance attestation.
+`npm run audit:stage7` and `npm run audit:stage9:lifecycle` execute deterministic repository controls in CI, while production-mode and development-mode Playwright suites cover runtime boundaries.
+
+This is an engineering assurance framework, not an independent security certification. It does not turn automated project tests into a penetration test or compliance attestation.
 
 ## Known boundaries
 
@@ -86,8 +116,10 @@ The project does not currently provide:
 - enterprise audit/compliance guarantees;
 - distributed provider-level rate limiting, WAF, or bot protection;
 - a formal third-party penetration test;
-- demonstrated production backup/restore rehearsal and application/database rollback evidence;
+- provider-native backup/PITR rehearsal in addition to the completed PostgreSQL-native restore rehearsal;
 - a nonce/hash-based CSP that eliminates `unsafe-inline`;
-- final account/logout/local-device-data lifecycle semantics, which remain later-stage work.
+- remote erasure of data held on an offline client device;
+- irreversible user-facing per-record purge with a proven anti-resurrection protocol;
+- Stage 10 final comprehensive local-first acceptance.
 
 These are deployment/product boundaries, not claims of security completeness.

@@ -44,6 +44,57 @@ async function localStateForEmail(page: Page, email: string) {
   }, { databaseName: DB_NAME, targetEmail: email });
 }
 
+async function seedPendingOutbox(page: Page, email: string) {
+  return page.evaluate(async ({ databaseName, targetEmail }) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(databaseName, 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    const users = await new Promise<Array<{ id: string; email: string }>>((resolve, reject) => {
+      const tx = db.transaction("users", "readonly");
+      const request = tx.objectStore("users").getAll();
+      request.onsuccess = () => resolve(request.result as Array<{ id: string; email: string }>);
+      request.onerror = () => reject(request.error);
+    });
+    const user = users.find((candidate) => candidate.email === targetEmail);
+    if (!user) {
+      db.close();
+      throw new Error("Could not find the verified local user for pending-outbox seed.");
+    }
+
+    const createdAt = new Date().toISOString();
+    const mutation = {
+      mutationId: `stage9-pending-${Date.now()}`,
+      entityType: "captures",
+      entityId: `stage9-pending-capture-${Date.now()}`,
+      operation: "upsert",
+      payload: {
+        id: `stage9-pending-capture-${Date.now()}`,
+        text: "Stage 9 pending logout probe",
+        status: "unprocessed",
+        type: "note",
+        parsedData: null,
+        convertedToId: null,
+        createdAt,
+        updatedAt: createdAt
+      },
+      createdAt
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("outboxes", "readwrite");
+      tx.objectStore("outboxes").put([mutation], user.id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error("Pending-outbox seed aborted."));
+    });
+    db.close();
+    return mutation.mutationId;
+  }, { databaseName: DB_NAME, targetEmail: email });
+}
+
 async function seedOtherLocalUser(page: Page) {
   return page.evaluate(async (databaseName) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -114,6 +165,36 @@ test("default logout preserves the verified local workspace", async ({ page }) =
   const after = await localStateForEmail(page, DEMO_EMAIL);
   expect(after.user?.id).toBe(before.user?.id);
   expect(after.workspace).not.toBeNull();
+});
+
+test("failed requested sync cancels logout and keeping pending changes preserves the outbox", async ({ page }) => {
+  await login(page);
+  await page.route("**/api/sync", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "forced Stage 9 sync failure" }) });
+      return;
+    }
+    await route.continue();
+  });
+
+  const mutationId = await seedPendingOutbox(page, DEMO_EMAIL);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByTestId("global-sync-indicator").first()).toContainText(/1 pending|Syncing/);
+
+  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await expect(page.getByTestId("logout-sync")).toBeVisible();
+  await page.getByTestId("logout-sync").click();
+  await expect(page.getByTestId("logout-error")).toContainText("Pending changes are still unsynchronized. Logout was cancelled");
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  const afterFailedSync = await localStateForEmail(page, DEMO_EMAIL);
+  expect(afterFailedSync.outbox).toEqual(expect.arrayContaining([expect.objectContaining({ mutationId })]));
+
+  await page.getByTestId("logout-keep-local").click();
+  await expect(page).toHaveURL(/\/login$/);
+  const afterLogout = await localStateForEmail(page, DEMO_EMAIL);
+  expect(afterLogout.outbox).toEqual(expect.arrayContaining([expect.objectContaining({ mutationId })]));
 });
 
 test("remove-from-device logout clears only the current user's local lifecycle state", async ({ page }) => {

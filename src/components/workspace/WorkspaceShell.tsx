@@ -143,7 +143,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
   const [darkMode, setDarkMode] = useState<boolean | null>(null);
   const localRouter = useLocalRouter();
   const currentPath = localRouter.location.pathname;
-  const { data, sync, syncNow, forceRefreshFromServer } = useWorkspace();
+  const { data, loading, sync, syncNow, forceRefreshFromServer } = useWorkspace();
   const inboxCount = data.captures.filter((capture) => capture.status === "unprocessed").length;
   const isDark = darkMode ?? false;
   const sidebarProjects = activeSidebarProjects(data.projects);
@@ -161,6 +161,20 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
     document.documentElement.classList.toggle("dark", darkMode);
     window.localStorage.setItem("contextos-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
+
+  if (loading) {
+    return (
+      <main data-testid="workspace-local-loading" className="grid min-h-screen place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
+        <section className="cos-surface flex w-full max-w-md items-center gap-3 p-5">
+          <RefreshCw className="h-5 w-5 animate-spin text-[var(--cos-primary)]" />
+          <div>
+            <h1 className="font-semibold text-[var(--cos-text-strong)]">Opening local workspace</h1>
+            <p className="mt-1 text-sm text-[var(--cos-text-muted)]">Reading this verified account's local state before enabling edits.</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   function goTo(href: string) {
     localRouter.push(href);

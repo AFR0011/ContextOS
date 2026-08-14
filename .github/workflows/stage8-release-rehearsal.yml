@@ -1,0 +1,117 @@
+name: Stage 8 release-pair rollback rehearsal
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/local-first-completion-stage8
+    paths:
+      - audits/stage8-release-rehearsal.trigger
+
+permissions:
+  contents: read
+
+jobs:
+  rehearse-release-pair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.STAGE8_BACKUP_RESTORE_DATABASE_URL }}
+      HOSTED_PREVIEW_TEST_PASSWORD: ${{ secrets.HOSTED_PREVIEW_TEST_PASSWORD }}
+      ALLOW_PUBLIC_REGISTRATION: "false"
+      ALLOW_DEMO_RESET: "false"
+
+    steps:
+      - name: Checkout Stage 8 candidate
+        uses: actions/checkout@v4
+        with:
+          path: stage8
+
+      - name: Checkout Stage 7 release
+        uses: actions/checkout@v4
+        with:
+          ref: 7efe1909b1369fde702342b75009e115218295d3
+          path: stage7
+
+      - name: Validate rehearsal secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${DATABASE_URL:-}" ]] || { echo "Missing STAGE8_BACKUP_RESTORE_DATABASE_URL" >&2; exit 1; }
+          [[ -n "${HOSTED_PREVIEW_TEST_PASSWORD:-}" ]] || { echo "Missing HOSTED_PREVIEW_TEST_PASSWORD" >&2; exit 1; }
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Stage 7 dependencies
+        working-directory: stage7
+        run: npm ci
+
+      - name: Install Stage 8 dependencies
+        working-directory: stage8
+        run: npm ci
+
+      - name: Generate ephemeral auth secrets
+        shell: bash
+        run: |
+          echo "STAGE7_AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "STAGE8_AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+
+      - name: Build Stage 7 release
+        working-directory: stage7
+        env:
+          AUTH_SECRET: ${{ env.STAGE7_AUTH_SECRET }}
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3100
+        run: npm run build
+
+      - name: Verify Stage 7 before upgrade
+        env:
+          AUTH_SECRET: ${{ env.STAGE7_AUTH_SECRET }}
+        run: bash stage8/scripts/stage8-release-smoke.sh stage7 3100 STAGE8_STAGE7_BEFORE_UPGRADE
+
+      - name: Record migration ledger before Stage 8 deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm -e DATABASE_URL postgres:18 \
+            sh -lc 'psql "$DATABASE_URL" -X -A -t -F "|" -v ON_ERROR_STOP=1 -c "SELECT migration_name, checksum, finished_at IS NOT NULL FROM public.\"_prisma_migrations\" ORDER BY started_at;"' \
+            > /tmp/stage8-ledger-before.txt
+          cat /tmp/stage8-ledger-before.txt
+
+      - name: Deploy Stage 8 migrations
+        working-directory: stage8
+        run: npm run db:deploy
+
+      - name: Verify migration ledger unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm -e DATABASE_URL postgres:18 \
+            sh -lc 'psql "$DATABASE_URL" -X -A -t -F "|" -v ON_ERROR_STOP=1 -c "SELECT migration_name, checksum, finished_at IS NOT NULL FROM public.\"_prisma_migrations\" ORDER BY started_at;"' \
+            > /tmp/stage8-ledger-after.txt
+          diff -u /tmp/stage8-ledger-before.txt /tmp/stage8-ledger-after.txt
+          echo "STAGE8_MIGRATION_LEDGER_UNCHANGED=PASS"
+
+      - name: Build Stage 8 candidate
+        working-directory: stage8
+        env:
+          AUTH_SECRET: ${{ env.STAGE8_AUTH_SECRET }}
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3200
+        run: npm run build
+
+      - name: Verify Stage 8 after upgrade
+        env:
+          AUTH_SECRET: ${{ env.STAGE8_AUTH_SECRET }}
+        run: bash stage8/scripts/stage8-release-smoke.sh stage8 3200 STAGE8_STAGE8_AFTER_UPGRADE
+
+      - name: Verify Stage 7 application-only rollback
+        env:
+          AUTH_SECRET: ${{ env.STAGE7_AUTH_SECRET }}
+        run: bash stage8/scripts/stage8-release-smoke.sh stage7 3101 STAGE8_STAGE7_AFTER_ROLLBACK
+
+      - name: Record release-pair result
+        run: |
+          echo "STAGE8_RELEASE_UPGRADE=PASS"
+          echo "STAGE8_APP_ONLY_ROLLBACK=PASS"

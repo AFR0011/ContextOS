@@ -18,18 +18,15 @@ interface WorkspaceData {
 type TombstoneEntity = "projects" | "tasks" | "notes" | "deadlines";
 
 async function registerDisposableUser(page: Page) {
-  const email = `stage9-tombstone-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
+  const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const email = `stage9-tombstone-${nonce}@example.com`;
   const password = "stage9-tombstone-password";
-  await page.goto("/login");
-  const result = await page.evaluate(async ({ email, password }) => {
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    });
-    return { status: response.status, body: await response.json().catch(() => null) };
-  }, { email, password });
-  expect(result.status, JSON.stringify(result.body)).toBe(200);
+  const response = await page.request.post("/api/auth/register", {
+    data: { email, password },
+    headers: { "x-forwarded-for": `stage9-tombstone-${nonce}` }
+  });
+  const body = await response.json().catch(() => null);
+  expect(response.status(), JSON.stringify(body)).toBe(200);
   await page.goto("/dashboard");
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   return { email, password };

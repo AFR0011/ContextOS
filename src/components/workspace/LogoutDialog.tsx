@@ -167,11 +167,23 @@ export function LogoutDialog({ open, user, sync, syncNow, onClose }: LogoutDialo
           </button>
         </div>
 
+        <div className="mt-4 border-t border-[var(--cos-border-soft)] pt-4">
+          <button
+            type="button"
+            data-testid="open-account-deletion"
+            disabled={busy || !sync.online}
+            onClick={() => window.location.assign("/account/delete")}
+            className="cos-btn cos-btn-ghost min-h-10 w-full justify-start px-4 py-2 text-sm text-[var(--cos-danger-text)] disabled:opacity-50"
+          >
+            <Trash2 className="h-4 w-4" /> Permanently delete account...
+          </button>
+        </div>
+
         <button
           type="button"
           disabled={busy}
           onClick={onClose}
-          className="cos-btn cos-btn-ghost mt-4 min-h-10 w-full justify-center px-4 py-2 text-sm disabled:opacity-50"
+          className="cos-btn cos-btn-ghost mt-3 min-h-10 w-full justify-center px-4 py-2 text-sm disabled:opacity-50"
         >
           Cancel
         </button>

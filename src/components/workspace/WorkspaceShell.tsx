@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Download,
@@ -19,6 +18,7 @@ import {
   X,
   Zap
 } from "lucide-react";
+import { LogoutDialog } from "@/components/workspace/LogoutDialog";
 import { OfflineReadiness } from "@/components/workspace/OfflineReadiness";
 import type { PublicUser } from "@/lib/auth";
 import { useWorkspace } from "@/lib/client-store";
@@ -139,11 +139,11 @@ function SyncIndicator({ sync, compact = false, onRefreshFromServer }: { sync: S
 
 export default function WorkspaceShell({ user, children }: { user: PublicUser; children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const [darkMode, setDarkMode] = useState<boolean | null>(null);
   const localRouter = useLocalRouter();
   const currentPath = localRouter.location.pathname;
-  const router = useRouter();
-  const { data, sync, forceRefreshFromServer } = useWorkspace();
+  const { data, sync, syncNow, forceRefreshFromServer } = useWorkspace();
   const inboxCount = data.captures.filter((capture) => capture.status === "unprocessed").length;
   const isDark = darkMode ?? false;
   const sidebarProjects = activeSidebarProjects(data.projects);
@@ -161,11 +161,6 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
     document.documentElement.classList.toggle("dark", darkMode);
     window.localStorage.setItem("contextos-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
-
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-  }
 
   function goTo(href: string) {
     localRouter.push(href);
@@ -200,6 +195,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
 
   return (
     <div className="flex min-h-screen bg-[var(--cos-bg)] text-[var(--cos-text)]">
+      <LogoutDialog open={logoutOpen} user={user} sync={sync} syncNow={syncNow} onClose={() => setLogoutOpen(false)} />
       {open ? <div className="fixed inset-0 z-30 bg-slate-950/30 lg:hidden" onClick={() => setOpen(false)} /> : null}
       <aside
         className={`fixed inset-y-0 left-0 z-40 flex w-68 flex-col border-r border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] transition-transform lg:static lg:translate-x-0 ${
@@ -302,7 +298,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
               <p className="truncate text-xs font-medium text-[var(--cos-text)]">{user.email}</p>
               <p className="text-[11px] text-[var(--cos-text-subtle)]">{sync.syncing ? "Syncing..." : sync.lastSyncedAt ? `Synced ${new Date(sync.lastSyncedAt).toLocaleTimeString()}` : "Not synced yet"}</p>
             </div>
-            <button onClick={logout} className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text-muted)]" title="Log out">
+            <button onClick={() => setLogoutOpen(true)} className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text-muted)]" title="Log out" aria-label="Log out">
               <LogOut className="h-4 w-4" />
             </button>
           </div>

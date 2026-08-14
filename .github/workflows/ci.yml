@@ -72,6 +72,9 @@ jobs:
       - name: Run Stage 9 lifecycle audit
         run: npm run audit:stage9:lifecycle
 
+      - name: Validate Stage 9 evidence registry
+        run: npm run audit:stage9:evidence
+
       - name: Validate Prisma schema
         run: npx prisma validate
 

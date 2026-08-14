@@ -58,7 +58,10 @@ jobs:
 
       - name: Generate ephemeral local auth secret
         shell: bash
-        run: echo "AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+        run: |
+          secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$secret"
+          echo "AUTH_SECRET=$secret" >> "$GITHUB_ENV"
 
       - name: Build ContextOS against restored database
         env:

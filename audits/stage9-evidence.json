@@ -20,84 +20,84 @@
       "id": "LOGOUT-001",
       "stage": "9.1",
       "title": "Normal logout preserves the verified user's local workspace by default",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["src/components/workspace/LogoutDialog.tsx", "tests/e2e/stage9-lifecycle.spec.ts"]
     },
     {
       "id": "LOGOUT-002",
       "stage": "9.1",
       "title": "Pending mutations have explicit non-lossy logout handling",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["src/components/workspace/LogoutDialog.tsx", "tests/e2e/stage9-lifecycle.spec.ts"]
     },
     {
       "id": "LOGOUT-003",
       "stage": "9.1",
       "title": "Offline logout does not claim HttpOnly server-session invalidation",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["src/components/workspace/LogoutDialog.tsx", "tests/e2e/stage9-lifecycle.spec.ts"]
     },
     {
       "id": "DEVICE-001",
       "stage": "9.1",
       "title": "Current-device removal is user-scoped and does not clear another local user's data",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["src/lib/local-lifecycle.ts", "tests/e2e/stage9-lifecycle.spec.ts", "scripts/stage9-lifecycle-audit.mjs"]
     },
     {
       "id": "MULTI-001",
       "stage": "9.2",
       "title": "Multiple verified local workspaces require explicit offline identity selection",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["src/components/workspace/WorkspaceGate.tsx", "tests/e2e/workspace-gate.spec.ts", "scripts/stage9-lifecycle-audit.mjs"]
     },
     {
       "id": "ACCOUNT-001",
       "stage": "9.3",
       "title": "Permanent account deletion requires authenticated same-origin password re-verification and exact destructive confirmation",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["src/app/api/account/delete/route.ts", "src/components/workspace/AccountDeletionPanel.tsx", "scripts/stage9-lifecycle-audit.mjs"]
     },
     {
       "id": "ACCOUNT-002",
       "stage": "9.3",
       "title": "Account deletion removes current-device state before committing server cascade deletion",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["src/components/workspace/AccountDeletionPanel.tsx", "src/lib/local-lifecycle.ts", "tests/e2e/stage9-lifecycle.spec.ts"]
     },
     {
       "id": "ACCOUNT-003",
       "stage": "9.3",
       "title": "Deleted account can no longer authenticate while unrelated users remain unaffected by cascade scope",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["src/app/api/account/delete/route.ts", "prisma/schema.prisma", "tests/e2e/stage9-lifecycle.spec.ts", "scripts/stage7-schema-check.mjs"]
     },
     {
       "id": "DELETE-001",
       "stage": "9.4",
       "title": "Projects, tasks, standalone notes, and dates use synchronized recoverable tombstones",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["prisma/schema.prisma", "src/lib/client-store.tsx", "src/lib/sync-server.ts", "src/components/workspace/Views.tsx", "tests/e2e/stage9-tombstones.spec.ts"]
     },
     {
       "id": "DELETE-002",
       "stage": "9.4",
       "title": "Older offline upserts cannot silently resurrect a newer tombstone",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["src/lib/sync-server.ts", "tests/e2e/stage9-tombstones.spec.ts"]
     },
     {
       "id": "DELETE-003",
       "stage": "9.4",
-      "title": "Offline tombstone survives reload, synchronizes after reconnect, and can be restored",
-      "status": "pending",
-      "artifacts": ["tests/e2e/stage9-tombstones.spec.ts", "src/lib/local-db.ts", "src/lib/client-store.tsx"]
+      "title": "Offline tombstone survives local persistence, production hard reload, reconnect synchronization, and restore",
+      "status": "passed",
+      "artifacts": ["tests/e2e/stage9-tombstones.spec.ts", "tests/offline-production/stage9-tombstone.spec.ts", "src/lib/local-db.ts", "src/lib/client-store.tsx"]
     },
     {
       "id": "CAPTURE-001",
       "stage": "9.4",
       "title": "Inbox capture deletion remains synchronized deleted state rather than physical deletion",
-      "status": "pending",
+      "status": "passed",
       "artifacts": ["src/lib/client-store.tsx", "src/lib/sync-server.ts", "scripts/stage9-lifecycle-audit.mjs"]
     },
     {
@@ -111,7 +111,9 @@
       "id": "CLOSE-001",
       "stage": "9.7",
       "title": "Stage 7 and Stage 8 regression ladders remain green with Stage 9 lifecycle controls and browser tests",
-      "status": "pending",
+      "status": "passed",
+      "ciRun": 31798664757,
+      "verifiedCommit": "68b1543e5083e9064fe909101047fa5e57e7f563",
       "artifacts": [".github/workflows/ci.yml", "docs/stage9/STAGE9_VERIFICATION.md"]
     },
     {

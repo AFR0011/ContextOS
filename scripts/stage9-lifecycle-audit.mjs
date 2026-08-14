@@ -41,6 +41,14 @@ check(
   logoutDialog.includes("HttpOnly server session cannot be invalidated") && logoutDialog.includes("!sync.online"),
   "Offline browser code cannot truthfully claim to revoke the server-side HttpOnly session."
 );
+const logoutDiscardIndex = logoutDialog.indexOf('if (action === "discard")');
+const logoutRemoveIndex = logoutDialog.indexOf('if (action === "remove")');
+const logoutDestroyIndex = logoutDialog.indexOf("await destroyServerSession()");
+check(
+  "destructive logout cleans local state before revoking session",
+  logoutDiscardIndex >= 0 && logoutRemoveIndex >= 0 && logoutDestroyIndex > logoutDiscardIndex && logoutDestroyIndex > logoutRemoveIndex,
+  "Discard/remove-from-device paths must fail before server logout if user-scoped local cleanup cannot be completed."
+);
 check(
   "multiple local identities require explicit selection",
   workspaceGate.includes('data-testid="local-account-chooser"') &&

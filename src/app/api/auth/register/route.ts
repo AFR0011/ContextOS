@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createSession, hashPassword, publicUser } from "@/lib/auth";
 import { createStarterWorkspace } from "@/lib/starter";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
+import { logOperationalError } from "@/lib/operational-log";
 import { isPublicRegistrationEnabled } from "@/lib/registration";
 import { authRateLimitResponse, checkAuthRateLimit, recordAuthRateLimitAttempt } from "@/lib/rate-limit";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
     if (isDatabaseUnavailableError(error)) {
       return databaseUnavailableResponse();
     }
-    console.error("Registration failed", error);
+    logOperationalError("registration_unexpected_error", error);
     return NextResponse.json(
       { error: "Registration server error. Check the deployment database connection and migrations." },
       { status: 500 }

@@ -54,6 +54,33 @@ jobs:
       - name: Validate Stage 7 evidence mapping
         run: npm run audit:stage7:evidence
 
+      - name: Run Stage 8 deployment preflight
+        env:
+          NEXT_PUBLIC_APP_URL: https://contextos-preview.example
+          ALLOW_PUBLIC_REGISTRATION: "false"
+          ALLOW_DEMO_RESET: "false"
+          CONTEXTOS_SSO_SECRET: ""
+          SOCIALOS_APP_URL: https://socialos-preview.example
+        run: npm run audit:stage8:preflight
+
+      - name: Test Stage 8 deployment preflight rejection cases
+        run: npm run audit:stage8:preflight:test
+
+      - name: Run Stage 8 operational log audit
+        run: npm run audit:stage8:ops
+
+      - name: Run Stage 9 lifecycle audit
+        run: npm run audit:stage9:lifecycle
+
+      - name: Validate Stage 9 evidence registry
+        run: npm run audit:stage9:evidence
+
+      - name: Validate Stage 10 acceptance registry
+        run: npm run audit:stage10:acceptance
+
+      - name: Audit Stage 10 public claims
+        run: npm run audit:stage10:claims
+
       - name: Validate Prisma schema
         run: npx prisma validate
 
@@ -75,8 +102,11 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run production offline and Stage 7 matrix
+      - name: Run production offline and Stage 10 matrix
         run: npx playwright test --config=playwright.production.config.ts --workers=1
+
+      - name: Run Stage 9 lifecycle browser matrix
+        run: npx playwright test tests/e2e/stage9-lifecycle.spec.ts tests/e2e/stage9-tombstones.spec.ts tests/e2e/workspace-gate.spec.ts --workers=1 --reporter=github
 
       - name: Run Playwright e2e
         run: npm run test:e2e -- --workers=1

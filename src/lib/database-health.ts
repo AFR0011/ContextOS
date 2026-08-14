@@ -20,6 +20,13 @@ export async function checkDatabaseAvailability() {
   }
 }
 
+export async function getNeonDatabaseBranchId() {
+  const rows = await prisma.$queryRaw<Array<{ branchId: string | null }>>`
+    SELECT current_setting('neon.branch_id', true) AS "branchId"
+  `;
+  return rows[0]?.branchId ?? null;
+}
+
 export function databaseUnavailableResponse() {
   return NextResponse.json(
     {

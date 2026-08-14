@@ -1,6 +1,7 @@
 # ContextOS Run Protocol
 
 ## Local Setup
+
 1. Copy `.env.example` to `.env` if `.env` does not exist.
 2. Start PostgreSQL:
    ```bash
@@ -15,7 +16,7 @@
    npx prisma generate
    npm run db:migrate
    ```
-5. Seed the demo account:
+5. Seed the disposable demo account:
    ```bash
    npm run db:seed
    ```
@@ -25,158 +26,193 @@
    ```
 
 ## Demo Login
+
 - Email: `demo@contextos.local`
 - Password: `contextos-demo-v011`
 
-## Verification Ladder
-Run verification commands sequentially. In this Next.js app, `npm run build` can rewrite generated `.next` route type files while `npm run typecheck` is reading them, causing false transient typecheck failures if they run in parallel. Playwright runs that auto-start a server should also remain sequential unless deliberately pointed at one shared server.
+The starter workspace is neutral test/demo data. Do not point `db:seed` at a database containing user data that must be preserved.
 
-The Stage 7 verification ladder is:
+## Verification Ladder
+
+Run verification commands sequentially. `npm run build` can rewrite generated `.next` route types while `npm run typecheck` is reading them, and Playwright suites start their own runtime boundaries. Parallelizing these steps creates impressive-looking failures with very little informational value.
+
+The accepted Stage 10 ladder is:
 
 1. Dependency advisory gate:
    ```bash
    npm audit --audit-level=low
    ```
-2. Repository/security audit controls:
+2. Stage 7 repository/security controls and evidence mapping:
    ```bash
    npm run audit:stage7
+   npm run audit:stage7:evidence
    ```
-3. Prisma schema/client verification:
+3. Stage 8 deployment and operational controls:
+   ```bash
+   npm run audit:stage8:preflight
+   npm run audit:stage8:preflight:test
+   npm run audit:stage8:ops
+   ```
+   The deployment preflight expects production-like safe values, including HTTPS canonical origin and closed registration/reset controls.
+4. Stage 9 lifecycle/destructive-data controls:
+   ```bash
+   npm run audit:stage9:lifecycle
+   npm run audit:stage9:evidence
+   ```
+5. Stage 10 acceptance-registry integrity and public-claims audit:
+   ```bash
+   npm run audit:stage10:acceptance
+   npm run audit:stage10:claims
+   ```
+6. Prisma schema/client verification and migration application:
    ```bash
    npx prisma validate
    npx prisma generate
-   ```
-4. Database migration and seed:
-   ```bash
-   npm run db:migrate
+   npm run db:deploy
    npm run db:seed
    ```
-   In CI and production-style environments, use `npm run db:deploy` rather than `db:migrate`.
-5. Typecheck:
+   Use `db:migrate` only for local migration development.
+7. Typecheck and optimized build:
    ```bash
    npm run typecheck
-   ```
-6. Production build:
-   ```bash
    npm run build
    ```
-7. Production/offline/security browser matrix:
+8. Production/offline/security/final-acceptance browser matrix:
    ```bash
    npx playwright test --config=playwright.production.config.ts --workers=1
    ```
-   This suite starts the optimized application with `next start`. It owns cold-offline-reopen, hard-refresh, cached-shell, workspace-gate, and Stage 7 production-security assertions. Do not substitute the Next.js HMR server for this boundary.
-8. Development-server regression suite:
+9. Development-server regression suite:
    ```bash
    npm run test:e2e -- --workers=1
    ```
+10. Deliberate database-outage smoke, as implemented in `.github/workflows/ci.yml`.
 
-The committed GitHub Actions workflow executes the same required gates against disposable PostgreSQL.
+The committed GitHub Actions workflow runs this ladder against disposable PostgreSQL 16. Stage 10 final acceptance is closed against verified candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, which passed every gate in the accumulated ladder.
 
-## Stage 7 Audit Controls
+## Runtime Ownership
+
+Offline service-worker behavior belongs to the optimized production matrix. Development/HMR chunks are not deployment artifacts and must not be used as evidence for cold offline hard refresh.
+
+The production matrix owns:
+
+- previously authenticated cold offline reopen;
+- core workspace route cold open and hard refresh;
+- dynamic project route reconstruction;
+- offline browser back/forward navigation;
+- a functional local Search query returning cached workspace data;
+- verified complete application-shell readiness;
+- durable offline workspace mutations and queued outbox state across hard reload;
+- production offline tombstone hard reload and Archive/Trash reconstruction;
+- production response-security and request-origin boundaries; and
+- proof that `/api/*` requests remain network-only and absent from shell caches.
+
+The development suite owns broader interactive behavior, local atomic persistence, synchronization, lifecycle/account deletion, stale-state handling, user isolation, accessibility, compatibility, and fixture regression checks that do not require the installed production service worker.
+
+## Stage 7 Assurance Controls
 
 The human-readable scope is `docs/stage7-audit-plan.md`; the machine-readable registry is `audits/stage7-controls.json`.
 
-`npm run audit:stage7` currently checks repository hygiene, tracked environment/generated files, session/security implementation invariants, authentication input bounds, browser mutation-origin guards, API no-store headers, synchronization request integrity, local credential isolation, production CSP branching, service-worker cache replacement rules, user-scoped Prisma models, mutation-ledger uniqueness, documentation boundary language, and the CI verification ladder.
-
-Runtime controls live in the Playwright suites. The production matrix additionally verifies production headers, secure session-cookie behavior, cross-origin mutation rejection, unauthenticated workspace API closure, sync mutation ID consistency, timestamp validation, UTF-8 byte accounting, offline shell completeness, offline cold reopen/hard refresh, IndexedDB mutation durability, and API exclusion from the shell cache.
+`npm run audit:stage7` checks repository hygiene, tracked environment/generated files, session/security implementation invariants, authentication input bounds, browser mutation-origin guards, API no-store headers, synchronization request integrity, local credential isolation, production CSP branching, service-worker replacement rules, user-scoped Prisma models, mutation-ledger uniqueness, documentation boundaries, and CI coverage.
 
 Stage 7 is an internal engineering assurance layer, not a penetration test or compliance certification.
 
 ## Core Manual Product Checks
 
-Automated tests are the acceptance evidence; manual checks are useful for browser/device behavior that benefits from human inspection:
+Automated tests are the acceptance evidence; manual checks remain useful for human-visible browser/device behavior:
 
-- Confirm `GET /api/health` returns `200`, `Cache-Control: no-store`, `database: "ok"`, and the current package version while PostgreSQL is available.
-- Log in with the demo account and confirm Dashboard renders as a command page with the page editor above pinned Tasks and Dates blocks.
-- Confirm desktop primary navigation shows Dashboard, Inbox, Search, and active project links; confirm mobile bottom navigation shows Dashboard, Inbox, Projects, and Search.
-- Confirm Today and This Week redirect to Dashboard and `/deadlines` redirects to `/dates`.
-- Add `/task` and `/date` commands from the Dashboard page editor and confirm they create real structured records rather than Inbox captures.
-- Add a Markdown checkbox in the Dashboard page editor and confirm it remains scratchpad content rather than creating a task.
-- Convert an Inbox capture to a task and verify archive/delete triage behavior.
-- Add timed and untimed tasks, including same-time tasks, and confirm no fabricated empty calendar slots appear.
-- Add an important Date for today and confirm it appears in Dates as a Date row, not as a task checkbox.
-- Cross a Today task, reload, and confirm it remains visible and can be reopened without being reordered merely because completion changed.
-- Confirm long task titles wrap on mobile instead of truncating.
-- Open a project and confirm command-page notes, Tasks, Dates, Recovery fields, Subcontexts, and child rollups remain coherent.
-- Open an Area by URL and confirm projects/subcontexts appear inside it; open Resources and confirm standalone notes remain reachable.
-- Search for a project task and a standalone Resource and confirm each result opens a local surface where the record is visible.
+- Confirm `GET /api/health` reports application/database availability with `Cache-Control: no-store`.
+- Log in with the demo account and confirm Dashboard renders its command page, Tasks, and Dates.
+- Confirm desktop/mobile primary navigation remains usable.
+- Confirm `/today` and `/this-week` resolve to Dashboard and `/deadlines` resolves to `/dates`.
+- Add `/task` and `/date` commands from the Dashboard editor and confirm real structured records are created.
+- Convert an Inbox capture and verify archive/delete triage behavior.
+- Add/edit Tasks and Dates and confirm reload persistence.
+- Open a project and verify Recovery, Tasks, Dates, and Subcontexts remain coherent.
+- Search for a Project, Task, and standalone Resource and confirm results route to local surfaces.
 - Toggle dark mode and reload to confirm persistence.
-- On a 390px mobile viewport, confirm touched task/editor controls remain reachable, slash commands expose listbox/selected state, and block actions expose menu semantics.
+- Check a narrow mobile viewport for reachable task/editor controls and menu semantics.
 
 ## Offline Verification
 
-Full offline reload behavior belongs to the production matrix, because the service-worker application shell and optimized chunks are the actual deployment boundary. Development/HMR chunks are not production offline artifacts, despite browsers occasionally doing their best to make this distinction maximally annoying.
+The local-first contract is `docs/LOCAL_FIRST_CONTRACT.md`. After prior successful authentication and verified local preparation, the production matrix proves:
 
-The production matrix must prove:
+- the workspace cold-reopens offline;
+- core routes and dynamic project URLs cold-open/hard-refresh offline;
+- browser back/forward remains usable offline;
+- local Search returns results from cached workspace state;
+- `Offline ready` corresponds to a complete verified shell;
+- supported offline mutation state and its queued mutation survive hard reload;
+- recoverable tombstone state survives production hard reload;
+- reconnect applies pending supported changes without silently discarding them;
+- API requests fail as network/API requests rather than receiving cached HTML; and
+- no API request is present in the shell caches.
 
-- a previously authenticated workspace cold-reopens offline without route warming;
-- core workspace routes and dynamic project URLs cold-open and hard-refresh offline;
-- browser local routing/back-forward remains usable offline;
-- `Offline ready` corresponds to a verified complete shell manifest;
-- an offline scratchpad edit and its queued mutation survive hard reload;
-- API requests fail as network/API requests rather than receiving cached HTML;
-- no `/api/*` request is stored in shell caches.
+A first-time browser with no verified local workspace remains blocked. When several verified local identities are eligible and remote identity cannot be determined, the user must choose explicitly; ContextOS does not guess.
 
-A first-time browser or ambiguous multi-user local browser must remain blocked according to `docs/LOCAL_FIRST_CONTRACT.md` rather than being admitted into a guessed workspace.
+## Authentication and Request Boundary
 
-## Authentication and Request-Boundary Checks
+Production authentication requires a fresh configured `AUTH_SECRET` of at least 32 characters. Session-token database hashes are keyed by this secret; rotating it intentionally invalidates existing sessions.
 
-Production authentication requires a configured `AUTH_SECRET` of at least 32 characters. Use a fresh high-entropy secret, not the example placeholder. Session-token database hashes are keyed by this secret; rotating it intentionally invalidates existing sessions.
+Browser-originated state-changing requests use the exact-origin mutation guard. Controlled CLI/API calls may omit browser `Origin`/`Sec-Fetch-Site` metadata.
 
-Browser-originated state-changing requests to login, registration, logout, sync, and demo reset are exact-origin guarded. The automated production matrix covers cross-origin rejection. Controlled CLI/API calls may omit browser `Origin`/`Sec-Fetch-Site` metadata.
+Application login/registration throttling remains per-process/in-memory. Public deployment should combine it with trusted proxy IP handling and provider/WAF-level distributed abuse protection.
 
-Application-level login/registration throttling remains intentionally per-process/in-memory. It periodically prunes expired buckets, but public deployment still needs trusted proxy IP headers and provider/WAF-level distributed abuse protection.
+## Synchronization Integrity
 
-## Synchronization Integrity Checks
+Sync controls bound total request bytes, mutation count, per-mutation UTF-8 payload bytes, identifiers/keys, timestamps, and `entityId === payload.id` for upserts. Server application separately verifies record and relationship ownership.
 
-Sync request controls cover total request bytes, mutation count, per-mutation UTF-8 payload bytes, identifier and key lengths, timestamp parsing, and `entityId === payload.id` for upserts. Server application separately verifies record and relationship ownership.
+Accepted mutation IDs are scoped per user and replay idempotently. Stale updates are surfaced rather than silently replacing newer server state. Startup/bootstrap and explicit refresh also refuse to replace a newer local mutation with an older in-flight server snapshot.
 
-The historical `operation: "delete"` wire value is a compatibility boundary: the current server records it as an idempotent ledger no-op, while present product archive/trash/delete flows synchronize record-state upserts. Do not reinterpret this as hard-delete semantics before the later lifecycle stage owns deletion, logout, pending local changes, and device-data removal.
+The historical `operation: "delete"` wire value remains compatibility-only and records an idempotent ledger no-op. Stage 9 formalized ordinary user deletion as synchronized recoverable state instead: Projects, Tasks, standalone Notes, and Dates use `trashedAt`; Inbox captures use `status = "deleted"`. Irreversible per-record purge remains unsupported until an anti-resurrection generation/version protocol exists.
 
-## Deployment Hardening Checks
+## Lifecycle Verification
 
-- Confirm `.github/workflows/ci.yml` follows the Stage 7 verification ladder against disposable PostgreSQL.
-- Confirm `GET /api/health` returns `200` plus `Cache-Control: no-store` when PostgreSQL is reachable, and `503` with `code: "database_unavailable"` when PostgreSQL is unavailable.
-- Confirm repeated failed `/api/auth/login` requests eventually return `429` with `Retry-After`, and a successful login resets the failed-attempt bucket for that identity.
-- Confirm repeated `/api/auth/register` attempts eventually return `429` with `Retry-After` when public registration is enabled.
-- Confirm production responses carry CSP without `unsafe-eval`, frame protection, MIME-sniffing protection, referrer policy, permissions policy, opener/resource policy, and HSTS.
-- Confirm `X-Powered-By` is absent and `/api/*` responses are explicitly `no-store`.
-- Confirm `/sw.js` uses the current versioned shell, excludes API handling, and only removes old shell caches after replacement readiness verifies.
-- Before public production, run an installed-PWA upgrade smoke from an older cached worker.
-- Before public production, rehearse and record database backup/restore plus a compatible application/database rollback pair. This remains an unclosed deployment gate until actually performed.
+Stage 9 closed the lifecycle boundary and Stage 10 reran it as part of final acceptance:
+
+- ordinary online logout preserves isolated local workspace/outbox state by default;
+- pending changes expose explicit sync/retain/discard/remove-device choices;
+- discard removes affected cached workspace together with its outbox;
+- current-device removal is scoped to one verified user;
+- true logout is blocked offline because the HttpOnly server session cannot be revoked locally;
+- multiple eligible local identities require explicit offline selection; and
+- permanent account deletion is online, same-origin guarded, password re-verified, locally cleaned first, and then committed through the `User` cascade root.
+
+Other offline devices cannot be remotely erased after account deletion and irreversible per-record purge is not claimed.
+
+## Deployment and Recovery Evidence
+
+Stage 8 already recorded non-production engineering evidence for:
+
+- a real HTTPS Vercel preview against an isolated Neon branch;
+- reconnect synchronization on hosted infrastructure;
+- a same-origin application-shell upgrade from v3 to v4 while preserving local state;
+- PostgreSQL-native `pg_dump`/`pg_restore` into a fresh isolated database plus authenticated application bootstrap;
+- the exact Stage 7→8 application rollback pair, whose migration ledger was unchanged; and
+- minimal health/diagnostic behavior with sanitized operational logging.
+
+See `docs/stage8/STAGE8_VERIFICATION.md`. These results do **not** prove provider-native PITR, arbitrary migration reversibility, a production disaster-recovery SLA, or an external monitoring/on-call program.
+
+For an actual public production environment, still verify provider backups, production environment configuration, migration compatibility, rollback procedures for the exact release pair, WAF/abuse controls, and operational ownership appropriate to that deployment. Historical non-production rehearsal is evidence, not a permission slip to skip production operations.
 
 ## Database-Unavailable Smoke
 
-When checking graceful DB outage behavior, use a running development server with PostgreSQL stopped or unavailable.
+The CI outage smoke deliberately stops disposable PostgreSQL after the optimized build and verifies structured database-unavailable behavior.
 
-Expected behavior:
+Expected boundaries include:
 
-- `/login` renders a clear PostgreSQL-unavailable message and does not show an internal server error.
-- `POST /api/auth/login` returns `503` JSON with `code: "database_unavailable"`.
-- Protected DB-backed APIs such as `/api/bootstrap`, `/api/sync`, `/api/reset-demo`, and `/api/auth/me` return `503` JSON with `code: "database_unavailable"` when a session cookie forces DB lookup.
+- auth/database-backed requests return a structured `503` with `code: "database_unavailable"` where applicable;
+- raw Prisma/driver details are not exposed to the browser; and
+- the application returns to the normal DB-up ladder when PostgreSQL is restored/recreated in the next disposable run.
 
-After DB-down smoke, restart PostgreSQL and rerun the normal DB-up ladder.
+## Local Dev Cache Notes
 
-## v0.1.x Usage Trial
-Use [FRICTION_LOG.md](FRICTION_LOG.md) during a real-use trial when product-friction work resumes. This historical workflow is not a substitute for the Stage 7 audit gates.
-
-1. Start the app locally and log in with the demo account.
-2. Record the trial start time in `docs/FRICTION_LOG.md`.
-3. Use ContextOS as the only capture and execution surface for one real workday.
-4. Capture every open loop and process the Inbox at least twice.
-5. Use Dashboard for execution and update at least two project pages.
-6. Use at least one subcontext and one Resource note.
-7. Complete at least one daily startup or shutdown review.
-8. Fill the ranked friction list only after the trial window ends.
-
-## Local Dev Cache And Server Notes
-- `playwright.config.ts` defaults to port 3000 and can reuse an existing server. After substantial source/schema changes, confirm the port is serving current code or run tests on another free port with `PLAYWRIGHT_PORT=3001 npm run test:e2e -- --workers=1`.
-- After external `npm run db:seed` or `POST /api/reset-demo`, an already-open browser may keep stale IndexedDB workspace data. Use the shell sync indicator's Refresh action or Settings -> refresh from server when no pending offline mutations exist, or open a clean browser context for verification.
-- If PostgreSQL is unavailable, auth pages and workspace APIs should render/return database-unavailable states. Start PostgreSQL with `docker compose up -d` before DB-up verification.
+- `playwright.config.ts` defaults to port 3000 and can reuse an existing server. Confirm the port is serving current code after substantial changes.
+- After an external seed/reset, an already-open browser may retain stale IndexedDB data. Use the Refresh action when no pending mutations exist or use a clean browser context for verification.
+- Start PostgreSQL with `docker compose up -d` before DB-up verification.
 
 ## Notes
-- `.env` is ignored and may contain local-only values. `.env.example` is the only env file intended to be committed.
-- `npm run db:seed` resets the seeded demo workspace. Do not run it during normal production deploys.
-- Public registration is disabled by default in production unless `ALLOW_PUBLIC_REGISTRATION=true` is explicitly set.
-- `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is explicitly set.
-- Do not use `npm audit fix --force` blindly; review dependency changes and compatibility before applying them.
+
+- `.env` is ignored; `.env.example` is the only environment file intended to be committed.
+- `npm run db:seed` recreates the configured demo workspace. Do not run it as a normal production deploy step.
+- Public registration and demo reset are disabled by default in production unless deliberately enabled.
+- Review dependency updates deliberately; do not use `npm audit fix --force` as an assurance strategy.

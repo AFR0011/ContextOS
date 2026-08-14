@@ -4,6 +4,7 @@ import { getWorkspaceData } from "@/lib/data";
 import { createStarterWorkspace } from "@/lib/starter";
 import { prisma } from "@/lib/prisma";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
+import { logOperationalError } from "@/lib/operational-log";
 
 export async function GET() {
   try {
@@ -19,7 +20,7 @@ export async function GET() {
     if (isDatabaseUnavailableError(error)) {
       return databaseUnavailableResponse();
     }
-    console.error("Workspace bootstrap failed", error);
+    logOperationalError("bootstrap_unexpected_error", error);
     return NextResponse.json({ error: "Could not load workspace data." }, { status: 500 });
   }
 }

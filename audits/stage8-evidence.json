@@ -1,0 +1,176 @@
+{
+  "stage": 8,
+  "title": "Deployment and operational hardening evidence registry",
+  "baseline": {
+    "stage7Branch": "feat/local-first-completion-stage7",
+    "stage7ClosingCommit": "ef2cd38c325a80597b49a0c55b35ad5451530454",
+    "stage7ClosingCiRun": 31684900302,
+    "stage7ToMainPr": 5
+  },
+  "statusValues": ["pending", "in-progress", "passed", "blocked-external", "documented-boundary"],
+  "evidence": [
+    {
+      "id": "DEP-001",
+      "stage": "8.0",
+      "title": "Stage 7 baseline frozen and deployment inventory recorded",
+      "status": "passed",
+      "artifacts": ["docs/stage8/STAGE8_BASELINE.md"]
+    },
+    {
+      "id": "DEP-002",
+      "stage": "8.1",
+      "title": "Production-like deployment configuration preflight",
+      "status": "passed",
+      "ciRun": 31688233623,
+      "verifiedCommit": "7137130c6bd7846550d0865e04d28f31485e24d2",
+      "artifacts": ["scripts/deployment-preflight.mjs", "scripts/deployment-preflight-tests.mjs", ".github/workflows/ci.yml", "docs/DEPLOYMENT.md"]
+    },
+    {
+      "id": "DEP-003",
+      "stage": "8.1",
+      "title": "Build, migration, and seed responsibilities remain separated",
+      "status": "passed",
+      "ciRun": 31688233623,
+      "verifiedCommit": "7137130c6bd7846550d0865e04d28f31485e24d2",
+      "artifacts": ["vercel.json", "package.json", "scripts/deployment-preflight.mjs", "docs/DEPLOYMENT.md"]
+    },
+    {
+      "id": "PREVIEW-001",
+      "stage": "8.2",
+      "title": "Candidate commit deployed to HTTPS hosted preview with dedicated non-production database",
+      "status": "passed",
+      "verifiedCommit": "01486d4abede22717dff1c28db1ff54623057c1e",
+      "artifacts": ["docs/stage8/STAGE8_PREVIEW_TARGET.md", "docs/stage8/STAGE8_2_VERIFICATION.md"]
+    },
+    {
+      "id": "PREVIEW-002",
+      "stage": "8.2",
+      "title": "Hosted critical workflow smoke passes against exact preview deployment",
+      "status": "passed",
+      "ciRun": 31745028396,
+      "verifiedCommit": "01486d4abede22717dff1c28db1ff54623057c1e",
+      "artifacts": ["docs/stage8/STAGE8_2_VERIFICATION.md"]
+    },
+    {
+      "id": "PWA-001",
+      "stage": "8.3",
+      "title": "Installed/service-worker client upgrades without shell stranding or IndexedDB/outbox loss",
+      "status": "passed",
+      "ciRun": 31747167570,
+      "verifiedCommit": "9f28510aab7ce75b383163d7b42ac5a3546f0247",
+      "artifacts": ["public/sw.js", "tests/offline-production/offline-shell.spec.ts", "tests/e2e/contextos.spec.ts", "docs/stage8/STAGE8_3_VERIFICATION.md"]
+    },
+    {
+      "id": "DB-RESTORE-001",
+      "stage": "8.4",
+      "title": "Provider-neutral PostgreSQL backup restores into a fresh target",
+      "status": "passed",
+      "ciRun": 31787773777,
+      "verifiedCommit": "c84d6e7e3d9afded98454aea669824e32e2cf3e2",
+      "artifacts": ["scripts/stage8-db-backup-restore.sh", ".github/workflows/stage8-db-restore.yml", "docs/stage8/STAGE8_4_VERIFICATION.md"]
+    },
+    {
+      "id": "DB-RESTORE-002",
+      "stage": "8.4",
+      "title": "Restored database passes application-level integrity and authenticated bootstrap checks",
+      "status": "passed",
+      "ciRun": 31787773777,
+      "verifiedCommit": "c84d6e7e3d9afded98454aea669824e32e2cf3e2",
+      "artifacts": [".github/workflows/stage8-db-restore.yml", "docs/stage8/STAGE8_4_VERIFICATION.md"]
+    },
+    {
+      "id": "DB-NATIVE-001",
+      "stage": "8.4",
+      "title": "Provider-native backup/snapshot rehearsal",
+      "status": "blocked-external",
+      "requires": ["database provider", "explicit non-production target approval"]
+    },
+    {
+      "id": "ROLLBACK-001",
+      "stage": "8.5",
+      "title": "Stage 7 to Stage 8 migration path rehearsed against disposable infrastructure",
+      "status": "passed",
+      "ciRun": 31788424132,
+      "verifiedCommit": "9d7372e061cc836faa4c8263b2faecc1e29484dd",
+      "artifacts": ["scripts/stage8-release-smoke.sh", ".github/workflows/stage8-release-rehearsal.yml", "docs/stage8/STAGE8_5_VERIFICATION.md"]
+    },
+    {
+      "id": "ROLLBACK-002",
+      "stage": "8.5",
+      "title": "Application-only rollback compatibility is measured rather than assumed",
+      "status": "passed",
+      "ciRun": 31788424132,
+      "verifiedCommit": "9d7372e061cc836faa4c8263b2faecc1e29484dd",
+      "artifacts": ["scripts/stage8-release-smoke.sh", ".github/workflows/stage8-release-rehearsal.yml", "docs/stage8/STAGE8_5_VERIFICATION.md"]
+    },
+    {
+      "id": "ROLLBACK-003",
+      "stage": "8.5",
+      "title": "Backup/restore rollback path verified when application-only rollback is incompatible",
+      "status": "passed",
+      "ciRun": 31787773777,
+      "verifiedCommit": "c84d6e7e3d9afded98454aea669824e32e2cf3e2",
+      "note": "Provider-neutral backup/restore fallback was verified in Stage 8.4. It was not invoked by the Stage 8.5 release pair because application-only rollback proved compatible with the unchanged migration state.",
+      "artifacts": ["docs/stage8/STAGE8_4_VERIFICATION.md", "docs/stage8/STAGE8_5_VERIFICATION.md"]
+    },
+    {
+      "id": "OPS-001",
+      "stage": "8.6",
+      "title": "Health target remains minimal, public, no-store, and usable by monitoring",
+      "status": "passed",
+      "ciRun": 31789552012,
+      "verifiedCommit": "d4bbc860a27d5471d74868e39ebd0ef90c46e27d",
+      "deploymentId": "dpl_FVoSRukWkYbJYxRSSAn3VtLUuN5y",
+      "artifacts": ["src/app/api/health/route.ts", "scripts/stage8-operational-log-tests.ts", "docs/stage8/STAGE8_6_OPERATIONS.md", "docs/stage8/STAGE8_6_VERIFICATION.md"]
+    },
+    {
+      "id": "OPS-002",
+      "stage": "8.6",
+      "title": "Running preview can be correlated to a non-sensitive deployment/build identifier",
+      "status": "passed",
+      "verifiedCommit": "d4bbc860a27d5471d74868e39ebd0ef90c46e27d",
+      "deploymentId": "dpl_FVoSRukWkYbJYxRSSAn3VtLUuN5y",
+      "artifacts": ["docs/stage8/STAGE8_6_OPERATIONS.md", "docs/stage8/STAGE8_6_VERIFICATION.md"]
+    },
+    {
+      "id": "OPS-003",
+      "stage": "8.6",
+      "title": "Failure-evidence runbook avoids secrets and raw database diagnostics",
+      "status": "passed",
+      "ciRun": 31789552012,
+      "verifiedCommit": "d4bbc860a27d5471d74868e39ebd0ef90c46e27d",
+      "artifacts": ["src/lib/safe-error-metadata.ts", "src/lib/operational-log.ts", "scripts/stage8-operational-log-tests.ts", ".github/workflows/ci.yml", "docs/stage8/STAGE8_6_OPERATIONS.md", "docs/stage8/STAGE8_6_VERIFICATION.md"]
+    },
+    {
+      "id": "CLOSE-001",
+      "stage": "8.7",
+      "title": "Stage 7 verification ladder remains green on Stage 8 candidate",
+      "status": "passed",
+      "ciRun": 31789959516,
+      "verifiedCommit": "b01e65b08bcb09b597b2f7a778eaa966d77cfac6",
+      "artifacts": ["docs/stage8/STAGE8_VERIFICATION.md"]
+    },
+    {
+      "id": "CLOSE-002",
+      "stage": "8.7",
+      "title": "Exact preview, CI, PWA upgrade, restore, and rollback evidence recorded",
+      "status": "passed",
+      "verifiedCommit": "b76db7c4ff590aaaf24ef67d1344d4bf2bd40f68",
+      "artifacts": ["docs/stage8/STAGE8_VERIFICATION.md"]
+    },
+    {
+      "id": "BOUNDARY-009",
+      "stage": 8,
+      "title": "Lifecycle/destructive local-data semantics remain reserved for Stage 9",
+      "status": "documented-boundary",
+      "artifacts": ["docs/LOCAL_FIRST_CONTRACT.md", "docs/stage8-implementation-plan.md"]
+    },
+    {
+      "id": "BOUNDARY-010",
+      "stage": 8,
+      "title": "Final local-first acceptance remains reserved for Stage 10",
+      "status": "documented-boundary",
+      "artifacts": ["docs/LOCAL_FIRST_CONTRACT.md", "docs/stage8-implementation-plan.md"]
+    }
+  ]
+}

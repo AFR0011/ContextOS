@@ -20,7 +20,6 @@ async function warmOfflineShell(page: Page) {
   await expect(page.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 }
 
-
 async function clearLocalIdentityAndWorkspace(page: Page) {
   await page.evaluate(async (databaseName) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -44,7 +43,7 @@ async function clearLocalIdentityAndWorkspace(page: Page) {
 }
 
 async function seedSecondLocalWorkspace(page: Page) {
-  await page.evaluate(async (databaseName) => {
+  return page.evaluate(async (databaseName) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(databaseName, 2);
       request.onsuccess = () => resolve(request.result);
@@ -52,6 +51,7 @@ async function seedSecondLocalWorkspace(page: Page) {
     });
 
     const id = `second-local-${Date.now()}`;
+    const email = `${id}@example.com`;
     const timestamp = new Date().toISOString();
     const workspace = {
       domains: [],
@@ -68,7 +68,7 @@ async function seedSecondLocalWorkspace(page: Page) {
 
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(["users", "workspaces", "outboxes"], "readwrite");
-      tx.objectStore("users").put({ id, email: `${id}@example.com`, verifiedAt: timestamp });
+      tx.objectStore("users").put({ id, email, verifiedAt: timestamp });
       tx.objectStore("workspaces").put(workspace, id);
       tx.objectStore("outboxes").put([], id);
       tx.oncomplete = () => resolve();
@@ -76,6 +76,7 @@ async function seedSecondLocalWorkspace(page: Page) {
       tx.onabort = () => reject(tx.error ?? new Error("Second local workspace seed aborted."));
     });
     db.close();
+    return { id, email };
   }, DB_NAME);
 }
 
@@ -106,8 +107,7 @@ test("offline startup without a previously authenticated local workspace is bloc
   await warmOfflineShell(page);
 
   // This intentionally simulates a browser that has the neutral application shell cached
-  // but has no verified local identity/workspace. It is not exercising logout semantics,
-  // which remain deferred to Stage 9.
+  // but has no verified local identity/workspace.
   await clearRemoteSession(context);
   await clearLocalIdentityAndWorkspace(page);
   await context.setOffline(true);
@@ -123,13 +123,32 @@ test("offline startup without a previously authenticated local workspace is bloc
 test("offline startup refuses to guess when multiple local identities have workspaces", async ({ page, context }) => {
   await login(page);
   await warmOfflineShell(page);
-  await seedSecondLocalWorkspace(page);
+  const second = await seedSecondLocalWorkspace(page);
 
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });
 
   const blocked = page.getByTestId("workspace-gate-blocked");
   await expect(blocked).toBeVisible();
-  await expect(blocked).toContainText("Connect to verify your workspace");
+  await expect(blocked).toContainText("Choose a verified local workspace");
   await expect(blocked).toContainText("will not guess which identity to open");
+  await expect(page.getByTestId("local-account-chooser")).toBeVisible();
+  await expect(page.getByRole("button", { name: second.email })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toHaveCount(0);
+});
+
+test("multiple verified local workspaces require and honor explicit offline account selection", async ({ page, context }) => {
+  await login(page);
+  await warmOfflineShell(page);
+  const second = await seedSecondLocalWorkspace(page);
+
+  await context.setOffline(true);
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  await expect(page.getByTestId("local-account-chooser")).toBeVisible();
+  await page.getByRole("button", { name: second.email }).click();
+
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByText(second.email, { exact: true })).toBeVisible();
+  await expect(page.getByTestId("global-sync-indicator").first()).toContainText("Offline");
 });

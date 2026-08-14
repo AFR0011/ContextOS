@@ -5,6 +5,7 @@ import { getWorkspaceData } from "@/lib/data";
 import { applySyncMutations, SyncOwnershipError, SyncPayloadError } from "@/lib/sync-server";
 import type { QueuedMutation } from "@/lib/types";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
+import { logOperationalError } from "@/lib/operational-log";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
 
 const MAX_SYNC_BYTES = 256_000;
@@ -106,7 +107,7 @@ export async function POST(request: Request) {
     if (isDatabaseUnavailableError(error)) {
       return databaseUnavailableResponse();
     }
-    console.error("Workspace sync failed", error);
+    logOperationalError("sync_unexpected_error", error);
     return NextResponse.json({ error: "Could not sync workspace data." }, { status: 500 });
   }
 }

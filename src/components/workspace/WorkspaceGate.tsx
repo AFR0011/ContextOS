@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { AlertTriangle, LoaderCircle, WifiOff } from "lucide-react";
+import { AlertTriangle, LoaderCircle, UserRound, WifiOff } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { WorkspaceProvider } from "@/lib/client-store";
 import {
@@ -13,10 +13,11 @@ import {
 } from "@/lib/local-db";
 import { LocalRouterProvider } from "@/lib/local-router";
 import LocalWorkspaceRouter from "./LocalWorkspaceRouter";
+import ReconnectSyncWatchdog from "./ReconnectSyncWatchdog";
 import WorkspaceShell from "./WorkspaceShell";
 
 type ReadyGateState = { status: "ready"; user: LocalVerifiedUser; source: "server" | "local" };
-type BlockedGateState = { status: "blocked"; title: string; message: string };
+type BlockedGateState = { status: "blocked"; title: string; message: string; candidates?: StoredLocalUser[] };
 type GateState = { status: "checking" } | ReadyGateState | BlockedGateState;
 type LocalRecoveryState = ReadyGateState | BlockedGateState;
 
@@ -49,8 +50,9 @@ async function recoverLocalIdentity(): Promise<LocalRecoveryState> {
 
   return {
     status: "blocked",
-    title: "Connect to verify your workspace",
-    message: "More than one previously authenticated workspace exists on this device. ContextOS will not guess which identity to open while offline; connect so the active session can be verified."
+    title: "Choose a verified local workspace",
+    message: "More than one previously authenticated workspace exists on this device. ContextOS will not guess which identity to open. Choose one explicitly, or reconnect so the active server session can be verified.",
+    candidates
   };
 }
 
@@ -110,8 +112,8 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
             : "Online session verification failed.";
 
         setState({
+          ...local,
           status: "blocked",
-          title: local.title,
           message: `${detail} ${local.message}`
         });
       }
@@ -136,6 +138,7 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
   if (state.status === "ready") {
     return (
       <WorkspaceProvider user={state.user}>
+        <ReconnectSyncWatchdog />
         <LocalRouterProvider initialPathname={pathname}>
           <WorkspaceShell user={state.user}>
             <LocalWorkspaceRouter fallback={children} />
@@ -174,6 +177,24 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
             <p className="mt-2 text-sm leading-6 text-[var(--cos-text-muted)]">{state.message}</p>
           </div>
         </div>
+
+        {state.candidates?.length ? (
+          <div data-testid="local-account-chooser" className="space-y-2">
+            {state.candidates.map((candidate) => (
+              <button
+                key={candidate.id}
+                type="button"
+                data-testid={`local-account-${candidate.id}`}
+                onClick={() => setState({ status: "ready", user: candidate, source: "local" })}
+                className="cos-btn cos-btn-secondary min-h-11 w-full justify-start px-4 py-3 text-sm"
+              >
+                <UserRound className="h-4 w-4" />
+                <span className="min-w-0 truncate">{candidate.email}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         <button
           type="button"
           onClick={() => setAttempt((value) => value + 1)}

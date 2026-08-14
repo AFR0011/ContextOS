@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This document defines the product boundary for completing ContextOS as a single-user local-first workspace at any one active identity, with server-backed synchronization and user-scoped local persistence.
+This document defines the accepted product boundary for ContextOS as a single-user local-first workspace at any one active identity, with server-backed synchronization and user-scoped local persistence.
 
 The contract is intentionally narrower than "all functionality works without a server." It defines which product surfaces and behaviors remain usable after a user has successfully authenticated on a device at least once, which operations require connectivity, and how logout, local-device data, account deletion, and recoverable record deletion behave.
 
-The core contract originated in Stage 1 of the local-first completion work. Stage 9 makes the lifecycle and destructive-data semantics explicit before Stage 10 final acceptance.
+The core contract originated in Stage 1 of the local-first completion work. Stage 9 made the lifecycle and destructive-data semantics explicit. Stage 10 final acceptance is complete for this documented boundary against verified candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`.
 
 ## Local-First Operating Model
 
@@ -36,7 +36,7 @@ Account deletion is intentionally not a core offline surface because it changes 
 
 ## Required Offline Behaviors
 
-For the core offline surfaces above, the completed implementation must guarantee:
+For the core offline surfaces above, the accepted implementation guarantees within the tested boundary:
 
 1. A previously authenticated user can open ContextOS with no network connection.
 2. Core surfaces can be reached through normal application navigation while offline.
@@ -134,4 +134,6 @@ The local-first completion project does not require:
 
 ## Verification Rule
 
-Implementation claims must follow automated evidence. Stage 9 adds lifecycle-specific static guards and browser tests for logout retention/removal, multi-user selection, account deletion, tombstone synchronization, stale-resurrection rejection, and offline tombstone recovery. The broader acceptance matrix defined for Stage 10 remains the final evidence required before strengthening the public local-first claim.
+Implementation claims follow automated evidence. Stage 9 provides lifecycle-specific static guards and browser tests for logout retention/removal, multi-user selection, account deletion, tombstone synchronization, stale-resurrection rejection, and offline tombstone recovery. Stage 10 adds production-runtime browser-history and functional offline Search acceptance, aggregates the inherited security/operations/recovery evidence, and audits the public claims against the same boundaries.
+
+Stage 10 final acceptance is complete at verified candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, GitHub Actions run `31800346837`. That run passed dependency/security/evidence controls, Prisma/migrations, typecheck/build, optimized production offline acceptance, lifecycle/tombstone browser tests, the full development E2E suite, and deliberate database-outage smoke. The acceptance does not broaden the explicit non-goals or deployment/security boundaries above.

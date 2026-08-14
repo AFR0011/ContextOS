@@ -75,6 +75,9 @@ jobs:
       - name: Validate Stage 9 evidence registry
         run: npm run audit:stage9:evidence
 
+      - name: Validate Stage 10 acceptance registry
+        run: npm run audit:stage10:acceptance
+
       - name: Validate Prisma schema
         run: npx prisma validate
 
@@ -96,7 +99,7 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run production offline and Stage 7 matrix
+      - name: Run production offline and Stage 10 matrix
         run: npx playwright test --config=playwright.production.config.ts --workers=1
 
       - name: Run Stage 9 lifecycle browser matrix

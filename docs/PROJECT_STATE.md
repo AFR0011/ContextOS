@@ -6,7 +6,7 @@ ContextOS is a portfolio-stage, local-first workspace application. The current r
 
 Package version: `0.2.8`.
 
-The local-first completion program is complete through Stage 8 deployment/operational hardening. Stage 9 lifecycle and destructive-data semantics are under verification on `feat/local-first-completion-stage9`. Stage 10 remains the final comprehensive local-first acceptance stage.
+The local-first completion program is complete through **Stage 9 lifecycle and destructive-data semantics**. Stage 9 closed against GitHub Actions run `31798664757` on verified code/test commit `68b1543e5083e9064fe909101047fa5e57e7f563`. Stage 10 remains the final comprehensive local-first acceptance and public-claims stage.
 
 ## Architecture
 
@@ -43,11 +43,13 @@ Core workspace state is cached per verified user in IndexedDB. Supported create/
 
 The sync API validates ownership, bounds payloads, scopes mutation IDs per user, checks relationship ownership, and rejects stale updates instead of silently overwriting newer server state.
 
+Initial workspace interaction waits for the verified user's IndexedDB snapshot. Startup bootstrap and explicit server refresh capture a local mutation generation and refuse to replace newer local mutations with an older in-flight server snapshot.
+
 The application is deliberately not collaborative real-time editing. There is no CRDT layer or merge-conflict UI for simultaneous multi-user edits.
 
 ## Lifecycle And Deletion Model
 
-Stage 9 defines lifecycle behavior rather than leaving it implicit:
+Stage 9 defines and verifies lifecycle behavior rather than leaving it implicit:
 
 - normal online logout preserves that user's isolated local workspace by default;
 - a separate logout path removes only the current account's local identity/workspace/outbox from the browser;
@@ -59,6 +61,8 @@ Stage 9 defines lifecycle behavior rather than leaving it implicit:
 - Inbox capture deletion is synchronized as `status = "deleted"`;
 - the historical sync `delete` operation remains a compatibility ledger no-op and is not emitted by the current client for ordinary deletion;
 - irreversible per-record purge remains intentionally unavailable until old-offline-client resurrection can be prevented by an explicit version/generation protocol.
+
+The production offline browser matrix now includes a Date tombstone hard-reload rehearsal under the installed service-worker runtime. Development coverage separately verifies durable IndexedDB tombstone state, reconnect synchronization, restore, stale-resurrection rejection, logout/device handling, account deletion, and multi-user isolation.
 
 ## Deployment And Recovery State
 
@@ -96,14 +100,17 @@ The committed GitHub Actions workflow provisions PostgreSQL 16 and currently run
 1. `npm ci` and dependency audit;
 2. Stage 7 repository/security/evidence guards;
 3. Stage 8 deployment-preflight and operational-log guards;
-4. Stage 9 lifecycle guardrails;
+4. Stage 9 lifecycle and evidence guardrails;
 5. Prisma validation/generation and committed migration deployment;
 6. disposable demo seed;
 7. TypeScript checks;
 8. production build;
-9. optimized production/offline Playwright matrix;
-10. full database-backed development E2E suite, including Stage 9 lifecycle/tombstone coverage;
-11. deliberate database-outage smoke.
+9. optimized production/offline Playwright matrix, including Stage 9 tombstone hard-reload evidence;
+10. dedicated Stage 9 lifecycle browser matrix;
+11. full database-backed development E2E suite;
+12. deliberate database-outage smoke.
+
+Stage 9's verified closing run is `31798664757` on commit `68b1543e5083e9064fe909101047fa5e57e7f563` and passed every gate above.
 
 For local verification, see `docs/RUN_PROTOCOL.md`. Stage-specific evidence is recorded under `docs/stage8/`, `docs/stage9/`, and `audits/`.
 
@@ -120,7 +127,7 @@ For local verification, see `docs/RUN_PROTOCOL.md`. Stage-specific evidence is r
 - Other offline devices cannot be remotely scrubbed after account deletion.
 - Irreversible per-record purge is not exposed without a proven anti-resurrection design.
 - Provider-native backup/PITR rehearsal and external penetration testing are not claimed.
-- Stage 10 final local-first acceptance remains open.
+- Stage 10 final local-first acceptance and final public-claims audit remain open.
 
 ## Public Repository Documentation
 

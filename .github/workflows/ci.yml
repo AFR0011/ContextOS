@@ -99,6 +99,9 @@ jobs:
       - name: Run production offline and Stage 7 matrix
         run: npx playwright test --config=playwright.production.config.ts --workers=1
 
+      - name: Run Stage 9 lifecycle browser matrix
+        run: npx playwright test tests/e2e/stage9-lifecycle.spec.ts tests/e2e/stage9-tombstones.spec.ts tests/e2e/workspace-gate.spec.ts --workers=1 --reporter=github
+
       - name: Run Playwright e2e
         run: npm run test:e2e -- --workers=1
 

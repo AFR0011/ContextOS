@@ -55,8 +55,10 @@
       "id": "PWA-001",
       "stage": "8.3",
       "title": "Installed/service-worker client upgrades without shell stranding or IndexedDB/outbox loss",
-      "status": "pending",
-      "artifacts": ["tests/offline-production/**", "docs/stage8/**"]
+      "status": "passed",
+      "ciRun": 31747167570,
+      "verifiedCommit": "9f28510aab7ce75b383163d7b42ac5a3546f0247",
+      "artifacts": ["public/sw.js", "tests/offline-production/offline-shell.spec.ts", "tests/e2e/contextos.spec.ts", "docs/stage8/STAGE8_3_VERIFICATION.md"]
     },
     {
       "id": "DB-RESTORE-001",

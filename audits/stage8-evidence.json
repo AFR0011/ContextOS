@@ -89,19 +89,29 @@
       "id": "ROLLBACK-001",
       "stage": "8.5",
       "title": "Stage 7 to Stage 8 migration path rehearsed against disposable infrastructure",
-      "status": "pending"
+      "status": "passed",
+      "ciRun": 31788424132,
+      "verifiedCommit": "9d7372e061cc836faa4c8263b2faecc1e29484dd",
+      "artifacts": ["scripts/stage8-release-smoke.sh", ".github/workflows/stage8-release-rehearsal.yml", "docs/stage8/STAGE8_5_VERIFICATION.md"]
     },
     {
       "id": "ROLLBACK-002",
       "stage": "8.5",
       "title": "Application-only rollback compatibility is measured rather than assumed",
-      "status": "pending"
+      "status": "passed",
+      "ciRun": 31788424132,
+      "verifiedCommit": "9d7372e061cc836faa4c8263b2faecc1e29484dd",
+      "artifacts": ["scripts/stage8-release-smoke.sh", ".github/workflows/stage8-release-rehearsal.yml", "docs/stage8/STAGE8_5_VERIFICATION.md"]
     },
     {
       "id": "ROLLBACK-003",
       "stage": "8.5",
       "title": "Backup/restore rollback path verified when application-only rollback is incompatible",
-      "status": "pending"
+      "status": "passed",
+      "ciRun": 31787773777,
+      "verifiedCommit": "c84d6e7e3d9afded98454aea669824e32e2cf3e2",
+      "note": "Provider-neutral backup/restore fallback was verified in Stage 8.4. It was not invoked by the Stage 8.5 release pair because application-only rollback proved compatible with the unchanged migration state.",
+      "artifacts": ["docs/stage8/STAGE8_4_VERIFICATION.md", "docs/stage8/STAGE8_5_VERIFICATION.md"]
     },
     {
       "id": "OPS-001",

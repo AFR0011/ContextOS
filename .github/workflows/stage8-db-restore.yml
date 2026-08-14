@@ -2,6 +2,11 @@ name: Stage 8 database restore rehearsal
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feat/local-first-completion-stage8
+    paths:
+      - audits/stage8-db-restore.trigger
 
 permissions:
   contents: read

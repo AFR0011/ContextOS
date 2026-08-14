@@ -7,54 +7,114 @@ Stage 9 closure-head CI: `31799167361`
 
 ## Status
 
-**Open.** Stage 10 is the final evidence aggregation and public-claims stage. The repository must not describe Stage 10 or final local-first acceptance as closed while `audits/stage10-acceptance.json` contains pending controls.
+**Closed.** Stage 10 final local-first acceptance and public-claims verification are complete for the documented portfolio-stage product boundary.
 
-No new product feature is required by default. Stage 10 may add deterministic acceptance coverage or narrow fixes only when the accumulated contract fails under the correct runtime.
+Verified Stage 10 acceptance candidate: `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`  
+GitHub Actions run: `31800346837`  
+Conclusion: `success`
 
-## Baseline already inherited
+The verified candidate passed the complete accumulated repository ladder: dependency audit, Stage 7 security/repository/evidence controls, Stage 8 deployment/operational controls, Stage 9 lifecycle/evidence controls, Stage 10 registry and claims audits, Prisma validation/migration deployment, TypeScript, optimized build, production offline acceptance, lifecycle/tombstone browser coverage, the full development E2E suite, and deliberate database-outage smoke.
 
-Stage 10 starts from a fully green Stage 9 closure head. The inherited evidence includes:
+`audits/stage10-acceptance.json` records current Stage 10 behavioral/security/operational/public-claims controls as passed, exact Stage 8 PWA/recovery/rollback evidence as inherited-passed, and unsupported purge/disaster-recovery capabilities as documented boundaries rather than successes.
 
-- Stage 7 repository/security/ownership/origin/cache controls;
-- Stage 8 hosted HTTPS preview and reconnect rehearsal;
-- Stage 8 same-origin service-worker v3→v4 upgrade with local-state preservation;
-- Stage 8 PostgreSQL-native `pg_dump`/`pg_restore` recovery into an isolated non-production database plus authenticated application bootstrap;
-- Stage 8 exact Stage 7→8 release-pair rollback evidence with unchanged migration state;
-- Stage 8 operational health and sanitized diagnostic controls;
-- Stage 9 logout/device lifecycle, multi-user isolation, account deletion, recoverable tombstones, stale-resurrection rejection, and startup stale-snapshot protection.
+## What Stage 10 added
 
-Historical evidence keeps its original scope. In particular, the Stage 8 recovery and rollback rehearsals do not become claims of provider-native PITR or a production disaster-recovery SLA merely because Stage 10 cites them.
+Stage 10 did not introduce another product subsystem. It audited the accumulated contract and added evidence where the final claim was weaker than the contract.
 
-## Stage 10-specific acceptance gaps
+Two current-production-runtime gaps were found:
 
-The initial audit found two contract requirements that deserved stronger current production-runtime evidence rather than relying on route rendering or historical hosted smoke:
+1. **Functional offline Search.** Earlier production coverage proved `/search` rendered offline, but not that a query returned locally cached data. `tests/offline-production/stage10-acceptance.spec.ts` now searches for the seeded neutral `Offline Sync Trust` project while fully offline and requires a local result.
+2. **Offline browser history.** Stage 8 hosted smoke exercised browser history, but the repository-owned optimized production matrix did not. Stage 10 now proves offline Dashboard → Projects → Search navigation, back navigation to Projects and Dashboard, and forward navigation back to Search.
 
-1. **Functional offline Search:** the production matrix already proved `/search` could render offline, but did not type a query and require a result from cached workspace state.
-2. **Offline browser history:** the contract requires back/forward navigation across core surfaces. Stage 8 hosted smoke exercised it, but the final repository-owned production matrix should prove it deterministically on the current branch.
+Both checks passed in the final acceptance candidate.
 
-`tests/offline-production/stage10-acceptance.spec.ts` adds those checks against the optimized production runtime and the seeded neutral workspace.
+## Final accepted evidence
 
-## Required final evidence
+### Production offline runtime
 
-Before closure this report must record exact evidence for:
+The optimized production Playwright matrix verifies:
 
-- production cold offline reopen and core-route hard refresh;
-- functional offline Search and browser back/forward;
-- durable local mutation + outbox persistence;
-- reconnect synchronization and idempotency;
-- stale-write and stale-startup-snapshot handling;
-- per-user local isolation and explicit multi-user selection;
-- logout/device/account lifecycle semantics;
-- production offline tombstone hard reload, reconnect, and restore;
-- Stage 7 security controls on the final branch;
-- Stage 8 deployment/diagnostic controls on the final branch;
-- Prisma migration/build and database-outage behavior;
-- exact inherited Stage 8 PWA/recovery/rollback provenance; and
-- a public claims audit across README, project state, local-first contract, run protocol, deployment documentation, and SECURITY.
+- previously authenticated cold offline reopen;
+- hard refresh and cold route reconstruction across documented core surfaces;
+- dynamic project route reconstruction;
+- browser back/forward navigation while offline;
+- functional Search over cached workspace state while offline;
+- verified application-shell completeness before `Offline ready` is reported;
+- durable supported offline mutations and queued outbox state across reload;
+- production offline tombstone hard reload and Archive/Trash reconstruction;
+- production security/origin/session boundaries; and
+- network-only API behavior with API requests absent from service-worker caches.
 
-## Boundaries that remain valid even after closure
+### Local durability, synchronization, and stale-state handling
 
-Stage 10 final acceptance will not claim:
+The accumulated development and production suites verify:
+
+- atomic user-scoped IndexedDB workspace/outbox persistence;
+- pending mutation survival before acknowledgement;
+- reconnect synchronization without requiring a second edit;
+- per-user idempotent mutation IDs;
+- stale server-update warnings;
+- rejection of older attempted tombstone resurrection; and
+- mutation-generation protection that prevents an older startup/bootstrap or explicit refresh snapshot from replacing a newer local mutation.
+
+### Identity and lifecycle
+
+Stage 9 controls, rerun in the Stage 10 candidate, verify:
+
+- local workspace isolation by verified user ID;
+- explicit account selection when multiple verified offline workspaces are eligible;
+- ordinary online logout retaining isolated local data by default;
+- explicit pending-work sync/retain/discard/remove-device choices;
+- user-scoped current-device removal;
+- offline logout refusal because the HttpOnly server session cannot be revoked locally;
+- password-confirmed, same-origin account deletion with local-cleanup-before-server-delete ordering; and
+- failed reauthentication after account deletion without deleting unrelated users.
+
+### Recoverable deletion
+
+The accepted deletion model remains:
+
+- Projects, Tasks, standalone Notes, and Dates use synchronized `trashedAt` tombstones;
+- Inbox captures use synchronized `status = "deleted"`;
+- Archive/Trash exposes restore;
+- stale older writes cannot silently resurrect a newer tombstone;
+- production offline hard reload retains the local tombstone and Trash reconstruction; and
+- reconnect synchronizes and restores the record across the server boundary.
+
+The historical sync `operation: "delete"` remains compatibility-only and irreversible user-facing per-record purge remains withheld.
+
+### Security and operations
+
+The final candidate reruns the Stage 7 security/repository controls, Stage 8 deployment preflight and operational-log controls, production response/browser boundaries, Prisma migration/build path, dependency audit, and deliberate PostgreSQL outage smoke.
+
+Stage 8 historical evidence is inherited with its exact original scope:
+
+- real HTTPS Vercel preview against an isolated Neon branch;
+- hosted reconnect synchronization;
+- same-origin service-worker shell v3→v4 upgrade preserving local state;
+- PostgreSQL-native `pg_dump`/`pg_restore` into a fresh isolated non-production database plus authenticated bootstrap; and
+- application rollback for the exact Stage 7→8 release pair, whose Prisma migration state was unchanged.
+
+Stage 10 does not reinterpret those results as provider-native PITR, production RTO/RPO, arbitrary migration reversibility, or an SLA.
+
+## Public-claims audit
+
+Stage 10 added `scripts/stage10-claims-audit.mjs` and synchronized:
+
+- `README.md`;
+- `docs/PROJECT_STATE.md`;
+- `docs/LOCAL_FIRST_CONTRACT.md`;
+- `docs/RUN_PROTOCOL.md`;
+- `docs/DEPLOYMENT.md`; and
+- `SECURITY.md`.
+
+The audit protects the core maturity, previously-authenticated-device, lifecycle, recovery, runtime-ownership, and non-goal boundaries while rejecting stale pre-Stage-8/9 wording and broad claims such as unrestricted offline operation or guaranteed zero data loss.
+
+The audit is closure-aware: while `CLOSE-001` is pending it requires Stage 10-open wording; once closure passes it requires Stage 10-closed wording without relaxing the underlying non-claims.
+
+## Boundaries retained after closure
+
+Stage 10 final acceptance does not claim:
 
 - first-time offline authentication or registration;
 - arbitrary API/server functionality while offline;
@@ -62,12 +122,17 @@ Stage 10 final acceptance will not claim:
 - remote erasure of another device's offline IndexedDB copy;
 - irreversible per-record purge without an anti-resurrection generation protocol;
 - provider-native PITR rehearsal;
+- production RTO/RPO or disaster-recovery SLA;
 - external penetration testing or compliance certification;
 - distributed authentication rate limiting supplied by this repository; or
-- production SLA/on-call/disaster-recovery guarantees.
+- production uptime/on-call guarantees.
 
-These are product or operational boundaries, not failed acceptance controls.
+These are product, deployment, or security boundaries. They are not failed Stage 10 acceptance controls, and Stage 10 closure does not make them disappear.
 
-## Closure record
+## Final acceptance statement
 
-Pending. This section will be replaced with the exact final verified commit, CI run, acceptance-registry state, public-claims result, and any defects discovered during Stage 10.
+Within those boundaries, the repository evidence supports the following statement:
+
+**ContextOS is an evidence-backed portfolio-stage local-first workspace for the documented core surfaces after prior successful authentication on a device. Supported workspace mutations are committed to user-scoped local persistence first, remain durable while offline, and synchronize with the server when connectivity returns; the accepted lifecycle, deletion, stale-state, security, and recovery boundaries are documented and tested.**
+
+The statement is intentionally narrower than “everything works offline,” “production SaaS,” “no data can ever be lost,” or any other phrase humans tend to invent five minutes before a postmortem.

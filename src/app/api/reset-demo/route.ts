@@ -4,6 +4,7 @@ import { getWorkspaceData } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { createStarterWorkspace } from "@/lib/starter";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
+import { logOperationalError } from "@/lib/operational-log";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
 
 export async function POST(request: Request) {
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     if (isDatabaseUnavailableError(error)) {
       return databaseUnavailableResponse();
     }
-    console.error("Demo reset failed", error);
+    logOperationalError("demo_reset_unexpected_error", error);
     return NextResponse.json({ error: "Could not reset demo data." }, { status: 500 });
   }
 }

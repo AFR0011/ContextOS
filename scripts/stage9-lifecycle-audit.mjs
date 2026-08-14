@@ -12,6 +12,7 @@ function check(name, condition, detail) {
 const localLifecycle = read("src/lib/local-lifecycle.ts");
 const logoutDialog = read("src/components/workspace/LogoutDialog.tsx");
 const workspaceGate = read("src/components/workspace/WorkspaceGate.tsx");
+const workspaceShell = read("src/components/workspace/WorkspaceShell.tsx");
 const accountPanel = read("src/components/workspace/AccountDeletionPanel.tsx");
 const accountDelete = read("src/app/api/account/delete/route.ts");
 const clientStore = read("src/lib/client-store.tsx");
@@ -55,6 +56,24 @@ check(
     workspaceGate.includes("ContextOS will not guess which identity to open") &&
     workspaceGate.includes('setState({ status: "ready", user: candidate, source: "local" })'),
   "Multiple eligible offline workspaces must be chosen explicitly rather than selected implicitly."
+);
+check(
+  "workspace interaction waits for initial local state",
+  workspaceShell.includes("if (loading)") && workspaceShell.includes('data-testid="workspace-local-loading"'),
+  "Workspace editing/logout controls must not render before the verified user's initial IndexedDB state is known."
+);
+const mutationIncrementIndex = clientStore.indexOf("localMutationVersion.current += 1");
+const bootVersionIndex = clientStore.indexOf("const bootMutationVersion = localMutationVersion.current");
+const bootReadIndex = clientStore.indexOf("await rememberLocalUser(user)", bootVersionIndex);
+const bootGuardIndex = clientStore.indexOf("localMutationVersion.current === bootMutationVersion", bootReadIndex);
+const refreshVersionIndex = clientStore.indexOf("const refreshMutationVersion = localMutationVersion.current");
+const refreshGuardIndex = clientStore.indexOf("localMutationVersion.current !== refreshMutationVersion", refreshVersionIndex);
+check(
+  "stale server snapshots cannot replace newer local mutations",
+  mutationIncrementIndex >= 0 &&
+    bootVersionIndex >= 0 && bootReadIndex > bootVersionIndex && bootGuardIndex > bootReadIndex &&
+    refreshVersionIndex >= 0 && refreshGuardIndex > refreshVersionIndex,
+  "Startup bootstrap and explicit refresh must compare a mutation generation captured before their server snapshot can replace local state."
 );
 check(
   "account deletion is authenticated and same-origin guarded",

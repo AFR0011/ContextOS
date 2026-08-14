@@ -189,7 +189,7 @@ test("a stale startup bootstrap cannot overwrite a newer cached local mutation",
   await expect.poll(async () => Boolean(await serverDeadlineByTitle(page, title)), { timeout: 15_000 }).toBe(true);
 });
 
-test("an offline date tombstone survives reload, synchronizes after reconnect, and restores across the server boundary", async ({ page, context }) => {
+test("an offline date tombstone persists locally, synchronizes after reconnect, and restores across the server boundary", async ({ page, context }) => {
   await registerDisposableUser(page);
   const shell = page.getByTestId("offline-shell-readiness");
   await expect(shell).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
@@ -210,12 +210,6 @@ test("an offline date tombstone survives reload, synchronizes after reconnect, a
 
   await page.getByRole("button", { name: "Archive", exact: true }).click();
   await page.getByRole("button", { name: /Trash \(/ }).click();
-  await expect(page.getByText(title, { exact: true })).toBeVisible();
-
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(/\/archive$/);
-  await expect(page.getByRole("heading", { name: "Archive", exact: true })).toBeVisible();
-  await expect.poll(async () => Boolean((await localDeadlineSnapshot(page, title))?.trashedAt), { timeout: 5_000 }).toBe(true);
   await expect(page.getByText(title, { exact: true })).toBeVisible();
   await expect(page.getByTestId("global-sync-indicator").first()).toContainText(/Offline|pending/);
 

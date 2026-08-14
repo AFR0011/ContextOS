@@ -2,7 +2,7 @@
 
 ## Current Release Gate
 
-ContextOS remains a **portfolio-stage application**, not a hosted production SaaS offering. Repository-level deployment hardening is complete through Stage 9 and Stage 10 final acceptance is in progress. Stage 8 produced real non-production deployment/recovery evidence; those rehearsals must not be confused with target-specific production operations.
+ContextOS remains a **portfolio-stage application**, not a hosted production SaaS offering. Repository-level local-first completion and acceptance are complete through Stage 10 within the documented boundary. Stage 8 produced real non-production deployment/recovery evidence; those rehearsals must not be confused with target-specific production operations.
 
 Current repository evidence:
 
@@ -17,9 +17,9 @@ Current repository evidence:
 9. **Database recovery:** Stage 8 used PostgreSQL-native `pg_dump`/`pg_restore` to restore into a genuinely fresh isolated non-production database and verified authenticated application bootstrap.
 10. **Release-pair rollback:** Stage 8 verified application rollback for the exact Stage 7→8 pair because their Prisma migration ledgers were unchanged. This is not a claim that arbitrary migrations are reversible.
 11. **Lifecycle/destructive state:** Stage 9 verifies logout/device data choices, account deletion ordering, multi-user local isolation, recoverable tombstones, and stale-resurrection protection.
-12. **Final repository acceptance:** Stage 10 remains open until the exact accumulated branch and public claims pass together.
+12. **Final repository acceptance:** Stage 10 verified the accumulated repository boundary at candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, including production offline Search/history, lifecycle regressions, full E2E, and database-outage behavior.
 
-Primary evidence is recorded in `docs/stage8/STAGE8_VERIFICATION.md`, `docs/stage9/STAGE9_VERIFICATION.md`, and `audits/stage10-acceptance.json`.
+Primary evidence is recorded in `docs/stage8/STAGE8_VERIFICATION.md`, `docs/stage9/STAGE9_VERIFICATION.md`, `docs/stage10/STAGE10_ACCEPTANCE.md`, and `audits/stage10-acceptance.json`.
 
 For a real public production target, independently verify the target environment, provider-native backups/restore capability, exact release migration/rollback plan, provider/WAF abuse controls, monitoring/alert ownership, and operational responsibilities. Non-production rehearsal reduces uncertainty; it does not outsource production judgment to a Markdown file.
 
@@ -200,4 +200,4 @@ The repository does not itself supply or demonstrate:
 - external penetration testing/compliance certification; or
 - a general proof that future schema migrations are rollback-safe.
 
-Those are target-environment responsibilities or future evidence, not hidden assumptions behind the portfolio-stage claim.
+Those are target-environment responsibilities or future evidence, not hidden assumptions behind the portfolio-stage claim. Stage 10 acceptance does not relax them.

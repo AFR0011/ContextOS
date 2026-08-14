@@ -117,19 +117,29 @@
       "id": "OPS-001",
       "stage": "8.6",
       "title": "Health target remains minimal, public, no-store, and usable by monitoring",
-      "status": "pending"
+      "status": "passed",
+      "ciRun": 31789552012,
+      "verifiedCommit": "d4bbc860a27d5471d74868e39ebd0ef90c46e27d",
+      "deploymentId": "dpl_FVoSRukWkYbJYxRSSAn3VtLUuN5y",
+      "artifacts": ["src/app/api/health/route.ts", "scripts/stage8-operational-log-tests.ts", "docs/stage8/STAGE8_6_OPERATIONS.md", "docs/stage8/STAGE8_6_VERIFICATION.md"]
     },
     {
       "id": "OPS-002",
       "stage": "8.6",
       "title": "Running preview can be correlated to a non-sensitive deployment/build identifier",
-      "status": "pending"
+      "status": "passed",
+      "verifiedCommit": "d4bbc860a27d5471d74868e39ebd0ef90c46e27d",
+      "deploymentId": "dpl_FVoSRukWkYbJYxRSSAn3VtLUuN5y",
+      "artifacts": ["docs/stage8/STAGE8_6_OPERATIONS.md", "docs/stage8/STAGE8_6_VERIFICATION.md"]
     },
     {
       "id": "OPS-003",
       "stage": "8.6",
       "title": "Failure-evidence runbook avoids secrets and raw database diagnostics",
-      "status": "pending"
+      "status": "passed",
+      "ciRun": 31789552012,
+      "verifiedCommit": "d4bbc860a27d5471d74868e39ebd0ef90c46e27d",
+      "artifacts": ["src/lib/safe-error-metadata.ts", "src/lib/operational-log.ts", "scripts/stage8-operational-log-tests.ts", ".github/workflows/ci.yml", "docs/stage8/STAGE8_6_OPERATIONS.md", "docs/stage8/STAGE8_6_VERIFICATION.md"]
     },
     {
       "id": "CLOSE-001",

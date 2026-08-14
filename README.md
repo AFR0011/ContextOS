@@ -4,7 +4,7 @@ ContextOS is a local-first workspace for capturing loose context, turning it int
 
 It combines a Next.js application with PostgreSQL-backed user data, a user-scoped IndexedDB workspace, an offline mutation outbox, and a verified application-shell cache so the documented core workspace can continue through temporary network failures after a successful sign-in on the device and synchronize when connectivity returns.
 
-> **Project status:** portfolio-stage application and engineering demonstration. It is not presented as a hosted production SaaS service, a compliance-certified system, or a collaborative distributed-data platform. The local-first completion program is closed through Stage 9; Stage 10 final acceptance and public-claims verification remain in progress on the completion branch.
+> **Project status:** portfolio-stage application and engineering demonstration. It is not presented as a hosted production SaaS service, a compliance-certified system, or a collaborative distributed-data platform. The local-first completion program is complete through Stage 10 final acceptance within the documented boundary.
 
 ## Engineering highlights
 
@@ -15,7 +15,7 @@ It combines a Next.js application with PostgreSQL-backed user data, a user-scope
 - **Lifecycle semantics:** ordinary logout retains isolated local state by default, current-device removal is explicit and user-scoped, multiple local identities require explicit offline selection, and permanent account deletion is password-confirmed and online.
 - **Recoverable deletion:** Projects, Tasks, standalone Notes, and Dates synchronize recoverable tombstones; stale older writes cannot silently resurrect a newer tombstone.
 - **Failure-aware UX:** database, synchronization, offline-shell, pending-work, and conflict states are surfaced instead of silently discarding work.
-- **Repository assurance:** Stage 7 provides security/repository controls, Stage 8 records deployment/recovery/operational evidence, Stage 9 adds lifecycle/destructive-data evidence, and Stage 10 aggregates final local-first acceptance without broadening those claims beyond the tested boundary.
+- **Repository assurance:** Stage 7 provides security/repository controls, Stage 8 records deployment/recovery/operational evidence, Stage 9 adds lifecycle/destructive-data evidence, and Stage 10 closes final local-first acceptance and public-claims verification without broadening those claims beyond the tested boundary.
 
 ## Architecture
 
@@ -126,6 +126,7 @@ npm run audit:stage8:ops
 npm run audit:stage9:lifecycle
 npm run audit:stage9:evidence
 npm run audit:stage10:acceptance
+npm run audit:stage10:claims
 npx prisma validate
 npx prisma generate
 npm run db:deploy
@@ -138,7 +139,7 @@ npm run test:e2e -- --workers=1
 
 The GitHub Actions workflow runs the required ladder against disposable PostgreSQL 16. The production Playwright matrix owns cold offline reopen/hard-refresh, core route and dynamic-project reconstruction, functional offline Search/history acceptance, application-shell completeness, production security boundaries, offline mutation durability, tombstone hard reload, and API/cache separation. The development suite covers the broader interactive product, local atomicity, synchronization behavior, user-scoped IndexedDB, routing, lifecycle/destructive-data behavior, compatibility, accessibility, and fixture regression surface.
 
-The machine-readable assurance state is split across `audits/stage7-controls.json`, `audits/stage8-evidence.json`, `audits/stage9-evidence.json`, and `audits/stage10-acceptance.json`. Stage 10 remains open until its registry has no pending controls and the final claims audit passes.
+Stage 10's verified acceptance candidate is commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, GitHub Actions run `31800346837`, which passed the complete accumulated ladder. Machine-readable assurance state is preserved in `audits/stage7-controls.json`, `audits/stage8-evidence.json`, `audits/stage9-evidence.json`, and `audits/stage10-acceptance.json`.
 
 ## Deployment and recovery notes
 
@@ -168,11 +169,10 @@ Current boundaries include:
 - no provider-native backup/PITR rehearsal;
 - no production SLA/on-call/disaster-recovery guarantee;
 - no remote erasure of another offline device after account deletion;
-- no irreversible user-facing per-record purge without a proven anti-resurrection protocol;
-- no offline first-time authentication, true logout, or permanent account deletion; and
-- final Stage 10 local-first acceptance remains open until the accumulated evidence and public claims pass together.
+- no irreversible user-facing per-record purge without a proven anti-resurrection protocol; and
+- no offline first-time authentication, true logout, or permanent account deletion.
 
-These boundaries distinguish implemented/tested behavior from deployment maturity and unsupported future capability.
+Stage 10 closure means the documented portfolio-stage local-first boundary has passed the repository's accumulated acceptance ladder. It does not erase or weaken any of the deployment, security, collaboration, recovery, or lifecycle limitations above.
 
 ## Repository documentation
 
@@ -185,7 +185,7 @@ These boundaries distinguish implemented/tested behavior from deployment maturit
 - `docs/stage7-audit-plan.md` — Stage 7 assurance scope and closure rules
 - `docs/stage8/STAGE8_VERIFICATION.md` — Stage 8 deployment/recovery/operations evidence
 - `docs/stage9/STAGE9_VERIFICATION.md` — Stage 9 lifecycle/destructive-data evidence
-- `docs/stage10/STAGE10_ACCEPTANCE.md` — Stage 10 final acceptance status
+- `docs/stage10/STAGE10_ACCEPTANCE.md` — Stage 10 final acceptance record
 - `audits/stage10-acceptance.json` — machine-readable Stage 10 acceptance registry
 - `SECURITY.md` — vulnerability reporting, security assumptions, and non-claims
 - `CONTRIBUTING.md` — contribution and verification expectations

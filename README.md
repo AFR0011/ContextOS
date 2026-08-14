@@ -2,19 +2,20 @@
 
 ContextOS is a local-first workspace for capturing loose context, turning it into executable work, and recovering project state after interruptions.
 
-It combines a Next.js application with PostgreSQL-backed user data, a user-scoped IndexedDB workspace, an offline mutation outbox, and a verified application-shell cache so core work can continue through temporary network failures and synchronize safely when connectivity returns.
+It combines a Next.js application with PostgreSQL-backed user data, a user-scoped IndexedDB workspace, an offline mutation outbox, and a verified application-shell cache so the documented core workspace can continue through temporary network failures after a successful sign-in on the device and synchronize when connectivity returns.
 
-> **Project status:** portfolio-stage application and engineering demonstration. It is not presented as a hosted production SaaS service, a compliance-certified system, or a finished multi-device lifecycle implementation.
+> **Project status:** portfolio-stage application and engineering demonstration. It is not presented as a hosted production SaaS service, a compliance-certified system, or a collaborative distributed-data platform. The local-first completion program is closed through Stage 9; Stage 10 final acceptance and public-claims verification remain in progress on the completion branch.
 
 ## Engineering highlights
 
 - **User-scoped persistence:** PostgreSQL + Prisma with authenticated, user-owned records and relationship ownership checks.
-- **Local-first core workflow:** user-scoped IndexedDB caches core workspace state and queues mutations locally.
+- **Local-first core workflow:** user-scoped IndexedDB caches core workspace state and queues supported mutations locally.
 - **Verified offline shell:** a versioned service-worker shell is reported as ready only after its manifest and required static assets are present; API traffic remains network-only.
 - **Idempotent synchronization:** queued mutations replay through `/api/sync` with per-user mutation IDs, ownership validation, stale-update handling, UTF-8 byte limits, timestamp validation, and record-ID consistency checks.
-- **Authentication hardening:** bcrypt password hashing, random bearer sessions persisted only as `AUTH_SECRET`-keyed hashes, HTTP-only cookies, registration controls, failed-login throttling, bounded auth inputs, and browser same-origin mutation checks.
+- **Lifecycle semantics:** ordinary logout retains isolated local state by default, current-device removal is explicit and user-scoped, multiple local identities require explicit offline selection, and permanent account deletion is password-confirmed and online.
+- **Recoverable deletion:** Projects, Tasks, standalone Notes, and Dates synchronize recoverable tombstones; stale older writes cannot silently resurrect a newer tombstone.
 - **Failure-aware UX:** database, synchronization, offline-shell, pending-work, and conflict states are surfaced instead of silently discarding work.
-- **Repository assurance:** Stage 7 defines a machine-readable audit control registry, executable static audit, production-runtime security/offline matrix, dependency gate, and development regression suite.
+- **Repository assurance:** Stage 7 provides security/repository controls, Stage 8 records deployment/recovery/operational evidence, Stage 9 adds lifecycle/destructive-data evidence, and Stage 10 aggregates final local-first acceptance without broadening those claims beyond the tested boundary.
 
 ## Architecture
 
@@ -37,7 +38,7 @@ Browser
    PostgreSQL + Prisma
 ```
 
-The server is canonical after synchronization. Offline support is intentionally focused on durable workspace mutations and cached application navigation rather than collaborative conflict-resolution UI or arbitrary offline server functionality.
+PostgreSQL is canonical after successful synchronization. Local-first behavior is intentionally focused on durable workspace mutations and cached application navigation rather than collaborative conflict-resolution UI or arbitrary offline server functionality.
 
 ## Product surface
 
@@ -46,12 +47,16 @@ ContextOS currently supports:
 - Dashboard command page and scratchpad;
 - Inbox capture and triage;
 - Projects and nested subcontexts;
-- Tasks and important dates;
-- Areas and Markdown-backed resources;
-- Search and recovery surfaces;
+- Tasks and important Dates;
+- Areas and Markdown-backed Resources;
+- Search over locally available workspace data;
 - Archive and review flows;
-- offline-safe edits with visible pending-sync state;
+- offline-safe supported edits with visible pending-sync state;
+- explicit local-account selection when multiple verified workspaces exist offline;
+- recoverable trash/restore behavior;
 - authenticated handoff previews that require user approval before creating Inbox suggestions.
+
+The core offline contract is documented in `docs/LOCAL_FIRST_CONTRACT.md`. First-time authentication, synchronization itself, true logout, permanent account deletion, and other inherently remote operations require connectivity.
 
 ## Tech stack
 
@@ -109,11 +114,18 @@ Generate fresh secrets for every deployed environment. Do not reuse example/demo
 
 ## Verification
 
-The repository deliberately separates production-runtime offline/security verification from development-server interaction tests. Humans eventually discovered that a hot-reload server and an installable offline application are, regrettably, not the same thing.
+The repository deliberately separates production-runtime offline/security verification from development-server interaction tests. The optimized runtime owns service-worker and offline hard-reload claims; the development server does not impersonate an installed PWA.
 
 ```bash
 npm audit --audit-level=low
 npm run audit:stage7
+npm run audit:stage7:evidence
+npm run audit:stage8:preflight
+npm run audit:stage8:preflight:test
+npm run audit:stage8:ops
+npm run audit:stage9:lifecycle
+npm run audit:stage9:evidence
+npm run audit:stage10:acceptance
 npx prisma validate
 npx prisma generate
 npm run db:deploy
@@ -124,11 +136,11 @@ npx playwright test --config=playwright.production.config.ts --workers=1
 npm run test:e2e -- --workers=1
 ```
 
-The GitHub Actions workflow runs that ladder against disposable PostgreSQL 16. The production Playwright matrix owns cold offline reopen/hard-refresh, application-shell completeness, workspace-gate behavior, production security headers, browser origin checks, session-cookie behavior, synchronization boundary tests, and API/cache separation. The development suite covers the broader interactive product, local atomicity, user-scoped IndexedDB, routing, compatibility, mobile accessibility, and fixture regression surface.
+The GitHub Actions workflow runs the required ladder against disposable PostgreSQL 16. The production Playwright matrix owns cold offline reopen/hard-refresh, core route and dynamic-project reconstruction, functional offline Search/history acceptance, application-shell completeness, production security boundaries, offline mutation durability, tombstone hard reload, and API/cache separation. The development suite covers the broader interactive product, local atomicity, synchronization behavior, user-scoped IndexedDB, routing, lifecycle/destructive-data behavior, compatibility, accessibility, and fixture regression surface.
 
-`audits/stage7-controls.json` is the machine-readable assurance registry and `scripts/stage7-audit.mjs` implements the static/repository controls suitable for deterministic CI. The remaining controls are evidenced by runtime suites, schema/CI gates, or explicitly documented manual deployment boundaries.
+The machine-readable assurance state is split across `audits/stage7-controls.json`, `audits/stage8-evidence.json`, `audits/stage9-evidence.json`, and `audits/stage10-acceptance.json`. Stage 10 remains open until its registry has no pending controls and the final claims audit passes.
 
-## Deployment notes
+## Deployment and recovery notes
 
 - `npm run db:seed` resets the configured demo workspace and should never run automatically against production data.
 - `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is deliberately enabled.
@@ -136,15 +148,16 @@ The GitHub Actions workflow runs that ladder against disposable PostgreSQL 16. T
 - Browser-originated state-changing API requests must match the application origin.
 - All `/api/*` responses receive an explicit no-store policy and service-worker caching excludes API traffic.
 - `GET /api/health` reports minimal application/database availability with `Cache-Control: no-store`.
-- Backup/restore and compatible application/database rollback rehearsal remain deployment gates, not claims made by this repository.
+- Stage 8 demonstrated a real HTTPS Vercel preview on an isolated Neon branch, a same-origin service-worker upgrade, PostgreSQL-native `pg_dump`/`pg_restore` recovery into a fresh non-production database, and application rollback for the exact Stage 7→8 release pair whose migration state was unchanged.
+- Those rehearsals are engineering evidence, not a claim of provider-native PITR, production disaster-recovery SLA, or arbitrary migration reversibility.
 
-See `docs/DEPLOYMENT.md`, `docs/RUN_PROTOCOL.md`, and `docs/stage7-audit-plan.md` for the deeper operational and assurance workflow.
+See `docs/DEPLOYMENT.md`, `docs/RUN_PROTOCOL.md`, `docs/LOCAL_FIRST_CONTRACT.md`, and the stage verification reports for the deeper operational and assurance workflow.
 
 ## Scope and limitations
 
 Current boundaries include:
 
-- no collaborative merge interface;
+- no collaborative merge interface or CRDT semantics;
 - no email verification or self-service password-reset flow;
 - no supported general OAuth/SSO product surface;
 - no distributed provider/WAF rate limiting in this repository;
@@ -152,22 +165,28 @@ Current boundaries include:
 - no semantic search;
 - no external AI dependency for core operation;
 - no third-party penetration test or compliance certification;
-- no demonstrated production backup/restore and rollback rehearsal yet;
-- final logout/account/local-device-data and hard-delete lifecycle semantics remain later-stage work;
-- final local-first acceptance remains a later roadmap stage rather than something Stage 7 quietly declares by administrative magic.
+- no provider-native backup/PITR rehearsal;
+- no production SLA/on-call/disaster-recovery guarantee;
+- no remote erasure of another offline device after account deletion;
+- no irreversible user-facing per-record purge without a proven anti-resurrection protocol;
+- no offline first-time authentication, true logout, or permanent account deletion; and
+- final Stage 10 local-first acceptance remains open until the accumulated evidence and public claims pass together.
 
-These boundaries are documented so the repository distinguishes implemented behavior and automated evidence from future production hardening.
+These boundaries distinguish implemented/tested behavior from deployment maturity and unsupported future capability.
 
 ## Repository documentation
 
 - `BLUEPRINT.md` — product specification and design intent
 - `docs/PROJECT_STATE.md` — current implementation state and known boundaries
 - `docs/REPO_MAP.md` — code/data-flow map
-- `docs/LOCAL_FIRST_CONTRACT.md` — canonical local-first behavior and deferred lifecycle semantics
+- `docs/LOCAL_FIRST_CONTRACT.md` — canonical offline, synchronization, lifecycle, and deletion contract
 - `docs/RUN_PROTOCOL.md` — setup and verification ladder
-- `docs/DEPLOYMENT.md` — deployment guidance and unresolved operational gates
+- `docs/DEPLOYMENT.md` — deployment guidance and operational boundaries
 - `docs/stage7-audit-plan.md` — Stage 7 assurance scope and closure rules
-- `audits/stage7-controls.json` — machine-readable Stage 7 control registry
+- `docs/stage8/STAGE8_VERIFICATION.md` — Stage 8 deployment/recovery/operations evidence
+- `docs/stage9/STAGE9_VERIFICATION.md` — Stage 9 lifecycle/destructive-data evidence
+- `docs/stage10/STAGE10_ACCEPTANCE.md` — Stage 10 final acceptance status
+- `audits/stage10-acceptance.json` — machine-readable Stage 10 acceptance registry
 - `SECURITY.md` — vulnerability reporting, security assumptions, and non-claims
 - `CONTRIBUTING.md` — contribution and verification expectations
 

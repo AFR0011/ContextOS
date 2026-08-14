@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createSession, publicUser, verifyPassword } from "@/lib/auth";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
+import { logOperationalError } from "@/lib/operational-log";
 import { authRateLimitResponse, checkAuthRateLimit, recordAuthRateLimitAttempt, resetAuthRateLimit } from "@/lib/rate-limit";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
 
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     if (isDatabaseUnavailableError(error)) {
       return databaseUnavailableResponse();
     }
-    console.error("Login failed", error);
+    logOperationalError("login_unexpected_error", error);
     return NextResponse.json(
       { error: "Login server error. Check the deployment database connection and migrations." },
       { status: 500 }

@@ -41,6 +41,24 @@ async function bootstrap(page: Page): Promise<WorkspaceData> {
   });
 }
 
+async function localDeadlineExists(page: Page, title: string) {
+  return page.evaluate(async ({ databaseName, title }) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(databaseName, 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const workspaces = await new Promise<Array<{ deadlines?: Array<{ title?: string }> }>>((resolve, reject) => {
+      const tx = db.transaction("workspaces", "readonly");
+      const request = tx.objectStore("workspaces").getAll();
+      request.onsuccess = () => resolve(request.result as Array<{ deadlines?: Array<{ title?: string }> }>);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    return workspaces.some((workspace) => workspace.deadlines?.some((deadline) => deadline.title === title));
+  }, { databaseName: "contextos-offline-v1", title });
+}
+
 async function syncMutation(page: Page, mutation: Record<string, unknown>) {
   return page.evaluate(async (mutation) => {
     const response = await fetch("/api/sync", {
@@ -102,6 +120,58 @@ test("newer tombstones reject stale resurrection and remain explicitly restorabl
     const restoredRecord = (restoreResult.data[entityType] as WorkspaceRecord[]).find((item) => item.id === record.id);
     expect(restoredRecord?.trashedAt).toBeNull();
   }
+});
+
+test("a stale startup bootstrap cannot overwrite a newer cached local mutation", async ({ page }) => {
+  await registerDisposableUser(page);
+
+  let releaseBootstrap!: () => void;
+  let markBootstrapCaptured!: () => void;
+  let releaseSync!: () => void;
+  const bootstrapRelease = new Promise<void>((resolve) => { releaseBootstrap = resolve; });
+  const bootstrapCaptured = new Promise<void>((resolve) => { markBootstrapCaptured = resolve; });
+  const syncRelease = new Promise<void>((resolve) => { releaseSync = resolve; });
+  let bootstrapIntercepted = false;
+
+  await page.route("**/api/bootstrap", async (route) => {
+    if (bootstrapIntercepted || route.request().method() !== "GET") {
+      await route.continue();
+      return;
+    }
+    bootstrapIntercepted = true;
+    const staleResponse = await route.fetch();
+    const staleBody = await staleResponse.body();
+    markBootstrapCaptured();
+    await bootstrapRelease;
+    await route.fulfill({ response: staleResponse, body: staleBody });
+  });
+
+  await page.route("**/api/sync", async (route) => {
+    if (route.request().method() === "POST") {
+      await syncRelease;
+    }
+    await route.continue();
+  });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await bootstrapCaptured;
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+
+  const title = `Stage 9 startup race ${Date.now()}`;
+  await page.getByRole("button", { name: "Dates", exact: true }).click();
+  await page.getByRole("button", { name: "Add Date", exact: true }).click();
+  await page.getByPlaceholder("Date title...").fill(title);
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
+  await expect.poll(async () => localDeadlineExists(page, title), { timeout: 5_000 }).toBe(true);
+
+  releaseBootstrap();
+  await page.waitForResponse((response) => response.url().includes("/api/bootstrap") && response.request().method() === "GET");
+  await expect.poll(async () => localDeadlineExists(page, title), { timeout: 2_000 }).toBe(true);
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
+
+  releaseSync();
+  await expect.poll(async () => Boolean(await serverDeadlineByTitle(page, title)), { timeout: 15_000 }).toBe(true);
 });
 
 test("an offline date tombstone survives reload, synchronizes after reconnect, and restores across the server boundary", async ({ page, context }) => {

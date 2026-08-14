@@ -62,14 +62,11 @@ jobs:
       - name: Build Stage 7 release
         working-directory: stage7
         env:
-          AUTH_SECRET: ${{ env.STAGE7_AUTH_SECRET }}
           NEXT_PUBLIC_APP_URL: http://127.0.0.1:3100
-        run: npm run build
+        run: AUTH_SECRET="$STAGE7_AUTH_SECRET" npm run build
 
       - name: Verify Stage 7 before upgrade
-        env:
-          AUTH_SECRET: ${{ env.STAGE7_AUTH_SECRET }}
-        run: bash stage8/scripts/stage8-release-smoke.sh stage7 3100 STAGE8_STAGE7_BEFORE_UPGRADE
+        run: AUTH_SECRET="$STAGE7_AUTH_SECRET" bash stage8/scripts/stage8-release-smoke.sh stage7 3100 STAGE8_STAGE7_BEFORE_UPGRADE
 
       - name: Record migration ledger before Stage 8 deploy
         shell: bash
@@ -97,19 +94,14 @@ jobs:
       - name: Build Stage 8 candidate
         working-directory: stage8
         env:
-          AUTH_SECRET: ${{ env.STAGE8_AUTH_SECRET }}
           NEXT_PUBLIC_APP_URL: http://127.0.0.1:3200
-        run: npm run build
+        run: AUTH_SECRET="$STAGE8_AUTH_SECRET" npm run build
 
       - name: Verify Stage 8 after upgrade
-        env:
-          AUTH_SECRET: ${{ env.STAGE8_AUTH_SECRET }}
-        run: bash stage8/scripts/stage8-release-smoke.sh stage8 3200 STAGE8_STAGE8_AFTER_UPGRADE
+        run: AUTH_SECRET="$STAGE8_AUTH_SECRET" bash stage8/scripts/stage8-release-smoke.sh stage8 3200 STAGE8_STAGE8_AFTER_UPGRADE
 
       - name: Verify Stage 7 application-only rollback
-        env:
-          AUTH_SECRET: ${{ env.STAGE7_AUTH_SECRET }}
-        run: bash stage8/scripts/stage8-release-smoke.sh stage7 3101 STAGE8_STAGE7_AFTER_ROLLBACK
+        run: AUTH_SECRET="$STAGE7_AUTH_SECRET" bash stage8/scripts/stage8-release-smoke.sh stage7 3101 STAGE8_STAGE7_AFTER_ROLLBACK
 
       - name: Record release-pair result
         run: |

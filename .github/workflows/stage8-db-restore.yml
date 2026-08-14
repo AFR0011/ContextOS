@@ -1,0 +1,142 @@
+name: Stage 8 database restore rehearsal
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restore-and-bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_DATABASE_URL: ${{ secrets.STAGE8_BACKUP_SOURCE_DATABASE_URL }}
+      RESTORE_DATABASE_URL: ${{ secrets.STAGE8_BACKUP_RESTORE_DATABASE_URL }}
+      HOSTED_PREVIEW_TEST_PASSWORD: ${{ secrets.HOSTED_PREVIEW_TEST_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate rehearsal secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${SOURCE_DATABASE_URL:-}" ]] || { echo "Missing STAGE8_BACKUP_SOURCE_DATABASE_URL" >&2; exit 1; }
+          [[ -n "${RESTORE_DATABASE_URL:-}" ]] || { echo "Missing STAGE8_BACKUP_RESTORE_DATABASE_URL" >&2; exit 1; }
+          [[ -n "${HOSTED_PREVIEW_TEST_PASSWORD:-}" ]] || { echo "Missing HOSTED_PREVIEW_TEST_PASSWORD" >&2; exit 1; }
+          [[ "$SOURCE_DATABASE_URL" != "$RESTORE_DATABASE_URL" ]] || { echo "Source and restore URLs must differ" >&2; exit 1; }
+
+      - name: Run PostgreSQL 18 backup and restore rehearsal
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -e SOURCE_DATABASE_URL \
+            -e RESTORE_DATABASE_URL \
+            -v "$GITHUB_WORKSPACE:/work" \
+            -w /work \
+            postgres:18 \
+            bash scripts/stage8-db-backup-restore.sh
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install application dependencies
+        run: npm ci
+
+      - name: Generate ephemeral local auth secret
+        shell: bash
+        run: echo "AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+
+      - name: Build ContextOS against restored database
+        env:
+          DATABASE_URL: ${{ secrets.STAGE8_BACKUP_RESTORE_DATABASE_URL }}
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+          ALLOW_PUBLIC_REGISTRATION: "false"
+          ALLOW_DEMO_RESET: "false"
+        run: npm run build
+
+      - name: Verify authenticated bootstrap against restored database
+        shell: bash
+        env:
+          DATABASE_URL: ${{ secrets.STAGE8_BACKUP_RESTORE_DATABASE_URL }}
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+          ALLOW_PUBLIC_REGISTRATION: "false"
+          ALLOW_DEMO_RESET: "false"
+          HOSTNAME: 127.0.0.1
+          PORT: 3000
+        run: |
+          set -euo pipefail
+
+          npm start > /tmp/contextos-stage8-restore.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:3000/api/health >/tmp/stage8-health.json; then
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "ContextOS exited before becoming healthy." >&2
+              tail -n 100 /tmp/contextos-stage8-restore.log >&2
+              exit 1
+            fi
+            sleep 1
+          done
+
+          node <<'NODE'
+          const fs = require('fs');
+          const health = JSON.parse(fs.readFileSync('/tmp/stage8-health.json', 'utf8'));
+          if (health.status !== 'ok' || health.database !== 'ok') {
+            throw new Error('Restored-database health check did not report ok.');
+          }
+          const login = {
+            email: 'stage8.preview@contextos.local',
+            password: process.env.HOSTED_PREVIEW_TEST_PASSWORD
+          };
+          fs.writeFileSync('/tmp/stage8-login.json', JSON.stringify(login));
+          NODE
+
+          curl --fail-with-body -sS \
+            -c /tmp/stage8-cookies.txt \
+            -H 'content-type: application/json' \
+            --data-binary @/tmp/stage8-login.json \
+            http://127.0.0.1:3000/api/auth/login \
+            >/tmp/stage8-login-response.json
+
+          curl --fail-with-body -sS \
+            -b /tmp/stage8-cookies.txt \
+            http://127.0.0.1:3000/api/auth/me \
+            >/tmp/stage8-me.json
+
+          curl --fail-with-body -sS \
+            -b /tmp/stage8-cookies.txt \
+            http://127.0.0.1:3000/api/bootstrap \
+            >/tmp/stage8-bootstrap.json
+
+          node <<'NODE'
+          const fs = require('fs');
+          const me = JSON.parse(fs.readFileSync('/tmp/stage8-me.json', 'utf8'));
+          const bootstrap = JSON.parse(fs.readFileSync('/tmp/stage8-bootstrap.json', 'utf8'));
+
+          const email = me?.user?.email ?? me?.email;
+          if (email !== 'stage8.preview@contextos.local') {
+            throw new Error('Restored test identity could not establish an authenticated session.');
+          }
+
+          const data = bootstrap?.data;
+          if (!data) throw new Error('Bootstrap response did not contain workspace data.');
+          if (!Array.isArray(data.domains) || data.domains.length < 1) throw new Error('Restored bootstrap has no domains.');
+          if (!Array.isArray(data.projects) || data.projects.length < 1) throw new Error('Restored bootstrap has no projects.');
+          if (!Array.isArray(data.tasks) || data.tasks.length < 1) throw new Error('Restored bootstrap has no tasks.');
+          if (!Array.isArray(data.dashboardScratchpads) || data.dashboardScratchpads.length < 1) {
+            throw new Error('Restored bootstrap has no dashboard scratchpad.');
+          }
+
+          console.log('STAGE8_RESTORED_BOOTSTRAP=PASS');
+          NODE

@@ -9,6 +9,7 @@ interface RecoverableRow {
   type: string;
   title: string;
   restore: () => void;
+  restoreLabel?: string;
 }
 
 function RecoveryList({ rows, empty }: { rows: RecoverableRow[]; empty: string }) {
@@ -24,7 +25,7 @@ function RecoveryList({ rows, empty }: { rows: RecoverableRow[]; empty: string }
             <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--cos-text-subtle)]">{row.type}</span>
             <p className="truncate text-sm font-semibold text-[var(--cos-text-strong)]">{row.title}</p>
           </div>
-          <button type="button" aria-label={`Restore ${row.title}`} onClick={row.restore} className="cos-btn cos-btn-secondary min-h-10 shrink-0 px-3 py-2 text-xs">
+          <button type="button" aria-label={row.restoreLabel} onClick={row.restore} className="cos-btn cos-btn-secondary min-h-10 shrink-0 px-3 py-2 text-xs">
             <RotateCcw className="h-4 w-4" /> Restore
           </button>
         </div>
@@ -43,6 +44,7 @@ export function ArchiveLifecycleView() {
       key: `project-${item.id}`,
       type: "Project",
       title: item.name,
+      restoreLabel: `Restore ${item.name}`,
       restore: () => updateProject(item.id, { status: "active", archivedAt: null })
     }));
   const archivedResources: RecoverableRow[] = data.notes
@@ -51,6 +53,7 @@ export function ArchiveLifecycleView() {
       key: `resource-${item.id}`,
       type: "Resource",
       title: item.title,
+      restoreLabel: `Restore ${item.title}`,
       restore: () => updateNote(item.id, { archivedAt: null })
     }));
   const archivedDates: RecoverableRow[] = data.deadlines
@@ -75,6 +78,7 @@ export function ArchiveLifecycleView() {
       key: `capture-${item.id}`,
       type: "Inbox capture",
       title: item.text,
+      restoreLabel: `Restore ${item.text}`,
       restore: () => updateCapture(item.id, { status: "unprocessed" })
     }));
 
@@ -91,6 +95,7 @@ export function ArchiveLifecycleView() {
       key: `project-${item.id}`,
       type: "Project",
       title: item.name,
+      restoreLabel: `Restore ${item.name}`,
       restore: () => updateProject(item.id, { trashedAt: null, status: "active" as const, archivedAt: null })
     })),
     ...data.tasks.filter((item) => item.trashedAt).map((item) => ({
@@ -103,6 +108,7 @@ export function ArchiveLifecycleView() {
       key: `note-${item.id}`,
       type: item.projectId ? "Project note" : "Resource",
       title: item.title,
+      restoreLabel: item.projectId ? undefined : `Restore ${item.title}`,
       restore: () => updateNote(item.id, { trashedAt: null, archivedAt: null })
     })),
     ...data.deadlines.filter((item) => item.trashedAt).map((item) => ({
@@ -115,6 +121,7 @@ export function ArchiveLifecycleView() {
       key: `capture-${item.id}`,
       type: "Inbox capture",
       title: item.text,
+      restoreLabel: `Restore ${item.text}`,
       restore: () => updateCapture(item.id, { status: "unprocessed" })
     }))
   ];

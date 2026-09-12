@@ -10,12 +10,12 @@ import {
   SettingsView
 } from "@/components/workspace/Views";
 import {
-  ArchiveLifecycleView,
   ProjectDetailLifecycleView,
   ProjectsLifecycleView,
-  ResourcesLifecycleView,
   ReviewsLifecycleView
 } from "@/components/workspace/Batch2LifecycleViews";
+import { ArchiveLifecycleView } from "@/components/workspace/ArchiveLifecycleView";
+import { ResourcesLifecycleView } from "@/components/workspace/ResourcesLifecycleView";
 import { useLocalLocation } from "@/lib/local-router";
 
 function projectIdFromPath(pathname: string) {

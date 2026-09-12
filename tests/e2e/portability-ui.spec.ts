@@ -10,6 +10,28 @@ test("Settings previews and confirms a complete workspace restore", async ({ pag
   });
   expect(registered.status()).toBe(200);
 
+  const now = new Date().toISOString();
+  const domain = {
+    id: `dom-portability-ui-${Date.now()}`,
+    name: "Personal",
+    archived: false,
+    createdAt: now,
+    updatedAt: now
+  };
+  const initialArea = await page.request.post("/api/sync", {
+    data: {
+      mutations: [{
+        mutationId: `mut-portability-ui-${Date.now()}`,
+        entityType: "domains",
+        entityId: domain.id,
+        operation: "upsert",
+        payload: domain,
+        createdAt: now
+      }]
+    }
+  });
+  expect(initialArea.status()).toBe(200);
+
   const exported = await page.request.get("/api/portability/export?format=json");
   expect(exported.status()).toBe(200);
   const bundleText = await exported.text();
@@ -29,6 +51,7 @@ test("Settings previews and confirms a complete workspace restore", async ({ pag
   const preview = page.getByTestId("workspace-import-preview");
   await expect(preview).toBeVisible();
   await expect(preview).toContainText("format v1");
+  await expect(preview).toContainText("1 areas");
   await expect(page.getByLabel("Import mode")).toHaveValue("replace");
 
   const restoreButton = page.getByTestId("workspace-import-restore");
@@ -40,4 +63,5 @@ test("Settings previews and confirms a complete workspace restore", async ({ pag
   await expect(page.getByTestId("workspace-import-success")).toContainText("Workspace restored from export.");
   await expect(page.getByTestId("workspace-import-preview")).toHaveCount(0);
   await expect(page.getByTestId("pending-count")).toHaveText("0");
+  await expect(page.getByLabel("Area name Personal")).toHaveValue("Personal");
 });

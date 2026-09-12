@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { CalendarClock, CalendarDays, Check, Clock3, Trash2 } from "lucide-react";
+import { CalendarClock, CalendarDays, Check, Clock3, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
+import { TaskEditDialog } from "@/components/workspace/TaskEditDialog";
 import { dateKeyToLocalDate } from "@/lib/dates";
 import { useWorkspace } from "@/lib/client-store";
 import type { CaptureLineResult } from "@/components/workspace/editor/editorTypes";
@@ -192,59 +193,71 @@ function EditableTaskTitle({ task }: { task: Task }) {
 
 function CommandTaskItem({ row }: { row: CommandTaskRow }) {
   const { updateTask } = useWorkspace();
+  const [editing, setEditing] = useState(false);
   const done = row.task.status === "done";
   return (
-    <div data-testid="command-task-row" className="group flex items-start gap-2 border-b border-[var(--cos-border-soft)] py-2 last:border-b-0">
-      <button
-        type="button"
-        aria-label={done ? `Reopen ${row.task.title}` : `Mark ${row.task.title} done`}
-        onClick={() => updateTask(row.task.id, { status: done ? "todo" : "done" })}
-        className={`grid h-10 w-10 shrink-0 place-items-center rounded-md border sm:h-8 sm:w-8 ${done ? "border-[var(--cos-success)] bg-[var(--cos-success)] text-white" : "border-[var(--cos-border-strong)] text-transparent hover:border-[var(--cos-primary)]"}`}
-      >
-        <Check className="h-3 w-3" />
-      </button>
-      <div className="min-w-0 flex-1">
-        <EditableTaskTitle task={row.task} />
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          {row.labels.map((label) => (
-            <span key={label} className={`cos-pill ${label === "Overdue" ? "cos-pill-danger" : label === "Done today" ? "cos-pill-success" : label.includes("Today") ? "cos-pill-primary" : label === "In progress" ? "cos-pill-primary" : "cos-pill-muted"}`}>
-              {label}
-            </span>
-          ))}
+    <>
+      <div data-testid="command-task-row" className="group flex items-start gap-2 border-b border-[var(--cos-border-soft)] py-2 last:border-b-0">
+        <button
+          type="button"
+          aria-label={done ? `Reopen ${row.task.title}` : `Mark ${row.task.title} done`}
+          onClick={() => updateTask(row.task.id, { status: done ? "todo" : "done" })}
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-md border sm:h-8 sm:w-8 ${done ? "border-[var(--cos-success)] bg-[var(--cos-success)] text-white" : "border-[var(--cos-border-strong)] text-transparent hover:border-[var(--cos-primary)]"}`}
+        >
+          <Check className="h-3 w-3" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <EditableTaskTitle task={row.task} />
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {row.labels.map((label) => (
+              <span key={label} className={`cos-pill ${label === "Overdue" ? "cos-pill-danger" : label === "Done today" ? "cos-pill-success" : label.includes("Today") ? "cos-pill-primary" : label === "In progress" ? "cos-pill-primary" : "cos-pill-muted"}`}>
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
+        <label className="hidden shrink-0 items-center gap-1 text-[var(--cos-text-subtle)] sm:flex">
+          <Clock3 className="h-3.5 w-3.5" />
+          <input
+            aria-label={`${row.task.title} scheduled time`}
+            type="time"
+            value={row.task.scheduledTime ?? ""}
+            onChange={(event) => updateTask(row.task.id, { scheduledTime: event.target.value || null })}
+            className="w-[5.2rem] bg-transparent text-xs font-medium text-[var(--cos-text-muted)] outline-none"
+          />
+        </label>
+        <select
+          aria-label={`${row.task.title} status`}
+          value={row.task.status}
+          onChange={(event) => updateTask(row.task.id, { status: event.target.value as TaskStatus })}
+          className="hidden rounded-md bg-transparent px-1 py-1 text-xs font-semibold text-[var(--cos-text-muted)] outline-none hover:bg-[var(--cos-bg-inset)] sm:block"
+        >
+          <option value="todo">Todo</option>
+          <option value="in-progress">In progress</option>
+          <option value="blocked">Blocked</option>
+          <option value="waiting">Waiting</option>
+          <option value="done">Done</option>
+          <option value="dropped">Dropped</option>
+        </select>
+        <button
+          type="button"
+          aria-label={`Edit task ${row.task.title}`}
+          onClick={() => setEditing(true)}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-primary-text)] sm:h-8 sm:w-8"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          aria-label={`Delete ${row.task.title}`}
+          onClick={() => updateTask(row.task.id, { trashedAt: new Date().toISOString() })}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] opacity-80 hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger-text)] group-hover:opacity-100 sm:h-8 sm:w-8"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
-      <label className="hidden shrink-0 items-center gap-1 text-[var(--cos-text-subtle)] sm:flex">
-        <Clock3 className="h-3.5 w-3.5" />
-        <input
-          aria-label={`${row.task.title} scheduled time`}
-          type="time"
-          value={row.task.scheduledTime ?? ""}
-          onChange={(event) => updateTask(row.task.id, { scheduledTime: event.target.value || null })}
-          className="w-[5.2rem] bg-transparent text-xs font-medium text-[var(--cos-text-muted)] outline-none"
-        />
-      </label>
-      <select
-        aria-label={`${row.task.title} status`}
-        value={row.task.status}
-        onChange={(event) => updateTask(row.task.id, { status: event.target.value as TaskStatus })}
-        className="hidden rounded-md bg-transparent px-1 py-1 text-xs font-semibold text-[var(--cos-text-muted)] outline-none hover:bg-[var(--cos-bg-inset)] sm:block"
-      >
-        <option value="todo">Todo</option>
-        <option value="in-progress">In progress</option>
-        <option value="blocked">Blocked</option>
-        <option value="waiting">Waiting</option>
-        <option value="done">Done</option>
-        <option value="dropped">Dropped</option>
-      </select>
-      <button
-        type="button"
-        aria-label={`Delete ${row.task.title}`}
-        onClick={() => updateTask(row.task.id, { trashedAt: new Date().toISOString() })}
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] opacity-80 hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger-text)] group-hover:opacity-100 sm:h-8 sm:w-8"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
-    </div>
+      {editing ? <TaskEditDialog task={row.task} onClose={() => setEditing(false)} /> : null}
+    </>
   );
 }
 

@@ -96,6 +96,7 @@ export function CommandPageEditor({
 
   useEffect(() => {
     if (dirtyRef.current) return;
+    if (value === lastSavedRef.current && value === latestDraftRef.current) return;
     lastSavedRef.current = value;
     latestDraftRef.current = value;
     setDraft(value);

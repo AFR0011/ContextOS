@@ -20,7 +20,7 @@ function RecoveryList({ rows, empty }: { rows: RecoverableRow[]; empty: string }
   return (
     <div className="space-y-2">
       {rows.map((row) => (
-        <div key={row.key} className="flex flex-col gap-2 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)] px-3 py-3 sm:flex-row sm:items-center">
+        <div key={row.key} className="cos-surface flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--cos-text-subtle)]">{row.type}</span>
             <p className="truncate text-sm font-semibold text-[var(--cos-text-strong)]">{row.title}</p>

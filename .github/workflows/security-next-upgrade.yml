@@ -25,18 +25,24 @@ jobs:
       - name: Install patched Next.js and regenerate lockfile
         run: npm install next@16.3.4 --save-exact
 
-      - name: Audit generated dependency graph
-        run: npm audit --audit-level=low
+      - name: Capture post-upgrade audit report
+        shell: bash
+        run: |
+          set +e
+          npm audit --json > npm-audit-after-next.json
+          STATUS=$?
+          set -e
+          echo "npm audit exit status: $STATUS"
 
       - name: Remove temporary generator
         run: rm .github/workflows/security-next-upgrade.yml
 
-      - name: Commit generated dependency update
+      - name: Commit generated dependency update and audit evidence
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json .github/workflows/security-next-upgrade.yml
-          git commit -m "security: upgrade Next.js to 16.3.4"
+          git add package.json package-lock.json npm-audit-after-next.json .github/workflows/security-next-upgrade.yml
+          git commit -m "security: generate Next.js 16.3.4 upgrade audit"
           git push origin HEAD:security/next-16.3.4

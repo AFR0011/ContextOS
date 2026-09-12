@@ -6,8 +6,7 @@ import {
   DashboardView,
   DatesView,
   InboxView,
-  SearchView,
-  SettingsView
+  SearchView
 } from "@/components/workspace/Views";
 import {
   ProjectDetailLifecycleView,
@@ -16,6 +15,7 @@ import {
 } from "@/components/workspace/Batch2LifecycleViews";
 import { ArchiveLifecycleView } from "@/components/workspace/ArchiveLifecycleView";
 import { AreaRequiredView, AreasSetupView, FirstRunSetup } from "@/components/workspace/FirstRunSetup";
+import { ProductSettingsView } from "@/components/workspace/ProductSettingsView";
 import { ResourcesLifecycleView } from "@/components/workspace/ResourcesLifecycleView";
 import { useWorkspace } from "@/lib/client-store";
 import { useLocalLocation } from "@/lib/local-router";
@@ -62,7 +62,7 @@ export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNod
   if (pathname === "/search") return <SearchView />;
   if (pathname === "/archive") return <ArchiveLifecycleView />;
   if (pathname === "/reviews") return <ReviewsLifecycleView />;
-  if (pathname === "/settings") return <SettingsView />;
+  if (pathname === "/settings") return <ProductSettingsView />;
 
   return <>{fallback ?? <DashboardView />}</>;
 }

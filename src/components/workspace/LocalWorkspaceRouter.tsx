@@ -5,7 +5,6 @@ import {
   AreasView,
   DashboardView,
   DatesView,
-  InboxView,
   SearchView
 } from "@/components/workspace/Views";
 import {
@@ -15,6 +14,7 @@ import {
 } from "@/components/workspace/Batch2LifecycleViews";
 import { ArchiveLifecycleView } from "@/components/workspace/ArchiveLifecycleView";
 import { AreaRequiredView, AreasSetupView, FirstRunSetup } from "@/components/workspace/FirstRunSetup";
+import { ProductInboxView } from "@/components/workspace/ProductInboxView";
 import { ProductSettingsView } from "@/components/workspace/ProductSettingsView";
 import { ResourcesLifecycleView } from "@/components/workspace/ResourcesLifecycleView";
 import { useWorkspace } from "@/lib/client-store";
@@ -50,7 +50,7 @@ export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNod
   }
 
   if (pathname === "/dashboard") return <DashboardView />;
-  if (pathname === "/inbox") return <InboxView />;
+  if (pathname === "/inbox") return <ProductInboxView />;
   if (pathname === "/projects") return activeDomainCount ? <ProjectsLifecycleView /> : <AreaRequiredView target="projects" />;
 
   const projectId = projectIdFromPath(pathname);

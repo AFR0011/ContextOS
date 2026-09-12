@@ -38,8 +38,14 @@ const primaryNavItems = [
   { href: "/search", label: "Search", icon: Search }
 ] as const;
 
-const utilityNavItems = [
+const organizationNavItems = [
   { href: "/dates", label: "Dates" },
+  { href: "/areas", label: "Areas" },
+  { href: "/resources", label: "Resources" },
+  { href: "/reviews", label: "Reviews" }
+] as const;
+
+const utilityNavItems = [
   { href: "/archive", label: "Archive" },
   { href: "/settings", label: "Settings" }
 ] as const;
@@ -289,6 +295,31 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
                 <p className="px-3 py-2 text-xs text-[var(--cos-text-subtle)]">No active projects</p>
               )}
             </div>
+          </div>
+        </nav>
+
+        <nav aria-label="Organization navigation" data-testid="workspace-secondary-nav" className="border-t border-[var(--cos-border-soft)] px-3 py-3">
+          <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Organize</p>
+          <div className="grid grid-cols-2 gap-1">
+            {organizationNavItems.map((item) => {
+              const active = currentPath === item.href;
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => goTo(item.href)}
+                  aria-label={item.label}
+                  aria-current={active ? "page" : undefined}
+                  className={`min-h-10 rounded-md px-3 py-2 text-left text-xs font-semibold ${
+                    active
+                      ? "bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
+                      : "text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text)]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
         </nav>
 

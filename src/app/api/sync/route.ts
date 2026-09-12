@@ -7,6 +7,7 @@ import type { QueuedMutation } from "@/lib/types";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
 import { logOperationalError } from "@/lib/operational-log";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { enforceWorkspaceRestoreBarrier } from "@/lib/restore-barrier";
 
 const MAX_SYNC_BYTES = 256_000;
 const MAX_MUTATIONS = 100;
@@ -93,10 +94,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid sync payload." }, { status: 400 });
     }
 
-    const syncResult = await applySyncMutations(user.id, parsed.data.mutations as QueuedMutation[]);
+    const mutations = parsed.data.mutations as QueuedMutation[];
+    const restoreBarrier = await enforceWorkspaceRestoreBarrier(user.id, mutations);
+    const syncResult = await applySyncMutations(user.id, restoreBarrier.allowed);
     const data = await getWorkspaceData(user.id);
 
-    return NextResponse.json({ data, ...syncResult });
+    return NextResponse.json({
+      data,
+      appliedMutationIds: [...restoreBarrier.blockedMutationIds, ...syncResult.appliedMutationIds],
+      warnings: [...restoreBarrier.warnings, ...syncResult.warnings]
+    });
   } catch (error) {
     if (error instanceof SyncPayloadError) {
       return NextResponse.json({ error: error.message }, { status: 400 });

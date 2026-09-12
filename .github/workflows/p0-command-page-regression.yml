@@ -1,0 +1,62 @@
+name: P0 Command Page Regression
+
+on:
+  push:
+    branches:
+      - fix/p0-command-page-save-loss
+  workflow_dispatch:
+
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: contextos
+          POSTGRES_PASSWORD: contextos
+          POSTGRES_DB: contextos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U contextos -d contextos"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://contextos:contextos@localhost:5432/contextos?schema=public
+      AUTH_SECRET: ci-${{ github.sha }}-${{ github.run_id }}
+      SEED_DEMO_EMAIL: demo@contextos.local
+      SEED_DEMO_PASSWORD: contextos-demo-v011
+      ALLOW_DEMO_RESET: "true"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy database migrations
+        run: npm run db:deploy
+
+      - name: Seed demo data
+        run: npm run db:seed
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run P0 command-page regression
+        run: npx playwright test tests/e2e/p0-command-page-save-loss.spec.ts --workers=1 --reporter=github

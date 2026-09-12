@@ -1,0 +1,45 @@
+name: Regenerate Security Lockfile
+
+on:
+  push:
+    branches:
+      - security/next-16.3.4
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Regenerate lockfile from patched dependency policy
+        run: npm install
+
+      - name: Require clean dependency audit
+        run: npm audit --audit-level=low
+
+      - name: Typecheck dependency result
+        run: npm run typecheck
+
+      - name: Remove temporary generation evidence
+        run: rm .github/workflows/security-regenerate-lock.yml npm-audit-after-next.json
+
+      - name: Commit generated lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json .github/workflows/security-regenerate-lock.yml npm-audit-after-next.json
+          git commit -m "security: regenerate lockfile with patched dependency graph"
+          git push origin HEAD:security/next-16.3.4

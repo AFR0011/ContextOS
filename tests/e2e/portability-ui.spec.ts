@@ -1,19 +1,23 @@
 import { expect, test } from "@playwright/test";
 
-test("Settings previews and confirms a complete workspace restore", async ({ page }) => {
-  const token = `portability-ui-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+async function registerFresh(page: any, prefix: string) {
+  const token = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const email = `${token}@example.test`;
-  const password = `Portability-${Date.now()}-Test!`;
+  const password = `Portability-${Date.now()}-${Math.random().toString(36).slice(2)}!`;
   const registered = await page.request.post("/api/auth/register", {
     data: { email, password },
     headers: { "x-forwarded-for": token }
   });
   expect(registered.status()).toBe(200);
+}
+
+test("fresh first run exposes restore and completes a workspace replacement", async ({ page }) => {
+  await registerFresh(page, "portability-ui-source");
 
   const now = new Date().toISOString();
   const domain = {
     id: `dom-portability-ui-${Date.now()}`,
-    name: "Personal",
+    name: "Restored Personal",
     archived: false,
     createdAt: now,
     updatedAt: now
@@ -36,7 +40,15 @@ test("Settings previews and confirms a complete workspace restore", async ({ pag
   expect(exported.status()).toBe(200);
   const bundleText = await exported.text();
 
-  await page.goto("/settings");
+  const loggedOut = await page.request.post("/api/auth/logout");
+  expect(loggedOut.status()).toBe(200);
+  await registerFresh(page, "portability-ui-destination");
+
+  await page.goto("/dashboard");
+  await expect(page.getByTestId("first-run-setup")).toBeVisible();
+  await page.getByRole("button", { name: "Restore a workspace" }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+
   const portability = page.getByTestId("data-portability-settings");
   await expect(portability).toBeVisible();
   await expect(portability.getByRole("link", { name: "Export JSON" })).toHaveAttribute("href", "/api/portability/export?format=json");
@@ -63,5 +75,5 @@ test("Settings previews and confirms a complete workspace restore", async ({ pag
   await expect(page.getByTestId("workspace-import-success")).toContainText("Workspace restored from export.");
   await expect(page.getByTestId("workspace-import-preview")).toHaveCount(0);
   await expect(page.getByTestId("pending-count")).toHaveText("0");
-  await expect(page.getByLabel("Area name Personal")).toHaveValue("Personal");
+  await expect(page.getByLabel("Area name Restored Personal")).toHaveValue("Restored Personal");
 });

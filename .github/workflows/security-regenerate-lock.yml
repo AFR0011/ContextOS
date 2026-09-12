@@ -1,4 +1,4 @@
-name: Regenerate Security Lockfile
+name: Capture Security Install Failure
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  generate:
+  diagnose:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     steps:
@@ -22,24 +22,25 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Regenerate lockfile from patched dependency policy
-        run: npm install
+      - name: Capture npm install diagnostics
+        shell: bash
+        run: |
+          set +e
+          npm install > npm-install-diagnostic.txt 2>&1
+          STATUS=$?
+          set -e
+          printf '\nnpm install exit status: %s\n' "$STATUS" >> npm-install-diagnostic.txt
+          git restore package-lock.json || true
 
-      - name: Require clean dependency audit
-        run: npm audit --audit-level=low
+      - name: Remove temporary diagnostic workflow
+        run: rm .github/workflows/security-regenerate-lock.yml
 
-      - name: Typecheck dependency result
-        run: npm run typecheck
-
-      - name: Remove temporary generation evidence
-        run: rm .github/workflows/security-regenerate-lock.yml npm-audit-after-next.json
-
-      - name: Commit generated lockfile
+      - name: Commit diagnostics
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json .github/workflows/security-regenerate-lock.yml npm-audit-after-next.json
-          git commit -m "security: regenerate lockfile with patched dependency graph"
+          git add npm-install-diagnostic.txt .github/workflows/security-regenerate-lock.yml
+          git commit -m "chore: capture security dependency install diagnostics"
           git push origin HEAD:security/next-16.3.4

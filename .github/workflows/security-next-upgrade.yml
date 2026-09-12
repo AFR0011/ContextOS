@@ -1,0 +1,42 @@
+name: Generate Next Security Upgrade
+
+on:
+  push:
+    branches:
+      - security/next-16.3.4
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install patched Next.js and regenerate lockfile
+        run: npm install next@16.3.4 --save-exact
+
+      - name: Audit generated dependency graph
+        run: npm audit --audit-level=low
+
+      - name: Remove temporary generator
+        run: rm .github/workflows/security-next-upgrade.yml
+
+      - name: Commit generated dependency update
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json .github/workflows/security-next-upgrade.yml
+          git commit -m "security: upgrade Next.js to 16.3.4"
+          git push origin HEAD:security/next-16.3.4

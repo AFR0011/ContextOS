@@ -102,7 +102,7 @@ test("resources leave the active library when archived or trashed and restore cl
   await expect(restored).toHaveCount(0);
 
   await page.goto("/archive");
-  await page.getByRole("tab", { name: "Trash", exact: true }).click();
+  await page.getByRole("button", { name: /^Trash \(/ }).click();
   await expect(page.getByText(title, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: `Restore ${title}`, exact: true }).click();
 
@@ -133,7 +133,7 @@ test("archived and deleted Inbox captures are recoverable from Archive", async (
   await expect(page.getByText(archived, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: `Restore ${archived}`, exact: true }).click();
 
-  await page.getByRole("tab", { name: "Trash", exact: true }).click();
+  await page.getByRole("button", { name: /^Trash \(/ }).click();
   await expect(page.getByText(deleted, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: `Restore ${deleted}`, exact: true }).click();
 
@@ -160,7 +160,7 @@ test("trashing a parent project does not cascade into its subcontext", async ({ 
   await expect.poll(async () => (await localProjectState(page, child))?.trashedAt ?? null).toBeNull();
 
   await page.goto("/archive");
-  await page.getByRole("tab", { name: "Trash", exact: true }).click();
+  await page.getByRole("button", { name: /^Trash \(/ }).click();
   await page.getByRole("button", { name: "Restore ContextOS Demo", exact: true }).click();
   await page.goto("/projects");
   await expect(page.locator("main").getByRole("button", { name: /^ContextOS Demo/ })).toBeVisible();

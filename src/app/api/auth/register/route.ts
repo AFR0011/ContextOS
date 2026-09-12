@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createSession, hashPassword, publicUser } from "@/lib/auth";
-import { createStarterWorkspace } from "@/lib/starter";
+import { createWorkspaceScaffold } from "@/lib/starter";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
 import { logOperationalError } from "@/lib/operational-log";
 import { isPublicRegistrationEnabled } from "@/lib/registration";
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
         passwordHash
       }
     });
-    await createStarterWorkspace(prisma, user.id, false);
+    await createWorkspaceScaffold(prisma, user.id);
     await createSession(user.id);
 
     return NextResponse.json({ user: publicUser(user) });

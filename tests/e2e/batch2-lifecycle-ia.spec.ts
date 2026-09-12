@@ -84,11 +84,11 @@ test("resources leave the active library when archived or trashed and restore cl
 
   await page.getByPlaceholder("Resource title...").fill(title);
   await page.getByRole("button", { name: "Add", exact: true }).click();
-  const titleInput = page.getByDisplayValue(title);
-  await expect(titleInput).toBeVisible();
+  const titleInput = page.getByPlaceholder("Note title");
+  await expect(titleInput).toHaveValue(title);
   const resourceTestId = await titleInput.locator("xpath=ancestor::section[1]").getAttribute("data-testid");
   expect(resourceTestId).toBeTruthy();
-  const resource = page.getByTestId(resourceTestId!);
+  const resource = page.getByTestId(resourceTestId ?? "missing-resource-testid");
   await resource.getByRole("button", { name: "Done", exact: true }).click();
   await expect(resource.getByText(title, { exact: true })).toBeVisible();
 

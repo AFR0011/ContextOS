@@ -80,7 +80,7 @@ test("new accounts start clean, survive bootstrap, and reach useful work through
   await page.getByPlaceholder("Project name...").fill(projectName);
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page).toHaveURL(/\/projects\//);
-  await expect(page.getByTestId("project-command-page")).toContainText(projectName);
+  await expect(page.getByPlaceholder("Project name")).toHaveValue(projectName);
 
   await page.goto("/resources");
   const resourceTitle = `First resource ${Date.now()}`;

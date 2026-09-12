@@ -18,12 +18,14 @@ function SyncMetric({ label, value, testId }: { label: string; value: string; te
   );
 }
 
-function AreaSettingsRow({ domain, onUpdate }: { domain: Domain; onUpdate: (updates: Partial<Domain>) => void }) {
+function AreaSettingsRow({ domain, online, onUpdate }: { domain: Domain; online: boolean; onUpdate: (updates: Partial<Domain>) => void }) {
   const [name, setName] = useState(domain.name);
 
   useEffect(() => {
     setName(domain.name);
   }, [domain.name]);
+
+  const dirty = name !== domain.name;
 
   function commitName() {
     const next = name.trim();
@@ -36,17 +38,26 @@ function AreaSettingsRow({ domain, onUpdate }: { domain: Domain; onUpdate: (upda
 
   return (
     <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center">
-      <input
-        aria-label={`Area name ${domain.name}`}
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        onBlur={commitName}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") event.currentTarget.blur();
-          if (event.key === "Escape") setName(domain.name);
-        }}
-        className="cos-input min-h-10 min-w-0 flex-1 px-3 py-2 text-sm"
-      />
+      <div className="min-w-0 flex-1">
+        <input
+          aria-label={`Area name ${domain.name}`}
+          placeholder="Area name (Domain name)"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          onBlur={commitName}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+            if (event.key === "Escape") setName(domain.name);
+          }}
+          className="cos-input min-h-10 w-full px-3 py-2 text-sm"
+        />
+        {dirty ? (
+          <div className="mt-1 flex flex-wrap items-center justify-end gap-2 text-[11px]">
+            <span className="text-[var(--cos-warning-text)]">Unsaved changes</span>
+            {!online ? <span data-testid="offline-edit-warning" className="cos-pill cos-pill-warning">Offline: save will queue</span> : null}
+          </div>
+        ) : null}
+      </div>
       <button type="button" onClick={() => onUpdate({ archived: !domain.archived })} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs">
         {domain.archived ? "Restore" : "Archive"}
       </button>
@@ -120,7 +131,7 @@ export function ProductSettingsView() {
         <p className="mt-2 text-sm text-[var(--cos-text-muted)]">Areas are stable responsibilities or domains that organize Projects and Resources.</p>
         <div className="mt-3 divide-y divide-[var(--cos-border-soft)] rounded-lg border border-[var(--cos-border-soft)]">
           {data.domains.map((domain) => (
-            <AreaSettingsRow key={domain.id} domain={domain} onUpdate={(updates) => updateDomain(domain.id, updates)} />
+            <AreaSettingsRow key={domain.id} domain={domain} online={sync.online} onUpdate={(updates) => updateDomain(domain.id, updates)} />
           ))}
           <form
             className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center"
@@ -129,7 +140,7 @@ export function ProductSettingsView() {
               createArea();
             }}
           >
-            <input value={newArea} onChange={(event) => setNewArea(event.target.value)} placeholder="Add Area..." aria-label="Add Area" className="cos-input min-h-10 min-w-0 flex-1 px-3 py-2 text-sm" />
+            <input value={newArea} onChange={(event) => setNewArea(event.target.value)} placeholder="Add Area... / Add domain..." aria-label="Add Area" className="cos-input min-h-10 min-w-0 flex-1 px-3 py-2 text-sm" />
             <button type="submit" disabled={!newArea.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 py-2 text-sm disabled:opacity-50"><Plus className="h-4 w-4" /> Add Area</button>
           </form>
         </div>

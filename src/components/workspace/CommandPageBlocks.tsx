@@ -82,15 +82,22 @@ export function CommandPageEditor({
   const [draft, setDraft] = useState(value);
   const [saveState, setSaveState] = useState<"idle" | "dirty" | "saved">("idle");
   const lastSavedRef = useRef(value);
+  const latestDraftRef = useRef(value);
+  const onSaveRef = useRef(onSave);
   const dirtyRef = useRef(false);
 
-  useEffect(() => {
-    dirtyRef.current = draft !== lastSavedRef.current;
-  }, [draft]);
+  onSaveRef.current = onSave;
+
+  function updateDraft(next: string) {
+    latestDraftRef.current = next;
+    dirtyRef.current = next !== lastSavedRef.current;
+    setDraft(next);
+  }
 
   useEffect(() => {
     if (dirtyRef.current) return;
     lastSavedRef.current = value;
+    latestDraftRef.current = value;
     setDraft(value);
     setSaveState("idle");
   }, [value]);
@@ -99,18 +106,30 @@ export function CommandPageEditor({
     if (draft === lastSavedRef.current) return;
     setSaveState("dirty");
     const handle = window.setTimeout(() => {
-      onSave(draft);
+      onSaveRef.current(draft);
       lastSavedRef.current = draft;
+      latestDraftRef.current = draft;
+      dirtyRef.current = false;
       setSaveState("saved");
       window.setTimeout(() => setSaveState("idle"), 1200);
     }, 900);
     return () => window.clearTimeout(handle);
-  }, [draft, onSave]);
+  }, [draft]);
+
+  useEffect(() => {
+    return () => {
+      const pending = latestDraftRef.current;
+      if (pending === lastSavedRef.current) return;
+      onSaveRef.current(pending);
+      lastSavedRef.current = pending;
+      dirtyRef.current = false;
+    };
+  }, []);
 
   return (
     <MarkdownEditor
       value={draft}
-      onChange={setDraft}
+      onChange={updateDraft}
       onCaptureLine={onCommandLine}
       allowedCaptureCommands={["task", "date"]}
       placeholder={placeholder}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ArrowRight, Boxes, Plus } from "lucide-react";
+import { ArrowRight, Boxes, Plus, Upload } from "lucide-react";
 import { useWorkspace } from "@/lib/client-store";
 import { useLocalRouter } from "@/lib/local-router";
 
@@ -45,6 +45,8 @@ function AreaCreator({ compact = false }: { compact?: boolean }) {
 }
 
 export function FirstRunSetup() {
+  const router = useLocalRouter();
+
   return (
     <div data-testid="first-run-setup" className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <section className="cos-surface p-5 sm:p-7">
@@ -62,6 +64,18 @@ export function FirstRunSetup() {
         </div>
 
         <AreaCreator />
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--cos-border-soft)] pt-4">
+          <span className="text-sm text-[var(--cos-text-muted)]">Already have a ContextOS workspace export?</span>
+          <button
+            type="button"
+            onClick={() => router.push("/settings")}
+            className="cos-btn cos-btn-secondary min-h-10 px-4 py-2 text-sm"
+          >
+            <Upload className="h-4 w-4" />
+            Restore a workspace
+          </button>
+        </div>
 
         <div className="mt-6 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-4 text-sm text-[var(--cos-text-muted)]">
           <p className="font-medium text-[var(--cos-text-strong)]">What happens next?</p>

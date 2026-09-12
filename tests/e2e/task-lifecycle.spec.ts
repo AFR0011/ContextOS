@@ -155,10 +155,17 @@ test("task can be fully replanned, reassigned, completed, trashed, and restored"
   await scopedTasks.getByRole("button", { name: `Mark ${editedTitle} done` }).click();
   await expect(scopedTasks.getByRole("button", { name: `Reopen ${editedTitle}` })).toBeVisible();
   await scopedTasks.getByRole("button", { name: `Reopen ${editedTitle}` }).click();
+  await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({ status: "todo", trashed: false });
   await expect(scopedTasks.getByRole("button", { name: `Mark ${editedTitle} done` })).toBeVisible();
 
   await scopedTasks.getByRole("button", { name: `Edit task ${editedTitle}` }).click();
-  await page.getByTestId("task-edit-dialog").getByRole("button", { name: "Move to trash" }).click();
+  const trashDialog = page.getByTestId("task-edit-dialog");
+  await expect(trashDialog).toBeVisible();
+  await expect(trashDialog.getByLabel("Title")).toHaveValue(editedTitle);
+  const moveToTrash = trashDialog.getByRole("button", { name: "Move to trash" });
+  await expect(moveToTrash).toBeVisible();
+  await moveToTrash.click();
+  await expect(trashDialog).toHaveCount(0);
   await expect(scopedTasks.getByLabel(`Task title ${editedTitle}`)).toHaveCount(0);
   await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({ trashed: true });
 

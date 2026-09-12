@@ -148,7 +148,7 @@ test("multiple verified local workspaces require and honor explicit offline acco
   await expect(page.getByTestId("local-account-chooser")).toBeVisible();
   await page.getByRole("button", { name: second.email }).click();
 
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByTestId("first-run-setup")).toBeVisible();
   await expect(page.getByText(second.email, { exact: true })).toBeVisible();
   await expect(page.getByTestId("global-sync-indicator").first()).toContainText("Offline");
 });

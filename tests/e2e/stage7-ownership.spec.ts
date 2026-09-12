@@ -26,9 +26,11 @@ test("Stage 7 rejects cross-user relationship references and leaves no partial r
   expect(foreignTask?.id).toBeTruthy();
 
   await logout(page.request);
-  const email = `stage7-owner-${Date.now()}@example.test`;
+  const nonce = Date.now();
+  const email = `stage7-owner-${nonce}@example.test`;
   const registered = await page.request.post("/api/auth/register", {
-    data: { email, password: demoPassword }
+    data: { email, password: demoPassword },
+    headers: { "x-forwarded-for": `stage7-owner-${nonce}` }
   });
   expect(registered.status()).toBe(200);
 
@@ -101,9 +103,11 @@ test("Stage 7 rejects cross-user relationship references and leaves no partial r
 });
 
 test("Stage 7 accepted mutation replay is idempotent per user", async ({ page }) => {
-  const email = `stage7-replay-${Date.now()}@example.test`;
+  const nonce = Date.now();
+  const email = `stage7-replay-${nonce}@example.test`;
   const registered = await page.request.post("/api/auth/register", {
-    data: { email, password: demoPassword }
+    data: { email, password: demoPassword },
+    headers: { "x-forwarded-for": `stage7-replay-${nonce}` }
   });
   expect(registered.status()).toBe(200);
 

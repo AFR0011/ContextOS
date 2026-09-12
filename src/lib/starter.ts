@@ -36,13 +36,45 @@ export async function clearWorkspace(tx: Tx, userId: string) {
   await tx.domain.deleteMany({ where: { userId } });
 }
 
+export async function createWorkspaceScaffold(tx: Tx, userId: string) {
+  await tx.dashboardScratchpad.createMany({
+    data: [
+      {
+        id: idFor(userId, "dashboard-scratchpad"),
+        userId,
+        content: ""
+      }
+    ],
+    skipDuplicates: true
+  });
+
+  await tx.dashboardPreference.createMany({
+    data: [
+      {
+        id: idFor(userId, "dashboard-preferences"),
+        userId,
+        sectionOrder: ["tasks", "dates", "projects", "notepad"],
+        collapsedSections: [],
+        reviewPromptDismissals: [],
+        dateWindowDays: 14,
+        showCompleted: false,
+        taskSortMode: "recent"
+      }
+    ],
+    skipDuplicates: true
+  });
+}
+
 export async function createStarterWorkspace(tx: Tx, userId: string, reset = false) {
   if (reset) {
     await clearWorkspace(tx, userId);
   }
 
   const existingDomains = await tx.domain.count({ where: { userId } });
-  if (existingDomains > 0 && !reset) return;
+  if (existingDomains > 0 && !reset) {
+    await createWorkspaceScaffold(tx, userId);
+    return;
+  }
 
   const domains = Object.fromEntries(
     defaultDomainTemplates.map(([key]) => [key, idFor(userId, `dom-${key}`)])
@@ -284,30 +316,5 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
     skipDuplicates: true
   });
 
-  await tx.dashboardScratchpad.createMany({
-    data: [
-      {
-        id: idFor(userId, "dashboard-scratchpad"),
-        userId,
-        content: ""
-      }
-    ],
-    skipDuplicates: true
-  });
-
-  await tx.dashboardPreference.createMany({
-    data: [
-      {
-        id: idFor(userId, "dashboard-preferences"),
-        userId,
-        sectionOrder: ["tasks", "dates", "projects", "notepad"],
-        collapsedSections: [],
-        reviewPromptDismissals: [],
-        dateWindowDays: 14,
-        showCompleted: false,
-        taskSortMode: "recent"
-      }
-    ],
-    skipDuplicates: true
-  });
+  await createWorkspaceScaffold(tx, userId);
 }

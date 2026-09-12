@@ -61,8 +61,8 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
             <h2 className="text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">{mode === "login" ? "Sign in" : "Create account"}</h2>
             <p className="mt-1 text-sm text-[var(--cos-text-muted)]">
               {mode === "login"
-                ? registrationEnabled ? "Use the seeded demo account or your own account." : "Sign in to your private workspace."
-                : registrationEnabled ? "New accounts start with the demo workspace data." : "Registration is closed for this deployment."}
+                ? "Sign in to your workspace."
+                : registrationEnabled ? "Start with a clean workspace and set up your first Area." : "Registration is closed for this deployment."}
             </p>
           </div>
 

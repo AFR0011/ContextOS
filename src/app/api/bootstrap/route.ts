@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getWorkspaceData } from "@/lib/data";
-import { createStarterWorkspace } from "@/lib/starter";
+import { createWorkspaceScaffold } from "@/lib/starter";
 import { prisma } from "@/lib/prisma";
 import { databaseUnavailableResponse, isDatabaseUnavailableError } from "@/lib/database-health";
 import { logOperationalError } from "@/lib/operational-log";
@@ -13,7 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await createStarterWorkspace(prisma, user.id, false);
+    await createWorkspaceScaffold(prisma, user.id);
     const data = await getWorkspaceData(user.id);
     return NextResponse.json({ user, data });
   } catch (error) {

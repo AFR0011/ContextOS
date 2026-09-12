@@ -27,6 +27,9 @@ async function registerDisposableUser(page: Page) {
   });
   const body = await response.json().catch(() => null);
   expect(response.status(), JSON.stringify(body)).toBe(200);
+  const fixtureResponse = await page.request.post("/api/reset-demo");
+  const fixtureBody = await fixtureResponse.json().catch(() => null);
+  expect(fixtureResponse.status(), JSON.stringify(fixtureBody)).toBe(200);
   await page.goto("/dashboard");
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   return { email, password };

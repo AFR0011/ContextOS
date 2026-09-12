@@ -87,7 +87,9 @@ export function ProductSettingsView() {
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [importBusy, setImportBusy] = useState(false);
   const canRefreshFromServer = Boolean(sync.online && !sync.refreshing && !sync.syncing && sync.pendingCount === 0);
+  const canExport = Boolean(sync.online && !sync.refreshing && !sync.syncing && sync.pendingCount === 0);
   const refreshTitle = sync.pendingCount > 0 ? "Sync pending changes before refreshing" : sync.online ? "Refresh workspace from server" : "Refresh unavailable while offline";
+  const exportTitle = sync.pendingCount > 0 ? "Sync pending local changes before exporting" : sync.online ? "Export workspace" : "Export requires an online, fully synced workspace";
   const expectedConfirmation = importMode === "replace" ? "REPLACE" : "MERGE";
   const canRestore = Boolean(
     importBundle && importPreview && sync.online && sync.pendingCount === 0 && !sync.syncing && !sync.refreshing && !importBusy && importConfirmation === expectedConfirmation
@@ -239,8 +241,17 @@ export function ProductSettingsView() {
         <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-muted)]">Data portability</h2>
         <p className="mt-2 max-w-3xl text-sm text-[var(--cos-text-muted)]">Export the complete workspace as versioned JSON for restore, or as Markdown for a human-readable copy. JSON restore validates the whole file before changing anything.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <a href="/api/portability/export?format=json" className="cos-btn cos-btn-primary px-4 py-2 text-sm"><FileJson className="h-4 w-4" /> Export JSON</a>
-          <a href="/api/portability/export?format=markdown" className="cos-btn cos-btn-secondary px-4 py-2 text-sm"><FileText className="h-4 w-4" /> Export Markdown</a>
+          {canExport ? (
+            <>
+              <a href="/api/portability/export?format=json" className="cos-btn cos-btn-primary px-4 py-2 text-sm"><FileJson className="h-4 w-4" /> Export JSON</a>
+              <a href="/api/portability/export?format=markdown" className="cos-btn cos-btn-secondary px-4 py-2 text-sm"><FileText className="h-4 w-4" /> Export Markdown</a>
+            </>
+          ) : (
+            <>
+              <button type="button" disabled title={exportTitle} className="cos-btn cos-btn-primary px-4 py-2 text-sm opacity-40"><FileJson className="h-4 w-4" /> Export JSON</button>
+              <button type="button" disabled title={exportTitle} className="cos-btn cos-btn-secondary px-4 py-2 text-sm opacity-40"><FileText className="h-4 w-4" /> Export Markdown</button>
+            </>
+          )}
           <label className="cos-btn cos-btn-secondary cursor-pointer px-4 py-2 text-sm">
             <Upload className="h-4 w-4" /> Choose JSON to import
             <input
@@ -252,6 +263,7 @@ export function ProductSettingsView() {
             />
           </label>
         </div>
+        {!canExport ? <p data-testid="workspace-export-blocked" className="mt-2 text-sm text-[var(--cos-warning-text)]">{exportTitle}. Export is enabled after this device is online and fully synced.</p> : null}
 
         {importFileName ? <p className="mt-3 text-sm font-medium text-[var(--cos-text)]">Selected: {importFileName}</p> : null}
         {importBundle ? (

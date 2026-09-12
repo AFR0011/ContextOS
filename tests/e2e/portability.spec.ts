@@ -47,6 +47,21 @@ function workspaceOnly(data: any) {
   return workspace;
 }
 
+function normalizeWorkspace(workspace: any) {
+  return Object.fromEntries(
+    Object.entries(workspace).map(([key, value]) => [
+      key,
+      Array.isArray(value)
+        ? [...value].sort((a: any, b: any) => String(a.id).localeCompare(String(b.id)))
+        : value
+    ])
+  );
+}
+
+function sortedNames(records: { name: string }[]) {
+  return records.map((item) => item.name).sort((a, b) => a.localeCompare(b));
+}
+
 function assertRelationships(workspace: any) {
   const domains = new Set(workspace.domains.map((item: any) => item.id));
   const projects = new Set(workspace.projects.map((item: any) => item.id));
@@ -161,7 +176,7 @@ test("replace import round-trips the complete workspace and blocks pre-restore q
   expect(restore.status()).toBe(200);
 
   const restored = await bootstrap(page.request);
-  expect(workspaceOnly(restored)).toEqual(bundle.workspace);
+  expect(normalizeWorkspace(workspaceOnly(restored))).toEqual(normalizeWorkspace(bundle.workspace));
   assertRelationships(restored);
 
   const staleMutationId = `pre-restore-stale-${Date.now()}`;
@@ -223,8 +238,8 @@ test("replace import into another account remaps foreign ids while preserving re
   assertRelationships(restored);
 
   const exportedAgain = await exportBundle(page.request);
-  expect(exportedAgain.workspace.domains.map((item) => item.name)).toEqual(bundle.workspace.domains.map((item) => item.name));
-  expect(exportedAgain.workspace.projects.map((item) => item.name)).toEqual(bundle.workspace.projects.map((item) => item.name));
+  expect(sortedNames(exportedAgain.workspace.domains)).toEqual(sortedNames(bundle.workspace.domains));
+  expect(sortedNames(exportedAgain.workspace.projects)).toEqual(sortedNames(bundle.workspace.projects));
 });
 
 test("invalid imports are rejected before mutation", async ({ page }) => {

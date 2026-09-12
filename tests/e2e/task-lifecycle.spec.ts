@@ -90,8 +90,10 @@ async function expectMinTouchTarget(locator: Locator, min = 40) {
 }
 
 test("task can be fully replanned, reassigned, completed, trashed, and restored", async ({ page }) => {
+  const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
 
+  const plannedDate = localDateKey();
   const suffix = Date.now();
   const originalTitle = `Lifecycle task ${suffix}`;
   const editedTitle = `Lifecycle task edited ${suffix}`;
@@ -107,7 +109,7 @@ test("task can be fully replanned, reassigned, completed, trashed, and restored"
   await expect(dialog).toBeVisible();
   await dialog.getByLabel("Title").fill(editedTitle);
   await dialog.getByLabel("Status").selectOption("blocked");
-  await dialog.getByLabel("Planned date").fill("2030-03-18");
+  await dialog.getByLabel("Planned date").fill(plannedDate);
   await dialog.getByLabel("Due date").fill("2030-03-21");
   await dialog.getByLabel("Scheduled time").fill("13:45");
   await dialog.getByLabel("Project").selectOption({ label: "Benchmark Evaluation" });
@@ -119,7 +121,7 @@ test("task can be fully replanned, reassigned, completed, trashed, and restored"
   await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({
     title: editedTitle,
     status: "blocked",
-    plannedDate: "2030-03-18",
+    plannedDate,
     dueDate: "2030-03-21",
     scheduledTime: "13:45",
     projectName: "Benchmark Evaluation",

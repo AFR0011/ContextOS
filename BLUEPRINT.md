@@ -10,26 +10,23 @@
 
 ## Status
 
-**Version:** v1.0 (implementation batch v0.2.8)
+**Product Specification:** v1.0  
+**Package Version:** v0.2.8  
 **Product Type:** Execution-first context recovery system  
-**Primary User:** Single-user MVP  
-**Platform:** Online-first PWA, offline capture later  
-**Architecture Direction:** Next.js + PostgreSQL  
+**Primary User:** Single-user / self-hostable MVP  
+**Platform:** Local-first PWA with verified offline workspace reopen and queued supported mutations after a successful authenticated bootstrap on the device  
+**Architecture Direction:** Next.js + PostgreSQL + user-scoped IndexedDB + versioned service-worker shell  
 **Purpose:** Replace Notion, task apps, and phone notes for daily execution, project recovery, open-loop tracking, and lightweight context management.
 
-### Deployment Readiness - 2026-06-15 Audit
+### Current Verified Boundary
 
-v0.2.8 keeps the v0.2.7 production-readiness foundation and repairs the first remote GitHub Actions failure path: Dashboard Notepad slash-command timing/hydration. It also adds a first mobile accessibility foundation for touched task/editor controls.
+Package `0.2.8` is the implementation baseline; subsequent productization and refactor batches intentionally continue to use that package version unless a release-version change is made separately.
 
-Remaining deployment-hardening work:
+The local-first completion program is complete through Stage 10 final acceptance and public-claims verification. Stage 8 records real non-production HTTPS preview, PostgreSQL-native backup/restore rehearsal, exact release-pair rollback compatibility, and same-origin PWA upgrade evidence. Stage 9 verifies lifecycle and destructive-data behavior. Stage 10 re-runs the accumulated boundary in production-build offline, lifecycle, full E2E, and database-outage matrices. Current accepted product batches continue to rerun that complete ladder.
 
-1. Run a production-like preview plus migration, backup/restore, monitoring, and rollback rehearsal.
-2. Decide whether provider/WAF-level auth protection is needed in addition to the v0.2.6 app-level limiter.
-3. Run deeper installed-PWA upgrade smoke from an older cached worker.
-4. Finish broader mobile editor/action accessibility work outside the task-title wrapping fixed in v0.2.3 and touched controls fixed in v0.2.8.
-5. Validate the Notion-style command page flow so the Dashboard editor, live Tasks/Dates blocks, and Project detail recovery blocks feel simpler in daily use.
+The repository is a self-hostable application, not an operated hosted SaaS service or a compliance-certified/high-sensitivity platform. Target-specific production work still includes provider-native backup/PITR policy, exact release migration/rollback planning, provider/WAF abuse controls, monitoring/alert ownership, and operational responsibility.
 
-Deployment acceptance requires two-user isolation tests, sequential Prisma/typecheck/build/e2e checks, desktop/mobile browser smoke, and documented recovery evidence. The detailed audit is in `docs/AUDIT_2026-06-15.md`.
+`/` is the public product landing page. `/dashboard` remains the authenticated workspace entry. The current evidence boundary is maintained in `docs/PROJECT_STATE.md`, `docs/DEPLOYMENT.md`, `docs/LOCAL_FIRST_CONTRACT.md`, and the Stage 8-10 evidence directories. Earlier June 2026 audits remain historical records rather than current status.
 
 ---
 
@@ -101,7 +98,7 @@ Required fields should be minimal. Optional structure should exist, but should n
 
 ### 3.5 Human Applies AI Suggestions
 
-Agents may suggest next actions, triage, summaries, and status updates, but they cannot directly write, edit, delete, archive, or modify records in MVP.
+If an AI suggestion surface is enabled in a future version, it may suggest next actions, triage, summaries, and status updates, but it cannot directly write, edit, delete, archive, or modify records without explicit user action.
 
 ### 3.6 Actionable Surfacing Only
 
@@ -127,8 +124,10 @@ PARA is used to make execution context recoverable. It should not add capture fr
 ### 4.1 Included in MVP
 
 - Authentication with email/password.
-- Online-first PWA.
-- Offline capture/edit queue for core CRUD-style mutations.
+- Public product landing page at `/`; authenticated workspace entry at `/dashboard`.
+- Local-first PWA with user-scoped cached workspace state after a successful authenticated bootstrap.
+- Offline capture/edit queue for supported core mutations.
+- Versioned service-worker application shell with production-build offline reopen and hard-refresh coverage for the documented core workspace.
 - Sync-when-online.
 - Responsive mobile UI.
 - Dashboard.
@@ -151,13 +150,12 @@ PARA is used to make execution context recoverable. It should not add capture fr
 - Daily shutdown review.
 - Weekly review.
 - Markdown export.
-- Soft delete / trash.
-- Read-only/manual AI suggestions.
+- Soft delete / recoverable trash.
 
 ### 4.2 Later
 
 - Full offline conflict merge UI.
-- Production-grade offline app-shell/chunk hydration validation.
+- Optional read-only/manual AI suggestion surface.
 - Full Agents page.
 - Agent runs/logs/profiles.
 - Agent write permissions.
@@ -170,6 +168,8 @@ PARA is used to make execution context recoverable. It should not add capture fr
 ---
 
 ## 5. Top-Level Navigation
+
+The public root `/` is a product landing page. Authenticated workspace navigation begins at `/dashboard`.
 
 Phase 1 visible MVP navigation:
 
@@ -284,13 +284,13 @@ Resource = standalone Note
 Subcontext = Project with parentProjectId
 ```
 
-Lightweight or generated object:
+Deferred lightweight/generated concept:
 
 ```text
 Agent Suggestion
 ```
 
-Agent suggestions should not be a full workflow object in MVP. They are generated suggestions that the user may apply manually.
+Agent suggestions are not a current visible workflow object. If introduced later, they remain generated suggestions that the user applies manually.
 
 ---
 
@@ -731,7 +731,7 @@ Usable for project recovery
 
 ### 15.5 Review-to-Project Suggestions
 
-When a review mentions a project, the system may suggest attaching the entry to that project or updating the project’s Latest Status.
+When a review mentions a project, a future/manual suggestion surface may propose attaching the entry to that project or updating the project’s Latest Status.
 
 The user must apply this manually.
 
@@ -834,22 +834,26 @@ Restorable
 
 ### 18.2 Delete Behavior
 
-Use soft delete / trash.
+Use recoverable soft deletion / synchronized tombstones for ordinary record deletion.
 
 ```text
-Delete -> Trash
-Trash retained for 30 days
+Delete -> Trash / recoverable tombstone
 Restore available
-Permanent delete after 30 days
+No automatic 30-day purge
+No irreversible per-record purge in the current product
 ```
+
+Permanent account deletion is a separate authenticated flow requiring password re-verification and exact `DELETE` confirmation. Per-record irreversible purge remains unavailable until the product has an explicit anti-resurrection protocol for stale offline clients.
 
 ---
 
 ## 19. Agent Behavior
 
+This section describes a deferred suggestion-only design boundary. The current visible product does not expose a runtime Agents surface and does not require an external AI service for core operation.
+
 ### 19.1 Agent Access
 
-Agents can read allowed domains.
+A future suggestion-only agent integration may read allowed domains.
 
 Default readable domains:
 
@@ -939,14 +943,19 @@ Export is required to preserve durability and prevent lock-in.
 Installable PWA
 Responsive mobile layout
 Mobile-friendly quick capture
-Online-first
+Cached core workspace can reopen after a successful authenticated bootstrap on the device
+Supported offline mutations queue locally
+Reconnect synchronization when connectivity returns
 ```
+
+Offline support is deliberately scoped to cached workspace views and supported queued mutations. It is not a claim that arbitrary server functionality works offline.
 
 ### 21.2 Later Mobile Behavior
 
 ```text
-Offline capture
-Sync when online
+Full collaborative/conflict-merge UI
+More advanced mobile-native integrations
+Broader provider/device-specific PWA upgrade coverage
 ```
 
 MVP mobile goal:
@@ -987,7 +996,7 @@ Recent contexts
 Upcoming important dates
 Daily planning prompts
 Weekly planning/review prompts
-Agent-suggested actions
+Agent-suggested actions, only when an explicit future/manual suggestion surface exists
 ```
 
 ### 23.2 Maybe Surfacing
@@ -1043,7 +1052,7 @@ Formula-heavy Notion databases
 Specialized spaced-repetition or practice engines
 ```
 
-Piano repertoire, vocabulary lists, and similar personal systems should start as Areas plus Resources. If they need dynamic scheduling, rotations, formulas, or review algorithms, those capabilities belong in v0.2+ after the execution-first loop is validated.
+Piano repertoire, vocabulary lists, and similar personal systems should start as Areas plus Resources. If they need dynamic scheduling, rotations, formulas, or review algorithms, those capabilities belong in a later version after the execution-first loop is validated.
 
 ---
 
@@ -1066,6 +1075,8 @@ If these do not happen, the product has failed its primary purpose.
 ---
 
 ## 26. Implementation Priority
+
+The sequence below is the historical build order retained for design context. It is not the current backlog.
 
 Recommended implementation order:
 
@@ -1098,25 +1109,3 @@ Use this rule for scope decisions:
 > If it helps capture fast, choose today’s work, recover project context, or prevent forgotten open loops, it belongs in MVP.
 >
 > If it mainly helps organize, customize, decorate, automate, or archive, it waits.
-
----
-
-## 28. Open Questions for Later Versions
-
-These are intentionally not MVP blockers:
-
-- Should meetings/calendar be added later?
-- Should offline capture be implemented as service-worker local queue or local-first storage?
-- Should semantic search use local embeddings or external service?
-- Should agent suggestions become persistent objects with apply/dismiss history?
-- Should agents eventually create tasks or project updates with approval?
-- Should domains have access-control presets?
-- Should project templates exist?
-- Should recurring tasks exist?
-- Should Areas become a separate model from Domains?
-- Should Resources become a separate model from standalone Notes?
-- Should personal systems such as piano practice have routines/rotations?
-- Should vocabulary resources gain flashcard or spaced-repetition behavior?
-- Should weekly review generate a weekly plan automatically?
-
-These should not be solved before the MVP validates the execution-first workflow.

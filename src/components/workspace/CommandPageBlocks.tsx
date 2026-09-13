@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { CalendarClock, CalendarDays, Check, Clock3, Pencil, Trash2 } from "lucide-react";
+import { Archive, CalendarClock, CalendarDays, Check, Clock3, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
 import { TaskEditDialog } from "@/components/workspace/TaskEditDialog";
@@ -352,7 +352,7 @@ function CommandDateItem({ deadline }: { deadline: Deadline }) {
         onClick={() => updateDeadline(deadline.id, { archivedAt: deadline.archivedAt ? null : new Date().toISOString() })}
         className="grid h-10 w-10 shrink-0 place-items-center rounded-md text-[var(--cos-text-subtle)] opacity-80 hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-text)] group-hover:opacity-100 sm:h-8 sm:w-8"
       >
-        <Trash2 className="h-3.5 w-3.5" />
+        <Archive className="h-3.5 w-3.5" />
       </button>
     </div>
   );

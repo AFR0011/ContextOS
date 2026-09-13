@@ -318,7 +318,7 @@ export function Dashboard2View({ viewStorageKey = DEFAULT_VIEW_STORAGE_KEY }: { 
         value={scratchpad?.content ?? ""}
         onSave={updateDashboardScratchpad}
         onCommandLine={handleCommandLine}
-        placeholder="Start typing. /task Send update [2026-07-10] (09:30) or /date Exam [2026-07-10] (14:30)..."
+        placeholder="Start typing. Try /task Send update [YYYY-MM-DD] (09:30) or /date Exam [YYYY-MM-DD] (14:30)..."
         minLines={8}
       />
 

@@ -142,7 +142,7 @@ export function CommandPageEditor({
       footer={
         <>
           <span className="w-full text-[var(--cos-text-subtle)] sm:mr-auto sm:w-auto">{autosaveLabel(saveState)}</span>
-          <span className="w-full text-[var(--cos-text-subtle)] sm:w-auto sm:text-right">Hint: /task or /date with [2026-07-10] (09:30)</span>
+          <span className="w-full text-[var(--cos-text-subtle)] sm:w-auto sm:text-right">Hint: /task or /date with [YYYY-MM-DD] (HH:MM)</span>
         </>
       }
     />

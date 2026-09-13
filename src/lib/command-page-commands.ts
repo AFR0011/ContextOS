@@ -129,7 +129,7 @@ export function parseCommandPageLine(line: string, today = localDateKey()): Comm
   if (!body) {
     return {
       type: "error",
-      message: dateCommand ? "Add a title and date, like /date Exam [2026-07-10] (10:00)." : "Add a task title after /task."
+      message: dateCommand ? "Add a title and date, like /date Exam [YYYY-MM-DD] (HH:MM)." : "Add a task title after /task."
     };
   }
 

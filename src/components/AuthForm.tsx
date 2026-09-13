@@ -47,7 +47,7 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
     <div className="grid min-h-screen place-items-center bg-[var(--cos-bg)] px-4 py-10 text-[var(--cos-text)]">
       <div className="w-full max-w-md">
         <div className="mb-8 flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--cos-primary)] text-white shadow-sm">
+          <div className="grid h-10 w-10 place-items-center rounded-[var(--cos-radius-sm)] bg-[var(--cos-primary)] text-white shadow-sm">
             <Zap className="h-5 w-5" />
           </div>
           <div>
@@ -58,7 +58,7 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
 
         <form onSubmit={submit} className="cos-surface p-5 sm:p-6">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">{mode === "login" ? "Sign in" : "Create account"}</h2>
+            <h2 className="cos-page-title">{mode === "login" ? "Sign in" : "Create account"}</h2>
             <p className="mt-1 text-sm text-[var(--cos-text-muted)]">
               {mode === "login"
                 ? "Sign in to your workspace."
@@ -67,7 +67,7 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
           </div>
 
           {serviceStatus ? (
-            <p data-testid="auth-service-status" className="mt-4 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
+            <p data-testid="auth-service-status" className="mt-4 rounded-[var(--cos-radius-md)] border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
               {serviceStatus}
             </p>
           ) : null}
@@ -99,7 +99,7 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
             />
           </label>
 
-          {error ? <p className="mt-4 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
+          {error ? <p className="mt-4 rounded-[var(--cos-radius-md)] border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
 
           <button
             disabled={loading || Boolean(serviceStatus) || (mode === "register" && !registrationEnabled)}
@@ -113,7 +113,7 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
             <button
               type="button"
               onClick={() => router.push(mode === "login" ? "/register" : "/login")}
-              className="mt-4 w-full rounded-lg px-3 py-2 text-center text-sm font-medium text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-inset)] hover:text-[var(--cos-primary-text)]"
+              className="cos-btn cos-btn-ghost mt-4 w-full px-3 py-2 text-sm"
             >
               {mode === "login" ? "Create a new account" : "I already have an account"}
             </button>

@@ -237,7 +237,7 @@ function DashboardInboxPreview({ captures, count, onReview }: { captures: Captur
     >
       <div className="space-y-1">
         {captures.map((capture) => (
-          <button key={capture.id} onClick={onReview} className="flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left hover:bg-[var(--cos-bg-soft)]">
+          <button key={capture.id} onClick={onReview} className="flex w-full items-start gap-3 rounded-[var(--cos-radius-sm)] px-3 py-2 text-left hover:bg-[var(--cos-bg-soft)]">
             <span className="cos-pill cos-pill-primary shrink-0">{dashboardCaptureType(capture)}</span>
             <span className="min-w-0 flex-1 break-words text-sm text-[var(--cos-text-strong)]">{capture.text}</span>
             <span className="hidden shrink-0 text-[11px] text-[var(--cos-text-subtle)] sm:inline">{formatDistanceToNow(parseISO(capture.createdAt), { addSuffix: true })}</span>
@@ -304,14 +304,14 @@ export function Dashboard2View({ viewStorageKey = DEFAULT_VIEW_STORAGE_KEY }: { 
   }
 
   return (
-    <div data-testid="dashboard-command-page" className="mx-auto max-w-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-4 sm:px-5 sm:pt-6 lg:px-8">
+    <div data-testid="dashboard-command-page" className="mx-auto max-w-[var(--cos-content-narrow)] px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-4 sm:px-5 sm:pt-6 lg:px-8">
       <header className="mb-5 px-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--cos-primary-text)]">Daily Command Page</p>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--cos-text-strong)]">{loading ? "Loading dashboard" : "Dashboard"}</h1>
+        <p className="cos-caption font-semibold uppercase tracking-[0.16em] text-[var(--cos-primary-text)]">Daily Command Page</p>
+        <h1 className="cos-page-title mt-1">{loading ? "Loading dashboard" : "Dashboard"}</h1>
         <p className="mt-2 text-sm text-[var(--cos-text-muted)]">Write freely. Use /task and /date when a line should become a real record. Add [date] and (time) for timing.</p>
       </header>
 
-      {loading ? <div className="mb-4 rounded-lg border border-[var(--cos-border)] p-3 text-sm text-[var(--cos-text-muted)]">Loading cached command page...</div> : null}
+      {loading ? <div className="cos-row-muted mb-4 p-3 text-sm text-[var(--cos-text-muted)]">Loading cached command page...</div> : null}
 
       <CommandPageEditor
         dataTestId="dashboard-scratchpad"
@@ -332,14 +332,14 @@ export function Dashboard2View({ viewStorageKey = DEFAULT_VIEW_STORAGE_KEY }: { 
             <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
               <label className="flex min-w-0 items-center gap-1 text-xs font-semibold text-[var(--cos-text-muted)]">
                 Scope
-                <select data-testid="dashboard-scope-select" value={scope} onChange={(event) => setScope(event.target.value)} className="min-h-10 min-w-0 flex-1 rounded-md border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] px-2 py-2 text-sm text-[var(--cos-text)] outline-none sm:min-h-0 sm:flex-none sm:py-1 sm:text-xs">
+                <select data-testid="dashboard-scope-select" value={scope} onChange={(event) => setScope(event.target.value)} className="cos-input min-h-10 min-w-0 flex-1 px-2 py-2 text-sm sm:min-h-0 sm:flex-none sm:py-1 sm:text-xs">
                   <option value={ALL_AREAS}>All areas</option>
                   {data.domains.filter((domain) => !domain.archived).map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
                 </select>
               </label>
               <label className="flex min-w-0 items-center gap-1 text-xs font-semibold text-[var(--cos-text-muted)]">
                 Group
-                <select data-testid="dashboard-group-select" value={groupMode} onChange={(event) => setGroupMode(event.target.value as DashboardGroupMode)} className="min-h-10 min-w-0 flex-1 rounded-md border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] px-2 py-2 text-sm text-[var(--cos-text)] outline-none sm:min-h-0 sm:flex-none sm:py-1 sm:text-xs">
+                <select data-testid="dashboard-group-select" value={groupMode} onChange={(event) => setGroupMode(event.target.value as DashboardGroupMode)} className="cos-input min-h-10 min-w-0 flex-1 px-2 py-2 text-sm sm:min-h-0 sm:flex-none sm:py-1 sm:text-xs">
                   <option value="time">Time</option>
                   <option value="area">Area</option>
                   <option value="project">Project</option>

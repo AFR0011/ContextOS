@@ -27,7 +27,7 @@ test("production source reaches the legacy view implementation only through the 
   const directLegacyConsumers = sourceFiles(srcRoot)
     .filter((path) => path !== facadePath)
     .filter((path) => readFileSync(path, "utf8").includes("LegacyWorkspaceViews"))
-    .map((path) => path.slice(srcRoot.length + 1).replaceAll("\\", "/"));
+    .map((path) => path.slice(srcRoot.length + 1).replace(/\\/g, "/"));
 
   expect(directLegacyConsumers).toEqual([]);
 });

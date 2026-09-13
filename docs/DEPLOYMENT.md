@@ -7,11 +7,11 @@ ContextOS is a **self-hostable local-first application** with a verified reposit
 Current repository evidence:
 
 1. **User isolation:** sync writes, workspace reads, and mutation-ledger identifiers are user-scoped and covered by two-user/ownership controls.
-2. **Registration/reset defaults:** public registration and demo reset are closed by default in production.
+2. **Registration/reset defaults:** public registration and demo reset are closed by default in production; trusted-shell operator account creation/recovery exists without opening either public surface.
 3. **Bounded synchronization:** total request, mutation count, UTF-8 payload, identifier/key, timestamp, record-ID, and ownership boundaries are enforced.
 4. **Authentication throttling:** application-level failed-login/registration throttling exists; provider/WAF distributed protection remains deployment-specific defense in depth.
 5. **Production HTTP/PWA boundary:** production CSP/security headers, API no-store behavior, same-origin mutation checks, and service-worker API exclusion are automated.
-6. **CI:** disposable PostgreSQL CI runs security/evidence audits, migrations, typecheck, optimized build, production/offline browser tests, lifecycle tests, full E2E, and deliberate DB outage.
+6. **CI:** disposable PostgreSQL CI runs security/evidence audits, migrations, operator account provisioning/recovery checks, typecheck, optimized build, production/offline browser tests, lifecycle tests, full E2E, and deliberate DB outage.
 7. **Hosted preview:** Stage 8 verified a real HTTPS Vercel preview against a dedicated isolated Neon branch, including authentication, core workflow, offline/reconnect behavior, Search, project recovery, Dates, and mobile behavior.
 8. **PWA upgrade:** Stage 8 rehearsed a same-origin shell v3→v4 service-worker upgrade while preserving local workspace state.
 9. **Database recovery:** Stage 8 used PostgreSQL-native `pg_dump`/`pg_restore` to restore into a genuinely fresh isolated non-production database and verified authenticated application bootstrap.
@@ -50,6 +50,39 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 
 Treat any credential that appeared in a shared archive, chat, screenshot, or committed file as leaked and rotate it before deployment.
 
+## Closed-Registration Account Provisioning And Recovery
+
+Production can keep `ALLOW_PUBLIC_REGISTRATION=false` and still create the first real account from a trusted operator shell after migrations are applied.
+
+Create an account with a generated temporary password:
+
+```bash
+npm run account:create -- user@example.com --generate-password
+```
+
+Or supply a chosen password through stdin rather than the process argument list:
+
+```bash
+read -rsp "New ContextOS password: " CONTEXTOS_PASSWORD
+printf '\n'
+printf '%s' "$CONTEXTOS_PASSWORD" | npm run account:create -- user@example.com --password-stdin
+unset CONTEXTOS_PASSWORD
+```
+
+The operator create path refuses to overwrite an existing account and creates only the empty production workspace scaffold. It does not create demo Areas, projects, tasks, captures, or resources.
+
+Recover a forgotten password with:
+
+```bash
+npm run account:reset-password -- user@example.com --generate-password
+```
+
+or the equivalent `--password-stdin` form. Operator recovery updates the password hash, revokes **all** server sessions for that account, and leaves workspace rows unchanged. It does not create a replacement browser session automatically.
+
+Generated temporary passwords are deliberately printed once after a successful operation. Do not run generated-password mode in uncontrolled CI logs, shared terminal recordings, or other places where that credential would be retained. The CLI never accepts a password as a command-line argument.
+
+These are privileged deployment-operator commands, not public application endpoints. Anyone who can run them against the configured `DATABASE_URL` already has database-level operational authority. ContextOS still does not provide email verification or self-service password reset. See `docs/OPERATOR_ACCOUNTS.md` for the complete trust and device-state boundary.
+
 ## Deployment Preflight
 
 Before a production-like preview or production promotion, run the Stage 8 preflight with the **actual intended environment values**:
@@ -84,7 +117,7 @@ npm run db:seed
 npm run dev
 ```
 
-`npm run db:seed` intentionally recreates the starter workspace for the configured demo user. It is not a normal production operation.
+`npm run db:seed` intentionally recreates the starter workspace for the configured demo user. It is not a normal production operation and is not a real-account provisioning mechanism.
 
 ## Vercel Deployment Boundary
 
@@ -113,9 +146,10 @@ A sensible production promotion sequence is:
 5. Review migrations since the currently deployed release and document the exact rollback/fallback strategy.
 6. Take/verify the provider backup appropriate to the target before destructive/incompatible schema changes.
 7. Run `npm run db:deploy` deliberately.
-8. Deploy a preview/candidate build against an isolated or safely scoped target where practical.
-9. Exercise critical auth/workspace/sync/offline/health flows.
-10. Promote the verified build and monitor the target environment.
+8. On a first deployment with registration closed, provision the intended account through the trusted operator command rather than the demo seed.
+9. Deploy a preview/candidate build against an isolated or safely scoped target where practical.
+10. Exercise critical auth/workspace/sync/offline/health flows.
+11. Promote the verified build and monitor the target environment.
 
 Stage 8 demonstrates that this class of preview/recovery/rollback rehearsal can be performed. It does not remove the need to repeat target-specific checks for a real production promotion.
 
@@ -187,7 +221,7 @@ Production seeding should be exceptional and deliberate:
 4. Run `npm run db:seed` from a controlled shell.
 5. Remove/rotate demo credentials if they should not remain usable.
 
-Never put `npm run db:seed` in the normal production build/deploy command.
+Never put `npm run db:seed` in the normal production build/deploy command. For normal first-account creation, use the operator account command instead of seeding.
 
 ## Known Operational Boundaries
 
@@ -200,5 +234,7 @@ The repository does not itself supply or demonstrate:
 - provider/WAF distributed rate limiting;
 - external penetration testing/compliance certification; or
 - a general proof that future schema migrations are rollback-safe.
+
+ContextOS also still lacks email verification and self-service password reset. Trusted-shell operator recovery closes the bounded self-hosted recovery gap; it is not an email-based end-user recovery system and cannot remotely erase another offline device's cached data.
 
 Those are target-environment responsibilities or future evidence, not hidden assumptions behind the self-hostable application claim. Stage 10 acceptance does not relax them.

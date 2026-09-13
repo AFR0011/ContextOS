@@ -36,7 +36,7 @@ The starter workspace is neutral test/demo data. Do not point `db:seed` at a dat
 
 Run verification commands sequentially. `npm run build` can rewrite generated `.next` route types while `npm run typecheck` is reading them, and Playwright suites start their own runtime boundaries. Parallelizing these steps creates impressive-looking failures with very little informational value.
 
-The accepted Stage 10 ladder is:
+The current ladder retains the accepted Stage 10 gates and adds post-Stage-10 product checks:
 
 1. Dependency advisory gate:
    ```bash
@@ -72,22 +72,27 @@ The accepted Stage 10 ladder is:
    npm run db:seed
    ```
    Use `db:migrate` only for local migration development.
-7. Typecheck and optimized build:
+7. Operator account provisioning/recovery regression:
+   ```bash
+   npm run test:account-operator
+   ```
+   This uses only disposable test users and verifies empty-scaffold account creation, generated/stdin password sources, duplicate-create refusal, all-session revocation during operator password recovery, and workspace preservation.
+8. Typecheck and optimized build:
    ```bash
    npm run typecheck
    npm run build
    ```
-8. Production/offline/security/final-acceptance browser matrix:
+9. Production/offline/security/final-acceptance browser matrix:
    ```bash
    npx playwright test --config=playwright.production.config.ts --workers=1
    ```
-9. Development-server regression suite:
+10. Development-server regression suite:
    ```bash
    npm run test:e2e -- --workers=1
    ```
-10. Deliberate database-outage smoke, as implemented in `.github/workflows/ci.yml`.
+11. Deliberate database-outage smoke, as implemented in `.github/workflows/ci.yml`.
 
-The committed GitHub Actions workflow runs this ladder against disposable PostgreSQL 16. Stage 10 final acceptance is closed against verified candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, which passed every gate in the accumulated ladder.
+The committed GitHub Actions workflow runs this ladder against disposable PostgreSQL 16. Stage 10 final acceptance is closed against verified candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, which passed every gate that existed at Stage 10 closure. Current `main` continues the historical gates plus accepted product-batch checks.
 
 ## Runtime Ownership
 
@@ -155,6 +160,8 @@ Production authentication requires a fresh configured `AUTH_SECRET` of at least 
 
 Browser-originated state-changing requests use the exact-origin mutation guard. Controlled CLI/API calls may omit browser `Origin`/`Sec-Fetch-Site` metadata.
 
+Public registration remains closed by default in production. For a closed-registration self-hosted deployment, `npm run account:create` is the trusted-shell first-account path and `npm run account:reset-password` is the trusted-shell forgotten-password recovery path. Operator recovery revokes every server session for that account and leaves workspace rows unchanged. Passwords are supplied only through generated temporary credentials or stdin, never as process arguments. See `docs/OPERATOR_ACCOUNTS.md`.
+
 Application login/registration throttling remains per-process/in-memory. Public deployment should combine it with trusted proxy IP handling and provider/WAF-level distributed abuse protection.
 
 ## Synchronization Integrity
@@ -177,7 +184,7 @@ Stage 9 closed the lifecycle boundary and Stage 10 reran it as part of final acc
 - multiple eligible local identities require explicit offline selection; and
 - permanent account deletion is online, same-origin guarded, password re-verified, locally cleaned first, and then committed through the `User` cascade root.
 
-Other offline devices cannot be remotely erased after account deletion and irreversible per-record purge is not claimed.
+Other offline devices cannot be remotely erased after account deletion or an operator password reset, and irreversible per-record purge is not claimed.
 
 ## Deployment and Recovery Evidence
 
@@ -213,6 +220,7 @@ Expected boundaries include:
 ## Notes
 
 - `.env` is ignored; `.env.example` is the only environment file intended to be committed.
-- `npm run db:seed` recreates the configured demo workspace. Do not run it as a normal production deploy step.
+- `npm run db:seed` recreates the configured demo workspace. Do not run it as a normal production deploy step or as a real-user provisioning tool.
 - Public registration and demo reset are disabled by default in production unless deliberately enabled.
+- Closed-registration account creation/recovery is documented in `docs/OPERATOR_ACCOUNTS.md`.
 - Review dependency updates deliberately; do not use `npm audit fix --force` as an assurance strategy.

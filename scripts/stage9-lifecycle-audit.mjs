@@ -18,7 +18,7 @@ const accountDelete = read("src/app/api/account/delete/route.ts");
 const clientStore = read("src/lib/client-store.tsx");
 const syncServer = read("src/lib/sync-server.ts");
 const schema = read("prisma/schema.prisma");
-const views = read("src/components/workspace/Views.tsx");
+const archiveLifecycle = read("src/components/workspace/ArchiveLifecycleView.tsx");
 
 check(
   "user-scoped IndexedDB cleanup",
@@ -131,9 +131,9 @@ check(
 );
 check(
   "trash UI restores tombstones",
-  views.includes('tab, setTab] = useState<"archived" | "trash">') &&
-    views.includes("trashedAt: null") &&
-    views.includes("Trash is empty"),
+  archiveLifecycle.includes('tab, setTab] = useState<"archived" | "trash">') &&
+    archiveLifecycle.includes("trashedAt: null") &&
+    archiveLifecycle.includes("Trash is empty"),
   "Recoverable deletion must remain visible and reversible through the Archive/Trash UI."
 );
 

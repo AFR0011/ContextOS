@@ -1,5 +1,5 @@
-import { SettingsView } from "@/components/workspace/Views";
+import WorkspaceRouteHandoff from "@/components/workspace/WorkspaceRouteHandoff";
 
 export default function SettingsPage() {
-  return <SettingsView />;
+  return <WorkspaceRouteHandoff />;
 }

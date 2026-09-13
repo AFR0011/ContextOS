@@ -1,5 +1,5 @@
-import { DashboardView } from "@/components/workspace/Views";
+import WorkspaceRouteHandoff from "@/components/workspace/WorkspaceRouteHandoff";
 
 export default function DashboardPage() {
-  return <DashboardView />;
+  return <WorkspaceRouteHandoff />;
 }

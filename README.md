@@ -34,6 +34,7 @@ New registrations start with an empty workspace scaffold. First-run setup asks t
 - **Idempotent synchronization:** queued mutations replay through `/api/sync` with per-user mutation IDs, ownership validation, stale-update handling, UTF-8 byte limits, timestamp validation, and record-ID consistency checks.
 - **Lifecycle semantics:** ordinary logout retains isolated local state by default, current-device removal is explicit and user-scoped, multiple local identities require explicit offline selection, and permanent account deletion is password-confirmed and online.
 - **Operator account recovery:** production can keep public registration closed while a trusted server operator creates empty-workspace users or resets a forgotten password without exposing a public reset endpoint; operator resets revoke all server sessions and preserve workspace data.
+- **Production container distribution:** a non-root standalone application image, one-shot migration service, persistent PostgreSQL service, and unexposed operator image provide a repository-owned Docker Compose self-hosting path without automatic demo seeding.
 - **Recoverable deletion:** Projects, Tasks, standalone Notes, and Dates synchronize recoverable tombstones; stale older writes cannot silently resurrect a newer tombstone.
 - **Failure-aware UX:** database, synchronization, offline-shell, pending-work, and conflict states are surfaced instead of silently discarding work.
 - **Repository assurance:** Stage 7 provides security/repository controls, Stage 8 records deployment/recovery/operational evidence, Stage 9 adds lifecycle/destructive-data evidence, and Stage 10 closes final local-first acceptance and public-claims verification without broadening those claims beyond the tested boundary.
@@ -68,12 +69,12 @@ PostgreSQL is canonical after successful synchronization. Local-first behavior i
 - IndexedDB for user-scoped client state and queued mutations
 - service worker + Cache Storage for the verified application shell
 - Playwright for browser verification
-- Docker Compose for local PostgreSQL
+- Docker Compose for local PostgreSQL and the production-style self-host stack
 - GitHub Actions CI
 
 ## Quick start
 
-### Prerequisites
+### Local development prerequisites
 
 - Node.js 22+
 - Docker with Docker Compose
@@ -92,6 +93,27 @@ npm run dev
 Open `http://localhost:3000`.
 
 The default seed creates a disposable demo workspace. Its projects, tasks, areas, and resources are fictional sample data and are not personal, employment, academic, or client records. Demo credentials are defined in `.env.example` for local/disposable-preview verification; the login form does not pre-populate them.
+
+### Production-style container self-host
+
+The container path requires Docker Compose on the host but does not require a host Node/npm runtime.
+
+```bash
+cp .env.production.example .env.production
+# Replace every placeholder, especially APP_URL, AUTH_SECRET, and POSTGRES_PASSWORD.
+docker compose --env-file .env.production -f compose.production.yml up -d --build app
+```
+
+The stack waits for PostgreSQL health, applies committed migrations through a one-shot non-root migration container, and only then starts the non-root standalone application. It never runs `db:seed` during normal startup.
+
+With production registration closed, create the first real empty-workspace account through the unexposed operator profile:
+
+```bash
+docker compose --env-file .env.production -f compose.production.yml --profile operator run --rm operator \
+  npm run account:create -- user@example.com --generate-password
+```
+
+See `docs/CONTAINER_DEPLOYMENT.md` for first deployment, updates, password-stdin handling, recovery, persistent-volume behavior, and the deployment security boundary.
 
 ## Configuration
 
@@ -137,11 +159,12 @@ npm run db:seed
 npm run test:account-operator
 npm run typecheck
 npm run build
+npm run test:container-distribution
 npx playwright test --config=playwright.production.config.ts --workers=1
 npm run test:e2e -- --workers=1
 ```
 
-The GitHub Actions workflow runs the required ladder against disposable PostgreSQL 16. The production Playwright matrix owns cold offline reopen/hard-refresh, core route and dynamic-project reconstruction, functional offline Search/history acceptance, application-shell completeness, production security boundaries, offline mutation durability, tombstone hard reload, and API/cache separation. The development suite covers the broader interactive product, local atomicity, synchronization behavior, user-scoped IndexedDB, routing, lifecycle/destructive-data behavior, compatibility, accessibility, and fixture regression surface. The operator-account test separately verifies empty-workspace provisioning, password recovery, all-session revocation, duplicate-create refusal, and workspace preservation.
+The GitHub Actions workflow runs the required ladder against disposable PostgreSQL 16. The container-distribution gate additionally builds the exact production app/operator/migration images against a fresh isolated PostgreSQL volume, checks non-root/runtime separation, verifies closed registration, provisions a real first account through the operator container, authenticates through the containerized app, and proves that account starts with the empty production scaffold rather than demo data. The production Playwright matrix owns cold offline reopen/hard-refresh, core route and dynamic-project reconstruction, functional offline Search/history acceptance, application-shell completeness, production security boundaries, offline mutation durability, tombstone hard reload, and API/cache separation. The development suite covers the broader interactive product, local atomicity, synchronization behavior, user-scoped IndexedDB, routing, lifecycle/destructive-data behavior, compatibility, accessibility, and fixture regression surface. The operator-account test separately verifies empty-workspace provisioning, password recovery, all-session revocation, duplicate-create refusal, and workspace preservation.
 
 Stage 10's verified acceptance candidate is commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, GitHub Actions run `31800346837`, which passed the complete accumulated ladder. Machine-readable assurance state is preserved in `audits/stage7-controls.json`, `audits/stage8-evidence.json`, `audits/stage9-evidence.json`, and `audits/stage10-acceptance.json`.
 
@@ -149,10 +172,12 @@ Current `main` continues to run that complete ladder on accepted product batches
 
 ## Deployment and recovery notes
 
+- The production-style Compose path is defined in `compose.production.yml`; configuration starts from `.env.production.example` and detailed procedures live in `docs/CONTAINER_DEPLOYMENT.md`.
+- The long-running public application container is non-root and does not contain the account-operator scripts or Prisma migration tree; those remain in the separate unexposed operator/migration image.
 - `npm run db:seed` resets the configured demo workspace and should never run automatically against production data.
 - `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is deliberately enabled.
 - Public registration is closed by default in production unless explicitly enabled.
-- With registration closed, a trusted operator can create a real empty-workspace account with `npm run account:create -- user@example.com --generate-password` or `--password-stdin`.
+- With registration closed, a trusted operator can create a real empty-workspace account with `npm run account:create -- user@example.com --generate-password` or `--password-stdin`; container deployments run the same command through the operator service.
 - Forgotten passwords can be recovered from a trusted operator shell with `npm run account:reset-password -- user@example.com --generate-password` or `--password-stdin`; the reset revokes all server sessions and preserves workspace rows.
 - Passwords are never accepted as operator CLI arguments. See `docs/OPERATOR_ACCOUNTS.md` for the trust and password-handling boundary.
 - Browser-originated state-changing API requests must match the application origin.
@@ -161,7 +186,7 @@ Current `main` continues to run that complete ladder on accepted product batches
 - Stage 8 demonstrated a real HTTPS Vercel preview on an isolated Neon branch, a same-origin service-worker upgrade, PostgreSQL-native `pg_dump`/`pg_restore` recovery into a fresh non-production database, and application rollback for the exact Stage 7→8 release pair whose migration state was unchanged.
 - Those rehearsals are engineering evidence, not a claim of provider-native PITR, production disaster-recovery SLA, or arbitrary migration reversibility.
 
-See `docs/DEPLOYMENT.md`, `docs/OPERATOR_ACCOUNTS.md`, `docs/RUN_PROTOCOL.md`, `docs/LOCAL_FIRST_CONTRACT.md`, and the stage verification reports for the deeper operational and assurance workflow.
+See `docs/CONTAINER_DEPLOYMENT.md`, `docs/DEPLOYMENT.md`, `docs/OPERATOR_ACCOUNTS.md`, `docs/RUN_PROTOCOL.md`, `docs/LOCAL_FIRST_CONTRACT.md`, and the stage verification reports for the deeper operational and assurance workflow.
 
 ## Scope and limitations
 
@@ -190,6 +215,7 @@ Historical note: Stage 10 closed in August 2026 against a deliberately narrower 
 - `docs/REPO_MAP.md` — code/data-flow map
 - `docs/LOCAL_FIRST_CONTRACT.md` — canonical offline, synchronization, lifecycle, and deletion contract
 - `docs/RUN_PROTOCOL.md` — setup and verification ladder
+- `docs/CONTAINER_DEPLOYMENT.md` — production-style Docker Compose self-hosting and operator workflow
 - `docs/DEPLOYMENT.md` — deployment guidance and operational boundaries
 - `docs/OPERATOR_ACCOUNTS.md` — closed-registration account creation and trusted-shell password recovery
 - `docs/stage7-audit-plan.md` — Stage 7 assurance scope and closure rules

@@ -4,7 +4,7 @@
 
 Security fixes are accepted for the current `main` branch and the latest tagged release, when tags are available.
 
-ContextOS is a portfolio-stage application. It should not be treated as a production identity, secrets, compliance, or high-sensitivity data platform without an independent deployment/security review.
+ContextOS is a self-hostable local-first workspace application with repository-owned security controls and regression evidence. It should not be treated as a production identity, secrets, compliance, or high-sensitivity data platform without an independent deployment/security review and the provider-level controls appropriate to the target environment.
 
 ## Reporting a vulnerability
 
@@ -100,7 +100,7 @@ The dependency graph is still subject to normal upstream maintenance. Security u
 
 ## Assurance controls
 
-The repository's Stage 7 local assurance framework is defined in `docs/stage7-audit-plan.md` and `audits/stage7-controls.json`. Stage 8 adds deployment, hosted-preview, backup/restore, rollback, and operational evidence. Stage 9 adds lifecycle-specific static controls and browser tests for logout/device cleanup, multi-user selection, account deletion, and recoverable tombstones. Stage 10 final acceptance is complete for the documented portfolio-stage local-first boundary and adds functional production-offline Search/history plus an automated public-claims audit.
+The repository's Stage 7 local assurance framework is defined in `docs/stage7-audit-plan.md` and `audits/stage7-controls.json`. Stage 8 adds deployment, hosted-preview, backup/restore, rollback, and operational evidence. Stage 9 adds lifecycle-specific static controls and browser tests for logout/device cleanup, multi-user selection, account deletion, and recoverable tombstones. Stage 10 final acceptance is complete for the historical portfolio-stage local-first boundary and adds functional production-offline Search/history plus an automated public-claims audit. Current product positioning is self-hostable application software; the historical Stage 10 scope is preserved rather than retroactively rewritten.
 
 `npm run audit:stage7`, `npm run audit:stage9:lifecycle`, `npm run audit:stage10:acceptance`, and `npm run audit:stage10:claims` execute deterministic repository/evidence controls in CI, while production-mode and development-mode Playwright suites cover runtime boundaries. The Stage 10 verified acceptance candidate is commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`.
 

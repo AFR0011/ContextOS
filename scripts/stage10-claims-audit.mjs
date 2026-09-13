@@ -18,7 +18,7 @@ const requireMatch = (name, pattern, message) => {
   if (!pattern.test(docs[name])) errors.push(`${name}: ${message}`);
 };
 
-requireMatch("readme", /portfolio-stage/i, "must retain the portfolio-stage boundary");
+requireMatch("readme", /self-hostable local-first application/i, "must state the current self-hostable application boundary");
 requireMatch(
   "readme",
   /(?:after (?:a )?successful (?:sign-in|authentication)|previously authenticated|prior successful (?:sign-in|authentication))/i,
@@ -26,8 +26,11 @@ requireMatch(
 );
 requireMatch("readme", /provider-native (?:PITR|backup\/PITR)/i, "must retain the provider-native recovery boundary");
 requireMatch("readme", /irreversible[^\n]*per-record purge/i, "must retain the irreversible record-purge boundary");
+requireMatch("readme", /Historical note:[\s\S]{0,400}portfolio-stage/i, "must preserve the earlier portfolio-stage acceptance wording as historical provenance rather than current positioning");
 
+requireMatch("state", /self-hostable, local-first workspace application/i, "must record the current self-hostable product state");
 requireMatch("state", /31798664757/, "must preserve exact Stage 9 verified runtime CI provenance");
+requireMatch("state", /Historical note:[\s\S]{0,400}portfolio-stage/i, "must distinguish historical portfolio-stage acceptance from current product positioning");
 
 requireMatch("contract", /Offline workspace access is allowed only for an identity that was previously authenticated successfully on that device/i, "must preserve the offline identity boundary");
 requireMatch("contract", /Offline logout is blocked/i, "must preserve true logout's network requirement");
@@ -38,14 +41,16 @@ requireMatch("run", /functional local Search query/i, "must include functional o
 requireMatch("run", /Stage 9 formalized ordinary user deletion as synchronized recoverable state/i, "must not defer deletion semantics beyond Stage 9");
 requireMatch("run", /PostgreSQL-native `pg_dump`\/`pg_restore`/i, "must record the completed provider-neutral recovery evidence");
 
+requireMatch("deployment", /self-hostable local-first application/i, "must state the current self-hostable deployment boundary");
 requireMatch("deployment", /real HTTPS Vercel preview/i, "must record the completed Stage 8 hosted-preview evidence");
 requireMatch("deployment", /PostgreSQL-native `pg_dump`\/`pg_restore`/i, "must record the completed restore rehearsal");
 requireMatch("deployment", /does \*\*not\*\* prove provider-native point-in-time recovery/i, "must scope recovery evidence rather than generalizing it");
-requireMatch("deployment", /not a hosted production SaaS/i, "must retain deployment-maturity boundary");
+requireMatch("deployment", /not an operated hosted production SaaS/i, "must distinguish self-hostable software from an operated SaaS service");
 
-requireMatch("security", /portfolio-stage application/i, "must retain security maturity boundary");
+requireMatch("security", /self-hostable local-first workspace application/i, "must retain the current security maturity boundary");
 requireMatch("security", /not an independent security certification/i, "must retain assurance-vs-certification distinction");
 requireMatch("security", /provider-native backup\/PITR rehearsal/i, "must retain provider-native recovery boundary");
+requireMatch("security", /historical portfolio-stage local-first boundary/i, "must preserve the original Stage 10 scope as historical provenance");
 
 if (stage10Closed) {
   requireMatch("readme", /Stage 10[^\n]*(?:closed|complete)/i, "must record final Stage 10 closure after CLOSE-001 passes");
@@ -93,4 +98,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Stage 10 public claims audit passed (${stage10Closed ? "closed" : "open"} acceptance state): evidence, runtime, maturity, recovery, lifecycle, and non-goal boundaries are aligned.`);
+console.log(`Stage 10 public claims audit passed (${stage10Closed ? "closed" : "open"} acceptance state): evidence, runtime, self-hostable maturity, recovery, lifecycle, and non-goal boundaries are aligned.`);

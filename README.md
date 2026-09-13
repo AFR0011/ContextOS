@@ -1,10 +1,30 @@
 # ContextOS
 
-ContextOS is a local-first workspace for capturing loose context, turning it into executable work, and recovering project state after interruptions.
+ContextOS is a self-hostable local-first workspace for capturing loose context, turning it into executable work, and recovering project state after interruptions.
 
 It combines a Next.js application with PostgreSQL-backed user data, a user-scoped IndexedDB workspace, an offline mutation outbox, and a verified application-shell cache so the documented core workspace can continue through temporary network failures after a successful sign-in on the device and synchronize when connectivity returns.
 
-> **Project status:** portfolio-stage application and engineering demonstration. It is not presented as a hosted production SaaS service, a compliance-certified system, or a collaborative distributed-data platform. The local-first completion program is complete through Stage 10 final acceptance within the documented boundary.
+> **Project status:** self-hostable local-first application with an evidence-backed core workflow. The repository is not an operated hosted production SaaS service, a compliance-certified system, or a collaborative distributed-data platform. High-sensitivity/public production deployments still require target-specific operational and security review. The local-first completion program is complete through Stage 10 final acceptance within the documented boundary.
+
+## Product
+
+ContextOS is built around a simple loop: capture what is loose, turn it into work, preserve enough context to resume, and keep that state available through ordinary connectivity failures.
+
+The current product surface includes:
+
+- Dashboard command page and scratchpad;
+- Inbox capture and triage;
+- Projects and nested subcontexts;
+- Tasks and important Dates;
+- Areas and Markdown-backed Resources;
+- Search over locally available workspace data;
+- Archive and review flows;
+- offline-safe supported edits with visible pending-sync state;
+- explicit local-account selection when multiple verified workspaces exist offline;
+- recoverable trash/restore behavior; and
+- authenticated handoff previews that require user approval before creating Inbox suggestions.
+
+New registrations start with an empty workspace scaffold. First-run setup asks the user to create an Area or restore an existing ContextOS export; fictional demo records are reserved for deliberate local/disposable-preview seed and reset paths.
 
 ## Engineering highlights
 
@@ -39,24 +59,6 @@ Browser
 ```
 
 PostgreSQL is canonical after successful synchronization. Local-first behavior is intentionally focused on durable workspace mutations and cached application navigation rather than collaborative conflict-resolution UI or arbitrary offline server functionality.
-
-## Product surface
-
-ContextOS currently supports:
-
-- Dashboard command page and scratchpad;
-- Inbox capture and triage;
-- Projects and nested subcontexts;
-- Tasks and important Dates;
-- Areas and Markdown-backed Resources;
-- Search over locally available workspace data;
-- Archive and review flows;
-- offline-safe supported edits with visible pending-sync state;
-- explicit local-account selection when multiple verified workspaces exist offline;
-- recoverable trash/restore behavior;
-- authenticated handoff previews that require user approval before creating Inbox suggestions.
-
-The core offline contract is documented in `docs/LOCAL_FIRST_CONTRACT.md`. First-time authentication, synchronization itself, true logout, permanent account deletion, and other inherently remote operations require connectivity.
 
 ## Tech stack
 
@@ -141,6 +143,8 @@ The GitHub Actions workflow runs the required ladder against disposable PostgreS
 
 Stage 10's verified acceptance candidate is commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, GitHub Actions run `31800346837`, which passed the complete accumulated ladder. Machine-readable assurance state is preserved in `audits/stage7-controls.json`, `audits/stage8-evidence.json`, `audits/stage9-evidence.json`, and `audits/stage10-acceptance.json`.
 
+Current `main` continues to run that complete ladder on accepted product batches. Batch 10's merged commit `2b0c03c629fd0025ee185a91bc3c7da85e9215ae` passed post-merge CI run `34760727752` after the remaining live workspace views were extracted and the former legacy view monolith was removed.
+
 ## Deployment and recovery notes
 
 - `npm run db:seed` resets the configured demo workspace and should never run automatically against production data.
@@ -172,7 +176,7 @@ Current boundaries include:
 - no irreversible user-facing per-record purge without a proven anti-resurrection protocol; and
 - no offline first-time authentication, true logout, or permanent account deletion.
 
-Stage 10 closure means the documented portfolio-stage local-first boundary has passed the repository's accumulated acceptance ladder. It does not erase or weaken any of the deployment, security, collaboration, recovery, or lifecycle limitations above.
+Historical note: Stage 10 closed in August 2026 against a deliberately narrower **portfolio-stage** local-first acceptance boundary. That phrase records the scope of the historical acceptance exercise; current product positioning is self-hostable application software. The security, deployment, collaboration, recovery, and lifecycle limitations above remain unchanged.
 
 ## Repository documentation
 
@@ -185,7 +189,7 @@ Stage 10 closure means the documented portfolio-stage local-first boundary has p
 - `docs/stage7-audit-plan.md` — Stage 7 assurance scope and closure rules
 - `docs/stage8/STAGE8_VERIFICATION.md` — Stage 8 deployment/recovery/operations evidence
 - `docs/stage9/STAGE9_VERIFICATION.md` — Stage 9 lifecycle/destructive-data evidence
-- `docs/stage10/STAGE10_ACCEPTANCE.md` — Stage 10 final acceptance record
+- `docs/stage10/STAGE10_ACCEPTANCE.md` — historical Stage 10 final acceptance record
 - `audits/stage10-acceptance.json` — machine-readable Stage 10 acceptance registry
 - `SECURITY.md` — vulnerability reporting, security assumptions, and non-claims
 - `CONTRIBUTING.md` — contribution and verification expectations

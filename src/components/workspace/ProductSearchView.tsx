@@ -213,7 +213,7 @@ export function ProductSearchView() {
     }
   }, [areaName, data.captures, data.dashboardScratchpads, data.deadlines, data.domains, data.notes, data.projects, data.reviews, data.tasks, projectName, selectedResult]);
 
-  function selectResult(result: SearchResult) {
+  function inspectResult(result: SearchResult) {
     const next = new URLSearchParams();
     if (query.trim()) next.set("q", query.trim());
     next.set("selected", result.key);
@@ -238,18 +238,29 @@ export function ProductSearchView() {
           {!q ? <p className="p-5 text-sm text-[var(--cos-text-muted)]">Type a word or phrase to search stored workspace context.</p> : null}
           {q && !results.length ? <p className="p-5 text-sm text-[var(--cos-text-muted)]">No matching records.</p> : null}
           {results.map((result) => (
-            <button key={result.key} type="button" onClick={() => selectResult(result)} data-testid={`search-result-${result.kind}-${result.id}`} className={`flex w-full items-start gap-3 border-b border-[var(--cos-border-soft)] p-4 text-left last:border-b-0 hover:bg-[var(--cos-bg-soft)] ${selected === result.key ? "bg-[var(--cos-primary-soft)]" : ""}`}>
-              <span className="cos-pill cos-pill-muted shrink-0">{result.typeLabel}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)]">{result.title}</span>
-                {result.subtitle ? <span className="mt-1 block break-words text-xs text-[var(--cos-text-muted)]">{result.subtitle}</span> : null}
-              </span>
-            </button>
+            <div key={result.key} data-testid={`search-result-${result.kind}-${result.id}`} className={`flex items-stretch gap-2 border-b border-[var(--cos-border-soft)] p-2 last:border-b-0 ${selected === result.key ? "bg-[var(--cos-primary-soft)]" : ""}`}>
+              <button type="button" onClick={() => router.push(result.contextHref)} className="flex min-w-0 flex-1 items-start gap-3 rounded-md p-2 text-left hover:bg-[var(--cos-bg-soft)]">
+                <span className="cos-pill cos-pill-muted shrink-0">{result.typeLabel}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)]">{result.title}</span>
+                  {result.subtitle ? <span className="mt-1 block break-words text-xs text-[var(--cos-text-muted)]">{result.subtitle}</span> : null}
+                </span>
+              </button>
+              <button
+                type="button"
+                data-testid={`search-inspect-${result.kind}-${result.id}`}
+                aria-label={`Inspect exact record ${result.title}`}
+                onClick={() => inspectResult(result)}
+                className="cos-btn cos-btn-ghost min-h-10 shrink-0 self-center px-3 py-2 text-xs"
+              >
+                Inspect
+              </button>
+            </div>
           ))}
         </section>
 
         <aside className="cos-surface p-4" data-testid="search-selected-record">
-          {!selectedResult ? <p className="text-sm text-[var(--cos-text-muted)]">Select a result to inspect the exact stored record before opening its workspace context.</p> : (
+          {!selectedResult ? <p className="text-sm text-[var(--cos-text-muted)]">Select Inspect on a result to view the exact stored record here without leaving Search.</p> : (
             <>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">

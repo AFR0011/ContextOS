@@ -1197,6 +1197,7 @@ test("project pages use recovery notes instead of project note cards", async ({ 
   const content = `Recovery save check ${Date.now()}`;
   await markdownLine(editor, 0).fill(content);
   await expect(page.getByText("Saved").first()).toBeVisible({ timeout: 3000 });
+
   await page.reload();
   await expect(markdownLine(page.getByTestId("project-recovery-notes"), 0)).toHaveValue(content);
 });

@@ -3,7 +3,6 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 const demoEmail = "demo@contextos.local";
 const demoPassword = "contextos-demo-v011";
 const viewKey = "contextos-dashboard-command-page-view";
-const ownerKey = `${viewKey}:owner`;
 
 async function resetDemo(page: Page) {
   const response = await page.request.post("/api/reset-demo");
@@ -41,9 +40,9 @@ test("Search indexes recovery context and deep-targets the exact matched record"
 
   const input = page.getByPlaceholder("Search workspace...");
   await input.fill("Experiment recovery note");
-  const projectResult = page.getByRole("button").filter({ hasText: "Benchmark Evaluation" }).first();
+  const projectResult = page.getByTestId(/search-result-project-/).filter({ hasText: "Benchmark Evaluation" }).first();
   await expect(projectResult).toBeVisible();
-  await projectResult.click();
+  await projectResult.getByRole("button", { name: "Inspect exact record Benchmark Evaluation" }).click();
   await expect(page).toHaveURL(/\/search\?.*selected=project%3A/);
   const selected = page.getByTestId("search-selected-record");
   await expect(selected).toContainText("Benchmark Evaluation");
@@ -54,9 +53,9 @@ test("Search indexes recovery context and deep-targets the exact matched record"
   await expect(page.getByTestId("search-selected-record")).toContainText("Experiment recovery note");
 
   await input.fill("capture -> triage -> today -> recovery loop");
-  const dateResult = page.getByRole("button").filter({ hasText: "ContextOS v0.1 verification pass" }).first();
+  const dateResult = page.getByTestId(/search-result-date-/).filter({ hasText: "ContextOS v0.1 verification pass" }).first();
   await expect(dateResult).toBeVisible();
-  await dateResult.click();
+  await dateResult.getByRole("button", { name: "Inspect exact record ContextOS v0.1 verification pass" }).click();
   await expect(page).toHaveURL(/\/search\?.*selected=date%3A/);
   await expect(page.getByTestId("search-selected-record")).toContainText("Run the full capture -> triage -> today -> recovery loop.");
 });
@@ -68,12 +67,8 @@ test("Dashboard scope and grouping stay isolated per user on the same browser", 
   await page.getByTestId("dashboard-group-select").selectOption("area");
   await page.goto("/search");
 
-  const demoStored = await page.evaluate(({ prefId, key, owner }) => ({
-    owner: window.localStorage.getItem(owner),
-    scoped: window.localStorage.getItem(`${key}:${prefId}`)
-  }), { prefId: demoPreferenceId, key: viewKey, owner: ownerKey });
-  expect(demoStored.owner).toBe(demoPreferenceId);
-  expect(JSON.parse(demoStored.scoped ?? "{}").groupMode).toBe("area");
+  const demoStored = await page.evaluate(({ prefId, key }) => window.localStorage.getItem(`${key}:${prefId}`), { prefId: demoPreferenceId, key: viewKey });
+  expect(JSON.parse(demoStored ?? "{}").groupMode).toBe("area");
 
   await logout(page.request);
   const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;

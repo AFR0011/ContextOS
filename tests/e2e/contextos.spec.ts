@@ -941,17 +941,17 @@ test("workspace dark mode toggles and persists", async ({ page }) => {
   await expect(page.locator("html")).not.toHaveClass(/dark/);
 });
 
-test("draft-saved domain edit queues one offline mutation", async ({ page, context }) => {
+test("draft-saved Area edit queues one offline mutation", async ({ page, context }) => {
   await login(page);
   await page.goto("/settings");
   await expect(page.getByTestId("pending-count")).toHaveText("0");
   await context.setOffline(true);
 
-  const domainInput = page.getByPlaceholder("Domain name").first();
+  const areaInput = page.getByPlaceholder("Area name").first();
   const longName = `Research draft save ${Date.now()}`;
-  await domainInput.fill(longName);
+  await areaInput.fill(longName);
   await expect(page.getByTestId("offline-edit-warning").first()).toBeVisible();
-  await domainInput.blur();
+  await areaInput.blur();
 
   await expect(page.getByText("1 pending").first()).toBeVisible();
   await expect(page.getByTestId("settings-refresh-from-server")).toBeDisabled();
@@ -974,8 +974,8 @@ test("global server refresh replaces stale local workspace after external reset"
   await login(page);
   await page.goto("/settings");
   const staleDomain = `Stale cache domain ${Date.now()}`;
-  await page.getByPlaceholder("Add domain...").fill(staleDomain);
-  await page.getByPlaceholder("Add domain...").press("Enter");
+  await page.getByPlaceholder("Add Area...").fill(staleDomain);
+  await page.getByPlaceholder("Add Area...").press("Enter");
   await expectInputValue(page, "input", staleDomain);
   await expect.poll(async () => {
     const response = await page.request.get("/api/bootstrap");

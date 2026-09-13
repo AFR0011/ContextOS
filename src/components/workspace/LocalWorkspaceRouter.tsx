@@ -3,9 +3,7 @@
 import type { ReactNode } from "react";
 import {
   AreasView,
-  DashboardView,
-  DatesView,
-  SearchView
+  DatesView
 } from "@/components/workspace/Views";
 import {
   ProjectDetailLifecycleView,
@@ -15,8 +13,10 @@ import {
 import { ArchiveLifecycleView } from "@/components/workspace/ArchiveLifecycleView";
 import { AreaRequiredView, AreasSetupView, FirstRunSetup } from "@/components/workspace/FirstRunSetup";
 import { ProductInboxView } from "@/components/workspace/ProductInboxView";
+import { ProductSearchView } from "@/components/workspace/ProductSearchView";
 import { ProductSettingsView } from "@/components/workspace/ProductSettingsView";
 import { ResourcesLifecycleView } from "@/components/workspace/ResourcesLifecycleView";
+import { ScopedDashboardView } from "@/components/workspace/ScopedDashboardView";
 import { useWorkspace } from "@/lib/client-store";
 import { useLocalLocation } from "@/lib/local-router";
 
@@ -52,7 +52,7 @@ export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNod
     return <FirstRunSetup />;
   }
 
-  if (pathname === "/dashboard") return <DashboardView />;
+  if (pathname === "/dashboard") return <ScopedDashboardView />;
   if (pathname === "/inbox") return <ProductInboxView />;
   if (pathname === "/projects") return activeDomainCount ? <ProjectsLifecycleView /> : <AreaRequiredView target="projects" />;
 
@@ -62,10 +62,10 @@ export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNod
   if (pathname === "/dates") return <DatesView />;
   if (pathname === "/areas") return <AreasSetupView><AreasView /></AreasSetupView>;
   if (pathname === "/resources") return activeDomainCount ? <ResourcesLifecycleView /> : <AreaRequiredView target="resources" />;
-  if (pathname === "/search") return <SearchView />;
+  if (pathname === "/search") return <ProductSearchView />;
   if (pathname === "/archive") return <ArchiveLifecycleView />;
   if (pathname === "/reviews") return <ReviewsLifecycleView />;
   if (pathname === "/settings") return <ProductSettingsView />;
 
-  return <>{fallback ?? <DashboardView />}</>;
+  return <>{fallback ?? <ScopedDashboardView />}</>;
 }

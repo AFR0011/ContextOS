@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, Download, FileJson, FileText, Plus, RefreshCw, Upload } from "lucide-react";
+import { PasswordChangePanel } from "@/components/workspace/PasswordChangePanel";
 import { useWorkspace } from "@/lib/client-store";
 import type { Domain } from "@/lib/types";
 
@@ -193,7 +194,7 @@ export function ProductSettingsView() {
     <div className="cos-page">
       <div className="mb-5">
         <h1 className="text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">Settings</h1>
-        <p className="mt-1 max-w-2xl text-sm text-[var(--cos-text-muted)]">Areas, workspace sync, and data portability.</p>
+        <p className="mt-1 max-w-2xl text-sm text-[var(--cos-text-muted)]">Account security, Areas, workspace sync, and data portability.</p>
       </div>
 
       <section className="cos-surface p-4">
@@ -236,6 +237,8 @@ export function ProductSettingsView() {
           </p>
         ) : null}
       </section>
+
+      <PasswordChangePanel online={sync.online} />
 
       <section className="cos-surface mt-6 p-4" data-testid="data-portability-settings">
         <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-muted)]">Data portability</h2>

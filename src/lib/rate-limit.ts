@@ -2,7 +2,7 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 
-type AuthRateLimitScope = "login" | "register";
+type AuthRateLimitScope = "login" | "register" | "password-change";
 
 type RateLimitBucket = {
   attempts: number;
@@ -26,6 +26,7 @@ const buckets = new Map<string, RateLimitBucket>();
 const DEFAULT_WINDOW_MS = 10 * 60 * 1000;
 const DEFAULT_LOGIN_FAILURES = 5;
 const DEFAULT_REGISTER_ATTEMPTS = 3;
+const DEFAULT_PASSWORD_CHANGE_FAILURES = 5;
 const PRUNE_INTERVAL_MS = 60 * 1000;
 let nextPruneAt = 0;
 
@@ -37,6 +38,13 @@ function envNumber(name: string, fallback: number) {
 }
 
 function configFor(scope: AuthRateLimitScope) {
+  if (scope === "password-change") {
+    return {
+      limit: DEFAULT_PASSWORD_CHANGE_FAILURES,
+      windowMs: envNumber("AUTH_RATE_LIMIT_WINDOW_MS", DEFAULT_WINDOW_MS)
+    };
+  }
+
   const fallback = scope === "login" ? DEFAULT_LOGIN_FAILURES : DEFAULT_REGISTER_ATTEMPTS;
   const limitName = scope === "login" ? "AUTH_LOGIN_MAX_FAILURES" : "AUTH_REGISTER_MAX_ATTEMPTS";
 

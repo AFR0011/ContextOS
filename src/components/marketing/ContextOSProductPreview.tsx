@@ -11,9 +11,9 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, active: true },
-  { label: "Inbox", icon: Inbox, badge: "6" },
-  { label: "Search", icon: Search },
+  { label: "Dashboard", icon: LayoutDashboard, active: true, badge: undefined },
+  { label: "Inbox", icon: Inbox, active: false, badge: "6" },
+  { label: "Search", icon: Search, active: false, badge: undefined },
 ] as const;
 
 const projects = ["Portfolio launch", "Research manuscript", "ContextOS"] as const;

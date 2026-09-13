@@ -9,11 +9,11 @@
   --cos-bg-elevated: #ffffff;
   --cos-bg-inset: #f1f3f7;
 
-  /* Text */
+  /* Text. Muted/subtle are intentionally darker than the draft DESIGN.md values so meaningful 10-14px metadata remains AA-readable on every light surface. */
   --cos-text: #172033;
   --cos-text-strong: #0f172a;
-  --cos-text-muted: #64748b;
-  --cos-text-subtle: #94a3b8;
+  --cos-text-muted: #55657c;
+  --cos-text-subtle: #607087;
   --cos-text-inverse: #ffffff;
 
   /* Borders */
@@ -131,7 +131,7 @@ html.dark {
   --cos-text: #f4f6fb;
   --cos-text-strong: #ffffff;
   --cos-text-muted: #a1a8b3;
-  --cos-text-subtle: #707887;
+  --cos-text-subtle: #7f8796;
   --cos-text-inverse: #050608;
 
   --cos-border: #242832;

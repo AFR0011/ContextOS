@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./interaction-accessibility.css";
 
 function appUrl() {
   const localPort = process.env.PORT || process.env.PLAYWRIGHT_PORT || "3000";

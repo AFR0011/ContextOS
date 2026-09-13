@@ -1,6 +1,6 @@
 # Contributing
 
-ContextOS is a focused portfolio-stage project. Contributions should preserve its core goal: fast context capture, durable execution state, and reliable recovery after interruptions.
+ContextOS is a focused self-hostable local-first workspace application. Contributions should preserve its core goal: fast context capture, durable execution state, and reliable recovery after interruptions.
 
 ## Development setup
 

@@ -41,7 +41,7 @@ function AreaSettingsRow({ domain, online, onUpdate }: { domain: Domain; online:
       <div className="min-w-0 flex-1">
         <input
           aria-label={`Area name ${domain.name}`}
-          placeholder="Area name (Domain name)"
+          placeholder="Area name"
           value={name}
           onChange={(event) => setName(event.target.value)}
           onBlur={commitName}
@@ -320,7 +320,7 @@ export function ProductSettingsView() {
 
       <section className="cos-surface mt-6 p-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-muted)]">Areas</h2>
-        <p className="mt-2 text-sm text-[var(--cos-text-muted)]">Areas are stable responsibilities or domains that organize Projects and Resources.</p>
+        <p className="mt-2 text-sm text-[var(--cos-text-muted)]">Areas are stable responsibilities that organize Projects and Resources.</p>
         <div className="mt-3 divide-y divide-[var(--cos-border-soft)] rounded-lg border border-[var(--cos-border-soft)]">
           {data.domains.map((domain) => (
             <AreaSettingsRow key={domain.id} domain={domain} online={sync.online} onUpdate={(updates) => updateDomain(domain.id, updates)} />
@@ -332,7 +332,7 @@ export function ProductSettingsView() {
               createArea();
             }}
           >
-            <input value={newArea} onChange={(event) => setNewArea(event.target.value)} placeholder="Add Area... / Add domain..." aria-label="Add Area" className="cos-input min-h-10 min-w-0 flex-1 px-3 py-2 text-sm" />
+            <input value={newArea} onChange={(event) => setNewArea(event.target.value)} placeholder="Add Area..." aria-label="Add Area" className="cos-input min-h-10 min-w-0 flex-1 px-3 py-2 text-sm" />
             <button type="submit" disabled={!newArea.trim()} className="cos-btn cos-btn-primary min-h-10 px-3 py-2 text-sm disabled:opacity-50"><Plus className="h-4 w-4" /> Add Area</button>
           </form>
         </div>

@@ -16,6 +16,11 @@ export interface PublicUser {
   email: string;
 }
 
+export interface CurrentSessionContext {
+  sessionId: string;
+  user: PublicUser;
+}
+
 function sessionHashSecret() {
   const configured = process.env.AUTH_SECRET?.trim();
   if (configured && configured.length >= 32) return configured;
@@ -83,7 +88,7 @@ export async function destroySession() {
   }
 }
 
-export async function getCurrentUser() {
+export async function getCurrentSessionContext(): Promise<CurrentSessionContext | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -100,7 +105,11 @@ export async function getCurrentUser() {
     return null;
   }
 
-  return publicUser(session.user);
+  return { sessionId: session.id, user: publicUser(session.user) };
+}
+
+export async function getCurrentUser() {
+  return (await getCurrentSessionContext())?.user ?? null;
 }
 
 export async function getAuthPageStatus() {

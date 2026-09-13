@@ -45,7 +45,10 @@ export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNod
   const { data } = useWorkspace();
   const activeDomainCount = data.domains.filter((domain) => !domain.archived).length;
 
-  if (data.domains.length === 0 && isWorkspaceProductRoute(pathname)) {
+  // Fresh accounts normally stay in first-run setup until an Area exists. Settings is
+  // intentionally exempt so a returning user can restore a workspace backup without
+  // creating disposable local structure first.
+  if (data.domains.length === 0 && pathname !== "/settings" && isWorkspaceProductRoute(pathname)) {
     return <FirstRunSetup />;
   }
 

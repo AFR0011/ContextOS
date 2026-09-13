@@ -79,8 +79,7 @@ export async function POST(request: Request) {
       const revoked = await prisma.session.deleteMany({
         where: {
           id: parsed.data.sessionId,
-          userId: current.user.id,
-          id: { not: current.sessionId }
+          userId: current.user.id
         }
       });
 

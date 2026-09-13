@@ -19,6 +19,7 @@ Subsequent product/refactor batches retain that acceptance boundary and rerun th
 - Local email/password authentication with bcrypt-hashed passwords and HTTP-only sessions.
 - User-scoped records and ownership validation on data-changing paths.
 - Fixed-window throttling for repeated failed login and registration attempts.
+- Trusted-shell operator commands for closed-registration account creation and password recovery without exposing a public reset endpoint.
 - Per-user IndexedDB identities, workspace snapshots, and mutation outboxes.
 - Idempotent offline mutation synchronization with per-user mutation IDs and stale-write warnings.
 - Service-worker caching for the complete versioned application shell and static assets; API traffic remains network-only.
@@ -39,7 +40,7 @@ The primary workflow consists of:
 
 `/today` and `/this-week` remain compatibility routes and redirect to `/dashboard`. `/dates` is canonical while `/deadlines` remains a compatibility redirect.
 
-New production registrations start with an empty workspace scaffold rather than demo records. First-run setup asks the user to create an Area or restore an existing ContextOS export. Full fictional starter data is reserved for deliberate seed/reset-demo paths.
+New production registrations start with an empty workspace scaffold rather than demo records. First-run setup asks the user to create an Area or restore an existing ContextOS export. Full fictional starter data is reserved for deliberate seed/reset-demo paths. The trusted operator create command uses the same empty production scaffold and refuses to overwrite an existing account.
 
 ## Offline And Synchronization Model
 
@@ -85,6 +86,9 @@ Stage 10 inherits those exact results with their original scope. Provider-native
 ## Authentication And Deployment Defaults
 
 - Public registration is closed in production unless `ALLOW_PUBLIC_REGISTRATION=true` is explicitly configured.
+- With registration closed, a trusted operator can create a real account with `npm run account:create`; this creates an empty production scaffold and never demo fixtures.
+- A trusted operator can recover a forgotten password with `npm run account:reset-password`; the reset revokes all server sessions for that account and leaves workspace rows unchanged.
+- Operator account commands require either generated temporary credentials or password data on stdin and never accept a password as a process argument.
 - `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is deliberately enabled.
 - Demo seeding is intended for local or disposable preview environments only.
 - Database failures are surfaced as structured service errors rather than raw Prisma/database exceptions.
@@ -108,18 +112,21 @@ The committed GitHub Actions workflow provisions PostgreSQL 16 and runs, in sequ
 5. Stage 10 acceptance-registry and public-claims audits;
 6. Prisma validation/generation and committed migration deployment;
 7. disposable demo seed;
-8. TypeScript checks;
-9. production build;
-10. optimized production/offline Stage 10 Playwright matrix, including offline history, functional local Search, mutation durability, and tombstone hard-reload evidence;
-11. dedicated Stage 9 lifecycle browser matrix;
-12. full database-backed development E2E suite; and
-13. deliberate database-outage smoke.
+8. operator account provisioning/recovery checks against the disposable database;
+9. TypeScript checks;
+10. production build;
+11. optimized production/offline Stage 10 Playwright matrix, including offline history, functional local Search, mutation durability, and tombstone hard-reload evidence;
+12. dedicated Stage 9 lifecycle browser matrix;
+13. full database-backed development E2E suite; and
+14. deliberate database-outage smoke.
 
-Stage 10's verified acceptance candidate, commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40` / run `31800346837`, passed every gate above. Stage-specific provenance is recorded under `docs/stage8/`, `docs/stage9/`, `docs/stage10/`, and `audits/`. Current `main` continues to rerun that full ladder on every accepted product batch.
+The operator-account check verifies empty-workspace creation, duplicate-create refusal, generated and stdin password sources, all-session revocation during operator recovery, and preservation of workspace rows.
+
+Stage 10's verified acceptance candidate, commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40` / run `31800346837`, passed every historical gate above that existed at Stage 10 closure. Stage-specific provenance is recorded under `docs/stage8/`, `docs/stage9/`, `docs/stage10/`, and `audits/`. Current `main` continues to rerun the accumulated ladder on every accepted product batch.
 
 ## Known Boundaries
 
-- No email verification or self-service password reset.
+- No email verification or self-service password reset; bounded self-hosted password recovery requires trusted operator access to the deployment database.
 - No OAuth as a supported production login path.
 - No collaborative merge interface.
 - No calendar-provider integration or recurring-task engine.
@@ -127,7 +134,7 @@ Stage 10's verified acceptance candidate, commit `f4ba02699c24210ddd6f4cfaf2b626
 - No external AI service is required for core operation.
 - Offline support covers cached workspace views and queued local mutations after a previously authenticated device has an eligible local workspace, not arbitrary server functionality.
 - Ordinary logout requires connectivity because a true server-session logout cannot be completed offline.
-- Other offline devices cannot be remotely scrubbed after account deletion.
+- Other offline devices cannot be remotely scrubbed after account deletion or an operator password reset.
 - Irreversible per-record purge is not exposed without a proven anti-resurrection design.
 - Provider-native backup/PITR rehearsal, external penetration testing, distributed provider-level rate limiting, and production SLA/on-call guarantees are not claimed.
 
@@ -140,6 +147,7 @@ Historical note: Stage 10 closed in August 2026 against a deliberately narrower 
 - `docs/REPO_MAP.md` — code and data-flow map.
 - `docs/RUN_PROTOCOL.md` — local setup and verification ladder.
 - `docs/DEPLOYMENT.md` — deployment notes and safety boundaries.
+- `docs/OPERATOR_ACCOUNTS.md` — closed-registration account creation and trusted-shell password recovery.
 - `docs/LOCAL_FIRST_CONTRACT.md` — offline, lifecycle, and deletion semantics.
 - `docs/stage10/STAGE10_ACCEPTANCE.md` — historical Stage 10 final acceptance record.
 - `SECURITY.md` — security assumptions and vulnerability reporting.

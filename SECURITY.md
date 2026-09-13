@@ -29,6 +29,7 @@ The application currently assumes:
 - PostgreSQL credentials supplied through environment configuration;
 - public registration disabled unless deliberately enabled;
 - demo-reset functionality disabled in production unless deliberately enabled;
+- trusted deployment operators protect direct database access and any shell capable of running account-provisioning/recovery commands;
 - server-side authorization for user-owned records and sync mutations;
 - reverse-proxy client-IP headers are supplied by a trusted deployment boundary when application-level auth throttling is relied upon.
 
@@ -47,6 +48,18 @@ This is defense in depth around the existing `SameSite=Lax` session cookie. It i
 Failed login and registration attempts are throttled by fixed-window buckets keyed by client IP and, when available, normalized identity. Expired buckets are periodically pruned so stale high-cardinality keys do not remain indefinitely.
 
 The limiter is intentionally application-local and in-memory. It is not a distributed global rate limiter across multiple serverless/process instances, and its client-IP value depends on trusted reverse-proxy forwarding headers. Public production should therefore add provider/WAF-level abuse protection rather than treating the application limiter as the only bot-defense layer.
+
+## Operator account-recovery boundary
+
+Public registration remains closed by default in production. A trusted deployment operator may create a real account or reset an existing account password directly against the configured PostgreSQL database through `npm run account:create` and `npm run account:reset-password`.
+
+These commands are deliberately not HTTP endpoints. They require shell access with the deployment's `DATABASE_URL`, which is already privileged database authority. Protect that shell and database credential accordingly; the operator commands are not an authorization layer around an otherwise untrusted host.
+
+The CLI never accepts a password as a process argument. It accepts either password data on stdin or a generated temporary password. Generated temporary passwords are printed once after success, so generated-password mode must not be run in uncontrolled CI logs, terminal recordings, or other retained output channels.
+
+Account creation refuses to overwrite an existing email and creates only the empty production scaffold. Operator password recovery changes the password hash, revokes all server sessions for the account, and leaves workspace records unchanged. It does not create a new browser session and does not remotely erase IndexedDB data held by offline devices.
+
+This is a bounded self-hosted recovery mechanism, not self-service password reset, email verification, identity proofing, or delegated support administration. Deployments that need end-user recovery without a trusted operator still require a separately designed verification and delivery system.
 
 ## Synchronization and deletion boundary
 
@@ -111,7 +124,7 @@ This is an engineering assurance framework, not an independent security certific
 The project does not currently provide:
 
 - email verification;
-- self-service password reset;
+- self-service password reset (trusted-shell operator recovery is available for bounded self-hosted deployments);
 - OAuth/SSO as a supported production feature;
 - enterprise audit/compliance guarantees;
 - distributed provider-level rate limiting, WAF, or bot protection;

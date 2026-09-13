@@ -182,3 +182,24 @@ Current boundaries include:
 - no offline first-time authentication, true logout, or permanent account deletion.
 
 Historical note: Stage 10 closed in August 2026 against a deliberately narrower **portfolio-stage** local-first acceptance boundary. That phrase records the scope of the historical acceptance exercise; current product positioning is self-hostable application software. The security, deployment, collaboration, recovery, and lifecycle limitations above remain unchanged.
+
+## Repository documentation
+
+- `BLUEPRINT.md` — product specification and design intent
+- `docs/PROJECT_STATE.md` — current implementation state and known boundaries
+- `docs/REPO_MAP.md` — code/data-flow map
+- `docs/LOCAL_FIRST_CONTRACT.md` — canonical offline, synchronization, lifecycle, and deletion contract
+- `docs/RUN_PROTOCOL.md` — setup and verification ladder
+- `docs/DEPLOYMENT.md` — deployment guidance and operational boundaries
+- `docs/OPERATOR_ACCOUNTS.md` — closed-registration account creation and trusted-shell password recovery
+- `docs/stage7-audit-plan.md` — Stage 7 assurance scope and closure rules
+- `docs/stage8/STAGE8_VERIFICATION.md` — Stage 8 deployment/recovery/operations evidence
+- `docs/stage9/STAGE9_VERIFICATION.md` — Stage 9 lifecycle/destructive-data evidence
+- `docs/stage10/STAGE10_ACCEPTANCE.md` — historical Stage 10 final acceptance record
+- `audits/stage10-acceptance.json` — machine-readable Stage 10 acceptance registry
+- `SECURITY.md` — vulnerability reporting, security assumptions, and non-claims
+- `CONTRIBUTING.md` — contribution and verification expectations
+
+## License
+
+MIT. See `LICENSE`.

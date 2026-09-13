@@ -18,14 +18,12 @@ test("workspace Views facade exposes only reachable production views", () => {
 
   for (const view of liveViews) expect(facade, view).toContain(view);
   for (const view of retiredViews) expect(facade, view).not.toContain(view);
-  expect(facade).toContain('from "@/components/workspace/LegacyWorkspaceViews"');
+  expect(facade).not.toContain("LegacyWorkspaceViews");
 });
 
-test("production source reaches the legacy view implementation only through the facade", () => {
+test("production source no longer depends on the legacy view implementation", () => {
   const srcRoot = resolve(process.cwd(), "src");
-  const facadePath = resolve(srcRoot, "components/workspace/Views.tsx");
   const directLegacyConsumers = sourceFiles(srcRoot)
-    .filter((path) => path !== facadePath)
     .filter((path) => readFileSync(path, "utf8").includes("LegacyWorkspaceViews"))
     .map((path) => path.slice(srcRoot.length + 1).replace(/\\/g, "/"));
 

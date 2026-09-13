@@ -132,7 +132,7 @@ async function main() {
   if (command === "create") {
     await createAccount(email, passwordSource.password);
     console.log(`Created ContextOS account: ${email}`);
-    console.log("Workspace: empty production scaffold (no demo records)." );
+    console.log("Workspace: empty production scaffold (no demo records).");
   } else {
     const revokedSessions = await resetPassword(email, passwordSource.password);
     console.log(`Reset password for ContextOS account: ${email}`);

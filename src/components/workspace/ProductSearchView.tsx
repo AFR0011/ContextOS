@@ -122,7 +122,7 @@ export function ProductSearchView() {
     for (const review of data.reviews) {
       const responseText = Object.entries(review.responses).flatMap(([key, value]) => [key, value]).join(" ");
       items.push({
-        key: selectedKey("review", review.id), kind: "review", id: review.id, typeLabel: "Review", title: review.type.replaceAll("-", " "),
+        key: selectedKey("review", review.id), kind: "review", id: review.id, typeLabel: "Review", title: review.type.replace(/-/g, " "),
         subtitle: format(parseISO(review.date), "MMM d, yyyy h:mm a"),
         searchText: [review.type, review.date, responseText].join(" "),
         contextHref: "/reviews", contextLabel: "Open Reviews"

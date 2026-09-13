@@ -53,8 +53,8 @@ test("active-session controls revoke other sessions without bypassing the curren
       data: { action: "revoke", sessionId: currentSession!.id }
     });
     expect(currentRevoke.status()).toBe(400);
-    await expect(page.request.get("/api/bootstrap")).resolves.toMatchObject({ ok: expect.any(Function) });
-    expect((await page.request.get("/api/bootstrap")).status()).toBe(200);
+    const currentBootstrap = await page.request.get("/api/bootstrap");
+    expect(currentBootstrap.status()).toBe(200);
 
     await page.getByTestId("revoke-session").click();
     await expect(page.getByTestId("session-management-success")).toHaveText("Session signed out.");

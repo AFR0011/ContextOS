@@ -91,7 +91,7 @@ export function ProductSearchView() {
       const project = note.projectId ? projectName.get(note.projectId) ?? "" : "";
       const area = areaName.get(note.domainId) ?? "";
       items.push({
-        key: selectedKey("resource", note.id), kind: "resource", id: note.id, typeLabel: note.projectId ? "Project note" : "Resource", title: note.title,
+        key: selectedKey("resource", note.id), kind: "resource", id: note.id, typeLabel: note.projectId ? "Project note" : "Note", title: note.title,
         subtitle: [project, area, note.archivedAt ? "Archived" : ""].filter(Boolean).join(" · "),
         searchText: [note.title, note.content, project, area].join(" "),
         contextHref: note.projectId ? `/projects/${encodeURIComponent(note.projectId)}` : "/resources", contextLabel: note.projectId ? "Open project context" : "Open Resources"

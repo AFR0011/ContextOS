@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 
@@ -25,4 +25,8 @@ test("each live workspace module defines its production view directly", () => {
   expect(read("ProjectDetailView.tsx")).toContain("export function ProjectDetailView(");
   expect(read("ProjectsView.tsx")).toContain("export function ProjectsView()");
   expect(read("ReviewsView.tsx")).toContain("export function ReviewsView()");
+});
+
+test("legacy workspace view monolith is physically removed", () => {
+  expect(existsSync(resolve(workspaceRoot, "LegacyWorkspaceViews.tsx"))).toBe(false);
 });

@@ -1,0 +1,30 @@
+/*
+ * Batch 7 interaction accessibility guarantees.
+ *
+ * The product uses compact desktop controls in several dense workspace views.
+ * Touch devices must not inherit those mouse-sized targets, and controls that
+ * are intentionally revealed by hover on desktop must remain discoverable to
+ * touch and keyboard users.
+ */
+
+select.opacity-0:focus,
+select.opacity-0:focus-visible {
+  opacity: 1 !important;
+}
+
+@media (hover: none), (pointer: coarse) {
+  button,
+  select,
+  [role="button"] {
+    min-height: 2.5rem;
+  }
+
+  button,
+  [role="button"] {
+    min-width: 2.5rem;
+  }
+
+  select.opacity-0 {
+    opacity: 1 !important;
+  }
+}

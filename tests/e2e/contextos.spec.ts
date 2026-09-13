@@ -549,7 +549,7 @@ test("dashboard command page creates real task and date records", async ({ page 
   const taskTitle = `Dashboard command task ${Date.now()}`;
   const dateTitle = `Dashboard command date ${Date.now()}`;
   const editor = page.getByTestId("dashboard-scratchpad");
-  await expect(page.getByText("Hint: /task or /date with [2026-07-10] (09:30)")).toBeVisible();
+  await expect(page.getByText("Hint: /task or /date with [YYYY-MM-DD] (HH:MM)")).toBeVisible();
 
   await markdownLine(editor, 0).fill(`/task ${taskTitle} [${today}] (09:15)`);
   await markdownLine(editor, 0).press("Enter");
@@ -1197,7 +1197,6 @@ test("project pages use recovery notes instead of project note cards", async ({ 
   const content = `Recovery save check ${Date.now()}`;
   await markdownLine(editor, 0).fill(content);
   await expect(page.getByText("Saved").first()).toBeVisible({ timeout: 3000 });
-
   await page.reload();
   await expect(markdownLine(page.getByTestId("project-recovery-notes"), 0)).toHaveValue(content);
 });

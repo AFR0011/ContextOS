@@ -1,4 +1,4 @@
-import { devices, expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const demoEmail = "demo@contextos.local";
 const demoPassword = "contextos-demo-v011";
@@ -24,12 +24,19 @@ function legacyTaskStatusSelect(page: Page) {
 }
 
 test.describe("Batch 7 touch interaction guarantees", () => {
-  test.use({ ...devices["iPhone 13"] });
+  test.use({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true
+  });
 
   test("compact workspace task controls remain visible and at least 40px on touch devices", async ({ page }) => {
     await loginDemo(page);
     await page.goto("/this-week");
     await expect(page.getByRole("heading", { name: "This Week", exact: true })).toBeVisible();
+
+    const touchMediaMatches = await page.evaluate(() => window.matchMedia("(hover: none), (pointer: coarse)").matches);
+    expect(touchMediaMatches).toBe(true);
 
     const completionButton = page.getByRole("button", { name: /Mark .+ (?:done|todo)$/ }).first();
     await expect(completionButton).toBeVisible();

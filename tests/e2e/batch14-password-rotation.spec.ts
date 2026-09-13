@@ -53,7 +53,7 @@ test("password rotation verifies the current password, keeps this session, and r
     expect(bootstrap.status()).toBe(200);
 
     await secondPage.goto("/dashboard");
-    await expect(secondPage).toHaveURL(/\/login$/);
+    await expect(secondPage).toHaveURL((url) => url.pathname === "/login");
 
     await secondPage.getByLabel("Email").fill(email);
     await secondPage.getByLabel("Password").fill(originalCredential);

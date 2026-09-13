@@ -53,3 +53,4 @@
 - The previous Vite entrypoints and dormant Vite page files were removed during the Next migration.
 - The standalone Markdown editor Vite prototype is archived under `docs/archive/prototypes/markdown-editor-sample-demo/` and is not part of the active app.
 - The former monolithic `LegacyWorkspaceViews.tsx` workspace implementation was removed in Batch 10 after all live views were extracted into focused modules.
+- Retired June 2026 dev-loop coordination artifacts that formerly lived under the root `shared/` directory are archived under `docs/archive/shared/`; they are historical provenance, not active product or CI state.

@@ -61,6 +61,21 @@ NODE
 docker compose -f "$compose_file" exec -T app node -e "if (typeof process.getuid === 'function' && process.getuid() === 0) process.exit(1)"
 docker compose -f "$compose_file" exec -T app sh -c 'test ! -e /app/scripts/account-operator.ts && test ! -d /app/prisma'
 
+initial_user_count="$(docker compose -f "$compose_file" run -T --rm operator node -e '
+const { Client } = require("pg");
+(async () => {
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  const result = await client.query(`SELECT COUNT(*)::int AS count FROM "User"`);
+  console.log(result.rows[0].count);
+  await client.end();
+})().catch((error) => { console.error(error); process.exit(1); });
+')"
+if [ "$initial_user_count" != "0" ]; then
+  echo "Expected fresh production container startup to contain zero users before operator provisioning; found $initial_user_count." >&2
+  exit 1
+fi
+
 register_status="$(curl -sS -o "$register_file" -w '%{http_code}' \
   -H "Origin: $base_url" \
   -H 'content-type: application/json' \

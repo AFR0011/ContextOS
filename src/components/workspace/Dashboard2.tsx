@@ -20,7 +20,7 @@ import type { Capture, Deadline, Domain, Project, Task } from "@/lib/types";
 
 type DashboardGroupMode = "time" | "area" | "project";
 
-const VIEW_STORAGE_KEY = "contextos-dashboard-command-page-view";
+const DEFAULT_VIEW_STORAGE_KEY = "contextos-dashboard-command-page-view";
 const ALL_AREAS = "__all";
 
 function domainName(domains: Domain[], id: string | null | undefined) {
@@ -205,9 +205,9 @@ function dashboardDateGroups({
   }));
 }
 
-function readStoredView() {
+function readStoredView(storageKey: string) {
   try {
-    const value = window.localStorage.getItem(VIEW_STORAGE_KEY);
+    const value = window.localStorage.getItem(storageKey);
     if (!value) return null;
     return JSON.parse(value) as { scope?: string; groupMode?: DashboardGroupMode };
   } catch {
@@ -248,23 +248,26 @@ function DashboardInboxPreview({ captures, count, onReview }: { captures: Captur
   );
 }
 
-export function Dashboard2View() {
+export function Dashboard2View({ viewStorageKey = DEFAULT_VIEW_STORAGE_KEY }: { viewStorageKey?: string } = {}) {
   const router = useLocalRouter();
   const { data, loading, sync, addTask, addDeadline, updateDashboardScratchpad } = useWorkspace();
   const today = localDateKey();
   const scratchpad = data.dashboardScratchpads[0];
   const [scope, setScope] = useState(ALL_AREAS);
   const [groupMode, setGroupMode] = useState<DashboardGroupMode>("time");
+  const [viewReady, setViewReady] = useState(false);
 
   useEffect(() => {
-    const stored = readStoredView();
-    if (stored?.scope) setScope(stored.scope);
-    if (stored?.groupMode && ["time", "area", "project"].includes(stored.groupMode)) setGroupMode(stored.groupMode);
-  }, []);
+    const stored = readStoredView(viewStorageKey);
+    setScope(stored?.scope ?? ALL_AREAS);
+    setGroupMode(stored?.groupMode && ["time", "area", "project"].includes(stored.groupMode) ? stored.groupMode : "time");
+    setViewReady(true);
+  }, [viewStorageKey]);
 
   useEffect(() => {
-    window.localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify({ scope, groupMode }));
-  }, [groupMode, scope]);
+    if (!viewReady) return;
+    window.localStorage.setItem(viewStorageKey, JSON.stringify({ scope, groupMode }));
+  }, [groupMode, scope, viewReady, viewStorageKey]);
 
   const taskGroups = useMemo(
     () => dashboardTaskGroups({ tasks: data.tasks, projects: data.projects, domains: data.domains, today, scope, groupMode }),

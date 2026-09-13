@@ -1,5 +1,5 @@
-import { ProjectsView } from "@/components/workspace/Views";
+import WorkspaceRouteHandoff from "@/components/workspace/WorkspaceRouteHandoff";
 
 export default function ProjectsPage() {
-  return <ProjectsView />;
+  return <WorkspaceRouteHandoff />;
 }

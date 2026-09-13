@@ -1,5 +1,5 @@
-import { InboxView } from "@/components/workspace/Views";
+import WorkspaceRouteHandoff from "@/components/workspace/WorkspaceRouteHandoff";
 
 export default function InboxPage() {
-  return <InboxView />;
+  return <WorkspaceRouteHandoff />;
 }

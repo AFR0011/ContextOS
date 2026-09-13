@@ -1,6 +1,5 @@
-import { ProjectDetailView } from "@/components/workspace/Views";
+import WorkspaceRouteHandoff from "@/components/workspace/WorkspaceRouteHandoff";
 
-export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  return <ProjectDetailView projectId={id} />;
+export default function ProjectDetailPage() {
+  return <WorkspaceRouteHandoff />;
 }

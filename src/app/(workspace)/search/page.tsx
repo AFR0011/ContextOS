@@ -1,5 +1,5 @@
-import { SearchView } from "@/components/workspace/Views";
+import WorkspaceRouteHandoff from "@/components/workspace/WorkspaceRouteHandoff";
 
 export default function SearchPage() {
-  return <SearchView />;
+  return <WorkspaceRouteHandoff />;
 }

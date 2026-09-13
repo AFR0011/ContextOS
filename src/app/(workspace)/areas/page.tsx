@@ -1,5 +1,5 @@
-import { AreasView } from "@/components/workspace/Views";
+import WorkspaceRouteHandoff from "@/components/workspace/WorkspaceRouteHandoff";
 
 export default function AreasPage() {
-  return <AreasView />;
+  return <WorkspaceRouteHandoff />;
 }

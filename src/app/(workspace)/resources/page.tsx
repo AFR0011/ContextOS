@@ -1,5 +1,5 @@
-import { ResourcesView } from "@/components/workspace/Views";
+import WorkspaceRouteHandoff from "@/components/workspace/WorkspaceRouteHandoff";
 
 export default function ResourcesPage() {
-  return <ResourcesView />;
+  return <WorkspaceRouteHandoff />;
 }

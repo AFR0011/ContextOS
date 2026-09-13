@@ -1,5 +1,7 @@
 # ContextOS Repo Cleanup Audit - 2026-06-16
 
+> Follow-up (2026-09-13): the old dev-loop coordination contract described below has been retired. Its canonical root control files, including `DEV_STATE.md`, are no longer part of the active repository, and the remaining root `shared/` coordination artifacts were moved to `docs/archive/shared/` in Batch 12. The June “Keep” decisions below are preserved as historical audit context, not current repository guidance.
+
 ## Scope
 
 This cleanup proposal was executed during v0.2.7 on 2026-06-17. The approved generated artifacts were deleted, historical files were archived under `docs/archive/`, and active backlog items from the UI/UX planning file were extracted into `docs/MIGRATION_BACKLOG.md`.

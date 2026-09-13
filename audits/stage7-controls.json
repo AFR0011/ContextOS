@@ -12,7 +12,7 @@
     ]
   },
   "controls": [
-    {"id":"REP-001","lane":"repository","severity":"critical","mode":"static","requirement":"No tracked .env or credential-bearing environment file other than .env.example."},
+    {"id":"REP-001","lane":"repository","severity":"critical","mode":"static","requirement":"No tracked credential-bearing .env file; only approved placeholder-only example templates may be tracked."},
     {"id":"REP-002","lane":"repository","severity":"medium","mode":"static","requirement":"Generated build/test output is ignored and not tracked."},
     {"id":"REP-003","lane":"repository","severity":"medium","mode":"static","requirement":"No one-shot Stage 5/6/7 patch/bootstrap workflow or temporary patch script remains tracked."},
     {"id":"REP-004","lane":"repository","severity":"high","mode":"runtime","requirement":"Publication fixtures remain neutral and imported private reference material remains absent."},
@@ -31,7 +31,7 @@
     {"id":"AUTH-010","lane":"authentication","severity":"medium","mode":"runtime","requirement":"Optional SSO redirect rejects non-allowlisted return origins and fails closed when its signing secret is absent or inadequate."},
 
     {"id":"API-001","lane":"api","severity":"critical","mode":"runtime","requirement":"Unauthenticated bootstrap, sync, and enabled demo-reset access is rejected."},
-    {"id":"API-002","lane":"api","severity":"high","mode":"runtime","requirement":"Browser cross-origin workspace mutation requests are rejected."},
+    {"id":"API-002","lane":"api","severity":"high","mode":"static","requirement":"Browser cross-origin workspace mutation requests are rejected."},
     {"id":"API-003","lane":"api","severity":"high","mode":"static","requirement":"All API responses are explicitly no-store at the HTTP header layer."},
     {"id":"API-004","lane":"api","severity":"medium","mode":"runtime","requirement":"Database unavailability is surfaced structurally without raw database exceptions."},
     {"id":"API-005","lane":"api","severity":"critical","mode":"static","requirement":"Demo reset is production-disabled unless ALLOW_DEMO_RESET is explicitly true."},

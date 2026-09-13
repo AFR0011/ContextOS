@@ -1109,3 +1109,27 @@ Use this rule for scope decisions:
 > If it helps capture fast, choose today’s work, recover project context, or prevent forgotten open loops, it belongs in MVP.
 >
 > If it mainly helps organize, customize, decorate, automate, or archive, it waits.
+
+---
+
+## 28. Open Questions for Later Versions
+
+These are intentionally not MVP blockers:
+
+- Should meetings/calendar be added later?
+- Should full offline conflict resolution become an explicit merge UI, remain stale-write rejection, or use another user-mediated model?
+- Should semantic search use local embeddings or an external service?
+- Should optional agent suggestions become persistent objects with apply/dismiss history?
+- Should agents ever create tasks or project updates with explicit approval?
+- Should domains have access-control presets?
+- Should project templates exist?
+- Should recurring tasks exist?
+- Should Areas become a separate model from Domains?
+- Should Resources become a separate model from standalone Notes?
+- Should personal systems such as piano practice have routines/rotations?
+- Should vocabulary resources gain flashcard or spaced-repetition behavior?
+- Should weekly review generate a weekly plan automatically?
+- Should provider/device-specific PWA upgrade coverage expand beyond the verified same-origin rehearsal?
+- Should irreversible per-record purge be introduced only after a version/generation anti-resurrection protocol exists?
+
+These should not be solved before the execution-first workflow and current local-first boundary justify the added complexity.

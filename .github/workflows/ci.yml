@@ -93,6 +93,9 @@ jobs:
       - name: Seed demo data
         run: npm run db:seed
 
+      - name: Test operator account provisioning and recovery
+        run: npm run test:account-operator
+
       - name: Typecheck
         run: npm run typecheck
 

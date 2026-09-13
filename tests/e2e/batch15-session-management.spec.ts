@@ -65,7 +65,7 @@ test("active-session controls revoke other sessions without bypassing the curren
     await expect(secondPage).toHaveURL((url) => url.pathname === "/login");
 
     await login(thirdPage, email, credential);
-    await page.getByRole("button", { name: "Refresh" }).click();
+    await page.getByRole("button", { name: "Refresh", exact: true }).click();
     await expect(page.getByTestId("active-session-row")).toHaveCount(2);
     await expect(page.getByTestId("revoke-other-sessions")).toBeEnabled();
 

@@ -1,10 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function registerFreshAccount(page: Page, email: string, credential: string) {
-  await page.goto("/register");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(credential);
-  await page.getByRole("button", { name: "Create account" }).click();
+  const response = await page.request.post("/api/auth/register", {
+    headers: { "x-forwarded-for": "203.0.113.214" },
+    data: { email, password: credential }
+  });
+  expect(response.status()).toBe(200);
+
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByTestId("first-run-setup")).toBeVisible();
 }
@@ -35,13 +38,13 @@ test("password rotation verifies the current password, keeps this session, and r
     await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
     await expect(page.getByTestId("password-change-settings")).toBeVisible();
 
-    await page.getByLabel("Current password").fill(`wrong-${seed}`);
-    await page.getByLabel("New password").fill(rotatedCredential);
-    await page.getByLabel("Confirm new password").fill(rotatedCredential);
+    await page.getByLabel("Current password", { exact: true }).fill(`wrong-${seed}`);
+    await page.getByLabel("New password", { exact: true }).fill(rotatedCredential);
+    await page.getByLabel("Confirm new password", { exact: true }).fill(rotatedCredential);
     await page.getByRole("button", { name: "Change password" }).click();
     await expect(page.getByTestId("password-change-error")).toHaveText("Current password is incorrect.");
 
-    await page.getByLabel("Current password").fill(originalCredential);
+    await page.getByLabel("Current password", { exact: true }).fill(originalCredential);
     await page.getByRole("button", { name: "Change password" }).click();
     await expect(page.getByTestId("password-change-success")).toContainText("1 other signed-in session was signed out.");
 

@@ -2,11 +2,13 @@
 
 ## Status
 
-ContextOS is a portfolio-stage, local-first workspace application. The current repository edition is prepared as a public engineering project rather than presented as a production SaaS service.
+ContextOS is a self-hostable, local-first workspace application with an evidence-backed core workflow. The repository is a deployable application, not merely an engineering demonstration; it is not, however, presented as an operated hosted SaaS service or as a compliance-certified/high-sensitivity platform.
 
 Package version: `0.2.8`.
 
 The local-first completion program is complete through **Stage 10 final local-first acceptance and public-claims verification**. Stage 9 closed against GitHub Actions run `31798664757` on verified code/test commit `68b1543e5083e9064fe909101047fa5e57e7f563`. Stage 10's verified acceptance candidate is commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, which passed the complete accumulated verification ladder.
+
+Subsequent product/refactor batches retain that acceptance boundary and rerun the complete ladder. Batch 10 removed the former workspace-view monolith after extracting all live views into focused modules; merged `main` commit `2b0c03c629fd0025ee185a91bc3c7da85e9215ae` passed post-merge CI run `34760727752` including optimized production/offline coverage, lifecycle browser coverage, full E2E, and database-outage smoke.
 
 ## Architecture
 
@@ -36,6 +38,8 @@ The primary workflow consists of:
 - authenticated `/handoff` previews that create unprocessed Inbox suggestions only after user approval.
 
 `/today` and `/this-week` remain compatibility routes and redirect to `/dashboard`. `/dates` is canonical while `/deadlines` remains a compatibility redirect.
+
+New production registrations start with an empty workspace scaffold rather than demo records. First-run setup asks the user to create an Area or restore an existing ContextOS export. Full fictional starter data is reserved for deliberate seed/reset-demo paths.
 
 ## Offline And Synchronization Model
 
@@ -111,7 +115,7 @@ The committed GitHub Actions workflow provisions PostgreSQL 16 and runs, in sequ
 12. full database-backed development E2E suite; and
 13. deliberate database-outage smoke.
 
-Stage 10's verified acceptance candidate, commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40` / run `31800346837`, passed every gate above. Stage-specific provenance is recorded under `docs/stage8/`, `docs/stage9/`, `docs/stage10/`, and `audits/`.
+Stage 10's verified acceptance candidate, commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40` / run `31800346837`, passed every gate above. Stage-specific provenance is recorded under `docs/stage8/`, `docs/stage9/`, `docs/stage10/`, and `audits/`. Current `main` continues to rerun that full ladder on every accepted product batch.
 
 ## Known Boundaries
 
@@ -127,7 +131,7 @@ Stage 10's verified acceptance candidate, commit `f4ba02699c24210ddd6f4cfaf2b626
 - Irreversible per-record purge is not exposed without a proven anti-resurrection design.
 - Provider-native backup/PITR rehearsal, external penetration testing, distributed provider-level rate limiting, and production SLA/on-call guarantees are not claimed.
 
-Stage 10 closure is an engineering acceptance statement for the documented portfolio-stage product boundary. It is not a claim that the remaining product, deployment, or security boundaries ceased to exist.
+Historical note: Stage 10 closed in August 2026 against a deliberately narrower **portfolio-stage** acceptance boundary. That label records the scope of the historical acceptance exercise; the current repository is positioned as a self-hostable application while retaining every security, deployment, recovery, offline, and lifecycle non-claim listed above.
 
 ## Public Repository Documentation
 
@@ -137,6 +141,6 @@ Stage 10 closure is an engineering acceptance statement for the documented portf
 - `docs/RUN_PROTOCOL.md` — local setup and verification ladder.
 - `docs/DEPLOYMENT.md` — deployment notes and safety boundaries.
 - `docs/LOCAL_FIRST_CONTRACT.md` — offline, lifecycle, and deletion semantics.
-- `docs/stage10/STAGE10_ACCEPTANCE.md` — final local-first acceptance record.
+- `docs/stage10/STAGE10_ACCEPTANCE.md` — historical Stage 10 final acceptance record.
 - `SECURITY.md` — security assumptions and vulnerability reporting.
 - `CONTRIBUTING.md` — contribution and verification expectations.

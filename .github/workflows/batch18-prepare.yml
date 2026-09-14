@@ -22,11 +22,12 @@ jobs:
       - name: Apply release-candidate preparation
         run: python3 scripts/batch18-prepare.py
 
-      - name: Commit prepared candidate
+      - name: Commit non-workflow candidate changes
         shell: bash
         run: |
           set -euo pipefail
-          git rm scripts/batch18-prepare.py .github/workflows/batch18-prepare.yml
+          git checkout -- .github/workflows/ci.yml .github/workflows/batch18-prepare.yml
+          git rm scripts/batch18-prepare.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A

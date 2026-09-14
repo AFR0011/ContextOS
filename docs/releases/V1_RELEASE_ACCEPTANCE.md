@@ -9,9 +9,9 @@
 **RC disposition:** `PASS_RC`
 
 **Stable version:** `1.0.0`  
-**Stable candidate commit:** pending exact stable verification  
-**Stable GitHub Actions run:** pending exact stable verification  
-**Stable disposition:** `PENDING_V1`
+**Stable candidate commit:** `4b66d6c840cc4b526d4315a0b438d8b3eeed08a1`  
+**Stable GitHub Actions run:** `34865680146` — https://github.com/AFR0011/ContextOS/actions/runs/34865680146  
+**Stable disposition:** `PASS_V1`
 
 ## Scope
 
@@ -45,6 +45,12 @@ The exact RC candidate `175c2899e66c20784123d5ecaa56403fa256b29e` passed the com
 20. full development E2E suite — PASS.
 21. deliberate database-outage smoke — PASS.
 
+## Stable acceptance result
+
+The exact stable candidate `4b66d6c840cc4b526d4315a0b438d8b3eeed08a1` passed the same committed verification ladder in GitHub Actions run `34865680146`. Dependency audit, Stage 7–10 assurance checks, release closure audit, Prisma validation/generation and committed migrations, operator account regression, TypeScript, optimized production build, production container distribution/restart persistence, production/offline browser coverage, lifecycle browser coverage, full E2E, and deliberate database-outage smoke all completed successfully.
+
+The stable promotion contains no intended runtime/product change beyond release metadata from the accepted RC. This acceptance-record update is evidence-only and does not alter application runtime, schema, persistence, synchronization, lifecycle semantics, or container architecture.
+
 ## Production-container rehearsal
 
 The repository-owned container acceptance builds the exact production app/operator/migration images against an isolated fresh PostgreSQL volume. It verifies committed migrations before app startup, health, non-root/runtime separation, closed public registration, operator first-account creation, authentication, and the empty production scaffold. Batch 18 then creates representative synchronized workspace data, restarts the application and database containers without deleting the named PostgreSQL volume, and verifies the account, representative data, and health survive the restart. The disposable project and volume are explicitly removed afterward.
@@ -55,6 +61,8 @@ This proves the repository-owned deployment/restart contract only. It is not pro
 
 This release does not claim provider-native backup/PITR rehearsal, production RTO/RPO or SLA/on-call guarantees, external monitoring, distributed WAF/rate limiting, penetration testing/compliance certification, collaborative real-time/CRDT editing, self-service email password recovery, remote erasure of another offline device, or irreversible per-record purge without an anti-resurrection protocol.
 
-## Stable promotion gate
+## Final disposition
 
-Stable `1.0.0` is promoted only from the `PASS_RC` candidate above. The stable candidate must pass the committed verification ladder again; its exact candidate SHA, CI run, and final `PASS_V1` disposition are recorded in this file after that run completes.
+`PASS_V1`
+
+The release candidate to tag as `v1.0.0` is `4b66d6c840cc4b526d4315a0b438d8b3eeed08a1`. The subsequent acceptance-record commit exists only to persist the completed verification evidence in repository history; it is not a different application candidate.

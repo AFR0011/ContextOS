@@ -164,7 +164,7 @@ GET /api/health
 Expected DB-up response:
 
 ```json
-{ "status": "ok", "service": "contextos", "database": "ok", "version": "0.2.8" }
+{ "status": "ok", "service": "contextos", "database": "ok", "version": "1.0.0-rc.1" }
 ```
 
 Expected DB-unavailable response:

@@ -1,7 +1,7 @@
 {
   "name": "contextos",
   "private": true,
-  "version": "0.2.8",
+  "version": "1.0.0-rc.1",
   "type": "module",
   "scripts": {
     "dev": "next dev",
@@ -17,6 +17,7 @@
     "audit:stage9:evidence": "node scripts/stage9-evidence-check.mjs",
     "audit:stage10:acceptance": "node scripts/stage10-acceptance-check.mjs",
     "audit:stage10:claims": "node scripts/stage10-claims-audit.mjs",
+    "audit:release": "node scripts/release-closure-audit.mjs",
     "account:create": "tsx scripts/account-operator.ts create",
     "account:reset-password": "tsx scripts/account-operator.ts reset-password",
     "test:account-operator": "tsx scripts/account-operator-tests.ts",

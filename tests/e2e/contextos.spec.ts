@@ -1,4 +1,7 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+
+const packageVersion = (JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as { version: string }).version;
 
 async function login(page: Page) {
   await page.goto("/login");
@@ -316,7 +319,7 @@ test("health endpoint reports database availability", async ({ page }) => {
     status: "ok",
     service: "contextos",
     database: "ok",
-    version: "0.2.8"
+    version: packageVersion
   });
 });
 

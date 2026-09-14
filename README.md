@@ -6,6 +6,8 @@ It combines a Next.js application with PostgreSQL-backed user data, a user-scope
 
 > **Project status:** self-hostable local-first application with an evidence-backed core workflow. The repository is not an operated hosted production SaaS service, a compliance-certified system, or a collaborative distributed-data platform. High-sensitivity/public production deployments still require target-specific operational and security review. The local-first completion program is complete through Stage 10 final acceptance within the documented boundary.
 
+**Current release candidate:** `v1.0.0-rc.1`. Batch 18 is release closure only: the accepted product boundary is frozen while versioning, release evidence, and distribution documentation are finalized. See `CHANGELOG.md` and `docs/releases/V1_RELEASE_ACCEPTANCE.md`.
+
 ## Product
 
 ContextOS is built around a simple loop: capture what is loose, turn it into work, preserve enough context to resume, and keep that state available through ordinary connectivity failures.
@@ -210,7 +212,9 @@ Historical note: Stage 10 closed in August 2026 against a deliberately narrower 
 
 ## Repository documentation
 
+- `CHANGELOG.md` — stable release history and known boundaries
 - `BLUEPRINT.md` — product specification and design intent
+- `docs/releases/V1_RELEASE_ACCEPTANCE.md` — Batch 18 release evidence
 - `docs/PROJECT_STATE.md` — current implementation state and known boundaries
 - `docs/REPO_MAP.md` — code/data-flow map
 - `docs/LOCAL_FIRST_CONTRACT.md` — canonical offline, synchronization, lifecycle, and deletion contract

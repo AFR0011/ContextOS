@@ -4,7 +4,9 @@
 
 ContextOS is a self-hostable, local-first workspace application with an evidence-backed core workflow. The repository is a deployable application, not merely an engineering demonstration; it is not, however, presented as an operated hosted SaaS service or as a compliance-certified/high-sensitivity platform.
 
-Package version: `0.2.8`.
+Package version: `1.0.0-rc.1`.
+
+Release status: **v1.0.0 release candidate under Batch 18 closure**. The product boundary is frozen; release evidence is recorded in `docs/releases/V1_RELEASE_ACCEPTANCE.md` and user-facing changes are summarized in `CHANGELOG.md`.
 
 The local-first completion program is complete through **Stage 10 final local-first acceptance and public-claims verification**. Stage 9 closed against GitHub Actions run `31798664757` on verified code/test commit `68b1543e5083e9064fe909101047fa5e57e7f563`. Stage 10's verified acceptance candidate is commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, which passed the complete accumulated verification ladder.
 
@@ -153,6 +155,8 @@ Historical note: Stage 10 closed in August 2026 against a deliberately narrower 
 ## Public Repository Documentation
 
 - `README.md` — project overview and engineering highlights.
+- `CHANGELOG.md` — current stable-release history and boundaries.
+- `docs/releases/V1_RELEASE_ACCEPTANCE.md` — Batch 18 RC/stable release evidence.
 - `BLUEPRINT.md` — product specification and design intent.
 - `docs/REPO_MAP.md` — code and data-flow map.
 - `docs/RUN_PROTOCOL.md` — local setup and verification ladder.

@@ -20,6 +20,7 @@
     "account:create": "tsx scripts/account-operator.ts create",
     "account:reset-password": "tsx scripts/account-operator.ts reset-password",
     "test:account-operator": "tsx scripts/account-operator-tests.ts",
+    "test:container-distribution": "bash scripts/container-distribution-smoke.sh",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",

@@ -82,17 +82,22 @@ The current ladder retains the accepted Stage 10 gates and adds post-Stage-10 pr
    npm run typecheck
    npm run build
    ```
-9. Production/offline/security/final-acceptance browser matrix:
+9. Production container-distribution acceptance:
+   ```bash
+   npm run test:container-distribution
+   ```
+   This builds the exact standalone app and operator/migration images, starts a fresh isolated PostgreSQL volume, applies committed migrations, verifies non-root/runtime separation and closed registration, provisions a first account through the operator container, authenticates through the containerized app, and verifies the empty production scaffold. The smoke tears down its isolated Compose project and volume afterward.
+10. Production/offline/security/final-acceptance browser matrix:
    ```bash
    npx playwright test --config=playwright.production.config.ts --workers=1
    ```
-10. Development-server regression suite:
+11. Development-server regression suite:
    ```bash
    npm run test:e2e -- --workers=1
    ```
-11. Deliberate database-outage smoke, as implemented in `.github/workflows/ci.yml`.
+12. Deliberate database-outage smoke, as implemented in `.github/workflows/ci.yml`.
 
-The committed GitHub Actions workflow runs this ladder against disposable PostgreSQL 16. Stage 10 final acceptance is closed against verified candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, which passed every gate that existed at Stage 10 closure. Current `main` continues the historical gates plus accepted product-batch checks.
+The committed GitHub Actions workflow runs this ladder against disposable PostgreSQL 16. Stage 10 final acceptance is closed against verified candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, which passed every gate that existed at Stage 10 closure. Batch 17's production-distribution candidate passed the expanded ladder in PR-head run `34778947459`. Current `main` continues the historical gates plus accepted product-batch checks.
 
 ## Runtime Ownership
 
@@ -118,6 +123,8 @@ The development suite owns broader interactive behavior, local atomic persistenc
 The human-readable scope is `docs/stage7-audit-plan.md`; the machine-readable registry is `audits/stage7-controls.json`.
 
 `npm run audit:stage7` checks repository hygiene, tracked environment/generated files, session/security implementation invariants, authentication input bounds, browser mutation-origin guards, API no-store headers, synchronization request integrity, local credential isolation, production CSP branching, service-worker replacement rules, user-scoped Prisma models, mutation-ledger uniqueness, documentation boundaries, and CI coverage.
+
+The only tracked dotenv-style files allowed by the repository audit are the explicit placeholder templates `.env.example` and `.env.production.example`; both are included in the high-confidence repository secret scan.
 
 Stage 7 is an internal engineering assurance layer, not a penetration test or compliance certification.
 
@@ -160,7 +167,7 @@ Production authentication requires a fresh configured `AUTH_SECRET` of at least 
 
 Browser-originated state-changing requests use the exact-origin mutation guard. Controlled CLI/API calls may omit browser `Origin`/`Sec-Fetch-Site` metadata.
 
-Public registration remains closed by default in production. For a closed-registration self-hosted deployment, `npm run account:create` is the trusted-shell first-account path and `npm run account:reset-password` is the trusted-shell forgotten-password recovery path. Operator recovery revokes every server session for that account and leaves workspace rows unchanged. Passwords are supplied only through generated temporary credentials or stdin, never as process arguments. See `docs/OPERATOR_ACCOUNTS.md`.
+Public registration remains closed by default in production. For a closed-registration self-hosted deployment, `npm run account:create` is the trusted-shell first-account path and `npm run account:reset-password` is the trusted-shell forgotten-password recovery path. Operator recovery revokes every server session for that account and leaves workspace rows unchanged. Passwords are supplied only through generated temporary credentials or stdin, never as process arguments. Container deployments expose the same commands through the unexposed operator profile described in `docs/CONTAINER_DEPLOYMENT.md`. See `docs/OPERATOR_ACCOUNTS.md` for the account trust boundary.
 
 Application login/registration throttling remains per-process/in-memory. Public deployment should combine it with trusted proxy IP handling and provider/WAF-level distributed abuse protection.
 
@@ -197,9 +204,11 @@ Stage 8 already recorded non-production engineering evidence for:
 - the exact Stage 7→8 application rollback pair, whose migration ledger was unchanged; and
 - minimal health/diagnostic behavior with sanitized operational logging.
 
-See `docs/stage8/STAGE8_VERIFICATION.md`. These results do **not** prove provider-native PITR, arbitrary migration reversibility, a production disaster-recovery SLA, or an external monitoring/on-call program.
+Batch 17 adds repository-owned production-distribution evidence using `Dockerfile`, `compose.production.yml`, and `scripts/container-distribution-smoke.sh`. The container smoke is deliberately separate from the ordinary `next start` production browser matrix: one verifies the shipped container/Compose path, while the other owns the local-first PWA/browser contract.
 
-For an actual public production environment, still verify provider backups, production environment configuration, migration compatibility, rollback procedures for the exact release pair, WAF/abuse controls, and operational ownership appropriate to that deployment. Historical non-production rehearsal is evidence, not a permission slip to skip production operations.
+See `docs/CONTAINER_DEPLOYMENT.md` and `docs/stage8/STAGE8_VERIFICATION.md`. These results do **not** prove provider-native PITR, arbitrary migration reversibility, a production disaster-recovery SLA, or an external monitoring/on-call program.
+
+For an actual public production environment, still verify provider backups, production environment configuration, migration compatibility, rollback procedures for the exact release pair, TLS/reverse-proxy configuration, WAF/abuse controls, and operational ownership appropriate to that deployment. Historical non-production rehearsal and container acceptance are evidence, not a permission slip to skip production operations.
 
 ## Database-Unavailable Smoke
 
@@ -219,8 +228,9 @@ Expected boundaries include:
 
 ## Notes
 
-- `.env` is ignored; `.env.example` is the only environment file intended to be committed.
+- `.env` is ignored. `.env.example` and `.env.production.example` are the only dotenv-style environment templates intended to be committed; they must contain placeholders/demo values only.
 - `npm run db:seed` recreates the configured demo workspace. Do not run it as a normal production deploy step or as a real-user provisioning tool.
+- Production container startup never invokes `db:seed`.
 - Public registration and demo reset are disabled by default in production unless deliberately enabled.
-- Closed-registration account creation/recovery is documented in `docs/OPERATOR_ACCOUNTS.md`.
+- Closed-registration account creation/recovery is documented in `docs/OPERATOR_ACCOUNTS.md`; container operation is documented in `docs/CONTAINER_DEPLOYMENT.md`.
 - Review dependency updates deliberately; do not use `npm audit fix --force` as an assurance strategy.

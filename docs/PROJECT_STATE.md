@@ -10,6 +10,8 @@ The local-first completion program is complete through **Stage 10 final local-fi
 
 Subsequent product/refactor batches retain that acceptance boundary and rerun the complete ladder. Batch 10 removed the former workspace-view monolith after extracting all live views into focused modules; merged `main` commit `2b0c03c629fd0025ee185a91bc3c7da85e9215ae` passed post-merge CI run `34760727752` including optimized production/offline coverage, lifecycle browser coverage, full E2E, and database-outage smoke.
 
+Batch 17 adds a repository-owned production-style container distribution. Its PR-head candidate passed GitHub Actions run `34778947459` with the full accumulated ladder plus a fresh-volume container acceptance test covering image build, migrations, non-root runtime separation, closed registration, operator first-account creation, authentication, and empty production bootstrap. Release versioning/tagging remains a separate release-closure step.
+
 ## Architecture
 
 - Next.js App Router application under `src/app`.
@@ -20,6 +22,7 @@ Subsequent product/refactor batches retain that acceptance boundary and rerun th
 - User-scoped records and ownership validation on data-changing paths.
 - Fixed-window throttling for repeated failed login and registration attempts.
 - Trusted-shell operator commands for closed-registration account creation and password recovery without exposing a public reset endpoint.
+- Production-style Docker distribution with a non-root Next.js standalone app image, a separate non-root migration/operator image, PostgreSQL 16, and Compose dependency/health ordering.
 - Per-user IndexedDB identities, workspace snapshots, and mutation outboxes.
 - Idempotent offline mutation synchronization with per-user mutation IDs and stale-write warnings.
 - Service-worker caching for the complete versioned application shell and static assets; API traffic remains network-only.
@@ -81,18 +84,23 @@ Stage 8 produced non-production evidence for:
 - Stage 7 to Stage 8 release-pair migration/rollback compatibility; and
 - minimal operational health and sanitized error logging.
 
-Stage 10 inherits those exact results with their original scope. Provider-native snapshot/PITR rehearsal, production RTO/RPO, and arbitrary future migration rollback are not claimed.
+Batch 17 adds a second, provider-neutral deployment path owned directly by the repository: `compose.production.yml` builds the app and operator images, starts PostgreSQL, waits for database health, applies committed migrations through a one-shot container, and starts the standalone application only after migration success. Normal container startup never seeds demo data. `docs/CONTAINER_DEPLOYMENT.md` is the canonical procedure for this path.
+
+The container acceptance test uses an isolated Compose project and fresh named volume. It verifies the public app image runs non-root, excludes repository operator scripts and the Prisma migration tree, keeps public registration closed, supports first-account creation through the unexposed operator image, authenticates that account, and returns only the empty production scaffold from bootstrap.
+
+Stage 10 inherits the Stage 8 results with their original scope. Provider-native snapshot/PITR rehearsal, production RTO/RPO, and arbitrary future migration rollback are not claimed. Container packaging does not broaden those claims.
 
 ## Authentication And Deployment Defaults
 
 - Public registration is closed in production unless `ALLOW_PUBLIC_REGISTRATION=true` is explicitly configured.
 - With registration closed, a trusted operator can create a real account with `npm run account:create`; this creates an empty production scaffold and never demo fixtures.
+- Container deployments expose the same account tooling only through the unexposed operator Compose profile; it is not copied into the long-running public app image.
 - A trusted operator can recover a forgotten password with `npm run account:reset-password`; the reset revokes all server sessions for that account and leaves workspace rows unchanged.
 - Operator account commands require either generated temporary credentials or password data on stdin and never accept a password as a process argument.
 - `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is deliberately enabled.
-- Demo seeding is intended for local or disposable preview environments only.
+- Demo seeding is intended for local or disposable preview environments only and is not part of production container startup.
 - Database failures are surfaced as structured service errors rather than raw Prisma/database exceptions.
-- Deployment secrets must be supplied through environment variables; `.env.example` contains placeholders/demo values only.
+- Deployment secrets must be supplied through environment variables; `.env.example` and `.env.production.example` contain placeholders/demo values only and are included in repository secret scanning.
 - Account deletion is same-origin guarded, authenticated, password re-verified, and implemented through the `User` cascade root rather than ad hoc child-table deletion.
 
 ## Public Demo Fixtures
@@ -115,12 +123,13 @@ The committed GitHub Actions workflow provisions PostgreSQL 16 and runs, in sequ
 8. operator account provisioning/recovery checks against the disposable database;
 9. TypeScript checks;
 10. production build;
-11. optimized production/offline Stage 10 Playwright matrix, including offline history, functional local Search, mutation durability, and tombstone hard-reload evidence;
-12. dedicated Stage 9 lifecycle browser matrix;
-13. full database-backed development E2E suite; and
-14. deliberate database-outage smoke.
+11. production container-distribution acceptance against a fresh isolated PostgreSQL volume;
+12. optimized production/offline Stage 10 Playwright matrix, including offline history, functional local Search, mutation durability, and tombstone hard-reload evidence;
+13. dedicated Stage 9 lifecycle browser matrix;
+14. full database-backed development E2E suite; and
+15. deliberate database-outage smoke.
 
-The operator-account check verifies empty-workspace creation, duplicate-create refusal, generated and stdin password sources, all-session revocation during operator recovery, and preservation of workspace rows.
+The operator-account check verifies empty-workspace creation, duplicate-create refusal, generated and stdin password sources, all-session revocation during operator recovery, and preservation of workspace rows. The container-distribution check separately proves the production images and Compose startup contract rather than substituting the host Node runtime for the claimed deployment path.
 
 Stage 10's verified acceptance candidate, commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40` / run `31800346837`, passed every historical gate above that existed at Stage 10 closure. Stage-specific provenance is recorded under `docs/stage8/`, `docs/stage9/`, `docs/stage10/`, and `audits/`. Current `main` continues to rerun the accumulated ladder on every accepted product batch.
 
@@ -136,6 +145,7 @@ Stage 10's verified acceptance candidate, commit `f4ba02699c24210ddd6f4cfaf2b626
 - Ordinary logout requires connectivity because a true server-session logout cannot be completed offline.
 - Other offline devices cannot be remotely scrubbed after account deletion or an operator password reset.
 - Irreversible per-record purge is not exposed without a proven anti-resurrection design.
+- Container distribution does not supply TLS termination, external monitoring/on-call, provider-native backup/PITR, or distributed WAF/rate limiting.
 - Provider-native backup/PITR rehearsal, external penetration testing, distributed provider-level rate limiting, and production SLA/on-call guarantees are not claimed.
 
 Historical note: Stage 10 closed in August 2026 against a deliberately narrower **portfolio-stage** acceptance boundary. That label records the scope of the historical acceptance exercise; the current repository is positioned as a self-hostable application while retaining every security, deployment, recovery, offline, and lifecycle non-claim listed above.
@@ -146,6 +156,7 @@ Historical note: Stage 10 closed in August 2026 against a deliberately narrower 
 - `BLUEPRINT.md` — product specification and design intent.
 - `docs/REPO_MAP.md` — code and data-flow map.
 - `docs/RUN_PROTOCOL.md` — local setup and verification ladder.
+- `docs/CONTAINER_DEPLOYMENT.md` — production-style Docker Compose self-hosting and operator workflow.
 - `docs/DEPLOYMENT.md` — deployment notes and safety boundaries.
 - `docs/OPERATOR_ACCOUNTS.md` — closed-registration account creation and trusted-shell password recovery.
 - `docs/LOCAL_FIRST_CONTRACT.md` — offline, lifecycle, and deletion semantics.

@@ -35,13 +35,15 @@ function trackedFiles() {
     .filter(Boolean);
 }
 
+const allowedEnvTemplates = new Set([".env.example", ".env.production.example"]);
+
 function isAuditableTextFile(relative) {
   const extension = path.extname(relative).toLowerCase();
   const textExtensions = new Set([
     ".cjs", ".css", ".env", ".html", ".js", ".json", ".jsx", ".md", ".mjs",
     ".prisma", ".ps1", ".sh", ".sql", ".toml", ".ts", ".tsx", ".txt", ".yaml", ".yml"
   ]);
-  return textExtensions.has(extension) || ["Dockerfile", ".env.example", ".gitignore"].includes(path.basename(relative));
+  return textExtensions.has(extension) || ["Dockerfile", ".gitignore", ...allowedEnvTemplates].includes(path.basename(relative));
 }
 
 const tracked = trackedFiles();
@@ -65,11 +67,13 @@ const projectState = read("docs/PROJECT_STATE.md");
 const security = read("SECURITY.md");
 const deployment = read("docs/DEPLOYMENT.md");
 
-const forbiddenEnv = tracked.filter((file) => /(^|\/)\.env(?:\..+)?$/.test(file) && file !== ".env.example");
+const forbiddenEnv = tracked.filter((file) => /(^|\/)\.env(?:\..+)?$/.test(file) && !allowedEnvTemplates.has(path.basename(file)));
 record(
   "REP-001",
   forbiddenEnv.length === 0,
-  forbiddenEnv.length ? `Tracked environment files: ${forbiddenEnv.join(", ")}` : "git ls-files contains no tracked .env variant except .env.example.",
+  forbiddenEnv.length
+    ? `Tracked environment files: ${forbiddenEnv.join(", ")}`
+    : "git ls-files contains no tracked .env variant except approved placeholder-only example templates.",
   "Remove credential-bearing environment files from Git history/tracking and rotate exposed secrets."
 );
 

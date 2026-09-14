@@ -1,0 +1,90 @@
+name: contextos
+
+x-database-url: &database-url "postgresql://${POSTGRES_USER:-contextos}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}@database:5432/${POSTGRES_DB:-contextos}?schema=public"
+
+services:
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-contextos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+      POSTGRES_DB: ${POSTGRES_DB:-contextos}
+    volumes:
+      - contextos-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-contextos} -d ${POSTGRES_DB:-contextos}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  migrate:
+    build:
+      context: .
+      target: operator
+    restart: "no"
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      database:
+        condition: service_healthy
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command: ["npm", "run", "db:deploy"]
+
+  app:
+    build:
+      context: .
+      target: runtime
+      args:
+        NEXT_PUBLIC_APP_URL: ${APP_URL:?Set APP_URL in .env.production}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: *database-url
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env.production}
+      APP_URL: ${APP_URL:?Set APP_URL in .env.production}
+      NEXT_PUBLIC_APP_URL: ${APP_URL:?Set APP_URL in .env.production}
+      ALLOW_PUBLIC_REGISTRATION: ${ALLOW_PUBLIC_REGISTRATION:-false}
+      ALLOW_DEMO_RESET: ${ALLOW_DEMO_RESET:-false}
+      AUTH_RATE_LIMIT_WINDOW_MS: ${AUTH_RATE_LIMIT_WINDOW_MS:-}
+      AUTH_LOGIN_MAX_FAILURES: ${AUTH_LOGIN_MAX_FAILURES:-}
+      AUTH_REGISTER_MAX_ATTEMPTS: ${AUTH_REGISTER_MAX_ATTEMPTS:-}
+      CONTEXTOS_SSO_SECRET: ${CONTEXTOS_SSO_SECRET:-}
+      SOCIALOS_APP_URL: ${SOCIALOS_APP_URL:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${CONTEXTOS_PORT:-3000}:3000"
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  operator:
+    build:
+      context: .
+      target: operator
+    profiles: ["operator"]
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      database:
+        condition: service_healthy
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      - node
+      - -e
+      - "console.log('Run account tooling with: docker compose -f compose.production.yml run --rm operator npm run account:create -- user@example.com --generate-password')"
+
+volumes:
+  contextos-postgres-data:

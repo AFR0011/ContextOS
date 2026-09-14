@@ -6,6 +6,7 @@ base_url="${APP_URL:-http://127.0.0.1:${CONTEXTOS_PORT:-3200}}"
 email="${CONTEXTOS_CONTAINER_TEST_EMAIL:-container-ci@contextos.local}"
 password="${CONTEXTOS_CONTAINER_TEST_PASSWORD:-container-ci-password-17}"
 project="${COMPOSE_PROJECT_NAME:-contextos-container-ci}"
+representative_id="release-rehearsal-area"
 
 export COMPOSE_PROJECT_NAME="$project"
 export POSTGRES_USER="${POSTGRES_USER:-contextos_ci}"
@@ -22,10 +23,11 @@ health_file="/tmp/contextos-container-health.json"
 login_file="/tmp/contextos-container-login.json"
 bootstrap_file="/tmp/contextos-container-bootstrap.json"
 register_file="/tmp/contextos-container-register.json"
+sync_file="/tmp/contextos-container-sync.json"
 
 cleanup() {
   docker compose -f "$compose_file" down -v --remove-orphans >/dev/null 2>&1 || true
-  rm -f "$cookies_file" "$health_file" "$login_file" "$bootstrap_file" "$register_file"
+  rm -f "$cookies_file" "$health_file" "$login_file" "$bootstrap_file" "$register_file" "$sync_file"
 }
 trap cleanup EXIT
 
@@ -131,4 +133,90 @@ if (!Array.isArray(data.dashboardPreferences) || data.dashboardPreferences.lengt
 }
 NODE
 
+node - "$sync_file" "$representative_id" <<'NODE'
+const fs = require('fs');
+const [path, id] = process.argv.slice(2);
+const now = new Date().toISOString();
+fs.writeFileSync(path, JSON.stringify({
+  mutations: [{
+    mutationId: `release-rehearsal-${Date.now()}`,
+    entityType: 'domains',
+    entityId: id,
+    operation: 'upsert',
+    payload: {
+      id,
+      name: 'Release rehearsal area',
+      archived: false,
+      createdAt: now,
+      updatedAt: now
+    },
+    createdAt: now
+  }]
+}));
+NODE
+
+curl --fail-with-body -sS \
+  -b "$cookies_file" \
+  -H "Origin: $base_url" \
+  -H 'content-type: application/json' \
+  --data-binary "@$sync_file" \
+  "$base_url/api/sync" \
+  >/dev/null
+
+# Rehearse an ordinary app/database restart while preserving the named PostgreSQL volume.
+docker compose -f "$compose_file" stop app database >/dev/null
+docker compose -f "$compose_file" start database >/dev/null
+
+database_ready=0
+for _ in $(seq 1 60); do
+  if docker compose -f "$compose_file" exec -T database pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; then
+    database_ready=1
+    break
+  fi
+  sleep 1
+done
+if [ "$database_ready" -ne 1 ]; then
+  docker compose -f "$compose_file" ps >&2 || true
+  docker compose -f "$compose_file" logs --no-color database >&2 || true
+  exit 1
+fi
+
+docker compose -f "$compose_file" start app >/dev/null
+
+ready=0
+for _ in $(seq 1 60); do
+  if curl -fsS "$base_url/api/health" >"$health_file" 2>/dev/null; then
+    ready=1
+    break
+  fi
+  sleep 1
+done
+if [ "$ready" -ne 1 ]; then
+  docker compose -f "$compose_file" ps >&2 || true
+  docker compose -f "$compose_file" logs --no-color app database >&2 || true
+  exit 1
+fi
+
+curl --fail-with-body -sS \
+  -b "$cookies_file" \
+  "$base_url/api/bootstrap" \
+  >"$bootstrap_file"
+
+node - "$health_file" "$bootstrap_file" "$email" "$representative_id" <<'NODE'
+const fs = require('fs');
+const [healthPath, bootstrapPath, expectedEmail, expectedId] = process.argv.slice(2);
+const health = JSON.parse(fs.readFileSync(healthPath, 'utf8'));
+if (health.status !== 'ok' || health.database !== 'ok') {
+  throw new Error('Container health endpoint did not recover after app/database restart.');
+}
+const payload = JSON.parse(fs.readFileSync(bootstrapPath, 'utf8'));
+if (payload?.user?.email !== expectedEmail) {
+  throw new Error('Operator-created account did not survive app/database restart.');
+}
+if (!payload?.data?.domains?.some((domain) => domain.id === expectedId && domain.name === 'Release rehearsal area')) {
+  throw new Error('Representative synchronized workspace data did not survive app/database restart.');
+}
+NODE
+
 echo "CONTEXTOS_CONTAINER_DISTRIBUTION=PASS"
+echo "CONTEXTOS_CONTAINER_RESTART_PERSISTENCE=PASS"

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const isProduction = process.env.NODE_ENV === "production";
+const useStandaloneOutput = !process.env.VERCEL;
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -72,7 +73,7 @@ const apiNoStoreHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  ...(useStandaloneOutput ? { output: "standalone" as const } : {}),
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {

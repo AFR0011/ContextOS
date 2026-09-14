@@ -11,7 +11,7 @@
 ## Status
 
 **Product Specification:** v1.0  
-**Package Version:** v1.0.0-rc.1  
+**Package Version:** v1.0.0  
 **Product Type:** Execution-first context recovery system  
 **Primary User:** Single-user / self-hosted deployments  
 **Platform:** Local-first PWA with verified offline workspace reopen and queued supported mutations after a successful authenticated bootstrap on the device  
@@ -20,7 +20,7 @@
 
 ### Current Verified Boundary
 
-Package `1.0.0-rc.1` is the first stable-release candidate. Batch 18 freezes the accepted product boundary, adds release metadata/evidence, and does not broaden runtime semantics.
+Package `1.0.0` is the first stable public release. Batch 18 froze the accepted product boundary, added release metadata/evidence, and did not broaden runtime semantics.
 
 The local-first completion program is complete through Stage 10 final acceptance and public-claims verification. Stage 8 records real non-production HTTPS preview, PostgreSQL-native backup/restore rehearsal, exact release-pair rollback compatibility, and same-origin PWA upgrade evidence. Stage 9 verifies lifecycle and destructive-data behavior. Stage 10 re-runs the accumulated boundary in production-build offline, lifecycle, full E2E, and database-outage matrices. Current accepted product batches continue to rerun that complete ladder.
 

@@ -19,7 +19,10 @@ const forbidText = (path, pattern, message) => {
   const text = read(path);
   if (pattern.test(text)) fail(`${path}: ${message}`);
 };
-const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const requireLiteral = (path, literal, message) => {
+  const text = read(path);
+  if (!text.includes(literal)) fail(`${path}: ${message}`);
+};
 
 const requiredFiles = [
   "README.md",
@@ -37,7 +40,8 @@ const requiredFiles = [
   "docs/DEPLOYMENT.md",
   "docs/CONTAINER_DEPLOYMENT.md",
   "docs/OPERATOR_ACCOUNTS.md",
-  "docs/releases/V1_RELEASE_ACCEPTANCE.md"
+  "docs/releases/V1_RELEASE_ACCEPTANCE.md",
+  "scripts/container-distribution-smoke.sh"
 ];
 for (const path of requiredFiles) requireFile(path);
 if (process.exitCode) process.exit(process.exitCode);
@@ -50,11 +54,10 @@ if (lock.version !== packageJson.version || lock.packages?.[""]?.version !== pac
   fail("package.json and package-lock.json release versions disagree");
 }
 
-const escapedVersion = escapeRegex(packageJson.version);
-requireText("CHANGELOG.md", new RegExp(`^## \\[${escapedVersion}\\] - 2026-09-14$`, "m"), "missing changelog heading for the current release version");
-requireText("BLUEPRINT.md", new RegExp(`\\*\\*Package Version:\\*\\* v${escapedVersion}`), "package version does not match package.json");
-requireText("docs/PROJECT_STATE.md", new RegExp(`Package version: \\`${escapedVersion}\\``), "package version does not match package.json");
-requireText("README.md", new RegExp(`v${escapedVersion}`), "README does not identify the current release version");
+requireLiteral("CHANGELOG.md", `## [${packageJson.version}] - 2026-09-14`, "missing changelog heading for the current release version");
+requireLiteral("BLUEPRINT.md", `**Package Version:** v${packageJson.version}`, "package version does not match package.json");
+requireLiteral("docs/PROJECT_STATE.md", `Package version: \`${packageJson.version}\`.`, "package version does not match package.json");
+requireLiteral("README.md", `v${packageJson.version}`, "README does not identify the current release version");
 requireText("README.md", /self-hostable local-first application/i, "current product maturity boundary is missing");
 requireText("README.md", /not an operated hosted production SaaS/i, "hosted-SaaS non-claim is missing");
 requireText("docs/PROJECT_STATE.md", /Known Boundaries/, "known-boundaries section is missing");

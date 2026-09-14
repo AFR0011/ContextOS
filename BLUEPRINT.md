@@ -11,16 +11,16 @@
 ## Status
 
 **Product Specification:** v1.0  
-**Package Version:** v0.2.8  
+**Package Version:** v1.0.0  
 **Product Type:** Execution-first context recovery system  
-**Primary User:** Single-user / self-hostable MVP  
+**Primary User:** Single-user / self-hosted deployments  
 **Platform:** Local-first PWA with verified offline workspace reopen and queued supported mutations after a successful authenticated bootstrap on the device  
 **Architecture Direction:** Next.js + PostgreSQL + user-scoped IndexedDB + versioned service-worker shell  
 **Purpose:** Replace Notion, task apps, and phone notes for daily execution, project recovery, open-loop tracking, and lightweight context management.
 
 ### Current Verified Boundary
 
-Package `0.2.8` is the implementation baseline; subsequent productization and refactor batches intentionally continue to use that package version unless a release-version change is made separately.
+Package `1.0.0` is the first stable public release. Batch 18 froze the accepted product boundary, added release metadata/evidence, and did not broaden runtime semantics.
 
 The local-first completion program is complete through Stage 10 final acceptance and public-claims verification. Stage 8 records real non-production HTTPS preview, PostgreSQL-native backup/restore rehearsal, exact release-pair rollback compatibility, and same-origin PWA upgrade evidence. Stage 9 verifies lifecycle and destructive-data behavior. Stage 10 re-runs the accumulated boundary in production-build offline, lifecycle, full E2E, and database-outage matrices. Current accepted product batches continue to rerun that complete ladder.
 
@@ -64,7 +64,7 @@ ContextOS is **not**:
 - A task-manager clone with excessive metadata.
 - A maintenance-heavy productivity system.
 
-The MVP should optimize for execution and recovery, not broad life capture. It may replace Notion pages that support execution, recovery, PARA organization, or searchable resources; it should not recreate Notion's fully customizable database/platform surface.
+The current product should optimize for execution and recovery, not broad life capture. It may replace Notion pages that support execution, recovery, PARA organization, or searchable resources; it should not recreate Notion's fully customizable database/platform surface.
 
 ---
 
@@ -119,9 +119,9 @@ PARA is used to make execution context recoverable. It should not add capture fr
 
 ---
 
-## 4. MVP Scope
+## 4. Current Product Scope
 
-### 4.1 Included in MVP
+### 4.1 Included in v1
 
 - Authentication with email/password.
 - Public product landing page at `/`; authenticated workspace entry at `/dashboard`.
@@ -171,7 +171,7 @@ PARA is used to make execution context recoverable. It should not add capture fr
 
 The public root `/` is a product landing page. Authenticated workspace navigation begins at `/dashboard`.
 
-Phase 1 visible MVP navigation:
+Current visible primary navigation:
 
 ```text
 Dashboard
@@ -201,9 +201,9 @@ Settings
 
 `/today` and `/this-week` redirect to `/dashboard`; Dashboard is canonical for daily work selection.
 
-There is no top-level `Workspaces` page in MVP.
+There is no top-level `Workspaces` page in v1.
 
-There is no top-level `Agents` page in MVP.
+There is no top-level `Agents` page in v1.
 
 Agent suggestions are not shown in the Phase 1 simplified visible surface.
 
@@ -264,7 +264,7 @@ Resources live under an Area/Domain.
 
 ## 7. Main Data Objects
 
-MVP objects:
+Core v1 objects:
 
 ```text
 Domain
@@ -470,7 +470,7 @@ Backlog and future tasks now appear in the same live Dashboard Tasks block rathe
 
 ### 9.6 No Priority Subsystem
 
-There is no global task priority field in MVP.
+There is no global task priority field in v1.
 
 There is no separate daily or weekly priority object. Today selection is expressed through planned dates, due dates, task state, and the Dashboard live Tasks block.
 
@@ -531,7 +531,7 @@ The smallest useful captured item is a sentence.
 
 ### 11.2 Slash Commands
 
-MVP slash commands:
+v1 slash commands:
 
 ```text
 /task
@@ -554,7 +554,7 @@ Examples:
 
 ### 11.3 Capture Parsing
 
-MVP supports basic date parsing only.
+v1 supports basic date parsing only.
 
 Example:
 
@@ -569,7 +569,7 @@ Title: submit report
 Date: June 10
 ```
 
-MVP should not attempt heavy natural-language parsing, project inference, or domain inference.
+v1 should not attempt heavy natural-language parsing, project inference, or domain inference.
 
 ### 11.4 Inbox Item Lifecycle
 
@@ -579,7 +579,7 @@ Inbox items are either unprocessed or acted upon.
 Unprocessed -> converted / attached / archived / deleted
 ```
 
-No deferred inbox state in MVP.
+No deferred inbox state in v1.
 
 ### 11.5 Inbox Triage Actions
 
@@ -739,11 +739,11 @@ Example:
 
 ```text
 Shutdown note:
-Worked on ContextOS. Finished MVP screen decisions. Need to update blueprint tomorrow.
+Worked on ContextOS. Finished v1 screen decisions. Need to update blueprint tomorrow.
 
 Suggested project update:
 Project: ContextOS
-Latest Status: MVP screen decisions finalized. Next action is to update blueprint/spec.
+Latest Status: v1 screen decisions finalized. Next action is to update blueprint/spec.
 ```
 
 ---
@@ -787,7 +787,7 @@ Checkboxes inside notes stay local unless explicitly converted into structured t
 
 ## 17. Search
 
-### 17.1 MVP Search
+### 17.1 v1 Search
 
 Basic text search across:
 
@@ -801,7 +801,7 @@ Dates
 Reviews
 ```
 
-### 17.2 MVP Filters
+### 17.2 v1 Filters
 
 Light filters:
 
@@ -878,7 +878,7 @@ Private notes
 
 ### 19.2 Agent Writes
 
-Agents cannot directly write in MVP.
+Agents cannot directly write in v1.
 
 Agents cannot directly:
 
@@ -913,7 +913,7 @@ Project detail pages
 Dashboard collapsed section
 ```
 
-There is no full Agents page in MVP.
+There is no full Agents page in v1.
 
 ---
 
@@ -937,7 +937,7 @@ Export is required to preserve durability and prevent lock-in.
 
 ## 21. Mobile and PWA
 
-### 21.1 MVP Mobile Behavior
+### 21.1 v1 Mobile Behavior
 
 ```text
 Installable PWA
@@ -958,7 +958,7 @@ More advanced mobile-native integrations
 Broader provider/device-specific PWA upgrade coverage
 ```
 
-MVP mobile goal:
+v1 mobile goal:
 
 ```text
 Open phone -> capture sentence -> done
@@ -968,7 +968,7 @@ Open phone -> capture sentence -> done
 
 ## 22. Authentication
 
-MVP authentication:
+v1 authentication:
 
 ```text
 Email/password
@@ -1102,11 +1102,11 @@ Recommended implementation order:
 
 ---
 
-## 27. Final MVP Decision Rule
+## 27. Final v1 Decision Rule
 
 Use this rule for scope decisions:
 
-> If it helps capture fast, choose today’s work, recover project context, or prevent forgotten open loops, it belongs in MVP.
+> If it helps capture fast, choose today’s work, recover project context, or prevent forgotten open loops, it belongs in v1.
 >
 > If it mainly helps organize, customize, decorate, automate, or archive, it waits.
 
@@ -1114,7 +1114,7 @@ Use this rule for scope decisions:
 
 ## 28. Open Questions for Later Versions
 
-These are intentionally not MVP blockers:
+These are intentionally not v1 blockers:
 
 - Should meetings/calendar be added later?
 - Should full offline conflict resolution become an explicit merge UI, remain stale-write rejection, or use another user-mediated model?

@@ -81,6 +81,9 @@ jobs:
       - name: Audit Stage 10 public claims
         run: npm run audit:stage10:claims
 
+      - name: Audit release closure contract
+        run: npm run audit:release
+
       - name: Validate Prisma schema
         run: npx prisma validate
 

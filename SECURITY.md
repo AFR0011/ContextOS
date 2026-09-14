@@ -105,7 +105,7 @@ All `/api/*` responses receive an explicit `Cache-Control: no-store, max-age=0` 
 
 ## Dependency audit status
 
-ContextOS is pinned to stable Next.js 16.2.12 and Prisma 7.9.1. The lockfile uses explicit patched transitive overrides for `esbuild` 0.28.1, `nanoid` 6.0.0, `postcss` 8.5.23, and `sharp` 0.35.3 while remaining on the stable Next.js 16.2 line.
+ContextOS is pinned to stable Next.js 16.3.4 and Prisma 7.9.1. The lockfile uses explicit patched transitive overrides for `esbuild` 0.28.1, `nanoid` 6.0.0, `postcss` 8.5.23, and `sharp` 0.35.4 while remaining on the stable Next.js 16.3 line.
 
 The verified dependency graph reports **0 npm audit vulnerabilities** at the last recorded verification. Permanent CI runs `npm audit --audit-level=low`, so any future advisory at low severity or above fails the verification job rather than being silently accepted.
 

@@ -173,7 +173,10 @@ The smoke test uses an isolated Compose project and fresh PostgreSQL volume. It 
 - the public app image does not contain operator scripts or the Prisma migration tree;
 - production registration remains closed;
 - a first account can be created through the operator container with password data on stdin;
-- that account can authenticate through the containerized application; and
-- its bootstrap contains only the empty production scaffold rather than demo records.
+- that account can authenticate through the containerized application;
+- its bootstrap contains only the empty production scaffold rather than demo records; and
+- representative synchronized workspace data and the operator-created account survive an app/database container restart while the named PostgreSQL volume is preserved.
+
+The Batch 18 v1 release rehearsal therefore covers both fresh-volume acceptance and restart persistence using the repository-owned Compose path. A passing run emits `CONTEXTOS_CONTAINER_DISTRIBUTION=PASS` and `CONTEXTOS_CONTAINER_RESTART_PERSISTENCE=PASS`. This still does not constitute backup/PITR, RTO/RPO, or disaster-recovery evidence.
 
 The test tears down its isolated containers and volume after completion.

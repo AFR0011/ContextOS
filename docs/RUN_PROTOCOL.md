@@ -64,7 +64,11 @@ The current ladder retains the accepted Stage 10 gates and adds post-Stage-10 pr
    npm run audit:stage10:acceptance
    npm run audit:stage10:claims
    ```
-6. Prisma schema/client verification and migration application:
+6. Release-closure metadata and distribution contract:
+   ```bash
+   npm run audit:release
+   ```
+7. Prisma schema/client verification and migration application:
    ```bash
    npx prisma validate
    npx prisma generate
@@ -72,30 +76,30 @@ The current ladder retains the accepted Stage 10 gates and adds post-Stage-10 pr
    npm run db:seed
    ```
    Use `db:migrate` only for local migration development.
-7. Operator account provisioning/recovery regression:
+8. Operator account provisioning/recovery regression:
    ```bash
    npm run test:account-operator
    ```
    This uses only disposable test users and verifies empty-scaffold account creation, generated/stdin password sources, duplicate-create refusal, all-session revocation during operator password recovery, and workspace preservation.
-8. Typecheck and optimized build:
+9. Typecheck and optimized build:
    ```bash
    npm run typecheck
    npm run build
    ```
-9. Production container-distribution acceptance:
+10. Production container-distribution acceptance:
    ```bash
    npm run test:container-distribution
    ```
    This builds the exact standalone app and operator/migration images, starts a fresh isolated PostgreSQL volume, applies committed migrations, verifies non-root/runtime separation and closed registration, provisions a first account through the operator container, authenticates through the containerized app, and verifies the empty production scaffold. The smoke tears down its isolated Compose project and volume afterward.
-10. Production/offline/security/final-acceptance browser matrix:
+11. Production/offline/security/final-acceptance browser matrix:
    ```bash
    npx playwright test --config=playwright.production.config.ts --workers=1
    ```
-11. Development-server regression suite:
+12. Development-server regression suite:
    ```bash
    npm run test:e2e -- --workers=1
    ```
-12. Deliberate database-outage smoke, as implemented in `.github/workflows/ci.yml`.
+13. Deliberate database-outage smoke, as implemented in `.github/workflows/ci.yml`.
 
 The committed GitHub Actions workflow runs this ladder against disposable PostgreSQL 16. Stage 10 final acceptance is closed against verified candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, which passed every gate that existed at Stage 10 closure. Batch 17's production-distribution candidate passed the expanded ladder in PR-head run `34778947459`. Current `main` continues the historical gates plus accepted product-batch checks.
 

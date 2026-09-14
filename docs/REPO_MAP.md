@@ -1,7 +1,7 @@
 # ContextOS Repo Map
 
 ## Root
-- `BLUEPRINT.md`: product specification and MVP rules.
+- `BLUEPRINT.md`: product specification and current v1 rules.
 - `package.json`: Next/Prisma scripts and dependencies.
 - `docker-compose.yml`: local PostgreSQL service.
 - `.env.example`: required local environment variables.

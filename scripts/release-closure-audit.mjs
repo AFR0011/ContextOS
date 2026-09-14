@@ -76,6 +76,8 @@ if (!/ALLOW_DEMO_RESET: \$\{ALLOW_DEMO_RESET:-false\}/.test(compose)) fail("prod
 if (!/profiles: \["operator"\]/.test(compose)) fail("operator service is no longer isolated behind its Compose profile");
 requireText("docs/CONTAINER_DEPLOYMENT.md", /Production startup never runs `npm run db:seed`/, "container deployment no-seed contract is missing");
 requireText("docs/CONTAINER_DEPLOYMENT.md", /unexposed operator service/i, "operator trust boundary is missing");
+requireText("scripts/container-distribution-smoke.sh", /CONTEXTOS_CONTAINER_RESTART_PERSISTENCE=PASS/, "release rehearsal no longer proves restart persistence");
+requireText("docs/CONTAINER_DEPLOYMENT.md", /restart persistence/i, "container documentation no longer describes the v1 restart-persistence rehearsal");
 requireText(".github/workflows/ci.yml", /run: npm run audit:release/, "release audit is not wired into CI");
 
 if (existsSync(pathOf("DEV_STATE.md"))) fail("retired DEV_STATE.md returned to the active root");

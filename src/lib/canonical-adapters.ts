@@ -122,7 +122,38 @@ export function adaptLegacyWorkspace(source: WorkspaceData): CanonicalAdaptation
       areas,
       projects,
       tasks,
-      dates: [],
+      dates: (source.contextDates ?? []).flatMap((date) => {
+        if (date.projectId) {
+          if (!projectIds.has(date.projectId)) return [];
+          return [{
+            id: date.id,
+            title: date.title,
+            kind: date.kind,
+            parent: { type: "project" as const, projectId: date.projectId },
+            date: date.date,
+            startTime: date.startTime,
+            endTime: date.endTime,
+            details: date.details,
+            createdAt: date.createdAt,
+            updatedAt: date.updatedAt
+          }];
+        }
+        if (date.domainId && areaIds.has(date.domainId)) {
+          return [{
+            id: date.id,
+            title: date.title,
+            kind: date.kind,
+            parent: { type: "area" as const, areaId: date.domainId },
+            date: date.date,
+            startTime: date.startTime,
+            endTime: date.endTime,
+            details: date.details,
+            createdAt: date.createdAt,
+            updatedAt: date.updatedAt
+          }];
+        }
+        return [];
+      }),
       dailyNotes: (source.dailyNotes ?? []).map((note) => ({
         id: note.id,
         localDate: note.localDate,

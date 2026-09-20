@@ -53,28 +53,26 @@ async function localProjectState(page: Page, name: string) {
   }, name);
 }
 
-test("canonical organization surfaces are discoverable without flattening primary navigation", async ({ page }) => {
+test("canonical shell exposes the definitive ContextOS navigation", async ({ page }) => {
   await login(page);
 
   const primary = page.getByTestId("workspace-primary-nav");
-  await expect(primary.getByRole("button", { name: "Dashboard" })).toBeVisible();
-  await expect(primary.getByRole("button", { name: "Areas" })).toHaveCount(0);
-
-  const secondary = page.getByTestId("workspace-secondary-nav");
-  for (const label of ["Dates", "Areas", "Resources", "Reviews"]) {
-    await expect(secondary.getByRole("button", { name: label, exact: true })).toBeVisible();
+  for (const label of ["Home", "Projects", "Areas", "Dates", "LifeOS", "Search"]) {
+    await expect(primary.getByRole("button", { name: label, exact: true })).toBeVisible();
   }
-  await secondary.getByRole("button", { name: "Reviews", exact: true }).click();
-  await expect(page).toHaveURL(/\/reviews$/);
-  await expect(page.getByText("Reviews are historical snapshots")).toBeVisible();
+  for (const retired of ["Inbox", "Resources", "Reviews", "Archive"]) {
+    await expect(primary.getByRole("button", { name: retired, exact: true })).toHaveCount(0);
+  }
+
+  const work = page.getByTestId("workspace-secondary-nav");
+  for (const label of ["Projects", "Areas", "Dates"]) {
+    await expect(work.getByRole("button", { name: label, exact: true })).toBeVisible();
+  }
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/dashboard");
-  await page.locator("button:has(svg.lucide-menu)").click();
-  await expect(page.getByTestId("workspace-secondary-nav")).toBeVisible();
-  await page.getByTestId("workspace-secondary-nav").getByRole("button", { name: "Resources", exact: true }).click();
-  await expect(page).toHaveURL(/\/resources$/);
-  await expect(page.getByRole("heading", { name: "Resources", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Open navigation", exact: true }).click();
+  await expect(page.getByTestId("workspace-utility-nav").getByRole("button", { name: "Settings", exact: true })).toBeVisible();
 });
 
 test("resources leave the active library when archived or trashed and restore cleanly", async ({ page }) => {

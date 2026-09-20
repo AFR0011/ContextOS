@@ -244,18 +244,18 @@ export function HomeView() {
           </div>
         </Section>
 
-        <Section
-          title="Daily Notes"
-          description="One unstructured note for today. No filing required."
-        >
-          <DailyNoteEditor
-            key={today}
-            value={dailyNote?.content ?? ""}
-            onSave={(content) => updateDailyNote(today, content)}
-          />
-        </Section>
-
         <div className="space-y-8">
+          <Section
+            title="Daily Notes"
+            description="One unstructured note for today. No filing required."
+          >
+            <DailyNoteEditor
+              key={today}
+              value={dailyNote?.content ?? ""}
+              onSave={(content) => updateDailyNote(today, content)}
+            />
+          </Section>
+
           <Section
             title="Insights"
             description="Relevant, explainable suggestions from ContextOS intelligence."
@@ -278,7 +278,9 @@ export function HomeView() {
               )}
             </div>
           </Section>
+        </div>
 
+        <div className="space-y-8">
           <Section
             title="In Context Today"
             description="Projects and Areas referenced by today’s planned work and dates."

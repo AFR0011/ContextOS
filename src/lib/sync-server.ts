@@ -340,6 +340,9 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           if (!parsedDate) throw new SyncPayloadError("ContextDate date is not a valid calendar date.");
           const startTime = optionalTimeKey(payload.startTime, "startTime");
           const endTime = optionalTimeKey(payload.endTime, "endTime");
+          if (kind === "deadline" && endTime !== null) {
+            throw new SyncPayloadError("Deadline endTime must be null.");
+          }
           const rawProjectId = payload.projectId ?? null;
           const rawDomainId = payload.domainId ?? null;
           const hasProject = Boolean(rawProjectId);

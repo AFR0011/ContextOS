@@ -75,7 +75,10 @@ test("maps only surviving ContextOS concepts into the canonical workspace", () =
   assert.equal(workspace.tasks.find((task) => task.id === "t-dropped")?.scheduledTime, null);
   assert.equal("dueDate" in (workspace.tasks[0] as object), false);
 
-  assert.deepEqual(workspace.dates, []);
+  assert.deepEqual(workspace.dates.map((date) => ({ id: date.id, parent: date.parent, kind: date.kind })), [
+    { id: "cd-project", parent: { type: "project", projectId: "p-active" }, kind: "deadline" },
+    { id: "cd-area", parent: { type: "area", areaId: "area-active" }, kind: "event" }
+  ]);
   assert.deepEqual(workspace.dailyNotes, [{
     id: "dn",
     localDate: "2026-09-20",
@@ -97,6 +100,7 @@ test("maps only surviving ContextOS concepts into the canonical workspace", () =
     archivedOrTrashedTasks: 2,
     unscopedTasks: 1,
     tasksWithMissingProject: 1,
-    tasksWithMissingArea: 1
+    tasksWithMissingArea: 1,
+    contextDatesWithInvalidParent: 1
   });
 });

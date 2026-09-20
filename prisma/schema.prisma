@@ -21,6 +21,7 @@ model User {
   notes         Note[]
   deadlines     Deadline[]
   reviews       Review[]
+  dailyNotes    DailyNote[]
   dashboardScratchpads  DashboardScratchpad[]
   dashboardPreferences  DashboardPreference[]
   syncMutations         SyncMutation[]
@@ -171,6 +172,20 @@ model Review {
   @@index([userId])
   @@index([userId, type])
   @@index([userId, date])
+}
+
+model DailyNote {
+  id        String   @id
+  userId    String
+  localDate String
+  content   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, localDate])
+  @@index([userId])
 }
 
 model DashboardScratchpad {

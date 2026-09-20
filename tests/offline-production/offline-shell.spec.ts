@@ -6,7 +6,7 @@ async function login(page: Page) {
   await page.getByLabel("Password").fill("contextos-demo-v011");
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 async function waitForOfflineReady(page: Page) {
@@ -135,7 +135,7 @@ test("previously authenticated workspace cold-reopens offline without route warm
   const reopened = await context.newPage();
   const response = await reopened.goto("/dashboard", { waitUntil: "domcontentloaded" });
   expect(response?.status()).not.toBe(503);
-  await expect(reopened.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(reopened.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(reopened.getByTestId("global-sync-indicator").first()).toContainText(/Offline|Loaded cached data\. Failed to fetch/i);
   await expect(reopened.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 });
@@ -150,7 +150,7 @@ test("offline scratchpad edit survives hard reload with its queued mutation", as
   await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(text);
   await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
 });
@@ -164,7 +164,7 @@ test("core workspace routes and a dynamic project cold-open and hard-refresh off
   await context.setOffline(true);
 
   const routes: Array<[string, (page: Page) => Promise<void>]> = [
-    ["/dashboard", async (routePage) => expect(routePage.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible()],
+    ["/dashboard", async (routePage) => expect(routePage.getByRole("heading", { name: "Today", exact: true })).toBeVisible()],
     ["/inbox", async (routePage) => expect(routePage.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible()],
     ["/projects", async (routePage) => expect(routePage.getByRole("heading", { name: "Projects", exact: true })).toBeVisible()],
     ["/dates", async (routePage) => expect(routePage.getByRole("heading", { name: "Dates", exact: true })).toBeVisible()],

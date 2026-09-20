@@ -67,15 +67,19 @@ test("browser back and forward traverse local workspace views while offline", as
 
 test("query-string navigation stays inside the local workspace router", async ({ page, context }) => {
   await login(page);
+  await page.getByTestId("workspace-primary-nav").getByRole("button", { name: "Search", exact: true }).click();
+  await expectPath(page, "/search");
+
   await context.setOffline(true);
+  const input = page.getByPlaceholder("Search workspace...");
+  await input.fill("Experiment recovery note");
+  const result = page.getByTestId(/search-result-project-/).filter({ hasText: "Benchmark Evaluation" }).first();
+  await expect(result).toBeVisible();
+  await result.getByRole("button", { name: "Inspect exact record Benchmark Evaluation" }).click();
 
-  const preview = page.getByTestId("dashboard-inbox-preview");
-  await expect(preview).toBeVisible();
-  await preview.getByRole("button", { name: "Review Inbox", exact: true }).click();
-
-  await expectPath(page, "/inbox");
-  await expect.poll(() => page.evaluate(() => window.location.search)).toBe("?review=1");
-  await expect(page.getByTestId("inbox-review-panel")).toBeVisible();
+  await expectPath(page, "/search");
+  await expect.poll(() => page.evaluate(() => window.location.search)).toMatch(/selected=project%3A/);
+  await expect(page.getByTestId("search-selected-record")).toContainText("Benchmark Evaluation");
 });
 
 test("search result navigation resolves records locally while offline", async ({ page, context }) => {

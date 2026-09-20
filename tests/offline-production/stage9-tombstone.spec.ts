@@ -68,7 +68,8 @@ test("offline date tombstone survives production hard reload, reconnect sync, an
   await expect.poll(async () => editableInputValueCount(page, title)).toBe(0);
   await expect.poll(async () => Boolean((await localDeadlineSnapshot(page, title))?.trashedAt), { timeout: 5_000 }).toBe(true);
 
-  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  await page.goto("/archive", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Archive", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Trash \(/ }).click();
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 

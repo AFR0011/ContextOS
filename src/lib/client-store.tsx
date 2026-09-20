@@ -784,13 +784,15 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         const hasProject = Boolean(input.projectId);
         const hasArea = Boolean(input.domainId);
         if (hasProject === hasArea) throw new Error("ContextDate must belong to exactly one Project or Area.");
+        const title = input.title.trim();
+        if (!title || !input.date) throw new Error("ContextDate title and date are required.");
         const contextDate: ContextDate = {
           id: newId("date"),
-          title: input.title.trim(),
+          title,
           kind: input.kind,
           date: input.date,
           startTime: input.startTime ?? null,
-          endTime: input.endTime ?? null,
+          endTime: input.kind === "event" ? input.endTime ?? null : null,
           details: input.details ?? "",
           projectId: input.projectId ?? null,
           domainId: input.domainId ?? null,
@@ -804,6 +806,9 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         const current = byId(dataRef.current.contextDates, id);
         if (!current) return;
         const next = { ...current, ...updates };
+        next.title = next.title.trim();
+        if (!next.title || !next.date) throw new Error("ContextDate title and date are required.");
+        if (next.kind === "deadline") next.endTime = null;
         const hasProject = Boolean(next.projectId);
         const hasArea = Boolean(next.domainId);
         if (hasProject === hasArea) throw new Error("ContextDate must belong to exactly one Project or Area.");

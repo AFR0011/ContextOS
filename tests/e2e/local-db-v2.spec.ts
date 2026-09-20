@@ -39,6 +39,7 @@ async function seedLegacyV1(page: Page) {
       notes: [],
       deadlines: [],
       reviews: [],
+      dailyNotes: [],
       dashboardScratchpads: [],
       dashboardPreferences: [],
       serverSyncedAt: "legacy-v1"
@@ -140,6 +141,7 @@ async function seedSecondLocalUser(page: Page, userId: string, email: string, ma
       notes: [],
       deadlines: [],
       reviews: [],
+      dailyNotes: [],
       dashboardScratchpads: [],
       dashboardPreferences: [],
       serverSyncedAt: ""

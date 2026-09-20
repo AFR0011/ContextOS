@@ -12,7 +12,13 @@ CREATE TABLE "ContextDate" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "ContextDate_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ContextDate_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "ContextDate_kind_check" CHECK ("kind" IN ('event', 'deadline')),
+    CONSTRAINT "ContextDate_parent_check" CHECK (
+      (CASE WHEN "projectId" IS NOT NULL THEN 1 ELSE 0 END) +
+      (CASE WHEN "domainId" IS NOT NULL THEN 1 ELSE 0 END) = 1
+    ),
+    CONSTRAINT "ContextDate_deadline_end_time_check" CHECK ("kind" = 'event' OR "endTime" IS NULL)
 );
 
 CREATE INDEX "ContextDate_userId_idx" ON "ContextDate"("userId");

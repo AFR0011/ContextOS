@@ -84,6 +84,14 @@ function requireDateKey(value: unknown, field: string) {
   return value;
 }
 
+function optionalTimeKey(value: unknown, field: string) {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value !== "string" || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+    throw new SyncPayloadError(`Sync payload has invalid ${field}.`);
+  }
+  return value;
+}
+
 function requirePayloadId(payload: any) {
   if (typeof payload?.id !== "string" || !payload.id.trim()) {
     throw new SyncPayloadError("Sync payload is missing an id.");
@@ -328,6 +336,10 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
             throw new SyncPayloadError("ContextDate kind must be event or deadline.");
           }
           const date = requireDateKey(payload.date, "date");
+          const parsedDate = dateKeyToUtcDate(date);
+          if (!parsedDate) throw new SyncPayloadError("ContextDate date is not a valid calendar date.");
+          const startTime = optionalTimeKey(payload.startTime, "startTime");
+          const endTime = optionalTimeKey(payload.endTime, "endTime");
           const rawProjectId = payload.projectId ?? null;
           const rawDomainId = payload.domainId ?? null;
           const hasProject = Boolean(rawProjectId);
@@ -345,9 +357,9 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
             const data = {
               title: typeof payload.title === "string" ? payload.title.trim() : "",
               kind,
-              date: toDateOnly(date) ?? defaultDateOnly(),
-              startTime: typeof payload.startTime === "string" && payload.startTime ? payload.startTime : null,
-              endTime: kind === "event" && typeof payload.endTime === "string" && payload.endTime ? payload.endTime : null,
+              date: parsedDate,
+              startTime,
+              endTime: kind === "event" ? endTime : null,
               details: typeof payload.details === "string" ? payload.details : "",
               projectId,
               domainId,

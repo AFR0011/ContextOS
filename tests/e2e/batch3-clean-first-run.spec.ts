@@ -26,6 +26,7 @@ async function bootstrapData(page: Page) {
     captures: unknown[];
     notes: unknown[];
     deadlines: unknown[];
+    contextDates: unknown[];
     reviews: unknown[];
     dailyNotes: unknown[];
     dashboardScratchpads: unknown[];

@@ -25,19 +25,20 @@ function assertFailure(result: ReturnType<typeof runNpm>, context: string) {
 }
 
 async function countWorkspaceRows(userId: string) {
-  const [domains, projects, tasks, captures, notes, deadlines, reviews, dailyNotes, scratchpads, preferences] = await Promise.all([
+  const [domains, projects, tasks, captures, notes, deadlines, contextDates, reviews, dailyNotes, scratchpads, preferences] = await Promise.all([
     prisma.domain.count({ where: { userId } }),
     prisma.project.count({ where: { userId } }),
     prisma.task.count({ where: { userId } }),
     prisma.capture.count({ where: { userId } }),
     prisma.note.count({ where: { userId } }),
     prisma.deadline.count({ where: { userId } }),
+    prisma.contextDate.count({ where: { userId } }),
     prisma.review.count({ where: { userId } }),
     prisma.dailyNote.count({ where: { userId } }),
     prisma.dashboardScratchpad.count({ where: { userId } }),
     prisma.dashboardPreference.count({ where: { userId } })
   ]);
-  return { domains, projects, tasks, captures, notes, deadlines, reviews, dailyNotes, scratchpads, preferences };
+  return { domains, projects, tasks, captures, notes, deadlines, contextDates, reviews, dailyNotes, scratchpads, preferences };
 }
 
 async function main() {
@@ -64,6 +65,7 @@ async function main() {
     assert(initialCounts.captures === 0, "operator create must not seed captures");
     assert(initialCounts.notes === 0, "operator create must not seed notes");
     assert(initialCounts.deadlines === 0, "operator create must not seed deadlines");
+    assert(initialCounts.contextDates === 0, "operator create must not seed ContextDates");
     assert(initialCounts.reviews === 0, "operator create must not seed reviews");
     assert(initialCounts.dailyNotes === 0, "operator create must not seed daily notes");
     assert(initialCounts.scratchpads === 1, "operator create should add the empty dashboard scratchpad scaffold");

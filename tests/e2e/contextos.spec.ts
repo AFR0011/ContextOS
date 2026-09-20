@@ -391,7 +391,8 @@ test("seeded demo account can log in and render Home", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Daily Notes", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "In Context Today", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Insights", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Upcoming", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Upcoming", exact: true })).toBeVisible();
+  await expect(page.getByTestId("home-upcoming")).toContainText("ContextOS verification pass");
   await expect(page.getByTestId("home-dayline")).toContainText("Process inbox captures");
   await expect(page.getByTestId("home-dayline")).toContainText("Write one clean latest-status note");
   await expect(page.getByTestId("home-dayline")).not.toContainText("Validate benchmark regression");
@@ -471,10 +472,15 @@ test("inbox review creates a date with parsed date and time", async ({ page }) =
   await expect(page.getByTestId("triage-time-input")).toHaveValue("16:30");
   await page.getByRole("button", { name: "Create Date" }).click();
 
+  await expect.poll(async () => {
+    const response = await page.request.get("/api/bootstrap");
+    const workspace = await response.json();
+    const deadline = workspace.data.deadlines.find((item: { title: string }) => item.title === title);
+    return deadline ? { date: deadline.date, time: deadline.time } : null;
+  }).toEqual({ date: "2026-07-20", time: "16:30" });
+
   await page.goto("/dates");
-  await expectInputValue(page, "input", title);
-  await expectInputValue(page, 'input[type="date"]', "2026-07-20");
-  await expect(page.getByText("16:30", { exact: true })).toBeVisible();
+  await expect(page.getByText(title, { exact: true })).toHaveCount(0);
 });
 
 test("inbox review attaches capture context to a project", async ({ page }) => {
@@ -553,7 +559,7 @@ test("project detail removes nested-project and recovery-field UX", async ({ pag
   await expect(page.getByTestId("project-recovery-notes")).toHaveCount(0);
 });
 
-test("project detail creates canonical project tasks while Dates remain hidden until C5", async ({ page }) => {
+test("project detail creates canonical Tasks and Dates", async ({ page }) => {
   const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
@@ -566,9 +572,19 @@ test("project detail creates canonical project tasks while Dates remain hidden u
   await tasks.getByLabel("Scheduled time").fill("10:45");
   await tasks.getByRole("button", { name: "Add", exact: true }).click();
   await expect(tasks.getByText(taskTitle, { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Dates", exact: true })).toHaveCount(0);
+
+  const dateTitle = `C5 project deadline ${Date.now()}`;
+  const dates = page.getByTestId("project-dates");
+  await dates.getByLabel("Date kind").selectOption("deadline");
+  await dates.getByPlaceholder("Add a Date...").fill(dateTitle);
+  await dates.getByLabel("Date").fill(today);
+  await dates.getByLabel("Date start time").fill("16:00");
+  await dates.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(dates.getByText(dateTitle, { exact: true })).toBeVisible();
+
   await page.reload();
   await expect(page.getByTestId("project-live-tasks").getByText(taskTitle, { exact: true })).toBeVisible();
+  await expect(page.getByTestId("project-dates").getByText(dateTitle, { exact: true })).toBeVisible();
 });
 
 test("today redirects to Home and completed today tasks stay in place", async ({ page }) => {
@@ -905,26 +921,28 @@ test("project detail exposes Tasks and honest Linked Knowledge without legacy re
   await expect(page.getByTestId("project-recovery-notes")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Linked Knowledge", exact: true })).toBeVisible();
   await expect(page.getByText("No linked knowledge", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Dates", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Dates", exact: true })).toBeVisible();
+  await expect(page.getByTestId("project-dates")).toBeVisible();
 });
 
-test("date remains stable after save and legacy route redirects", async ({ page }) => {
+test("canonical Date remains stable after save and legacy route redirects", async ({ page }) => {
   const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
   await page.goto("/deadlines");
   await expect(page).toHaveURL(/\/dates$/);
   const today = localDateKey();
   const title = `date-stable ${Date.now()}`;
-  await page.getByRole("button", { name: "Add Date" }).click();
-  await page.getByPlaceholder("Date title...").fill(title);
-  await page.locator('input[type="date"]').first().fill(today);
-  await page.getByRole("button", { name: "Add", exact: true }).click();
 
-  await expectInputValue(page, "input", title);
-  await expectInputValue(page, 'input[type="date"]', today);
+  await page.getByRole("button", { name: "Add Date" }).click();
+  const composer = page.getByTestId("context-date-create");
+  await composer.getByPlaceholder("Date title").fill(title);
+  await composer.getByLabel("Context").selectOption({ label: "ContextOS Demo" });
+  await composer.locator('input[type="date"]').fill(today);
+  await composer.getByRole("button", { name: "Add Date", exact: true }).click();
+
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
   await page.reload();
-  await expectInputValue(page, "input", title);
-  await expectInputValue(page, 'input[type="date"]', today);
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
 });
 
 test("project sections follow the definitive C4 order", async ({ page }) => {

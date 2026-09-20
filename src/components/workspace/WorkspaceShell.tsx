@@ -118,7 +118,7 @@ function SyncIndicator({
           disabled={!canRefreshFromServer}
           aria-label="Refresh workspace from server"
           title={refreshTitle}
-          className="mt-2 flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-current/15 px-2 py-1.5 text-xs font-semibold hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/5"
+          className="mt-2 flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-current/15 px-2 py-1.5 text-xs font-semibold hover:bg-[var(--cos-bg-soft)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Download className={`h-3.5 w-3.5 ${sync.refreshing ? "animate-pulse" : ""}`} />
           <span>{sync.refreshing ? "Refreshing" : "Refresh"}</span>

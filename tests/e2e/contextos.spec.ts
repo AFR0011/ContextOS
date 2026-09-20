@@ -389,9 +389,9 @@ test("seeded demo account can log in and render Home", async ({ page }) => {
   await expect(page.getByTestId("home-view")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Daily Notes", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Insights", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "In Context Today", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Upcoming", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Insights", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Upcoming", exact: true })).toHaveCount(0);
   await expect(page.getByTestId("home-dayline")).toContainText("Process inbox captures");
   await expect(page.getByTestId("home-dayline")).toContainText("Write one clean latest-status note");
   await expect(page.getByTestId("home-dayline")).not.toContainText("Validate benchmark regression");

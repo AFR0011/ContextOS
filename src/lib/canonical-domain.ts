@@ -38,8 +38,7 @@ export interface Task {
 
 export type ContextDateParent =
   | { type: "project"; projectId: string }
-  | { type: "area"; areaId: string }
-  | { type: "global" };
+  | { type: "area"; areaId: string };
 
 export interface ContextDate {
   id: string;

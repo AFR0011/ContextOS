@@ -178,7 +178,7 @@ export function Dayline({ items }: { items: DaylineItem[] }) {
                   type="button"
                   onClick={item.onToggle}
                   disabled={!item.onToggle}
-                  aria-label={item.done ? `${item.title} completed` : `Complete ${item.title}`}
+                  aria-label={item.done ? `Reopen ${item.title}` : `Complete ${item.title}`}
                   className={`grid h-5 w-5 place-items-center rounded-full border-2 border-[var(--cos-bg)] transition-colors ${
                     item.done
                       ? "bg-[var(--cos-text-subtle)] text-[var(--cos-bg)]"

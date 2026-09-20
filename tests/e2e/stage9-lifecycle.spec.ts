@@ -113,6 +113,7 @@ async function seedOtherLocalUser(page: Page) {
       notes: [],
       deadlines: [],
       reviews: [],
+      dailyNotes: [],
       dashboardScratchpads: [],
       dashboardPreferences: [],
       serverSyncedAt: verifiedAt

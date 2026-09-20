@@ -948,14 +948,17 @@ test("Today and This Week redirect to dashboard without priority terminology", a
   await expect(page.getByText(/priorit/i)).toHaveCount(0);
 });
 
-test("archive and trash restore flows work", async ({ page }) => {
+test("project archive and restore work in place", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await page.getByRole("button", { name: "Archive project" }).click();
-  await page.goto("/archive");
-  await expect(page.getByText("ContextOS Demo")).toBeVisible();
-  await page.waitForTimeout(500);
-  await page.getByRole("button", { name: "Restore ContextOS Demo" }).click({ force: true });
-  await expect(page.getByText("No archived projects")).toBeVisible();
+
+  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  await page.goto("/projects");
+  await expect(page.getByRole("heading", { name: "Archived", exact: true })).toBeVisible();
+  await expect(page.getByText("ContextOS Demo", { exact: true }).first()).toBeVisible();
+
+  await page.getByRole("button", { name: "Restore ContextOS Demo", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Active", exact: true })).toBeVisible();
+  await expect(page.getByText("ContextOS Demo", { exact: true }).first()).toBeVisible();
 });

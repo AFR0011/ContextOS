@@ -34,6 +34,7 @@ function workspaceFixture(): WorkspaceData {
     notes: [{ id: "n" }],
     deadlines: [{ id: "d" }],
     reviews: [{ id: "r" }],
+    dailyNotes: [{ id: "dn", localDate: "2026-09-20", content: "Daily context", createdAt: now, updatedAt: now }],
     dashboardScratchpads: [{ id: "s" }],
     dashboardPreferences: [{ id: "pref" }],
     serverSyncedAt: now
@@ -70,7 +71,13 @@ test("maps only surviving ContextOS concepts into the canonical workspace", () =
   assert.equal("dueDate" in (workspace.tasks[0] as object), false);
 
   assert.deepEqual(workspace.dates, []);
-  assert.deepEqual(workspace.dailyNotes, []);
+  assert.deepEqual(workspace.dailyNotes, [{
+    id: "dn",
+    localDate: "2026-09-20",
+    content: "Daily context",
+    createdAt: now,
+    updatedAt: now
+  }]);
   assert.deepEqual(workspace.insights, []);
 
   assert.deepEqual(discarded, {

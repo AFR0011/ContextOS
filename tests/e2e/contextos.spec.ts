@@ -622,12 +622,12 @@ test("today redirects to Home and completed today tasks stay in place", async ({
   await expect(page.getByText(taskTitle, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: `Complete ${taskTitle}`, exact: true }).click();
   await expect(page.getByText(taskTitle, { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: `${taskTitle} completed`, exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: `Reopen ${taskTitle}`, exact: true })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByText(taskTitle, { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: `${taskTitle} completed`, exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: `Reopen ${taskTitle}`, exact: true })).toBeVisible();
 });
 
 test("search results open surfaces where task and standalone note records are visible", async ({ page }) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Archive, ArrowLeft, Check, Circle, Plus, RotateCcw } from "lucide-react";
+import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
 import { EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
 import { useWorkspace } from "@/lib/client-store";
 import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
@@ -111,7 +111,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="cos-page">
+    <div className="cos-page" data-testid="project-command-page">
       <button type="button" onClick={() => router.push("/projects")} className="cos-btn cos-btn-ghost mb-4 px-2 py-1.5 text-xs">
         <ArrowLeft className="h-3.5 w-3.5" /> Projects
       </button>
@@ -173,7 +173,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           </button>
         ) : null}
       >
-        <div className="cos-surface p-3">
+        <div className="cos-surface p-3" data-testid="project-live-tasks">
           <div className="space-y-1">
             {openTasks.map((task) => (
               <TaskRow

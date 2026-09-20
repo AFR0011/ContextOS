@@ -347,7 +347,7 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               kind,
               date: toDateOnly(date) ?? defaultDateOnly(),
               startTime: typeof payload.startTime === "string" && payload.startTime ? payload.startTime : null,
-              endTime: typeof payload.endTime === "string" && payload.endTime ? payload.endTime : null,
+              endTime: kind === "event" && typeof payload.endTime === "string" && payload.endTime ? payload.endTime : null,
               details: typeof payload.details === "string" ? payload.details : "",
               projectId,
               domainId,

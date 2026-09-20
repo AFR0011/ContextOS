@@ -85,6 +85,18 @@ async function activeProjectId(page: Page) {
   });
 }
 
+async function activeAreaId(page: Page) {
+  return page.evaluate(async () => {
+    const response = await fetch("/api/bootstrap", { cache: "no-store" });
+    if (!response.ok) throw new Error(`bootstrap failed with ${response.status}`);
+    const result = await response.json();
+    const areas = result.data?.domains ?? [];
+    const area = areas.find((item: { archived?: boolean }) => !item.archived) ?? areas[0];
+    if (!area?.id) throw new Error("No Area is available for the offline dynamic-route check.");
+    return area.id as string;
+  });
+}
+
 async function openOfflineRoute(context: BrowserContext, route: string, assertion: (page: Page) => Promise<void>) {
   const page = await context.newPage();
   const response = await page.goto(route, { waitUntil: "domcontentloaded" });
@@ -161,6 +173,7 @@ test("core workspace routes and a dynamic project cold-open and hard-refresh off
   await login(page);
   await waitForOfflineReady(page);
   const projectId = await activeProjectId(page);
+  const areaId = await activeAreaId(page);
 
   await page.close();
   await context.setOffline(true);
@@ -177,7 +190,8 @@ test("core workspace routes and a dynamic project cold-open and hard-refresh off
     ["/archive", async (routePage) => expect(routePage.getByRole("heading", { name: "Archive", exact: true })).toBeVisible()],
     ["/reviews", async (routePage) => expect(routePage.getByRole("heading", { name: "Reviews", exact: true })).toBeVisible()],
     ["/settings", async (routePage) => expect(routePage.getByRole("heading", { name: "Settings", exact: true })).toBeVisible()],
-    [`/projects/${projectId}`, async (routePage) => expect(routePage.getByTestId("project-command-page")).toBeVisible()]
+    [`/projects/${projectId}`, async (routePage) => expect(routePage.getByTestId("project-command-page")).toBeVisible()],
+    [`/areas/${areaId}`, async (routePage) => expect(routePage.getByTestId("area-detail")).toBeVisible()]
   ];
 
   for (const [route, assertion] of routes) {

@@ -13,7 +13,7 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/dashboard/);
   await resetDemo(page);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 function markdownLine(editor: Locator, index: number) {
@@ -73,7 +73,7 @@ test("dashboard scratchpad flushes a pending edit when navigating before autosav
   await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
 
   await expect.poll(() => dashboardScratchpadContent(page)).toContain(note);
-  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await page.getByRole("button", { name: "Home", exact: true }).click();
   await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(note);
 });
 

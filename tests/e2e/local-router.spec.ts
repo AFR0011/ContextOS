@@ -26,11 +26,11 @@ test("core workspace navigation changes local history without network access", a
   await expectPath(page, "/projects");
   await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
 
-  await page.locator("main").getByRole("button", { name: /Next:/ }).first().click();
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).first().click();
   await expect.poll(() => page.evaluate(() => window.location.pathname.startsWith("/projects/"))).toBe(true);
   await expect(page.getByTestId("project-command-page")).toBeVisible();
 
-  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await page.getByTestId("project-command-page").getByRole("button", { name: "Projects", exact: true }).click();
   await expectPath(page, "/projects");
 
   await nav.getByRole("button", { name: "Search", exact: true }).click();

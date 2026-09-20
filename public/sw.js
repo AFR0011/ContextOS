@@ -1,4 +1,4 @@
-const SHELL_VERSION = "v5";
+const SHELL_VERSION = "v6";
 const CACHE_NAME = `contextos-shell-${SHELL_VERSION}`;
 const CACHE_PREFIX = "contextos-shell-";
 const SHELL_ENTRY = "/dashboard";
@@ -176,7 +176,7 @@ async function cachedAssetResponse(request) {
 }
 
 function isCoreWorkspacePath(pathname) {
-  return CORE_WORKSPACE_ROUTES.has(pathname) || pathname.startsWith("/projects/");
+  return CORE_WORKSPACE_ROUTES.has(pathname) || pathname.startsWith("/projects/") || pathname.startsWith("/areas/");
 }
 
 self.addEventListener("install", (event) => {

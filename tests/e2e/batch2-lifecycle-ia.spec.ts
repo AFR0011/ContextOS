@@ -144,26 +144,37 @@ test("archived and deleted Inbox captures are recoverable from Archive", async (
   await expect(page.getByTestId("capture-card").filter({ hasText: deleted })).toBeVisible();
 });
 
-test("trashing a parent project does not cascade into its subcontext", async ({ page }) => {
+test("archiving an Area does not cascade into its Projects", async ({ page }) => {
   await login(page);
-  await page.getByRole("button", { name: "Projects", exact: true }).click();
-  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
 
-  const child = `Batch 2 child ${Date.now()}`;
-  await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").fill(child);
-  await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").press("Enter");
-  await expect(page.getByTestId("project-subcontexts").getByRole("button", { name: new RegExp(`^${child}`) })).toBeVisible();
+  const bootstrap = await page.request.get("/api/bootstrap");
+  expect(bootstrap.ok()).toBeTruthy();
+  const workspace = await bootstrap.json();
+  const project = workspace.data.projects.find(
+    (item: { status?: string; trashedAt?: string | null; archivedAt?: string | null }) =>
+      item.status === "active" && !item.trashedAt && !item.archivedAt
+  );
+  expect(project?.id).toBeTruthy();
+  const area = workspace.data.domains.find((item: { id: string }) => item.id === project.domainId);
+  expect(area?.id).toBeTruthy();
+  const initialProjectStatus = project.status;
 
-  await page.getByTestId("project-detail-lifecycle").getByRole("button", { name: "Move project ContextOS Demo to trash", exact: true }).click();
-  await expect(page).toHaveURL(/\/projects$/);
-  await expect(page.locator("main").getByRole("button", { name: new RegExp(`^${child}`) })).toBeVisible();
+  await page.goto("/areas");
+  await page.getByRole("button", { name: `Archive ${area.name}`, exact: true }).click();
 
-  await expect.poll(async () => (await localProjectState(page, "ContextOS Demo"))?.trashedAt).not.toBeNull();
-  await expect.poll(async () => (await localProjectState(page, child))?.trashedAt ?? null).toBeNull();
+  await expect.poll(async () => {
+    const response = await page.request.get("/api/bootstrap");
+    const result = await response.json();
+    return result.data.domains.find((item: { id: string }) => item.id === area.id)?.archived ?? false;
+  }).toBe(true);
 
-  await page.goto("/archive");
-  await page.getByRole("button", { name: /^Trash \(/ }).click();
-  await page.getByRole("button", { name: "Restore ContextOS Demo", exact: true }).click();
+  await expect.poll(async () => {
+    const response = await page.request.get("/api/bootstrap");
+    const result = await response.json();
+    return result.data.projects.find((item: { id: string }) => item.id === project.id)?.status;
+  }).toBe(initialProjectStatus);
+
   await page.goto("/projects");
-  await expect(page.locator("main").getByRole("button", { name: /^ContextOS Demo/ })).toBeVisible();
+  await expect(page.getByText(project.name, { exact: true }).first()).toBeVisible();
 });
+

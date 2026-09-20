@@ -107,7 +107,7 @@ test("existing task editor remains functional while Home projects the edited tas
   await page.getByRole("button", { name: `Complete ${editedTitle}`, exact: true }).click();
 
   await expect(page.getByText(editedTitle, { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: `${editedTitle} completed`, exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: `Reopen ${editedTitle}`, exact: true })).toBeVisible();
   await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({ status: "done" });
 });
 

@@ -108,6 +108,22 @@ export interface Review {
   updatedAt: string;
 }
 
+export type ContextDateKind = "event" | "deadline";
+
+export interface ContextDate {
+  id: string;
+  title: string;
+  kind: ContextDateKind;
+  date: string;
+  startTime: string | null;
+  endTime: string | null;
+  details: string;
+  projectId: string | null;
+  domainId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DailyNote {
   id: string;
   localDate: string;
@@ -142,6 +158,7 @@ export interface WorkspaceData {
   captures: Capture[];
   notes: Note[];
   deadlines: Deadline[];
+  contextDates: ContextDate[];
   reviews: Review[];
   dailyNotes: DailyNote[];
   dashboardScratchpads: DashboardScratchpad[];
@@ -167,6 +184,6 @@ export interface QueuedMutation {
   entityType: SyncEntityType;
   entityId: string;
   operation: "upsert" | "delete";
-  payload: Domain | Project | Task | Capture | Note | Deadline | Review | DailyNote | DashboardScratchpad | DashboardPreference | Record<string, unknown> | null;
+  payload: Domain | Project | Task | Capture | Note | Deadline | ContextDate | Review | DailyNote | DashboardScratchpad | DashboardPreference | Record<string, unknown> | null;
   createdAt: string;
 }

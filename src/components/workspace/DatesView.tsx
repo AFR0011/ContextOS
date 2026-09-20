@@ -59,14 +59,25 @@ function DateEditor({
         <label className="space-y-1 lg:col-span-2">
           <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Title</span>
           <input
-            value={date.title}
-            onChange={(event) => onUpdate({ title: event.target.value })}
+            defaultValue={date.title}
+            onBlur={(event) => {
+              const title = event.target.value.trim();
+              if (title && title !== date.title) onUpdate({ title });
+              else if (!title) event.target.value = date.title;
+            }}
             className="cos-input w-full px-3 py-2 text-sm"
           />
         </label>
         <label className="space-y-1">
           <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Kind</span>
-          <select value={date.kind} onChange={(event) => onUpdate({ kind: event.target.value as ContextDateKind })} className="cos-input w-full px-3 py-2 text-sm">
+          <select
+            value={date.kind}
+            onChange={(event) => {
+              const kind = event.target.value as ContextDateKind;
+              onUpdate({ kind, endTime: kind === "deadline" ? null : date.endTime });
+            }}
+            className="cos-input w-full px-3 py-2 text-sm"
+          >
             <option value="event">Event</option>
             <option value="deadline">Deadline</option>
           </select>
@@ -93,7 +104,7 @@ function DateEditor({
         </label>
         <label className="space-y-1">
           <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Date</span>
-          <input type="date" value={date.date} onChange={(event) => onUpdate({ date: event.target.value })} className="cos-input w-full px-3 py-2 text-sm" />
+          <input type="date" value={date.date} onChange={(event) => event.target.value && onUpdate({ date: event.target.value })} className="cos-input w-full px-3 py-2 text-sm" />
         </label>
         <div className="grid grid-cols-2 gap-2">
           <label className="space-y-1">
@@ -107,7 +118,14 @@ function DateEditor({
         </div>
         <label className="space-y-1 lg:col-span-2">
           <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Details</span>
-          <textarea value={date.details} onChange={(event) => onUpdate({ details: event.target.value })} rows={3} className="cos-input w-full resize-y px-3 py-2 text-sm" />
+          <textarea
+            defaultValue={date.details}
+            onBlur={(event) => {
+              if (event.target.value !== date.details) onUpdate({ details: event.target.value });
+            }}
+            rows={3}
+            className="cos-input w-full resize-y px-3 py-2 text-sm"
+          />
         </label>
       </div>
     </details>

@@ -2,16 +2,15 @@
 
 import type { ReactNode } from "react";
 import {
+  AreaDetailView,
   AreasView,
-  DatesView
+  DatesView,
+  ProjectDetailView,
+  ProjectsView
 } from "@/components/workspace/Views";
-import {
-  ProjectDetailLifecycleView,
-  ProjectsLifecycleView,
-  ReviewsLifecycleView
-} from "@/components/workspace/Batch2LifecycleViews";
+import { ReviewsLifecycleView } from "@/components/workspace/Batch2LifecycleViews";
 import { ArchiveLifecycleView } from "@/components/workspace/ArchiveLifecycleView";
-import { AreaRequiredView, AreasSetupView, FirstRunSetup } from "@/components/workspace/FirstRunSetup";
+import { AreaRequiredView, FirstRunSetup } from "@/components/workspace/FirstRunSetup";
 import { ProductInboxView } from "@/components/workspace/ProductInboxView";
 import { LifeOSFoundationView } from "@/components/workspace/LifeOSFoundationView";
 import { ProductSearchView } from "@/components/workspace/ProductSearchView";
@@ -23,6 +22,11 @@ import { useLocalLocation } from "@/lib/local-router";
 
 function projectIdFromPath(pathname: string) {
   const match = pathname.match(/^\/projects\/([^/]+)$/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function areaIdFromPath(pathname: string) {
+  const match = pathname.match(/^\/areas\/([^/]+)$/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 
@@ -39,7 +43,7 @@ function isWorkspaceProductRoute(pathname: string) {
     "/archive",
     "/reviews",
     "/settings"
-  ].includes(pathname) || Boolean(projectIdFromPath(pathname));
+  ].includes(pathname) || Boolean(projectIdFromPath(pathname)) || Boolean(areaIdFromPath(pathname));
 }
 
 export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNode }) {
@@ -47,22 +51,23 @@ export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNod
   const { data } = useWorkspace();
   const activeDomainCount = data.domains.filter((domain) => !domain.archived).length;
 
-  // Fresh accounts normally stay in first-run setup until an Area exists. Settings is
-  // intentionally exempt so a returning user can restore a workspace backup without
-  // creating disposable local structure first.
   if (data.domains.length === 0 && pathname !== "/settings" && isWorkspaceProductRoute(pathname)) {
     return <FirstRunSetup />;
   }
 
   if (pathname === "/dashboard") return <ScopedDashboardView />;
   if (pathname === "/inbox") return <ProductInboxView />;
-  if (pathname === "/projects") return activeDomainCount ? <ProjectsLifecycleView /> : <AreaRequiredView target="projects" />;
+  if (pathname === "/projects") return <ProjectsView />;
 
   const projectId = projectIdFromPath(pathname);
-  if (projectId) return <ProjectDetailLifecycleView projectId={projectId} />;
+  if (projectId) return <ProjectDetailView projectId={projectId} />;
 
   if (pathname === "/dates") return <DatesView />;
-  if (pathname === "/areas") return <AreasSetupView><AreasView /></AreasSetupView>;
+  if (pathname === "/areas") return <AreasView />;
+
+  const areaId = areaIdFromPath(pathname);
+  if (areaId) return <AreaDetailView areaId={areaId} />;
+
   if (pathname === "/resources") return activeDomainCount ? <ResourcesLifecycleView /> : <AreaRequiredView target="resources" />;
   if (pathname === "/lifeos") return <LifeOSFoundationView />;
   if (pathname === "/search") return <ProductSearchView />;

@@ -282,6 +282,7 @@ const requiredOwnedModels = [
   "Capture",
   "Note",
   "Deadline",
+  "ContextDate",
   "Review",
   "DailyNote",
   "DashboardScratchpad",

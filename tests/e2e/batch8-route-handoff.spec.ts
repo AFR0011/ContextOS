@@ -33,7 +33,7 @@ async function loginDemo(page: Page) {
   await expect(page).toHaveURL(/\/dashboard/);
   await resetDemo(page);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 test("intercepted Next workspace pages are inert handoff entrypoints", () => {
@@ -52,7 +52,7 @@ test("direct workspace URLs resolve through the canonical local router", async (
   await loginDemo(page);
 
   const routes = [
-    ["/dashboard", "Dashboard"],
+    ["/dashboard", "Today"],
     ["/inbox", "Inbox"],
     ["/projects", "Projects"],
     ["/dates", "Dates"],

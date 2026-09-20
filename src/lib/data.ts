@@ -4,6 +4,7 @@ import type {
   Capture,
   DashboardPreference,
   DashboardScratchpad,
+  DailyNote,
   Deadline,
   Domain,
   Note,
@@ -18,7 +19,7 @@ import { utcDateToDateKey } from "./dates";
 const iso = (date: Date | null | undefined) => (date ? date.toISOString() : null);
 
 export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
-  const [domains, projects, tasks, captures, notes, deadlines, reviews, dashboardScratchpads, dashboardPreferences] = await Promise.all([
+  const [domains, projects, tasks, captures, notes, deadlines, reviews, dailyNotes, dashboardScratchpads, dashboardPreferences] = await Promise.all([
     prisma.domain.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
     prisma.project.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.task.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
@@ -26,6 +27,7 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
     prisma.note.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.deadline.findMany({ where: { userId }, orderBy: { date: "asc" } }),
     prisma.review.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
+    prisma.dailyNote.findMany({ where: { userId }, orderBy: { localDate: "desc" } }),
     prisma.dashboardScratchpad.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.dashboardPreference.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } })
   ]);
@@ -110,6 +112,13 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       responses: r.responses as Record<string, string>,
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString()
+    })),
+    dailyNotes: dailyNotes.map((note): DailyNote => ({
+      id: note.id,
+      localDate: note.localDate,
+      content: note.content,
+      createdAt: note.createdAt.toISOString(),
+      updatedAt: note.updatedAt.toISOString()
     })),
     dashboardScratchpads: dashboardScratchpads.map((scratchpad): DashboardScratchpad => ({
       id: scratchpad.id,

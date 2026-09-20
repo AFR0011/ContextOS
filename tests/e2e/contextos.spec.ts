@@ -642,7 +642,7 @@ test("Area detail exposes canonical Projects, direct Tasks, and direct Dates", a
   await expect(page).toHaveURL(/\/projects\//);
   await expect(page.getByRole("heading", { name: areaProject, exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: "Areas", exact: true }).click();
+  await page.getByTestId("project-command-page").getByRole("button", { name: "Areas", exact: true }).click();
   await page.getByText("Engineering", { exact: true }).first().click();
   const areaDate = `Area event ${Date.now()}`;
   const dates = page.getByTestId("area-dates");

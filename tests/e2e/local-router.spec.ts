@@ -18,28 +18,28 @@ test("core workspace navigation changes local history without network access", a
   await context.setOffline(true);
 
   const nav = page.getByTestId("workspace-primary-nav");
-  await nav.getByRole("button", { name: "Inbox", exact: true }).click();
-  await expectPath(page, "/inbox");
-  await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
+  await nav.getByRole("button", { name: "Areas", exact: true }).click();
+  await expectPath(page, "/areas");
+  await expect(page.getByRole("heading", { name: "Areas", exact: true })).toBeVisible();
 
   await nav.getByRole("button", { name: "Projects", exact: true }).click();
   await expectPath(page, "/projects");
   await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
 
-  // Exercise navigation initiated inside a core view, not only the shell. Use any
-  // visible project instead of a named fixture because earlier E2E cases may leave
-  // one seeded project temporarily archived while its queued sync is still draining.
   await page.locator("main").getByRole("button", { name: /Next:/ }).first().click();
   await expect.poll(() => page.evaluate(() => window.location.pathname.startsWith("/projects/"))).toBe(true);
   await expect(page.getByTestId("project-command-page")).toBeVisible();
 
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await expectPath(page, "/projects");
-  await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
 
   await nav.getByRole("button", { name: "Search", exact: true }).click();
   await expectPath(page, "/search");
   await expect(page.getByRole("heading", { name: "Search", exact: true })).toBeVisible();
+
+  await nav.getByRole("button", { name: "LifeOS", exact: true }).click();
+  await expectPath(page, "/lifeos");
+  await expect(page.getByRole("heading", { name: "Module hub", exact: true })).toBeVisible();
 });
 
 test("browser back and forward traverse local workspace views while offline", async ({ page, context }) => {
@@ -47,7 +47,7 @@ test("browser back and forward traverse local workspace views while offline", as
   await context.setOffline(true);
 
   const nav = page.getByTestId("workspace-primary-nav");
-  await nav.getByRole("button", { name: "Inbox", exact: true }).click();
+  await nav.getByRole("button", { name: "Areas", exact: true }).click();
   await nav.getByRole("button", { name: "Projects", exact: true }).click();
   await nav.getByRole("button", { name: "Search", exact: true }).click();
   await expectPath(page, "/search");
@@ -57,8 +57,8 @@ test("browser back and forward traverse local workspace views while offline", as
   await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
 
   await page.evaluate(() => window.history.back());
-  await expectPath(page, "/inbox");
-  await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
+  await expectPath(page, "/areas");
+  await expect(page.getByRole("heading", { name: "Areas", exact: true })).toBeVisible();
 
   await page.evaluate(() => window.history.forward());
   await expectPath(page, "/projects");

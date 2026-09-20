@@ -493,7 +493,8 @@ test("inbox review attaches capture context to a project", async ({ page }) => {
 
   await page.goto("/projects");
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await expect(page.getByTestId("project-recovery-notes")).toBeVisible();
+  await expect(page.getByTestId("project-command-page")).toBeVisible();
+  await expect(page.getByTestId("project-recovery-notes")).toHaveCount(0);
   await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", text)).toBe(true);
 });
 
@@ -530,86 +531,44 @@ test("mobile inbox actions remain reachable with touch-sized targets", async ({ 
   await expectMinTouchTarget(card.getByRole("button", { name: "Delete" }));
 });
 
-test("project recovery fields persist after reload", async ({ page }) => {
+test("project objective persists after reload", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  const nextAction = `Verify recovery persistence ${Date.now()}`;
-  const note = `Recovery note ${Date.now()}`;
-  const editor = page.getByTestId("project-recovery-editor");
-  await editor.getByPlaceholder("Concrete next action...").fill(nextAction);
-  await editor.getByPlaceholder("Concrete next action...").blur();
-  await markdownLine(page.getByTestId("project-recovery-notes"), 0).fill(note);
-  await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", note)).toBe(true);
+  const objective = `Canonical objective ${Date.now()}`;
+  const field = page.getByPlaceholder("What outcome is this Project trying to reach?");
+  await field.fill(objective);
+  await field.blur();
   await page.reload();
-  await expect(page.getByPlaceholder("Concrete next action...")).toHaveValue(nextAction);
-  await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", note)).toBe(true);
+  await expect(page.getByPlaceholder("What outcome is this Project trying to reach?")).toHaveValue(objective);
 });
 
-test("project subcontexts roll child tasks and dates into parent recovery", async ({ page }) => {
+test("project detail removes nested-project and recovery-field UX", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-
-  const subcontext = `Trial Subcontext ${Date.now()}`;
-  await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").fill(subcontext);
-  await page.getByPlaceholder("Add subcontext, course, assignment, or duty...").press("Enter");
-  const subcontextButton = page.getByTestId("project-subcontexts").getByRole("button", { name: new RegExp(`^${subcontext}`) });
-  await expect(subcontextButton).toBeVisible();
-
-  await subcontextButton.click();
-  await expect(page.getByText("Parent: ContextOS Demo")).toBeVisible();
-
-  const childTask = `Rolled child task ${Date.now()}`;
-  const childEditor = page.getByTestId("project-recovery-notes");
-  await markdownLine(childEditor, 0).fill(`/task ${childTask} today`);
-  await markdownLine(childEditor, 0).press("Enter");
-  await expect(page.getByTestId("project-live-tasks").getByLabel(`Task title ${childTask}`)).toBeVisible();
-
-  const childDate = `Rolled child date ${Date.now()}`;
-  await markdownLine(childEditor, 0).fill(`/date ${childDate} today`);
-  await markdownLine(childEditor, 0).press("Enter");
-  await expect(page.getByTestId("project-live-dates").getByLabel(`Date title ${childDate}`)).toBeVisible();
-
-  await page.getByRole("button", { name: "Back" }).click();
-  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await expect(page.getByTestId("project-live-tasks").getByLabel(`Task title ${childTask}`)).toBeVisible();
-  await expect(page.getByTestId("project-live-dates").getByLabel(`Date title ${childDate}`)).toBeVisible();
+  await expect(page.getByPlaceholder("Add subcontext, course, assignment, or duty...")).toHaveCount(0);
+  await expect(page.getByPlaceholder("Concrete next action...")).toHaveCount(0);
+  await expect(page.getByText("Open loops", { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId("project-recovery-notes")).toHaveCount(0);
 });
 
-test("project add buttons create direct project task and date records", async ({ page }) => {
+test("project detail creates canonical project tasks while Dates remain hidden until C5", async ({ page }) => {
   const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-
   const today = localDateKey();
-  const taskTitle = `Button project task ${Date.now()}`;
-  const dateTitle = `Button project date ${Date.now()}`;
+  const taskTitle = `C4 project task ${Date.now()}`;
   const tasks = page.getByTestId("project-live-tasks");
-  const dates = page.getByTestId("project-live-dates");
-
-  await tasks.getByRole("button", { name: "Add task", exact: true }).click();
-  const taskComposer = page.getByTestId("project-task-composer");
-  await taskComposer.getByPlaceholder("Task title...").fill(taskTitle);
-  await taskComposer.getByLabel("Task planned date").fill(today);
-  await taskComposer.getByLabel("Task scheduled time").fill("10:45");
-  await taskComposer.getByRole("button", { name: "Add task", exact: true }).click();
-  await expect(tasks.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
-  await expect(tasks.getByLabel(`${taskTitle} scheduled time`)).toHaveValue("10:45");
-
-  await dates.getByRole("button", { name: "Add Date", exact: true }).click();
-  const dateComposer = page.getByTestId("project-date-composer");
-  await dateComposer.getByPlaceholder("Date title...").fill(dateTitle);
-  await dateComposer.getByLabel("Date date").fill(today);
-  await dateComposer.getByLabel("Date time").fill("13:20");
-  await dateComposer.getByRole("button", { name: "Add Date", exact: true }).click();
-  await expect(dates.getByLabel(`Date title ${dateTitle}`)).toBeVisible();
-  await expect(dates.getByText("13:20")).toBeVisible();
-
+  await tasks.getByPlaceholder("Add a task...").fill(taskTitle);
+  await tasks.getByLabel("Planned day").fill(today);
+  await tasks.getByLabel("Scheduled time").fill("10:45");
+  await tasks.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(tasks.getByText(taskTitle, { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dates", exact: true })).toHaveCount(0);
   await page.reload();
-  await expect(page.getByTestId("project-live-tasks").getByLabel(`Task title ${taskTitle}`)).toBeVisible();
-  await expect(page.getByTestId("project-live-dates").getByLabel(`Date title ${dateTitle}`)).toBeVisible();
+  await expect(page.getByTestId("project-live-tasks").getByText(taskTitle, { exact: true })).toBeVisible();
 });
 
 test("today redirects to Home and completed today tasks stay in place", async ({ page }) => {
@@ -937,22 +896,16 @@ test("legacy task, project-note, and priority mutations drain compatibly", async
   expect(secondProject.recoveryNotes.match(new RegExp(`<!-- imported-project-note:${noteId} -->`, "g"))).toHaveLength(1);
 });
 
-test("project pages use recovery notes instead of project note cards", async ({ page }) => {
+test("project detail exposes Tasks and honest Linked Knowledge without legacy recovery UI", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await expect(page.getByText("Notes / Decisions")).toHaveCount(0);
   await expect(page.getByTestId("project-command-page")).toBeVisible();
   await expect(page.getByTestId("project-live-tasks")).toBeVisible();
-  await expect(page.getByTestId("project-live-dates")).toBeVisible();
-  const editor = page.getByTestId("project-recovery-notes");
-
-  const content = `Recovery save check ${Date.now()}`;
-  await markdownLine(editor, 0).fill(content);
-  await expect(page.getByText("Saved").first()).toBeVisible({ timeout: 3000 });
-
-  await page.reload();
-  await expect(markdownLine(page.getByTestId("project-recovery-notes"), 0)).toHaveValue(content);
+  await expect(page.getByTestId("project-recovery-notes")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Linked Knowledge", exact: true })).toBeVisible();
+  await expect(page.getByText("No linked knowledge", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dates", exact: true })).toHaveCount(0);
 });
 
 test("date remains stable after save and legacy route redirects", async ({ page }) => {
@@ -974,19 +927,12 @@ test("date remains stable after save and legacy route redirects", async ({ page 
   await expectInputValue(page, 'input[type="date"]', today);
 });
 
-test("project sections follow the simplified order", async ({ page }) => {
+test("project sections follow the definitive C4 order", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await expect(page).toHaveURL(/\/projects\//);
-  const sections = page.locator("main section");
-  const headings = await sections.locator("h2").allTextContents();
-  expect(headings.slice(0, 4).map((heading) => heading.replace(/\s*\d+$/, ""))).toEqual([
-    "Tasks",
-    "Dates",
-    "Recovery",
-    "Subcontexts"
-  ]);
+  const headings = await page.locator("main section h2").allTextContents();
+  expect(headings.slice(0, 3)).toEqual(["Project", "Tasks", "Linked Knowledge"]);
   await expect(page.getByTestId("project-live-tasks")).toBeVisible();
 });
 

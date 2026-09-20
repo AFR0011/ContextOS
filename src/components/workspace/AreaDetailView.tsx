@@ -58,7 +58,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
   }
 
   return (
-    <div className="cos-page">
+    <div className="cos-page" data-testid="area-detail">
       <button type="button" onClick={() => router.push("/areas")} className="cos-btn cos-btn-ghost mb-4 px-2 py-1.5 text-xs">
         <ArrowLeft className="h-3.5 w-3.5" /> Areas
       </button>

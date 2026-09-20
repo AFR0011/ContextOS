@@ -58,7 +58,7 @@ export function isCoreWorkspacePath(pathname: string) {
     normalized === "/dates" ||
     normalized === "/areas" ||
     normalized === "/resources" ||
-    normalized === "/search" ||
+    normalized === "/lifeos" ||\n    normalized === "/search" ||
     normalized === "/archive" ||
     normalized === "/reviews" ||
     normalized === "/settings"

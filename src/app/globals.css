@@ -4,16 +4,16 @@
   color-scheme: light;
 
   /* Canvas */
-  --cos-bg: #f7f8fb;
-  --cos-bg-soft: #fafafa;
+  --cos-bg: #f6f5f2;
+  --cos-bg-soft: #fbfaf8;
   --cos-bg-elevated: #ffffff;
-  --cos-bg-inset: #f1f3f7;
+  --cos-bg-inset: #efeee9;
 
   /* Text. Muted/subtle are intentionally darker than the draft DESIGN.md values so meaningful 10-14px metadata remains AA-readable on every light surface. */
-  --cos-text: #172033;
-  --cos-text-strong: #0f172a;
-  --cos-text-muted: #55657c;
-  --cos-text-subtle: #607087;
+  --cos-text: #252a36;
+  --cos-text-strong: #151923;
+  --cos-text-muted: #616979;
+  --cos-text-subtle: #7a8190;
   --cos-text-inverse: #ffffff;
 
   /* Borders */
@@ -22,11 +22,11 @@
   --cos-border-strong: #cbd5e1;
 
   /* Primary */
-  --cos-primary: #5e6ad2;
-  --cos-primary-hover: #4f5bc4;
-  --cos-primary-soft: #eef0ff;
-  --cos-primary-border: #cfd4ff;
-  --cos-primary-text: #3841a3;
+  --cos-primary: #626bd9;
+  --cos-primary-hover: #535dc9;
+  --cos-primary-soft: #eff0ff;
+  --cos-primary-border: #d2d5ff;
+  --cos-primary-text: #4048a8;
 
   /* Semantic state */
   --cos-success: #16a34a;
@@ -58,7 +58,7 @@
   --cos-review-soft: #faf1ed;
 
   /* Focus */
-  --cos-focus: rgba(94, 106, 210, 0.38);
+  --cos-focus: rgba(94, 106, 210, 0.38);\n  --cos-ambient: rgba(98, 107, 217, 0.055);
 
   /* Typography */
   --cos-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -70,7 +70,7 @@
   --cos-text-xl: 1.25rem;
   --cos-text-2xl: 1.5rem;
   --cos-text-3xl: 1.875rem;
-  --cos-page-title-size: var(--cos-text-2xl);
+  --cos-page-title-size: var(--cos-text-3xl);
   --cos-page-title-weight: 700;
   --cos-section-title-size: var(--cos-text-md);
   --cos-section-title-weight: 650;
@@ -107,7 +107,7 @@
   /* Layout */
   --cos-content-narrow: 720px;
   --cos-content-default: 960px;
-  --cos-content-wide: 1180px;
+  --cos-content-wide: 1480px;
 
   /* Motion */
   --cos-motion-fast: 120ms;
@@ -123,26 +123,26 @@
 html.dark {
   color-scheme: dark;
 
-  --cos-bg: #07080a;
-  --cos-bg-soft: #0d0f12;
-  --cos-bg-elevated: #111318;
-  --cos-bg-inset: #090a0d;
+  --cos-bg: #0a0c11;
+  --cos-bg-soft: #10131a;
+  --cos-bg-elevated: #141820;
+  --cos-bg-inset: #0d1016;
 
-  --cos-text: #f4f6fb;
+  --cos-text: #e7eaf0;
   --cos-text-strong: #ffffff;
-  --cos-text-muted: #a1a8b3;
-  --cos-text-subtle: #7f8796;
+  --cos-text-muted: #a2a9b6;
+  --cos-text-subtle: #7d8595;
   --cos-text-inverse: #050608;
 
   --cos-border: #242832;
   --cos-border-soft: #1a1e26;
   --cos-border-strong: #343a46;
 
-  --cos-primary: #828fff;
-  --cos-primary-hover: #a2aaff;
+  --cos-primary: #8b93ff;
+  --cos-primary-hover: #a4aaff;
   --cos-primary-soft: rgba(130, 143, 255, 0.14);
   --cos-primary-border: rgba(130, 143, 255, 0.32);
-  --cos-primary-text: #c8ceff;
+  --cos-primary-text: #cfd3ff;
 
   --cos-success: #22c55e;
   --cos-success-soft: rgba(34, 197, 94, 0.12);
@@ -171,7 +171,7 @@ html.dark {
   --cos-review: #e8a55a;
   --cos-review-soft: rgba(232, 165, 90, 0.12);
 
-  --cos-focus: rgba(130, 143, 255, 0.45);
+  --cos-focus: rgba(130, 143, 255, 0.45);\n  --cos-ambient: rgba(139, 147, 255, 0.07);
   --cos-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
   --cos-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.32);
   --cos-shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.38);
@@ -292,7 +292,7 @@ button:disabled {
   border: 1px solid var(--cos-border);
   border-radius: var(--cos-radius-lg);
   background: var(--cos-bg-elevated);
-  box-shadow: var(--cos-shadow-sm);
+  box-shadow: none;
 }
 
 .cos-surface-muted {
@@ -619,4 +619,41 @@ html.dark .prose-lite code {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+
+/* C2 product-system primitives */
+.cos-kicker {
+  color: var(--cos-text-subtle);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.cos-section {
+  min-width: 0;
+}
+
+.cos-section-heading {
+  color: var(--cos-text-strong);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.cos-entity-row {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--cos-border-soft);
+  padding: 0.625rem 0.25rem;
+}
+
+.cos-entity-row:last-child {
+  border-bottom-color: transparent;
 }

@@ -302,10 +302,11 @@ test("deployment headers, metadata, and service worker cache routes are configur
 
   const swResponse = await page.request.get("/sw.js");
   const serviceWorker = await swResponse.text();
-  expect(serviceWorker).toContain('const SHELL_VERSION = "v4"');
+  expect(serviceWorker).toContain('const SHELL_VERSION = "v5"');
   expect(serviceWorker).toContain('const SHELL_MANIFEST_KEY = "/__contextos_shell_manifest__"');
   expect(serviceWorker).toContain('"/dates"');
   expect(serviceWorker).toContain('"/deadlines"');
+  expect(serviceWorker).toContain('"/lifeos"');
   expect(serviceWorker).toContain('url.pathname.startsWith("/api/")');
   expect(serviceWorker).toContain('CONTEXTOS_SHELL_STATUS');
   expect(serviceWorker).toContain('CONTEXTOS_SHELL_PRIME');
@@ -401,26 +402,24 @@ test("seeded demo account can log in and render dashboard", async ({ page }) => 
 test("simplified navigation shows core surfaces and hides utility routes from primary nav", async ({ page }) => {
   await login(page);
   const primaryNav = page.getByTestId("workspace-primary-nav");
-  await expect(primaryNav.getByRole("button", { name: "Dashboard" })).toBeVisible();
-  await expect(primaryNav.getByRole("button", { name: "Inbox" })).toBeVisible();
-  await expect(primaryNav.getByRole("button", { name: "Search" })).toBeVisible();
-  await expect(primaryNav.getByRole("button", { name: "ContextOS Demo" })).toBeVisible();
-  await expect(primaryNav.getByRole("button", { name: "Today" })).toHaveCount(0);
-  await expect(primaryNav.getByRole("button", { name: "This Week" })).toHaveCount(0);
-  await expect(primaryNav.getByRole("button", { name: "Areas" })).toHaveCount(0);
-  await expect(primaryNav.getByRole("button", { name: "Resources" })).toHaveCount(0);
-  await expect(primaryNav.getByRole("button", { name: "Reviews" })).toHaveCount(0);
+  for (const label of ["Home", "Projects", "Areas", "Dates", "LifeOS", "Search"]) {
+    await expect(primaryNav.getByRole("button", { name: label, exact: true })).toBeVisible();
+  }
+  for (const retired of ["Dashboard", "Inbox", "Resources", "Reviews", "Archive"]) {
+    await expect(primaryNav.getByRole("button", { name: retired, exact: true })).toHaveCount(0);
+  }
+  await expect(page.getByTestId("workspace-project-nav")).toHaveCount(0);
 });
 
 test("mobile bottom navigation uses the simplified four-tab set", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
   const mobileNav = page.getByRole("navigation", { name: "Primary navigation" });
-  await expect(mobileNav.getByRole("button", { name: "Dashboard" })).toBeVisible();
-  await expect(mobileNav.getByRole("button", { name: "Inbox" })).toBeVisible();
-  await expect(mobileNav.getByRole("button", { name: "Projects" })).toBeVisible();
-  await expect(mobileNav.getByRole("button", { name: "Search" })).toBeVisible();
-  await expect(mobileNav.getByRole("button", { name: "Today" })).toHaveCount(0);
+  for (const label of ["Home", "Projects", "Search", "LifeOS"]) {
+    await expect(mobileNav.getByRole("button", { name: label, exact: true })).toBeVisible();
+  }
+  await expect(mobileNav.getByRole("button", { name: "Inbox", exact: true })).toHaveCount(0);
+  await expect(mobileNav.getByRole("button", { name: "Dates", exact: true })).toHaveCount(0);
 });
 
 test("quick capture appears in inbox and can convert to a task", async ({ page }) => {

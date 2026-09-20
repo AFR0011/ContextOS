@@ -39,9 +39,9 @@ test.describe("local-first completion characterization", () => {
 
     await context.setOffline(true);
 
-    await page.getByRole("button", { name: "Inbox", exact: true }).click();
-    await expect(page).toHaveURL(/\/inbox$/);
-    await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Projects", exact: true }).click();
+    await expect(page).toHaveURL(/\/projects$/);
+    await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Projects", exact: true }).click();
     await expect(page).toHaveURL(/\/projects$/);
@@ -74,7 +74,7 @@ test.describe("local-first completion characterization", () => {
     await warmServiceWorker(page);
 
     // Warm a representative set of core surfaces before simulating an app close.
-    for (const route of ["/inbox", "/projects", "/dates", "/areas", "/resources", "/archive", "/search", "/reviews", "/settings"]) {
+    for (const route of ["/inbox", "/projects", "/dates", "/areas", "/resources", "/lifeos", "/archive", "/search", "/reviews", "/settings"]) {
       await page.goto(route);
       await expect(page).toHaveURL(new RegExp(`${route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
     }

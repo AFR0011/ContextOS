@@ -1,4 +1,4 @@
-const SHELL_VERSION = "v4";
+const SHELL_VERSION = "v5";
 const CACHE_NAME = `contextos-shell-${SHELL_VERSION}`;
 const CACHE_PREFIX = "contextos-shell-";
 const SHELL_ENTRY = "/dashboard";
@@ -13,6 +13,7 @@ const CORE_WORKSPACE_ROUTES = new Set([
   "/deadlines",
   "/areas",
   "/resources",
+  "/lifeos",
   "/archive",
   "/search",
   "/reviews",

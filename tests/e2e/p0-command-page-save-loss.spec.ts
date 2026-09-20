@@ -52,9 +52,9 @@ async function currentLocalWorkspace(page: Page) {
   });
 }
 
-async function dashboardScratchpadContent(page: Page) {
+async function dailyNoteContent(page: Page, localDate: string) {
   const workspace = await currentLocalWorkspace(page);
-  return workspace?.dashboardScratchpads?.[0]?.content ?? "";
+  return workspace?.dailyNotes?.find((note: { localDate: string }) => note.localDate === localDate)?.content ?? "";
 }
 
 async function projectRecoveryNotes(page: Page, projectName: string) {
@@ -62,19 +62,21 @@ async function projectRecoveryNotes(page: Page, projectName: string) {
   return workspace?.projects?.find((project: { name: string }) => project.name === projectName)?.recoveryNotes ?? "";
 }
 
-test("dashboard scratchpad flushes a pending edit when navigating before autosave fires", async ({ page }) => {
+test("Daily Notes flush a pending edit when navigating before autosave fires", async ({ page }) => {
+  const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
-  const note = `Fast navigation scratchpad ${Date.now()}`;
-  const editor = page.getByTestId("dashboard-scratchpad");
+  const today = localDateKey();
+  const note = `Fast navigation daily note ${Date.now()}`;
+  const editor = page.getByLabel("Daily Notes");
 
-  await markdownLine(editor, 0).fill(note);
-  await expect(page.getByText("Autosaving...", { exact: true })).toBeVisible();
+  await editor.fill(note);
+  await expect(page.getByText("Saving…", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
 
-  await expect.poll(() => dashboardScratchpadContent(page)).toContain(note);
+  await expect.poll(() => dailyNoteContent(page, today)).toContain(note);
   await page.getByRole("button", { name: "Home", exact: true }).click();
-  await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(note);
+  await expect(page.getByLabel("Daily Notes")).toHaveValue(note);
 });
 
 test("project recovery notes flush a pending edit when navigating before autosave fires", async ({ page }) => {

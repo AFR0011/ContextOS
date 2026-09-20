@@ -62,9 +62,12 @@ test("Dates derives Today, Upcoming, and Past and filters by kind", async ({ pag
   await createDate(page, { title: futureDeadline, kind: "deadline", date: tomorrow, contextLabel: "ContextOS Demo", startTime: "17:00" });
   await createDate(page, { title: pastEvent, kind: "event", date: yesterday, contextLabel: "Research", startTime: "09:00" });
 
-  await expect(page.getByRole("heading", { name: "Today", exact: true }).locator("..")).toContainText(todayEvent);
-  await expect(page.getByRole("heading", { name: "Upcoming", exact: true }).locator("..")).toContainText(futureDeadline);
-  await expect(page.getByRole("heading", { name: "Past", exact: true }).locator("..")).toContainText(pastEvent);
+  const todaySection = page.getByRole("heading", { name: "Today", exact: true }).locator("xpath=ancestor::section");
+  const upcomingSection = page.getByRole("heading", { name: "Upcoming", exact: true }).locator("xpath=ancestor::section");
+  const pastSection = page.getByRole("heading", { name: "Past", exact: true }).locator("xpath=ancestor::section");
+  await expect(todaySection).toContainText(todayEvent);
+  await expect(upcomingSection).toContainText(futureDeadline);
+  await expect(pastSection).toContainText(pastEvent);
 
   await page.getByRole("button", { name: "Deadlines", exact: true }).click();
   await expect(page.getByText(futureDeadline, { exact: true })).toBeVisible();

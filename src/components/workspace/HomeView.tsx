@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { DateRow, Dayline, EmptyState, EntityRow, InsightCard, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
+import { Dayline, EmptyState, EntityRow, InsightCard, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
 import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import { getContextsForToday, getTodayTasks } from "@/lib/canonical-selectors";
 import { useWorkspace } from "@/lib/client-store";
@@ -134,41 +134,13 @@ export function HomeView() {
         .sort((a, b) => a.title.localeCompare(b.title)),
     [todayTasks]
   );
-  const baseContexts = useMemo(
+  const contexts = useMemo(
     () => getContextsForToday(canonical, today),
     [canonical, today]
   );
-  const legacyTodayProjectIds = useMemo(
-    () =>
-      new Set(
-        data.deadlines
-          .filter((item) => !item.archivedAt && !item.trashedAt && item.date === today && item.projectId)
-          .map((item) => item.projectId as string)
-      ),
-    [data.deadlines, today]
-  );
-  const contexts = useMemo(() => {
-    const projects = canonical.projects.filter(
-      (project) => baseContexts.projects.some((item) => item.id === project.id) || legacyTodayProjectIds.has(project.id)
-    );
-    const areaIds = new Set(baseContexts.areas.map((area) => area.id));
-    for (const project of projects) areaIds.add(project.areaId);
-    return {
-      projects,
-      areas: canonical.areas.filter((area) => areaIds.has(area.id))
-    };
-  }, [baseContexts, canonical.areas, canonical.projects, legacyTodayProjectIds]);
   const insights = useMemo(
     () => noOpInsightProvider.getInsights(canonical, today).slice(0, 3),
     [canonical, today]
-  );
-  const upcoming = useMemo(
-    () =>
-      data.deadlines
-        .filter((item) => !item.archivedAt && !item.trashedAt && item.date >= today)
-        .sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? "99:99").localeCompare(b.time ?? "99:99") || a.title.localeCompare(b.title))
-        .slice(0, 6),
-    [data.deadlines, today]
   );
   const dailyNote = canonical.dailyNotes.find((note) => note.localDate === today);
   const date = dateKeyToLocalDate(today);
@@ -257,34 +229,29 @@ export function HomeView() {
             />
           </Section>
 
-          <Section
-            title="Insights"
-            description="Relevant, explainable suggestions from ContextOS intelligence."
-          >
-            <div data-testid="home-insights" className="space-y-3">
-              {insights.length ? (
-                insights.map((insight) => (
+          {insights.length ? (
+            <Section
+              title="Insights"
+              description="Relevant, explainable suggestions from ContextOS intelligence."
+            >
+              <div data-testid="home-insights" className="space-y-3">
+                {insights.map((insight) => (
                   <InsightCard
                     key={insight.id}
                     title={insight.title}
                     message={insight.message}
                     source={insight.sourceRef ?? undefined}
                   />
-                ))
-              ) : (
-                <EmptyState
-                  title="Nothing to surface"
-                  description="Insights stay quiet until there is something timely and explainable to show."
-                />
-              )}
-            </div>
-          </Section>
+                ))}
+              </div>
+            </Section>
+          ) : null}
         </div>
 
         <div className="space-y-8">
           <Section
             title="In Context Today"
-            description="Projects and Areas referenced by today’s planned work and dates."
+            description="Projects and Areas referenced by today’s planned work."
           >
             <div data-testid="home-contexts">
               {contexts.projects.length || contexts.areas.length ? (
@@ -320,38 +287,12 @@ export function HomeView() {
               ) : (
                 <EmptyState
                   title="No context yet"
-                  description="Projects and Areas will appear here when today’s Tasks or Dates reference them."
+                  description="Projects and Areas will appear here when today’s planned Tasks reference them."
                 />
               )}
             </div>
           </Section>
 
-          <Section
-            title="Upcoming"
-            description="The next dates and deadlines that are about to matter."
-          >
-            <div data-testid="home-upcoming">
-              {upcoming.length ? (
-                <div>
-                  {upcoming.map((item) => (
-                    <DateRow
-                      key={item.id}
-                      title={item.title}
-                      kind="deadline"
-                      time={item.time}
-                      meta={item.date === today ? "Today" : item.date}
-                      onOpen={() => router.push("/dates")}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  title="Nothing upcoming"
-                  description="Near-term Dates and deadlines will appear here."
-                />
-              )}
-            </div>
-          </Section>
         </div>
       </div>
     </div>

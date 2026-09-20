@@ -61,6 +61,7 @@ async function seedSecondLocalWorkspace(page: Page) {
       notes: [],
       deadlines: [],
       reviews: [],
+      dailyNotes: [],
       dashboardScratchpads: [],
       dashboardPreferences: [],
       serverSyncedAt: ""

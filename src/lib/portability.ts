@@ -96,6 +96,14 @@ const reviewSchema = z.object({
   updatedAt: timestampSchema
 }).strict();
 
+const dailyNoteSchema = z.object({
+  id: idSchema,
+  localDate: dateKeySchema,
+  content: z.string(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema
+}).strict();
+
 const dashboardScratchpadSchema = z.object({
   id: idSchema,
   content: z.string(),
@@ -123,6 +131,7 @@ export const portableWorkspaceSchema = z.object({
   notes: z.array(noteSchema),
   deadlines: z.array(deadlineSchema),
   reviews: z.array(reviewSchema),
+  dailyNotes: z.array(dailyNoteSchema).default([]),
   dashboardScratchpads: z.array(dashboardScratchpadSchema).max(1),
   dashboardPreferences: z.array(dashboardPreferenceSchema).max(1)
 }).strict();
@@ -142,6 +151,7 @@ export const workspaceExportBundleSchema = z.object({
     notes: new Set<string>(),
     deadlines: new Set<string>(),
     reviews: new Set<string>(),
+    dailyNotes: new Set<string>(),
     dashboardScratchpads: new Set<string>(),
     dashboardPreferences: new Set<string>()
   };
@@ -249,6 +259,7 @@ export function createWorkspaceExportBundle(data: WorkspaceData, exportedAt = ne
       notes: data.notes,
       deadlines: data.deadlines,
       reviews: data.reviews,
+      dailyNotes: data.dailyNotes,
       dashboardScratchpads: data.dashboardScratchpads,
       dashboardPreferences: data.dashboardPreferences
     }
@@ -264,6 +275,7 @@ export function portabilityCounts(workspace: PortableWorkspace) {
     resources: workspace.notes.length,
     dates: workspace.deadlines.length,
     reviews: workspace.reviews.length,
+    dailyNotes: workspace.dailyNotes.length,
     scratchpads: workspace.dashboardScratchpads.length,
     preferences: workspace.dashboardPreferences.length
   };
@@ -304,6 +316,11 @@ export function workspaceExportToMarkdown(bundle: WorkspaceExportBundle) {
 
   lines.push("## Inbox captures", "");
   for (const item of w.captures) lines.push(`- [${item.status}] ${item.text}`);
+
+  lines.push("", "## Daily Notes", "");
+  for (const item of [...w.dailyNotes].sort((a, b) => a.localDate.localeCompare(b.localDate))) {
+    lines.push(`### ${item.localDate}`, "", item.content, "");
+  }
 
   lines.push("", "## Reviews", "");
   for (const item of w.reviews) {

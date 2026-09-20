@@ -33,6 +33,7 @@ function isWorkspaceProductRoute(pathname: string) {
     "/dates",
     "/areas",
     "/resources",
+    "/lifeos",
     "/search",
     "/archive",
     "/reviews",
@@ -62,6 +63,7 @@ export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNod
   if (pathname === "/dates") return <DatesView />;
   if (pathname === "/areas") return <AreasSetupView><AreasView /></AreasSetupView>;
   if (pathname === "/resources") return activeDomainCount ? <ResourcesLifecycleView /> : <AreaRequiredView target="resources" />;
+  if (pathname === "/lifeos") return <LifeOSFoundationView />;
   if (pathname === "/search") return <ProductSearchView />;
   if (pathname === "/archive") return <ArchiveLifecycleView />;
   if (pathname === "/reviews") return <ReviewsLifecycleView />;

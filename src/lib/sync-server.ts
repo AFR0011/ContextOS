@@ -11,7 +11,7 @@ const toDateOnly = (value: string | null | undefined) => (value ? dateKeyToUtcDa
 const defaultDateOnly = () => dateKeyToUtcDate(localDateKey()) ?? new Date();
 const dashboardTaskSortModes = new Set<string>(DASHBOARD_TASK_SORT_MODES);
 type Tx = Prisma.TransactionClient;
-type OwnedModel = "domain" | "project" | "task" | "capture" | "note" | "deadline" | "review" | "dailyNote" | "dashboardScratchpad" | "dashboardPreference";
+type OwnedModel = "domain" | "project" | "task" | "capture" | "note" | "deadline" | "contextDate" | "review" | "dailyNote" | "dashboardScratchpad" | "dashboardPreference";
 
 export class SyncOwnershipError extends Error {
   constructor(message = "Sync payload references a record outside this workspace.") {
@@ -316,6 +316,48 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               await tx.deadline.update({ where: { id }, data });
             } else {
               await tx.deadline.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
+          }
+          break;
+        }
+
+        case "contextDates": {
+          const existing = await ownedRecord(tx, "contextDate", id, userId);
+          const kind = payload.kind;
+          if (kind !== "event" && kind !== "deadline") {
+            throw new SyncPayloadError("ContextDate kind must be event or deadline.");
+          }
+          const date = requireDateKey(payload.date, "date");
+          const rawProjectId = payload.projectId ?? null;
+          const rawDomainId = payload.domainId ?? null;
+          const hasProject = Boolean(rawProjectId);
+          const hasArea = Boolean(rawDomainId);
+          if (hasProject === hasArea) {
+            throw new SyncPayloadError("ContextDate must belong to exactly one Project or Area.");
+          }
+          const projectId = hasProject
+            ? await requireOwnedReference(tx, "project", rawProjectId, userId, "projectId")
+            : null;
+          const domainId = hasArea
+            ? await requireOwnedReference(tx, "domain", rawDomainId, userId, "domainId")
+            : null;
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
+            const data = {
+              title: typeof payload.title === "string" ? payload.title.trim() : "",
+              kind,
+              date: toDateOnly(date) ?? defaultDateOnly(),
+              startTime: typeof payload.startTime === "string" && payload.startTime ? payload.startTime : null,
+              endTime: typeof payload.endTime === "string" && payload.endTime ? payload.endTime : null,
+              details: typeof payload.details === "string" ? payload.details : "",
+              projectId,
+              domainId,
+              updatedAt: toDate(updatedAt) ?? new Date()
+            };
+            if (!data.title) throw new SyncPayloadError("ContextDate title is required.");
+            if (existing) {
+              await tx.contextDate.update({ where: { id }, data });
+            } else {
+              await tx.contextDate.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
             }
           }
           break;

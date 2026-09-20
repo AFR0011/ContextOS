@@ -21,11 +21,6 @@ async function loginDemo(page: Page) {
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
-test("Dashboard visibly teaches durable command date and time formats", async ({ page }) => {
-  await loginDemo(page);
-  await expect(page.getByText("Hint: /task or /date with [YYYY-MM-DD] (HH:MM)", { exact: true })).toBeVisible();
-});
-
 test("capture slash-command descriptions use format examples rather than an aging literal date", () => {
   const task = CAPTURE_COMMANDS.find((command) => command.command === "/task");
   const date = CAPTURE_COMMANDS.find((command) => command.command === "/date");

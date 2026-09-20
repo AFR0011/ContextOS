@@ -186,8 +186,8 @@ export function HomeView() {
   return (
     <div data-testid="home-view" className="cos-page">
       <PageHeader
-        eyebrow="Home"
-        title="Today"
+        eyebrow="ContextOS"
+        title="Home"
         description={humanDate}
       />
 

@@ -15,6 +15,7 @@ const userOwnedModels = [
   "Note",
   "Deadline",
   "Review",
+  "DailyNote",
   "DashboardScratchpad",
   "DashboardPreference",
   "SyncMutation"

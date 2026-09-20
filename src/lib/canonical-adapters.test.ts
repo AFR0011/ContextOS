@@ -33,6 +33,11 @@ function workspaceFixture(): WorkspaceData {
     captures: [{ id: "c" }],
     notes: [{ id: "n" }],
     deadlines: [{ id: "d" }],
+    contextDates: [
+      { id: "cd-project", title: "Project deadline", kind: "deadline", date: "2026-09-22", startTime: null, endTime: null, details: "", projectId: "p-active", domainId: null, createdAt: now, updatedAt: now },
+      { id: "cd-area", title: "Area event", kind: "event", date: "2026-09-20", startTime: "14:00", endTime: "15:00", details: "Review", projectId: null, domainId: "area-active", createdAt: now, updatedAt: now },
+      { id: "cd-invalid", title: "Invalid", kind: "event", date: "2026-09-20", startTime: null, endTime: null, details: "", projectId: null, domainId: null, createdAt: now, updatedAt: now }
+    ],
     reviews: [{ id: "r" }],
     dailyNotes: [{ id: "dn", localDate: "2026-09-20", content: "Daily context", createdAt: now, updatedAt: now }],
     dashboardScratchpads: [{ id: "s" }],

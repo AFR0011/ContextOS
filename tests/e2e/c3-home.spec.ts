@@ -75,7 +75,7 @@ test("Home task completion stays in place", async ({ page }) => {
 
   await page.getByRole("button", { name: `Complete ${title}`, exact: true }).click();
   await expect(page.getByText(title, { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: `${title} completed`, exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: `Reopen ${title}`, exact: true })).toBeVisible();
 
   await expect.poll(async () => {
     const response = await page.request.get("/api/bootstrap");

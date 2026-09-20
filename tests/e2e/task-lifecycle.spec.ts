@@ -24,7 +24,7 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/dashboard/);
   await resetDemo(page);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 function markdownLine(editor: Locator, index: number) {
@@ -147,7 +147,7 @@ test("task can be fully replanned, reassigned, completed, trashed, and restored"
   });
   await expect(page.getByLabel(`Task title ${editedTitle}`)).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Dashboard", exact: true }).click();
+  await page.getByRole("button", { name: "Home", exact: true }).click();
   await page.getByTestId("dashboard-scope-select").selectOption({ label: "Planning" });
   await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${editedTitle}`)).toBeVisible();
 

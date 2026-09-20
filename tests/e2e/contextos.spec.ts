@@ -11,7 +11,7 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/dashboard/);
   await resetDemo(page);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 async function resetDemo(page: Page) {
@@ -192,7 +192,7 @@ async function warmOfflineShell(page: Page) {
   const readiness = page.getByTestId("offline-shell-readiness");
   await expect(readiness).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 }
 
@@ -848,7 +848,7 @@ test("today redirects to dashboard and completed today tasks stay interactable",
   await login(page);
   await page.goto("/today");
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   const taskTitle = "Process inbox captures";
   const main = page.getByTestId("dashboard-live-tasks");
   await expect(main.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
@@ -858,7 +858,7 @@ test("today redirects to dashboard and completed today tasks stay interactable",
   await expect(main.getByRole("button", { name: `Reopen ${taskTitle}` }).first()).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   const reloaded = page.getByTestId("dashboard-live-tasks");
   await expect(reloaded.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
   await expect(reloaded.getByRole("button", { name: `Reopen ${taskTitle}` }).first()).toBeVisible();
@@ -1243,11 +1243,11 @@ test("Today and This Week redirect to dashboard without priority terminology", a
   await login(page);
   await page.goto("/today");
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
   await expect(page.getByText(/priorit/i)).toHaveCount(0);
   await page.goto("/this-week");
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
   await expect(page.getByText(/priorit/i)).toHaveCount(0);
 });
 

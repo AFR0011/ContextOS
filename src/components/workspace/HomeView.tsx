@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Dayline, EmptyState, EntityRow, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
+import { DateRow, Dayline, EmptyState, EntityRow, InsightCard, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
 import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import { getContextsForToday, getTodayTasks } from "@/lib/canonical-selectors";
 import { useWorkspace } from "@/lib/client-store";
 import { dateKeyToLocalDate, localDateKey } from "@/lib/dates";
+import { noOpInsightProvider } from "@/lib/insights";
 import { useLocalRouter } from "@/lib/local-router";
 import type { Task as CanonicalTask } from "@/lib/canonical-domain";
 
@@ -132,9 +133,41 @@ export function HomeView() {
         .sort((a, b) => a.title.localeCompare(b.title)),
     [todayTasks]
   );
-  const contexts = useMemo(
+  const baseContexts = useMemo(
     () => getContextsForToday(canonical, today),
     [canonical, today]
+  );
+  const legacyTodayProjectIds = useMemo(
+    () =>
+      new Set(
+        data.deadlines
+          .filter((item) => !item.archivedAt && !item.trashedAt && item.date === today && item.projectId)
+          .map((item) => item.projectId as string)
+      ),
+    [data.deadlines, today]
+  );
+  const contexts = useMemo(() => {
+    const projects = canonical.projects.filter(
+      (project) => baseContexts.projects.some((item) => item.id === project.id) || legacyTodayProjectIds.has(project.id)
+    );
+    const areaIds = new Set(baseContexts.areas.map((area) => area.id));
+    for (const project of projects) areaIds.add(project.areaId);
+    return {
+      projects,
+      areas: canonical.areas.filter((area) => areaIds.has(area.id))
+    };
+  }, [baseContexts, canonical.areas, canonical.projects, legacyTodayProjectIds]);
+  const insights = useMemo(
+    () => noOpInsightProvider.getInsights(canonical, today).slice(0, 3),
+    [canonical, today]
+  );
+  const upcoming = useMemo(
+    () =>
+      data.deadlines
+        .filter((item) => !item.archivedAt && !item.trashedAt && item.date >= today)
+        .sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? "99:99").localeCompare(b.time ?? "99:99") || a.title.localeCompare(b.title))
+        .slice(0, 6),
+    [data.deadlines, today]
   );
   const dailyNote = canonical.dailyNotes.find((note) => note.localDate === today);
   const date = dateKeyToLocalDate(today);
@@ -147,10 +180,7 @@ export function HomeView() {
     title: task.title,
     done: task.state === "done",
     meta: taskContext(task, canonical.projects, canonical.areas),
-    onToggle:
-      task.state === "open"
-        ? () => updateTask(task.id, { status: "done" })
-        : undefined
+    onToggle: () => updateTask(task.id, { status: task.state === "open" ? "done" : "todo" })
   }));
 
   return (
@@ -188,8 +218,7 @@ export function HomeView() {
                     >
                       <button
                         type="button"
-                        onClick={task.state === "open" ? () => updateTask(task.id, { status: "done" }) : undefined}
-                        disabled={task.state === "done"}
+                        onClick={() => updateTask(task.id, { status: task.state === "open" ? "done" : "todo" })}
                         aria-label={task.state === "done" ? `${task.title} completed` : `Complete ${task.title}`}
                         className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px] ${
                           task.state === "done"
@@ -226,49 +255,101 @@ export function HomeView() {
           />
         </Section>
 
-        <Section
-          title="In Context Today"
-          description="Projects and Areas referenced by today’s planned work."
-        >
-          <div data-testid="home-contexts">
-            {contexts.projects.length || contexts.areas.length ? (
-              <div>
-                {contexts.projects.length ? (
-                  <div>
-                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Projects</p>
-                    {contexts.projects.map((project) => (
-                      <EntityRow
-                        key={project.id}
-                        title={project.name}
-                        meta={canonical.areas.find((area) => area.id === project.areaId)?.name ?? "Project"}
-                        onOpen={() => router.push(`/projects/${encodeURIComponent(project.id)}`)}
-                      />
-                    ))}
-                  </div>
-                ) : null}
+        <div className="space-y-8">
+          <Section
+            title="Insights"
+            description="Relevant, explainable suggestions from ContextOS intelligence."
+          >
+            <div data-testid="home-insights" className="space-y-3">
+              {insights.length ? (
+                insights.map((insight) => (
+                  <InsightCard
+                    key={insight.id}
+                    title={insight.title}
+                    message={insight.message}
+                    source={insight.sourceRef ?? undefined}
+                  />
+                ))
+              ) : (
+                <EmptyState
+                  title="Nothing to surface"
+                  description="Insights stay quiet until there is something timely and explainable to show."
+                />
+              )}
+            </div>
+          </Section>
 
-                {contexts.areas.length ? (
-                  <div className={contexts.projects.length ? "mt-6" : ""}>
-                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Areas</p>
-                    {contexts.areas.map((area) => (
-                      <EntityRow
-                        key={area.id}
-                        title={area.name}
-                        meta="Area"
-                        onOpen={() => router.push("/areas")}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <EmptyState
-                title="No context yet"
-                description="Projects and Areas will appear here when they are referenced by today’s planned tasks."
-              />
-            )}
-          </div>
-        </Section>
+          <Section
+            title="In Context Today"
+            description="Projects and Areas referenced by today’s planned work and dates."
+          >
+            <div data-testid="home-contexts">
+              {contexts.projects.length || contexts.areas.length ? (
+                <div>
+                  {contexts.projects.length ? (
+                    <div>
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Projects</p>
+                      {contexts.projects.map((project) => (
+                        <EntityRow
+                          key={project.id}
+                          title={project.name}
+                          meta={canonical.areas.find((area) => area.id === project.areaId)?.name ?? "Project"}
+                          onOpen={() => router.push(`/projects/${encodeURIComponent(project.id)}`)}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {contexts.areas.length ? (
+                    <div className={contexts.projects.length ? "mt-6" : ""}>
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Areas</p>
+                      {contexts.areas.map((area) => (
+                        <EntityRow
+                          key={area.id}
+                          title={area.name}
+                          meta="Area"
+                          onOpen={() => router.push("/areas")}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <EmptyState
+                  title="No context yet"
+                  description="Projects and Areas will appear here when today’s Tasks or Dates reference them."
+                />
+              )}
+            </div>
+          </Section>
+
+          <Section
+            title="Upcoming"
+            description="The next dates and deadlines that are about to matter."
+          >
+            <div data-testid="home-upcoming">
+              {upcoming.length ? (
+                <div>
+                  {upcoming.map((item) => (
+                    <DateRow
+                      key={item.id}
+                      title={item.title}
+                      kind="deadline"
+                      time={item.time}
+                      meta={item.date === today ? "Today" : item.date}
+                      onOpen={() => router.push("/dates")}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  title="Nothing upcoming"
+                  description="Near-term Dates and deadlines will appear here."
+                />
+              )}
+            </div>
+          </Section>
+        </div>
       </div>
     </div>
   );

@@ -58,7 +58,7 @@ export function FirstRunSetup() {
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]">First run</p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">Set up your first Area</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--cos-text-muted)]">
-              Areas are stable parts of your work or life that hold Projects and Resources. Start with one you actually use. ContextOS will not invent sample work for you.
+              Areas are stable parts of your work or life that organize Projects and direct Tasks. Start with one you actually use. ContextOS will not invent sample work for you.
             </p>
           </div>
         </div>
@@ -79,7 +79,7 @@ export function FirstRunSetup() {
 
         <div className="mt-6 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-4 text-sm text-[var(--cos-text-muted)]">
           <p className="font-medium text-[var(--cos-text-strong)]">What happens next?</p>
-          <p className="mt-1 leading-6">After you create an Area, your normal workspace opens immediately. You can then add a Project, capture something into Inbox, or create a Resource without cleaning up demo records first.</p>
+          <p className="mt-1 leading-6">After you create an Area, your normal workspace opens immediately. You can add Projects, plan direct Tasks, and use Home for the current day.</p>
         </div>
       </section>
     </div>
@@ -87,22 +87,7 @@ export function FirstRunSetup() {
 }
 
 export function AreasSetupView({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <section className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
-        <div className="cos-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <h2 className="font-semibold text-[var(--cos-text-strong)]">Add an Area</h2>
-            <p className="mt-1 text-sm text-[var(--cos-text-muted)]">Create a stable responsibility or domain for Projects and Resources.</p>
-          </div>
-          <div className="w-full sm:max-w-md">
-            <AreaCreator compact />
-          </div>
-        </div>
-      </section>
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }
 
 export function AreaRequiredView({ target }: { target: "projects" | "resources" }) {
@@ -116,7 +101,7 @@ export function AreaRequiredView({ target }: { target: "projects" | "resources" 
           <Boxes className="mt-0.5 h-5 w-5 shrink-0 text-[var(--cos-primary)]" />
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-semibold text-[var(--cos-text-strong)]">Create an active Area first</h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--cos-text-muted)]">{label} belong to an Area. Add or restore one before creating {target}.</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--cos-text-muted)]">{label} require an active Area before new records can be created.</p>
             <button type="button" onClick={() => router.push("/areas")} className="cos-btn cos-btn-primary mt-4 min-h-10 px-4 py-2 text-sm">
               Manage Areas <ArrowRight className="h-4 w-4" />
             </button>

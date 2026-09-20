@@ -9,7 +9,7 @@ async function browserLogin(page: Page) {
   await page.getByLabel("Password").fill(demoPassword);
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 async function browserJsonPost(page: Page, path: string, data: unknown) {

@@ -17,7 +17,7 @@ async function loginDemo(page: Page) {
   await expect(page).toHaveURL(/\/dashboard/);
   await resetDemo(page);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 async function logout(request: APIRequestContext) {
@@ -83,7 +83,7 @@ test("Dashboard scope and grouping stay isolated per user on the same browser", 
   await expect(page.getByTestId("first-run-setup")).toBeVisible();
   await page.getByLabel("Area name").fill("Work");
   await page.getByRole("button", { name: "Add Area" }).click();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   const secondPreferenceId = await preferenceId(page.request);
   expect(secondPreferenceId).not.toBe(demoPreferenceId);
 

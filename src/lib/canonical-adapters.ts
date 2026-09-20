@@ -14,6 +14,7 @@ export interface LegacyDiscardReport {
   unscopedTasks: number;
   tasksWithMissingProject: number;
   tasksWithMissingArea: number;
+  contextDatesWithInvalidParent: number;
 }
 
 export interface CanonicalAdaptationResult {
@@ -48,7 +49,8 @@ export function adaptLegacyWorkspace(source: WorkspaceData): CanonicalAdaptation
     archivedOrTrashedTasks: 0,
     unscopedTasks: 0,
     tasksWithMissingProject: 0,
-    tasksWithMissingArea: 0
+    tasksWithMissingArea: 0,
+    contextDatesWithInvalidParent: 0
   };
 
   const areas = source.domains.map((area) => ({
@@ -124,7 +126,10 @@ export function adaptLegacyWorkspace(source: WorkspaceData): CanonicalAdaptation
       tasks,
       dates: (source.contextDates ?? []).flatMap((date) => {
         if (date.projectId) {
-          if (!projectIds.has(date.projectId)) return [];
+          if (date.domainId || !projectIds.has(date.projectId)) {
+            discarded.contextDatesWithInvalidParent += 1;
+            return [];
+          }
           return [{
             id: date.id,
             title: date.title,
@@ -152,6 +157,7 @@ export function adaptLegacyWorkspace(source: WorkspaceData): CanonicalAdaptation
             updatedAt: date.updatedAt
           }];
         }
+        discarded.contextDatesWithInvalidParent += 1;
         return [];
       }),
       dailyNotes: (source.dailyNotes ?? []).map((note) => ({

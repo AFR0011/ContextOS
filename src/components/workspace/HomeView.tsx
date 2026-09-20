@@ -219,7 +219,7 @@ export function HomeView() {
                       <button
                         type="button"
                         onClick={() => updateTask(task.id, { status: task.state === "open" ? "done" : "todo" })}
-                        aria-label={task.state === "done" ? `${task.title} completed` : `Complete ${task.title}`}
+                        aria-label={task.state === "done" ? `Reopen ${task.title}` : `Complete ${task.title}`}
                         className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px] ${
                           task.state === "done"
                             ? "border-[var(--cos-text-subtle)] bg-[var(--cos-text-subtle)] text-[var(--cos-bg)]"

@@ -11,7 +11,7 @@ const toDateOnly = (value: string | null | undefined) => (value ? dateKeyToUtcDa
 const defaultDateOnly = () => dateKeyToUtcDate(localDateKey()) ?? new Date();
 const dashboardTaskSortModes = new Set<string>(DASHBOARD_TASK_SORT_MODES);
 type Tx = Prisma.TransactionClient;
-type OwnedModel = "domain" | "project" | "task" | "capture" | "note" | "deadline" | "review" | "dashboardScratchpad" | "dashboardPreference";
+type OwnedModel = "domain" | "project" | "task" | "capture" | "note" | "deadline" | "review" | "dailyNote" | "dashboardScratchpad" | "dashboardPreference";
 
 export class SyncOwnershipError extends Error {
   constructor(message = "Sync payload references a record outside this workspace.") {
@@ -75,6 +75,13 @@ function mergeImportedProjectNote(recoveryNotes: string, payload: any) {
 
   const heading = recoveryNotes.includes("## Imported project notes") ? "" : "## Imported project notes\n\n";
   return `${recoveryNotes.trim()}${recoveryNotes.trim() ? "\n\n" : ""}${heading}${block}`.trim();
+}
+
+function requireDateKey(value: unknown, field: string) {
+  if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) {
+    throw new SyncPayloadError(`Sync payload has invalid ${field}.`);
+  }
+  return value;
 }
 
 function requirePayloadId(payload: any) {
@@ -314,6 +321,35 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           break;
         }
 
+        case "dailyNotes": {
+          const localDate = requireDateKey(payload.localDate, "localDate");
+          const byId = await tx.dailyNote.findUnique({
+            where: { id },
+            select: { id: true, userId: true, localDate: true, updatedAt: true }
+          });
+          if (byId && byId.userId !== userId) throw new SyncOwnershipError();
+          if (byId && byId.localDate !== localDate) {
+            throw new SyncPayloadError("Daily Note localDate cannot change.");
+          }
+          const byDate = await tx.dailyNote.findUnique({
+            where: { userId_localDate: { userId, localDate } },
+            select: { id: true, userId: true, localDate: true, updatedAt: true }
+          });
+          const existing = byId ?? byDate;
+          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
+            const data = {
+              localDate,
+              content: typeof payload.content === "string" ? payload.content : "",
+              updatedAt: toDate(updatedAt) ?? new Date()
+            };
+            if (existing) {
+              await tx.dailyNote.update({ where: { id: existing.id }, data });
+            } else {
+              await tx.dailyNote.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            }
+          }
+          break;
+        }
         case "dashboardScratchpads": {
           await ownedRecord(tx, "dashboardScratchpad", id, userId);
           const existing = await tx.dashboardScratchpad.findFirst({ where: { userId } });

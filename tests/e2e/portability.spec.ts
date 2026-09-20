@@ -107,7 +107,7 @@ test("portability schema rejects unsupported versions, dangling references, and 
         currentObjective: "", nextAction: "", latestStatus: "", recoveryNotes: "", openLoops: [],
         createdAt: now, updatedAt: now, archivedAt: null, trashedAt: null
       }],
-      tasks: [], captures: [], notes: [], deadlines: [], reviews: [], dashboardScratchpads: [], dashboardPreferences: []
+      tasks: [], captures: [], notes: [], deadlines: [], reviews: [], dailyNotes: [], dashboardScratchpads: [], dashboardPreferences: []
     }
   };
 

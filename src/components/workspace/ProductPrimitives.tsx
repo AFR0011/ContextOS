@@ -161,6 +161,7 @@ export interface DaylineItem {
   title: string;
   done?: boolean;
   meta?: string;
+  onToggle?: () => void;
 }
 
 export function Dayline({ items }: { items: DaylineItem[] }) {
@@ -172,13 +173,23 @@ export function Dayline({ items }: { items: DaylineItem[] }) {
           <div key={item.id} className={`grid grid-cols-[4rem_1.5rem_minmax(0,1fr)] items-start gap-2 rounded-lg px-1 py-2 ${item.done ? "opacity-55" : ""}`}>
             <div className="pt-0.5 text-right text-xs tabular-nums text-[var(--cos-text-subtle)]">{item.time ?? ""}</div>
             <div className="relative z-10 grid h-5 place-items-center">
-              <span className={`h-2.5 w-2.5 rounded-full border-2 border-[var(--cos-bg)] ${
-                item.type === "event"
-                  ? "bg-[var(--cos-primary)]"
-                  : item.done
-                    ? "bg-[var(--cos-text-subtle)]"
-                    : "bg-[var(--cos-bg-elevated)] ring-1 ring-[var(--cos-border-strong)]"
-              }`} />
+              {item.type === "task" ? (
+                <button
+                  type="button"
+                  onClick={item.onToggle}
+                  disabled={!item.onToggle}
+                  aria-label={item.done ? `Reopen ${item.title}` : `Complete ${item.title}`}
+                  className={`grid h-5 w-5 place-items-center rounded-full border-2 border-[var(--cos-bg)] transition-colors ${
+                    item.done
+                      ? "bg-[var(--cos-text-subtle)] text-[var(--cos-bg)]"
+                      : "bg-[var(--cos-bg-elevated)] text-transparent ring-1 ring-[var(--cos-border-strong)] enabled:hover:ring-[var(--cos-primary)]"
+                  }`}
+                >
+                  {item.done ? <Check className="h-3 w-3" /> : null}
+                </button>
+              ) : (
+                <span className="h-2.5 w-2.5 rounded-full border-2 border-[var(--cos-bg)] bg-[var(--cos-primary)]" />
+              )}
             </div>
             <div className="min-w-0">
               <p className={`truncate text-sm font-medium text-[var(--cos-text-strong)] ${item.done ? "line-through" : ""}`}>{item.title}</p>

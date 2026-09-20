@@ -14,6 +14,7 @@ const models = [
   "note",
   "deadline",
   "review",
+  "dailyNote",
   "dashboardScratchpad",
   "dashboardPreference"
 ];

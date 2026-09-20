@@ -6,14 +6,14 @@ async function login(page: Page) {
   await page.getByLabel("Password").fill("contextos-demo-v011");
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 async function warmServiceWorker(page: Page) {
   const readiness = page.getByTestId("offline-shell-readiness");
   await expect(readiness).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 }
 
@@ -80,7 +80,7 @@ test.describe("local-first completion characterization", () => {
     }
 
     await page.goto("/dashboard");
-    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 
     await context.setOffline(true);
     await page.close();
@@ -89,7 +89,7 @@ test.describe("local-first completion characterization", () => {
     await reopened.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
     await expect(reopened).toHaveURL(/\/dashboard$/);
-    await expect(reopened.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+    await expect(reopened.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
     await expect(reopened.getByTestId("global-sync-indicator").first()).toContainText(/Offline|Loaded cached data\. Failed to fetch/i);
   });
 });

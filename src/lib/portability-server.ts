@@ -21,6 +21,7 @@ type IdMaps = {
   notes: Map<string, string>;
   deadlines: Map<string, string>;
   reviews: Map<string, string>;
+  dailyNotes: Map<string, string>;
   dashboardScratchpads: Map<string, string>;
   dashboardPreferences: Map<string, string>;
 };
@@ -35,7 +36,7 @@ function mapIds(records: { id: string }[], existing: { id: string; userId: strin
 }
 
 async function buildIdMaps(tx: Tx, userId: string, workspace: PortableWorkspace): Promise<IdMaps> {
-  const [domains, projects, tasks, captures, notes, deadlines, reviews, scratchpads, preferences] = await Promise.all([
+  const [domains, projects, tasks, captures, notes, deadlines, reviews, dailyNotes, scratchpads, preferences] = await Promise.all([
     tx.domain.findMany({ where: { id: { in: workspace.domains.map((item) => item.id) } }, select: { id: true, userId: true } }),
     tx.project.findMany({ where: { id: { in: workspace.projects.map((item) => item.id) } }, select: { id: true, userId: true } }),
     tx.task.findMany({ where: { id: { in: workspace.tasks.map((item) => item.id) } }, select: { id: true, userId: true } }),
@@ -43,6 +44,7 @@ async function buildIdMaps(tx: Tx, userId: string, workspace: PortableWorkspace)
     tx.note.findMany({ where: { id: { in: workspace.notes.map((item) => item.id) } }, select: { id: true, userId: true } }),
     tx.deadline.findMany({ where: { id: { in: workspace.deadlines.map((item) => item.id) } }, select: { id: true, userId: true } }),
     tx.review.findMany({ where: { id: { in: workspace.reviews.map((item) => item.id) } }, select: { id: true, userId: true } }),
+    tx.dailyNote.findMany({ where: { id: { in: workspace.dailyNotes.map((item) => item.id) } }, select: { id: true, userId: true } }),
     tx.dashboardScratchpad.findMany({ where: { id: { in: workspace.dashboardScratchpads.map((item) => item.id) } }, select: { id: true, userId: true } }),
     tx.dashboardPreference.findMany({ where: { id: { in: workspace.dashboardPreferences.map((item) => item.id) } }, select: { id: true, userId: true } })
   ]);
@@ -55,6 +57,7 @@ async function buildIdMaps(tx: Tx, userId: string, workspace: PortableWorkspace)
     notes: mapIds(workspace.notes, notes, userId, "note"),
     deadlines: mapIds(workspace.deadlines, deadlines, userId, "deadline"),
     reviews: mapIds(workspace.reviews, reviews, userId, "review"),
+    dailyNotes: mapIds(workspace.dailyNotes, dailyNotes, userId, "daily-note"),
     dashboardScratchpads: mapIds(workspace.dashboardScratchpads, scratchpads, userId, "scratch"),
     dashboardPreferences: mapIds(workspace.dashboardPreferences, preferences, userId, "pref")
   };
@@ -79,6 +82,7 @@ async function clearWorkspace(tx: Tx, userId: string) {
     tx.note.deleteMany({ where: { userId } }),
     tx.deadline.deleteMany({ where: { userId } }),
     tx.review.deleteMany({ where: { userId } }),
+    tx.dailyNote.deleteMany({ where: { userId } }),
     tx.dashboardScratchpad.deleteMany({ where: { userId } }),
     tx.dashboardPreference.deleteMany({ where: { userId } }),
     tx.syncMutation.deleteMany({ where: { userId } })
@@ -199,6 +203,25 @@ async function writeWorkspace(tx: Tx, userId: string, workspace: PortableWorkspa
       updatedAt: new Date(item.updatedAt)
     };
     await tx.review.upsert({ where: { id }, create: { id, ...data }, update: data });
+  }
+
+  for (const item of workspace.dailyNotes) {
+    const mappedId = requiredMapped(maps.dailyNotes, item.id);
+    const existing = await tx.dailyNote.findUnique({
+      where: { userId_localDate: { userId, localDate: item.localDate } },
+      select: { id: true }
+    });
+    const data = {
+      localDate: item.localDate,
+      content: item.content,
+      createdAt: new Date(item.createdAt),
+      updatedAt: new Date(item.updatedAt)
+    };
+    if (existing) {
+      await tx.dailyNote.update({ where: { id: existing.id }, data });
+    } else {
+      await tx.dailyNote.create({ data: { id: mappedId, userId, ...data } });
+    }
   }
 
   const scratchpad = workspace.dashboardScratchpads[0];

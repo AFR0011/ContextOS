@@ -6,7 +6,7 @@ async function login(page: Page) {
   await page.getByLabel("Password").fill("contextos-demo-v011");
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 async function waitForOfflineReady(page: Page) {
@@ -68,7 +68,8 @@ test("offline date tombstone survives production hard reload, reconnect sync, an
   await expect.poll(async () => editableInputValueCount(page, title)).toBe(0);
   await expect.poll(async () => Boolean((await localDeadlineSnapshot(page, title))?.trashedAt), { timeout: 5_000 }).toBe(true);
 
-  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  await page.goto("/archive", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Archive", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Trash \(/ }).click();
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 

@@ -283,6 +283,7 @@ const requiredOwnedModels = [
   "Note",
   "Deadline",
   "Review",
+  "DailyNote",
   "DashboardScratchpad",
   "DashboardPreference",
   "SyncMutation"

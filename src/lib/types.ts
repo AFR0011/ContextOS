@@ -108,6 +108,14 @@ export interface Review {
   updatedAt: string;
 }
 
+export interface DailyNote {
+  id: string;
+  localDate: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DashboardScratchpad {
   id: string;
   content: string;
@@ -135,6 +143,7 @@ export interface WorkspaceData {
   notes: Note[];
   deadlines: Deadline[];
   reviews: Review[];
+  dailyNotes: DailyNote[];
   dashboardScratchpads: DashboardScratchpad[];
   dashboardPreferences: DashboardPreference[];
   serverSyncedAt: string;
@@ -158,6 +167,6 @@ export interface QueuedMutation {
   entityType: SyncEntityType;
   entityId: string;
   operation: "upsert" | "delete";
-  payload: Domain | Project | Task | Capture | Note | Deadline | Review | DashboardScratchpad | DashboardPreference | Record<string, unknown> | null;
+  payload: Domain | Project | Task | Capture | Note | Deadline | Review | DailyNote | DashboardScratchpad | DashboardPreference | Record<string, unknown> | null;
   createdAt: string;
 }

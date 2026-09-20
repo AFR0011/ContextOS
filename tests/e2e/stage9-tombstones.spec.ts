@@ -31,7 +31,7 @@ async function registerDisposableUser(page: Page) {
   const fixtureBody = await fixtureResponse.json().catch(() => null);
   expect(fixtureResponse.status(), JSON.stringify(fixtureBody)).toBe(200);
   await page.goto("/dashboard");
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   return { email, password };
 }
 
@@ -172,7 +172,7 @@ test("a stale startup bootstrap cannot overwrite a newer cached local mutation",
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await bootstrapCaptured;
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 
   const title = `Stage 9 startup race ${Date.now()}`;
   await page.getByRole("button", { name: "Dates", exact: true }).click();
@@ -211,7 +211,8 @@ test("an offline date tombstone persists locally, synchronizes after reconnect, 
   await expect.poll(async () => editableInputValueCount(page, title)).toBe(0);
   await expect.poll(async () => Boolean((await localDeadlineSnapshot(page, title))?.trashedAt), { timeout: 5_000 }).toBe(true);
 
-  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  await page.goto("/archive", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Archive", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Trash \(/ }).click();
   await expect(page.getByText(title, { exact: true })).toBeVisible();
   await expect(page.getByTestId("global-sync-indicator").first()).toContainText(/Offline|pending/);

@@ -27,6 +27,7 @@ async function bootstrapData(page: Page) {
     notes: unknown[];
     deadlines: unknown[];
     reviews: unknown[];
+    dailyNotes: unknown[];
     dashboardScratchpads: unknown[];
     dashboardPreferences: unknown[];
   };
@@ -41,7 +42,7 @@ async function loginDemo(page: Page) {
   const reset = await page.request.post("/api/reset-demo");
   expect(reset.ok()).toBeTruthy();
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 test("new accounts start clean, survive bootstrap, and reach useful work through first Area setup", async ({ page }) => {
@@ -55,6 +56,7 @@ test("new accounts start clean, survive bootstrap, and reach useful work through
   expect(data.notes).toHaveLength(0);
   expect(data.deadlines).toHaveLength(0);
   expect(data.reviews).toHaveLength(0);
+  expect(data.dailyNotes).toHaveLength(0);
   expect(data.dashboardScratchpads).toHaveLength(1);
   expect(data.dashboardPreferences).toHaveLength(1);
 
@@ -69,7 +71,7 @@ test("new accounts start clean, survive bootstrap, and reach useful work through
   await page.getByLabel("Area name").fill(areaName);
   await page.getByRole("button", { name: "Add Area" }).click();
   await expect(page.getByTestId("first-run-setup")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 
   await expect.poll(async () => (await bootstrapData(page)).domains.some((domain) => domain.name === areaName)).toBeTruthy();
 
@@ -103,7 +105,7 @@ test("first Area setup is usable on a narrow mobile viewport without horizontal 
   await page.getByLabel("Area name").fill("Personal");
   await page.getByRole("button", { name: "Add Area" }).click();
   await expect(page.getByTestId("first-run-setup")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 });
 
 test("quick Project conversion never silently files a Project into the Notes Area", async ({ page }) => {

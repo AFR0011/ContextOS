@@ -7,6 +7,7 @@ import type {
   CollectionName,
   DashboardPreference,
   DashboardScratchpad,
+  DailyNote,
   Deadline,
   Domain,
   Note,
@@ -41,6 +42,7 @@ export const emptyWorkspace = (): WorkspaceData => ({
   notes: [],
   deadlines: [],
   reviews: [],
+  dailyNotes: [],
   dashboardScratchpads: [],
   dashboardPreferences: [],
   serverSyncedAt: ""
@@ -81,6 +83,7 @@ function normalizeWorkspace(value: Partial<WorkspaceData> | null | undefined): W
     notes: value?.notes ?? [],
     deadlines,
     reviews: value?.reviews ?? [],
+    dailyNotes: value?.dailyNotes ?? [],
     dashboardScratchpads: value?.dashboardScratchpads ?? [],
     dashboardPreferences,
     serverSyncedAt: value?.serverSyncedAt ?? ""
@@ -134,7 +137,7 @@ export type TriageCaptureAction =
   | { type: "archive" }
   | { type: "delete" };
 
-type WorkspaceRecord = Domain | Project | Task | Capture | Note | Deadline | Review | DashboardScratchpad | DashboardPreference;
+type WorkspaceRecord = Domain | Project | Task | Capture | Note | Deadline | Review | DailyNote | DashboardScratchpad | DashboardPreference;
 
 interface LocalRecordChange {
   collection: CollectionName;
@@ -204,6 +207,7 @@ interface StoreApi {
   addNote: (data: { title: string; content?: string; projectId?: string | null; domainId: string }) => string;
   updateNote: (id: string, updates: Partial<Note>) => void;
   addReview: (type: ReviewType, responses: Record<string, string>) => void;
+  updateDailyNote: (localDate: string, content: string) => void;
   addDomain: (name: string) => void;
   updateDomain: (id: string, updates: Partial<Domain>) => void;
   updateDashboardScratchpad: (content: string) => void;
@@ -791,6 +795,20 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
           createdAt: ts,
           updatedAt: ts
         } satisfies Review);
+      },
+      updateDailyNote: (localDate, content) => {
+        const ts = now();
+        const existing = dataRef.current.dailyNotes.find((note) => note.localDate === localDate);
+        const note: DailyNote = existing
+          ? { ...existing, content }
+          : {
+              id: newId("daily-note"),
+              localDate,
+              content,
+              createdAt: ts,
+              updatedAt: ts
+            };
+        mutate("dailyNotes", note);
       },
       addDomain: (name) => {
         const ts = now();

@@ -6,7 +6,7 @@ async function login(page: Page) {
   await page.getByLabel("Password").fill("contextos-demo-v011");
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 async function waitForOfflineReady(page: Page) {
@@ -27,8 +27,8 @@ async function fillMarkdownEditor(editor: Locator, lines: string[]) {
   }
 }
 
-async function offlineCacheState(page: Page, text: string) {
-  return page.evaluate(async (expectedText) => {
+async function offlineDailyNoteState(page: Page, text: string, localDate: string) {
+  return page.evaluate(async ({ expectedText, localDate }) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open("contextos-offline-v1");
       request.onsuccess = () => resolve(request.result);
@@ -64,10 +64,10 @@ async function offlineCacheState(page: Page, text: string) {
 
     db.close();
     return {
-      hasScratchpad: Boolean(state.workspace?.dashboardScratchpads?.some((scratchpad: { content: string }) => scratchpad.content === expectedText)),
-      pendingCount: state.outbox.length
+      hasDailyNote: Boolean(state.workspace?.dailyNotes?.some((note: { localDate: string; content: string }) => note.localDate === localDate && note.content === expectedText)),
+      pendingDailyNotes: state.outbox.filter((mutation) => mutation.entityType === "dailyNotes").length
     };
-  }, text);
+  }, { expectedText: text, localDate });
 }
 
 async function activeProjectId(page: Page) {
@@ -101,7 +101,7 @@ test("verified readiness means the complete versioned shell is cached", async ({
 
   const snapshot = await page.evaluate(async () => {
     const cacheNames = await caches.keys();
-    const cacheName = cacheNames.find((name) => name === "contextos-shell-v4");
+    const cacheName = cacheNames.find((name) => name === "contextos-shell-v5");
     if (!cacheName) return { cacheName: null, version: null, resources: [] as string[], missing: ["cache"] };
 
     const cache = await caches.open(cacheName);
@@ -117,8 +117,8 @@ test("verified readiness means the complete versioned shell is cached", async ({
     return { cacheName, version: manifest.version ?? null, resources, missing };
   });
 
-  expect(snapshot.cacheName).toBe("contextos-shell-v4");
-  expect(snapshot.version).toBe("v4");
+  expect(snapshot.cacheName).toBe("contextos-shell-v5");
+  expect(snapshot.version).toBe("v5");
   expect(snapshot.resources).toContain("/dashboard");
   expect(snapshot.resources).toContain("/manifest.webmanifest");
   expect(snapshot.resources.some((resource) => resource.startsWith("/_next/static/"))).toBe(true);
@@ -135,24 +135,26 @@ test("previously authenticated workspace cold-reopens offline without route warm
   const reopened = await context.newPage();
   const response = await reopened.goto("/dashboard", { waitUntil: "domcontentloaded" });
   expect(response?.status()).not.toBe(503);
-  await expect(reopened.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(reopened.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(reopened.getByTestId("global-sync-indicator").first()).toContainText(/Offline|Loaded cached data\. Failed to fetch/i);
   await expect(reopened.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 });
 
-test("offline scratchpad edit survives hard reload with its queued mutation", async ({ page, context }) => {
+test("offline Daily Note edit survives hard reload with its queued mutation", async ({ page, context }) => {
+  const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
   await waitForOfflineReady(page);
   await context.setOffline(true);
 
-  const text = `offline scratchpad ${Date.now()}`;
-  await fillMarkdownEditor(page.getByTestId("dashboard-scratchpad"), [text]);
-  await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
+  const today = localDateKey();
+  const text = `offline daily note ${Date.now()}`;
+  await page.getByLabel("Daily Notes").fill(text);
+  await expect.poll(() => offlineDailyNoteState(page, text, today)).toMatchObject({ hasDailyNote: true, pendingDailyNotes: 1 });
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
-  await expect(markdownLine(page.getByTestId("dashboard-scratchpad"), 0)).toHaveValue(text);
-  await expect.poll(() => offlineCacheState(page, text)).toMatchObject({ hasScratchpad: true, pendingCount: 1 });
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Daily Notes")).toHaveValue(text);
+  await expect.poll(() => offlineDailyNoteState(page, text, today)).toMatchObject({ hasDailyNote: true, pendingDailyNotes: 1 });
 });
 
 test("core workspace routes and a dynamic project cold-open and hard-refresh offline", async ({ page, context }) => {
@@ -164,7 +166,7 @@ test("core workspace routes and a dynamic project cold-open and hard-refresh off
   await context.setOffline(true);
 
   const routes: Array<[string, (page: Page) => Promise<void>]> = [
-    ["/dashboard", async (routePage) => expect(routePage.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible()],
+    ["/dashboard", async (routePage) => expect(routePage.getByRole("heading", { name: "Today", exact: true })).toBeVisible()],
     ["/inbox", async (routePage) => expect(routePage.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible()],
     ["/projects", async (routePage) => expect(routePage.getByRole("heading", { name: "Projects", exact: true })).toBeVisible()],
     ["/dates", async (routePage) => expect(routePage.getByRole("heading", { name: "Dates", exact: true })).toBeVisible()],

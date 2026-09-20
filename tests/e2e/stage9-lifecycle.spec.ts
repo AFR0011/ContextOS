@@ -10,7 +10,7 @@ async function login(page: Page, email = DEMO_EMAIL, password = DEMO_PASSWORD) {
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 async function localStateForEmail(page: Page, email: string) {
@@ -113,6 +113,7 @@ async function seedOtherLocalUser(page: Page) {
       notes: [],
       deadlines: [],
       reviews: [],
+      dailyNotes: [],
       dashboardScratchpads: [],
       dashboardPreferences: [],
       serverSyncedAt: verifiedAt
@@ -145,7 +146,7 @@ async function registerDisposableUser(page: Page) {
   const fixtureBody = await fixtureResponse.json().catch(() => null);
   expect(fixtureResponse.status(), JSON.stringify(fixtureBody)).toBe(200);
   await page.goto("/dashboard");
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   return { email, password };
 }
 
@@ -179,7 +180,7 @@ test("failed requested sync cancels logout and keeping pending changes preserves
 
   const mutationId = await seedPendingOutbox(page, DEMO_EMAIL);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByTestId("global-sync-indicator").first()).toContainText(/1 pending|Syncing/);
 
   await page.getByRole("button", { name: "Log out", exact: true }).click();

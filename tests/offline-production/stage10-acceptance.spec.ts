@@ -6,7 +6,7 @@ async function login(page: Page) {
   await page.getByLabel("Password").fill("contextos-demo-v011");
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 async function waitForOfflineReady(page: Page) {
@@ -34,7 +34,7 @@ test("offline browser history and functional local search work in the production
 
   await page.goBack({ waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 
   await page.goForward({ waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/projects$/);

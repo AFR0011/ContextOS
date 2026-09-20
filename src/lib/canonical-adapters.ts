@@ -123,7 +123,13 @@ export function adaptLegacyWorkspace(source: WorkspaceData): CanonicalAdaptation
       projects,
       tasks,
       dates: [],
-      dailyNotes: [],
+      dailyNotes: (source.dailyNotes ?? []).map((note) => ({
+        id: note.id,
+        localDate: note.localDate,
+        content: note.content,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt
+      })),
       insights: []
     },
     discarded

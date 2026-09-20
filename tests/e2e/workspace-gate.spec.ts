@@ -9,14 +9,14 @@ async function login(page: Page) {
   await page.getByLabel("Password").fill("contextos-demo-v011");
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
 async function warmOfflineShell(page: Page) {
   const readiness = page.getByTestId("offline-shell-readiness");
   await expect(readiness).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByTestId("offline-shell-readiness")).toHaveAttribute("data-ready", "true");
 }
 
@@ -61,6 +61,7 @@ async function seedSecondLocalWorkspace(page: Page) {
       notes: [],
       deadlines: [],
       reviews: [],
+      dailyNotes: [],
       dashboardScratchpads: [],
       dashboardPreferences: [],
       serverSyncedAt: ""
@@ -98,7 +99,7 @@ test("a single previously verified local workspace can reopen after remote verif
   await page.reload({ waitUntil: "domcontentloaded" });
 
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByTestId("global-sync-indicator").first()).toContainText("Offline");
 });
 
@@ -117,7 +118,7 @@ test("offline startup without a previously authenticated local workspace is bloc
   await expect(blocked).toBeVisible();
   await expect(blocked).toContainText("Connect to open this workspace");
   await expect(blocked).toContainText("sign in once");
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toHaveCount(0);
 });
 
 test("offline startup refuses to guess when multiple local identities have workspaces", async ({ page, context }) => {
@@ -134,7 +135,7 @@ test("offline startup refuses to guess when multiple local identities have works
   await expect(blocked).toContainText("will not guess which identity to open");
   await expect(page.getByTestId("local-account-chooser")).toBeVisible();
   await expect(page.getByRole("button", { name: second.email })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toHaveCount(0);
 });
 
 test("multiple verified local workspaces require and honor explicit offline account selection", async ({ page, context }) => {

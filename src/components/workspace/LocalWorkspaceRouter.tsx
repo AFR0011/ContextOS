@@ -12,7 +12,8 @@ import {
 } from "@/components/workspace/Batch2LifecycleViews";
 import { ArchiveLifecycleView } from "@/components/workspace/ArchiveLifecycleView";
 import { AreaRequiredView, AreasSetupView, FirstRunSetup } from "@/components/workspace/FirstRunSetup";
-import { ProductInboxView } from "@/components/workspace/ProductInboxView";\nimport { LifeOSFoundationView } from "@/components/workspace/LifeOSFoundationView";
+import { ProductInboxView } from "@/components/workspace/ProductInboxView";
+import { LifeOSFoundationView } from "@/components/workspace/LifeOSFoundationView";
 import { ProductSearchView } from "@/components/workspace/ProductSearchView";
 import { ProductSettingsView } from "@/components/workspace/ProductSettingsView";
 import { ResourcesLifecycleView } from "@/components/workspace/ResourcesLifecycleView";

@@ -7,6 +7,7 @@ import type {
   CollectionName,
   DashboardPreference,
   DashboardScratchpad,
+  ContextDate,
   DailyNote,
   Deadline,
   Domain,
@@ -41,6 +42,7 @@ export const emptyWorkspace = (): WorkspaceData => ({
   captures: [],
   notes: [],
   deadlines: [],
+  contextDates: [],
   reviews: [],
   dailyNotes: [],
   dashboardScratchpads: [],
@@ -82,6 +84,7 @@ function normalizeWorkspace(value: Partial<WorkspaceData> | null | undefined): W
     captures: value?.captures ?? [],
     notes: value?.notes ?? [],
     deadlines,
+    contextDates: value?.contextDates ?? [],
     reviews: value?.reviews ?? [],
     dailyNotes: value?.dailyNotes ?? [],
     dashboardScratchpads: value?.dashboardScratchpads ?? [],
@@ -137,7 +140,7 @@ export type TriageCaptureAction =
   | { type: "archive" }
   | { type: "delete" };
 
-type WorkspaceRecord = Domain | Project | Task | Capture | Note | Deadline | Review | DailyNote | DashboardScratchpad | DashboardPreference;
+type WorkspaceRecord = Domain | Project | Task | Capture | Note | Deadline | ContextDate | Review | DailyNote | DashboardScratchpad | DashboardPreference;
 
 interface LocalRecordChange {
   collection: CollectionName;
@@ -204,6 +207,17 @@ interface StoreApi {
   updateProject: (id: string, updates: Partial<Project>) => void;
   addDeadline: (data: { title: string; date: string; time?: string | null; location?: string; projectId?: string | null; notes?: string }) => string;
   updateDeadline: (id: string, updates: Partial<Deadline>) => void;
+  addContextDate: (data: {
+    title: string;
+    kind: ContextDate["kind"];
+    date: string;
+    startTime?: string | null;
+    endTime?: string | null;
+    details?: string;
+    projectId?: string | null;
+    domainId?: string | null;
+  }) => string;
+  updateContextDate: (id: string, updates: Partial<ContextDate>) => void;
   addNote: (data: { title: string; content?: string; projectId?: string | null; domainId: string }) => string;
   updateNote: (id: string, updates: Partial<Note>) => void;
   addReview: (type: ReviewType, responses: Record<string, string>) => void;
@@ -764,6 +778,36 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
       updateDeadline: (id, updates) => {
         const deadline = byId(dataRef.current.deadlines, id);
         if (deadline) mutate("deadlines", { ...deadline, ...updates });
+      },
+      addContextDate: (input) => {
+        const ts = now();
+        const hasProject = Boolean(input.projectId);
+        const hasArea = Boolean(input.domainId);
+        if (hasProject === hasArea) throw new Error("ContextDate must belong to exactly one Project or Area.");
+        const contextDate: ContextDate = {
+          id: newId("date"),
+          title: input.title.trim(),
+          kind: input.kind,
+          date: input.date,
+          startTime: input.startTime ?? null,
+          endTime: input.endTime ?? null,
+          details: input.details ?? "",
+          projectId: input.projectId ?? null,
+          domainId: input.domainId ?? null,
+          createdAt: ts,
+          updatedAt: ts
+        };
+        mutate("contextDates", contextDate);
+        return contextDate.id;
+      },
+      updateContextDate: (id, updates) => {
+        const current = byId(dataRef.current.contextDates, id);
+        if (!current) return;
+        const next = { ...current, ...updates };
+        const hasProject = Boolean(next.projectId);
+        const hasArea = Boolean(next.domainId);
+        if (hasProject === hasArea) throw new Error("ContextDate must belong to exactly one Project or Area.");
+        mutate("contextDates", next);
       },
       addNote: (input) => {
         const ts = now();

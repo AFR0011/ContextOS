@@ -622,26 +622,50 @@ test("search results open surfaces where task and standalone note records are vi
   await expect(page.getByText("Practice Schedule")).toBeVisible();
 });
 
-test("areas and resources expose PARA navigation", async ({ page }) => {
+test("Area detail exposes canonical Projects, direct Tasks, and direct Dates", async ({ page }) => {
+  const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
   await page.goto("/areas");
-  await expect(page.getByRole("heading", { name: "Areas" })).toBeVisible();
-  await expect(page.getByText("Engineering")).toBeVisible();
-  await page.getByRole("button", { name: "Open Engineering" }).click();
-  await expect(page.getByText("Next: Use the dashboard canvas during the next real work session.")).toBeVisible();
-  const areaProject = `Area project ${Date.now()}`;
-  await page.getByPlaceholder("New project in Engineering...").fill(areaProject);
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  const areaProjectButton = page.getByRole("main").getByRole("button", { name: areaProject, exact: true });
-  await expect(areaProjectButton).toBeVisible();
-  await page.getByRole("button", { name: `Delete ${areaProject}` }).click();
-  await expect(areaProjectButton).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Areas", exact: true })).toBeVisible();
 
+  await page.getByText("Engineering", { exact: true }).first().click();
+  await expect(page.getByTestId("area-detail")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Active Projects", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Direct Tasks", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Direct Dates", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Archived Projects", exact: true })).toBeVisible();
+
+  const areaProject = `Area project ${Date.now()}`;
+  await page.getByPlaceholder("New Project name").fill(areaProject);
+  await page.getByPlaceholder("Objective (optional)").fill("Verify flat Area ownership");
+  await page.getByRole("button", { name: "Add Project", exact: true }).click();
+  await expect(page).toHaveURL(/\/projects\//);
+  await expect(page.getByRole("heading", { name: areaProject, exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Areas", exact: true }).click();
+  await page.getByText("Engineering", { exact: true }).first().click();
+  const areaDate = `Area event ${Date.now()}`;
+  const dates = page.getByTestId("area-dates");
+  await dates.getByLabel("Date kind").selectOption("event");
+  await dates.getByPlaceholder("Add a direct Date...").fill(areaDate);
+  await dates.getByLabel("Date").fill(localDateKey());
+  await dates.getByLabel("Date start time").fill("15:30");
+  await dates.getByLabel("Date end time").fill("16:00");
+  await dates.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(dates.getByText(areaDate, { exact: true })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByTestId("area-dates").getByText(areaDate, { exact: true })).toBeVisible();
+});
+
+test("legacy Resources remain accessible until retirement", async ({ page }) => {
+  await login(page);
   await page.goto("/resources");
   await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();
   await expect(page.getByText("Practice Schedule")).toBeVisible();
   await expect(page.getByTestId("practice-schedule-table")).toContainText("Status");
   await expect(page.getByTestId("practice-schedule-table")).toContainText("Refine");
+
   const title = `Vocabulary resource ${Date.now()}`;
   await page.getByPlaceholder("Resource title...").fill(title);
   await page.getByRole("button", { name: "Add", exact: true }).click();

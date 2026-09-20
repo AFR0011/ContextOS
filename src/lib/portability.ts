@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { WorkspaceData } from "./types";
+import { dateKeyToUtcDate } from "./dates";
 
 export const CONTEXTOS_EXPORT_FORMAT = "contextos-workspace" as const;
 export const CONTEXTOS_EXPORT_VERSION = 1 as const;
@@ -8,6 +9,8 @@ const idSchema = z.string().min(1).max(200);
 const timestampSchema = z.string().min(1).max(100).refine((value) => !Number.isNaN(Date.parse(value)), "Invalid timestamp.");
 const nullableTimestampSchema = timestampSchema.nullable();
 const dateKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const contextDateKeySchema = dateKeySchema.refine((value) => Boolean(dateKeyToUtcDate(value)), "Invalid calendar date.");
+const timeKeySchema = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
 
 const domainSchema = z.object({
   id: idSchema,
@@ -98,17 +101,34 @@ const reviewSchema = z.object({
 
 const contextDateSchema = z.object({
   id: idSchema,
-  title: z.string(),
+  title: z.string().trim().min(1).max(500),
   kind: z.enum(["event", "deadline"]),
-  date: dateKeySchema,
-  startTime: z.string().nullable(),
-  endTime: z.string().nullable(),
+  date: contextDateKeySchema,
+  startTime: timeKeySchema.nullable(),
+  endTime: timeKeySchema.nullable(),
   details: z.string(),
   projectId: idSchema.nullable(),
   domainId: idSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema
-}).strict();
+}).strict().superRefine((date, ctx) => {
+  const hasProject = Boolean(date.projectId);
+  const hasArea = Boolean(date.domainId);
+  if (hasProject === hasArea) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["projectId"],
+      message: "ContextDate must reference exactly one Project or Area."
+    });
+  }
+  if (date.kind === "deadline" && date.endTime !== null) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["endTime"],
+      message: "Deadline endTime must be null."
+    });
+  }
+});
 
 const dailyNoteSchema = z.object({
   id: idSchema,

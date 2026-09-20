@@ -96,6 +96,20 @@ const reviewSchema = z.object({
   updatedAt: timestampSchema
 }).strict();
 
+const contextDateSchema = z.object({
+  id: idSchema,
+  title: z.string(),
+  kind: z.enum(["event", "deadline"]),
+  date: dateKeySchema,
+  startTime: z.string().nullable(),
+  endTime: z.string().nullable(),
+  details: z.string(),
+  projectId: idSchema.nullable(),
+  domainId: idSchema.nullable(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema
+}).strict();
+
 const dailyNoteSchema = z.object({
   id: idSchema,
   localDate: dateKeySchema,
@@ -130,6 +144,7 @@ export const portableWorkspaceSchema = z.object({
   captures: z.array(captureSchema),
   notes: z.array(noteSchema),
   deadlines: z.array(deadlineSchema),
+  contextDates: z.array(contextDateSchema).default([]),
   reviews: z.array(reviewSchema),
   dailyNotes: z.array(dailyNoteSchema).default([]),
   dashboardScratchpads: z.array(dashboardScratchpadSchema).max(1),
@@ -150,6 +165,7 @@ export const workspaceExportBundleSchema = z.object({
     captures: new Set<string>(),
     notes: new Set<string>(),
     deadlines: new Set<string>(),
+    contextDates: new Set<string>(),
     reviews: new Set<string>(),
     dailyNotes: new Set<string>(),
     dashboardScratchpads: new Set<string>(),
@@ -215,6 +231,21 @@ export const workspaceExportBundleSchema = z.object({
     }
   }
 
+  for (const contextDate of workspace.contextDates) {
+    const hasProject = Boolean(contextDate.projectId);
+    const hasArea = Boolean(contextDate.domainId);
+    if (hasProject === hasArea) {
+      ctx.addIssue({ code: "custom", path: ["workspace", "contextDates"], message: `Date ${contextDate.id} must reference exactly one Project or Area.` });
+      continue;
+    }
+    if (contextDate.projectId && !sets.projects.has(contextDate.projectId)) {
+      ctx.addIssue({ code: "custom", path: ["workspace", "contextDates"], message: `Date ${contextDate.id} references a missing Project.` });
+    }
+    if (contextDate.domainId && !sets.domains.has(contextDate.domainId)) {
+      ctx.addIssue({ code: "custom", path: ["workspace", "contextDates"], message: `Date ${contextDate.id} references a missing Area.` });
+    }
+  }
+
   for (const deadline of workspace.deadlines) {
     if (deadline.projectId && !sets.projects.has(deadline.projectId)) {
       ctx.addIssue({ code: "custom", path: ["workspace", "deadlines"], message: `Date ${deadline.id} references a missing Project.` });
@@ -258,6 +289,7 @@ export function createWorkspaceExportBundle(data: WorkspaceData, exportedAt = ne
       captures: data.captures,
       notes: data.notes,
       deadlines: data.deadlines,
+      contextDates: data.contextDates,
       reviews: data.reviews,
       dailyNotes: data.dailyNotes,
       dashboardScratchpads: data.dashboardScratchpads,
@@ -273,7 +305,8 @@ export function portabilityCounts(workspace: PortableWorkspace) {
     tasks: workspace.tasks.length,
     captures: workspace.captures.length,
     resources: workspace.notes.length,
-    dates: workspace.deadlines.length,
+    dates: workspace.contextDates.length,
+    legacyDates: workspace.deadlines.length,
     reviews: workspace.reviews.length,
     dailyNotes: workspace.dailyNotes.length,
     scratchpads: workspace.dashboardScratchpads.length,

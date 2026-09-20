@@ -13,6 +13,7 @@ const CORE_WORKSPACE_ROUTES = new Set([
   "/deadlines",
   "/areas",
   "/resources",
+  "/lifeos",
   "/archive",
   "/search",
   "/reviews",

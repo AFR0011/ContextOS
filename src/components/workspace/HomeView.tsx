@@ -99,10 +99,11 @@ function DailyNoteEditor({
 }
 
 function taskContext(task: CanonicalTask, projects: { id: string; name: string }[], areas: { id: string; name: string }[]) {
-  if (task.parent.type === "project") {
-    return projects.find((project) => project.id === task.parent.projectId)?.name ?? "";
+  const parent = task.parent;
+  if (parent.type === "project") {
+    return projects.find((project) => project.id === parent.projectId)?.name ?? "";
   }
-  return areas.find((area) => area.id === task.parent.areaId)?.name ?? "";
+  return areas.find((area) => area.id === parent.areaId)?.name ?? "";
 }
 
 export function HomeView() {

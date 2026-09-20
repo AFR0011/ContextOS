@@ -120,7 +120,7 @@ if (payload?.user?.email !== expectedEmail) {
 }
 const data = payload?.data;
 if (!data) throw new Error('Container bootstrap did not return workspace data.');
-for (const key of ['domains', 'projects', 'tasks', 'captures', 'notes', 'deadlines', 'reviews', 'dailyNotes']) {
+for (const key of ['domains', 'projects', 'tasks', 'captures', 'notes', 'deadlines', 'contextDates', 'reviews', 'dailyNotes']) {
   if (!Array.isArray(data[key]) || data[key].length !== 0) {
     throw new Error(`Fresh operator-created workspace should have zero ${key}.`);
   }

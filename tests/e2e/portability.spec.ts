@@ -89,6 +89,11 @@ function assertRelationships(workspace: any) {
     if (date.projectId) expect(projects.has(date.projectId)).toBe(true);
     for (const taskId of date.taskIds) expect(tasks.has(taskId)).toBe(true);
   }
+  for (const date of workspace.contextDates ?? []) {
+    expect(Boolean(date.projectId) !== Boolean(date.domainId)).toBe(true);
+    if (date.projectId) expect(projects.has(date.projectId)).toBe(true);
+    if (date.domainId) expect(domains.has(date.domainId)).toBe(true);
+  }
   for (const capture of workspace.captures) {
     if (capture.convertedToId) expect(targets.has(capture.convertedToId)).toBe(true);
   }
@@ -126,6 +131,32 @@ test("portability schema rejects unsupported versions, dangling references, and 
         { ...base.workspace.projects[0], id: "proj-b", name: "B", parentProjectId: "proj-a" }
       ]
     }
+  }).success).toBe(false);
+
+  const contextDate = {
+    id: "date-a",
+    title: "A",
+    kind: "deadline",
+    date: "2026-09-20",
+    startTime: null,
+    endTime: null,
+    details: "",
+    projectId: "proj-a",
+    domainId: null,
+    createdAt: now,
+    updatedAt: now
+  };
+  expect(workspaceExportBundleSchema.safeParse({
+    ...base,
+    workspace: { ...base.workspace, contextDates: [contextDate] }
+  }).success).toBe(true);
+  expect(workspaceExportBundleSchema.safeParse({
+    ...base,
+    workspace: { ...base.workspace, contextDates: [{ ...contextDate, projectId: null }] }
+  }).success).toBe(false);
+  expect(workspaceExportBundleSchema.safeParse({
+    ...base,
+    workspace: { ...base.workspace, contextDates: [{ ...contextDate, domainId: "dom-a" }] }
   }).success).toBe(false);
 });
 

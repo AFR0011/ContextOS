@@ -69,8 +69,8 @@ test("dashboard scratchpad flushes a pending edit when navigating before autosav
 
   await markdownLine(editor, 0).fill(note);
   await expect(page.getByText("Autosaving...", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Inbox", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Projects", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
 
   await expect.poll(() => dashboardScratchpadContent(page)).toContain(note);
   await page.getByRole("button", { name: "Dashboard", exact: true }).click();

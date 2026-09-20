@@ -64,7 +64,8 @@ test("Home projects only planned-today tasks and derives today context", async (
   await expect(page.getByTestId("home-contexts")).toContainText("Engineering");
 
   await expect(page.getByRole("heading", { name: "Insights", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Upcoming", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Upcoming", exact: true })).toBeVisible();
+  await expect(page.getByTestId("home-upcoming")).toContainText("ContextOS verification pass");
   await expect(page.getByTestId("dashboard-scratchpad")).toHaveCount(0);
 });
 

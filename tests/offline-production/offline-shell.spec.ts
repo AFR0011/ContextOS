@@ -170,6 +170,7 @@ test("core workspace routes and a dynamic project cold-open and hard-refresh off
     ["/dates", async (routePage) => expect(routePage.getByRole("heading", { name: "Dates", exact: true })).toBeVisible()],
     ["/areas", async (routePage) => expect(routePage.getByRole("heading", { name: "Areas", exact: true })).toBeVisible()],
     ["/resources", async (routePage) => expect(routePage.getByRole("heading", { name: "Resources", exact: true })).toBeVisible()],
+    ["/lifeos", async (routePage) => expect(routePage.getByRole("heading", { name: "Module hub", exact: true })).toBeVisible()],
     ["/search", async (routePage) => expect(routePage.getByRole("heading", { name: "Search", exact: true })).toBeVisible()],
     ["/archive", async (routePage) => expect(routePage.getByRole("heading", { name: "Archive", exact: true })).toBeVisible()],
     ["/reviews", async (routePage) => expect(routePage.getByRole("heading", { name: "Reviews", exact: true })).toBeVisible()],

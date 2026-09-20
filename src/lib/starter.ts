@@ -27,6 +27,7 @@ export async function clearWorkspace(tx: Tx, userId: string) {
   await tx.syncMutation.deleteMany({ where: { userId } });
   await tx.dashboardPreference.deleteMany({ where: { userId } });
   await tx.dashboardScratchpad.deleteMany({ where: { userId } });
+  await tx.dailyNote.deleteMany({ where: { userId } });
   await tx.review.deleteMany({ where: { userId } });
   await tx.deadline.deleteMany({ where: { userId } });
   await tx.note.deleteMany({ where: { userId } });

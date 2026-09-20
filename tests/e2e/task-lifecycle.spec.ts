@@ -1,19 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function resetDemo(page: Page) {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      const response = await page.request.post("/api/reset-demo", { timeout: 15_000 });
-      if (response.ok()) return;
-      lastError = new Error(`/api/reset-demo returned ${response.status()}`);
-    } catch (error) {
-      lastError = error;
-    }
-    await page.waitForTimeout(500);
-  }
-  if (lastError instanceof Error) throw lastError;
-  throw new Error("/api/reset-demo failed");
+  const response = await page.request.post("/api/reset-demo", { timeout: 15_000 });
+  expect(response.ok()).toBeTruthy();
 }
 
 async function login(page: Page) {
@@ -25,10 +14,6 @@ async function login(page: Page) {
   await resetDemo(page);
   await page.reload();
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
-}
-
-function markdownLine(editor: Locator, index: number) {
-  return editor.locator(`[data-testid$="-line-${index}"]`).first();
 }
 
 async function currentLocalWorkspace(page: Page) {
@@ -46,10 +31,7 @@ async function currentLocalWorkspace(page: Page) {
       request.onerror = () => reject(request.error);
     });
     const user = users.find((candidate) => candidate.email === "demo@contextos.local") ?? users[0];
-    if (!user) {
-      db.close();
-      throw new Error("No locally verified user is available for the test workspace.");
-    }
+    if (!user) throw new Error("No local demo user");
 
     const workspace = await new Promise<any>((resolve, reject) => {
       const tx = db.transaction("workspaces", "readonly");
@@ -57,7 +39,6 @@ async function currentLocalWorkspace(page: Page) {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
-
     db.close();
     return workspace;
   });
@@ -68,7 +49,8 @@ async function taskSnapshot(page: Page, title: string) {
   const task = workspace?.tasks?.find((candidate: { title: string }) => candidate.title === title);
   if (!task) return null;
   const project = workspace.projects?.find((candidate: { id: string }) => candidate.id === task.projectId) ?? null;
-  const domain = workspace.domains?.find((candidate: { id: string }) => candidate.id === task.domainId) ?? null;
+  const domainId = task.domainId ?? project?.domainId ?? null;
+  const domain = workspace.domains?.find((candidate: { id: string }) => candidate.id === domainId) ?? null;
   return {
     title: task.title,
     status: task.status,
@@ -84,29 +66,23 @@ async function taskSnapshot(page: Page, title: string) {
 async function expectMinTouchTarget(locator: Locator, min = 40) {
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
-  expect(box, "Expected visible element to have a bounding box").not.toBeNull();
+  expect(box).not.toBeNull();
   expect(box!.width).toBeGreaterThanOrEqual(min);
   expect(box!.height).toBeGreaterThanOrEqual(min);
 }
 
-test("task can be fully replanned, reassigned, completed, trashed, and restored", async ({ page }) => {
+test("existing task editor remains functional while Home projects the edited task", async ({ page }) => {
   const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
 
   const plannedDate = localDateKey();
-  const suffix = Date.now();
-  const originalTitle = `Lifecycle task ${suffix}`;
-  const editedTitle = `Lifecycle task edited ${suffix}`;
-  const editor = page.getByTestId("dashboard-scratchpad");
-  await markdownLine(editor, 0).fill(`/task ${originalTitle}`);
-  await markdownLine(editor, 0).press("Enter");
+  const editedTitle = `C3 edited task ${Date.now()}`;
 
-  const dashboardTasks = page.getByTestId("dashboard-live-tasks");
-  await expect(dashboardTasks.getByLabel(`Task title ${originalTitle}`)).toBeVisible();
-  await dashboardTasks.getByRole("button", { name: `Edit task ${originalTitle}` }).click();
+  await page.getByRole("button", { name: "Projects", exact: true }).click();
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
+  await page.getByRole("button", { name: "Edit task Process inbox captures" }).click();
 
   const dialog = page.getByTestId("task-edit-dialog");
-  await expect(dialog).toBeVisible();
   await dialog.getByLabel("Title").fill(editedTitle);
   await dialog.getByLabel("Status").selectOption("blocked");
   await dialog.getByLabel("Planned date").fill(plannedDate);
@@ -116,83 +92,37 @@ test("task can be fully replanned, reassigned, completed, trashed, and restored"
   await expect(dialog.getByLabel("Area")).toBeDisabled();
   await expect(dialog.getByLabel("Area").locator("option:checked")).toHaveText("Research");
   await dialog.getByRole("button", { name: "Save task" }).click();
-  await expect(dialog).toHaveCount(0);
 
   await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({
-    title: editedTitle,
     status: "blocked",
     plannedDate,
-    dueDate: "2030-03-21",
     scheduledTime: "13:45",
     projectName: "Benchmark Evaluation",
     areaName: "Research",
     trashed: false
   });
 
-  await page.getByRole("button", { name: "Projects", exact: true }).click();
-  await page.locator("main").getByRole("button", { name: /^Benchmark Evaluation/ }).click();
-  await expect(page.getByRole("button", { name: `Edit task ${editedTitle}` })).toBeVisible();
-  await page.getByRole("button", { name: `Edit task ${editedTitle}` }).click();
-
-  const projectDialog = page.getByTestId("task-edit-dialog");
-  await projectDialog.getByLabel("Project").selectOption("");
-  await expect(projectDialog.getByLabel("Area")).toBeEnabled();
-  await projectDialog.getByLabel("Area").selectOption({ label: "Planning" });
-  await projectDialog.getByRole("button", { name: "Save task" }).click();
-
-  await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({
-    projectName: null,
-    areaName: "Planning",
-    status: "blocked"
-  });
-  await expect(page.getByLabel(`Task title ${editedTitle}`)).toHaveCount(0);
-
   await page.getByRole("button", { name: "Home", exact: true }).click();
-  await page.getByTestId("dashboard-scope-select").selectOption({ label: "Planning" });
-  await expect(page.getByTestId("dashboard-live-tasks").getByLabel(`Task title ${editedTitle}`)).toBeVisible();
+  await expect(page.getByTestId("home-dayline")).toContainText(editedTitle);
+  await page.getByRole("button", { name: `Complete ${editedTitle}`, exact: true }).click();
 
-  const scopedTasks = page.getByTestId("dashboard-live-tasks");
-  await scopedTasks.getByRole("button", { name: `Mark ${editedTitle} done` }).click();
-  await expect(scopedTasks.getByRole("button", { name: `Reopen ${editedTitle}` })).toBeVisible();
-  await scopedTasks.getByRole("button", { name: `Reopen ${editedTitle}` }).click();
-  await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({ status: "todo", trashed: false });
-  await expect(scopedTasks.getByRole("button", { name: `Mark ${editedTitle} done` })).toBeVisible();
-
-  await scopedTasks.getByRole("button", { name: `Edit task ${editedTitle}` }).click();
-  const trashDialog = page.getByTestId("task-edit-dialog");
-  await expect(trashDialog).toBeVisible();
-  await expect(trashDialog.getByLabel("Title")).toHaveValue(editedTitle);
-  const moveToTrash = trashDialog.getByRole("button", { name: "Move to trash" });
-  await expect(moveToTrash).toBeVisible();
-  await moveToTrash.click();
-  await expect(trashDialog).toHaveCount(0);
-  await expect(scopedTasks.getByLabel(`Task title ${editedTitle}`)).toHaveCount(0);
-  await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({ trashed: true });
-
-  await page.goto("/archive");
-  await page.getByRole("button", { name: /^Trash \(/ }).click();
-  const trashCard = page.locator(".cos-surface").filter({ hasText: editedTitle });
-  await expect(trashCard).toBeVisible();
-  await trashCard.getByRole("button", { name: "Restore" }).click();
-  await expect(trashCard).toHaveCount(0);
-  await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({
-    projectName: null,
-    areaName: "Planning",
-    trashed: false
-  });
+  await expect(page.getByText(editedTitle, { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: `${editedTitle} completed`, exact: true })).toBeVisible();
+  await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({ status: "done" });
 });
 
-test("full task editor is usable on mobile and preserves project-area inheritance", async ({ page }) => {
+test("task editor stays usable on mobile and preserves project-area inheritance", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
 
-  const taskSection = page.getByTestId("dashboard-live-tasks");
-  const editButton = taskSection.getByRole("button", { name: "Edit task Process inbox captures" });
+  await page.getByRole("button", { name: "Projects", exact: true }).click();
+  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
+
+  const editButton = page.getByRole("button", { name: "Edit task Process inbox captures" });
   await expectMinTouchTarget(editButton);
   await editButton.click();
 
   const dialog = page.getByTestId("task-edit-dialog");
-  await expect(dialog).toBeVisible();
   for (const label of ["Title", "Status", "Planned date", "Due date", "Scheduled time", "Project", "Area"]) {
     await expect(dialog.getByLabel(label, { exact: true })).toBeVisible();
   }

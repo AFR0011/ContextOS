@@ -158,6 +158,14 @@ test("portability schema rejects unsupported versions, dangling references, and 
     ...base,
     workspace: { ...base.workspace, contextDates: [{ ...contextDate, domainId: "dom-a" }] }
   }).success).toBe(false);
+  expect(workspaceExportBundleSchema.safeParse({
+    ...base,
+    workspace: { ...base.workspace, contextDates: [{ ...contextDate, startTime: "25:99" }] }
+  }).success).toBe(false);
+  expect(workspaceExportBundleSchema.safeParse({
+    ...base,
+    workspace: { ...base.workspace, contextDates: [{ ...contextDate, endTime: "18:00" }] }
+  }).success).toBe(false);
 });
 
 test("replace import round-trips the complete workspace and blocks pre-restore queued mutations", async ({ page }) => {

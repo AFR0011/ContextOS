@@ -1,5 +1,5 @@
-import WorkspaceRouteHandoff from "@/components/workspace/WorkspaceRouteHandoff";
+import { redirect } from "next/navigation";
 
-export default function InboxPage() {
-  return <WorkspaceRouteHandoff />;
+export default function InboxCompatibilityPage() {
+  redirect("/dashboard");
 }

@@ -32,7 +32,13 @@ test("public demo fixtures remain neutral and portfolio-safe", () => {
   expect(fixtureSource).toContain('"Benchmark Evaluation"');
   expect(fixtureSource).toContain('"Release Planning"');
   expect(fixtureSource).toContain('"Validate benchmark regression"');
-  expect(fixtureSource).toContain('"Practice Schedule"');
+  expect(fixtureSource).toContain('"Home & Navigation"');
+  expect(fixtureSource).toContain('"Review today\'s open work"');
+  expect(fixtureSource).not.toContain('"Process inbox captures"');
+  expect(fixtureSource).not.toContain('"Practice Schedule"');
+  expect(fixtureSource).not.toContain('tx.capture.createMany');
+  expect(fixtureSource).not.toContain('tx.note.createMany');
+  expect(fixtureSource).not.toContain('tx.review.createMany');
 });
 
 test("imported editor reference is absent from the publication tree", () => {

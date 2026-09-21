@@ -20,7 +20,11 @@ const LocalRouterContext = createContext<LocalRouterApi | null>(null);
 const PATH_ALIASES: Record<string, string> = {
   "/today": "/dashboard",
   "/this-week": "/dashboard",
-  "/deadlines": "/dates"
+  "/deadlines": "/dates",
+  "/inbox": "/dashboard",
+  "/resources": "/lifeos",
+  "/reviews": "/lifeos",
+  "/archive": "/search"
 };
 
 function normalizePathname(pathname: string) {
@@ -52,17 +56,13 @@ export function isCoreWorkspacePath(pathname: string) {
   const normalized = normalizePathname(pathname);
   return (
     normalized === "/dashboard" ||
-    normalized === "/inbox" ||
     normalized === "/projects" ||
     normalized.startsWith("/projects/") ||
     normalized === "/dates" ||
     normalized === "/areas" ||
     normalized.startsWith("/areas/") ||
-    normalized === "/resources" ||
     normalized === "/lifeos" ||
     normalized === "/search" ||
-    normalized === "/archive" ||
-    normalized === "/reviews" ||
     normalized === "/settings"
   );
 }

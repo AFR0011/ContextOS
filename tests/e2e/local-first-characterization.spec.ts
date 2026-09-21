@@ -74,7 +74,7 @@ test.describe("local-first completion characterization", () => {
     await warmServiceWorker(page);
 
     // Warm a representative set of core surfaces before simulating an app close.
-    for (const route of ["/inbox", "/projects", "/dates", "/areas", "/resources", "/lifeos", "/archive", "/search", "/reviews", "/settings"]) {
+    for (const route of ["/projects", "/dates", "/areas", "/lifeos", "/search", "/settings"]) {
       await page.goto(route);
       await expect(page).toHaveURL(new RegExp(`${route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
     }

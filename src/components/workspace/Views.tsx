@@ -6,4 +6,3 @@ export { AreasView } from "@/components/workspace/AreasView";
 export { DatesView } from "@/components/workspace/DatesView";
 export { ProjectDetailView } from "@/components/workspace/ProjectDetailView";
 export { ProjectsView } from "@/components/workspace/ProjectsView";
-export { ReviewsView } from "@/components/workspace/ReviewsView";

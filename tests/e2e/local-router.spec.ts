@@ -21,6 +21,11 @@ test("core workspace navigation changes local history without network access", a
   await nav.getByRole("button", { name: "Areas", exact: true }).click();
   await expectPath(page, "/areas");
   await expect(page.getByRole("heading", { name: "Areas", exact: true })).toBeVisible();
+  await page.getByText("Research", { exact: true }).first().click();
+  await expect.poll(() => page.evaluate(() => window.location.pathname.startsWith("/areas/"))).toBe(true);
+  await expect(page.getByTestId("area-detail")).toBeVisible();
+  await page.getByRole("button", { name: "Areas", exact: true }).click();
+  await expectPath(page, "/areas");
 
   await nav.getByRole("button", { name: "Projects", exact: true }).click();
   await expectPath(page, "/projects");

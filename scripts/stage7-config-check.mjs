@@ -30,7 +30,18 @@ const requiredKeys = [
   "SOCIALOS_APP_URL"
 ];
 
+const publicModuleKeys = [
+  "NEXT_PUBLIC_LIFEOS_RAVEL_URL",
+  "NEXT_PUBLIC_LIFEOS_SOCIALOS_URL",
+  "NEXT_PUBLIC_LIFEOS_LEDGER_URL",
+  "NEXT_PUBLIC_LIFEOS_CANON_URL"
+];
+
 const failures = [];
+for (const key of publicModuleKeys) {
+  if (!envKeys.has(key)) failures.push(`.env.example is missing ${key}`);
+  if (!deployment.includes(`\`${key}\``)) failures.push(`docs/DEPLOYMENT.md does not document ${key}`);
+}
 for (const key of requiredKeys) {
   if (!envKeys.has(key)) failures.push(`.env.example is missing ${key}`);
   if (!deployment.includes(`\`${key}\``)) failures.push(`docs/DEPLOYMENT.md does not document ${key}`);
@@ -42,7 +53,7 @@ if (!/CONTEXTOS_SSO_SECRET=""/.test(envExample)) failures.push(".env.example mus
 if (!deployment.includes("Do not reuse `AUTH_SECRET` as the SSO secret.")) failures.push("Deployment docs must require separate auth and SSO secrets");
 if (!deployment.includes("token issuance fails closed")) failures.push("Deployment docs must state the SSO fail-closed boundary");
 
-console.log(`Stage 7 deployment-config guard: ${requiredKeys.length} security-relevant environment keys inspected.`);
+console.log(`Stage 7 deployment-config guard: ${requiredKeys.length} security-relevant and ${publicModuleKeys.length} public module environment keys inspected.`);
 if (failures.length) {
   for (const failure of failures) console.error(`FAIL ${failure}`);
   process.exitCode = 1;

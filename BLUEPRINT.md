@@ -1,1135 +1,441 @@
-# ContextOS Product Specification v1
+# ContextOS Product Blueprint
 
-## LifeOS proposal intake
+Status: canonical product specification after C7 surface retirement, September 2026.
 
-- Authenticated `/handoff` previews `lifeos-handoff/v1` URL-fragment payloads and removes the fragment from browser history immediately.
-- The user may edit the proposed title and body before approval.
-- Approval is idempotent and creates only an unprocessed Inbox capture with source metadata.
-- Suggestions remain subject to manual triage; intake never creates a task or changes a project directly.
-- `/reviews` is the canonical destination for weekly reviews started from The Ledger.
+ContextOS is the operational-context module of LifeOS. It is a self-hostable local-first application for deciding what to do today, keeping active work recoverable, and carrying just enough temporal/contextual state to resume without reconstructing everything from memory.
 
-## Status
+It is deliberately **not** the universal home for finance, relationships, reflection history, or deep knowledge. Those belong to other LifeOS modules.
 
-**Product Specification:** v1.0  
-**Package Version:** v1.0.0  
-**Product Type:** Execution-first context recovery system  
-**Primary User:** Single-user / self-hosted deployments  
-**Platform:** Local-first PWA with verified offline workspace reopen and queued supported mutations after a successful authenticated bootstrap on the device  
-**Architecture Direction:** Next.js + PostgreSQL + user-scoped IndexedDB + versioned service-worker shell  
-**Purpose:** Replace Notion, task apps, and phone notes for daily execution, project recovery, open-loop tracking, and lightweight context management.
+## 1. Product model
 
-### Current Verified Boundary
-
-Package `1.0.0` is the first stable public release. Batch 18 froze the accepted product boundary, added release metadata/evidence, and did not broaden runtime semantics.
-
-The local-first completion program is complete through Stage 10 final acceptance and public-claims verification. Stage 8 records real non-production HTTPS preview, PostgreSQL-native backup/restore rehearsal, exact release-pair rollback compatibility, and same-origin PWA upgrade evidence. Stage 9 verifies lifecycle and destructive-data behavior. Stage 10 re-runs the accumulated boundary in production-build offline, lifecycle, full E2E, and database-outage matrices. Current accepted product batches continue to rerun that complete ladder.
-
-The repository is a self-hostable application, not an operated hosted SaaS service or a compliance-certified/high-sensitivity platform. Target-specific production work still includes provider-native backup/PITR policy, exact release migration/rollback planning, provider/WAF abuse controls, monitoring/alert ownership, and operational responsibility.
-
-`/` is the public product landing page. `/dashboard` remains the authenticated workspace entry. The current evidence boundary is maintained in `docs/PROJECT_STATE.md`, `docs/DEPLOYMENT.md`, `docs/LOCAL_FIRST_CONTRACT.md`, and the Stage 8-10 evidence directories. Earlier June 2026 audits remain historical records rather than current status.
-
----
-
-## 1. Product Definition
-
-ContextOS is an execution-first context recovery system for managing tasks, open loops, projects, important dates, lightweight notes, and review-based recovery.
-
-Its core promise is:
-
-> Capture fast. Know what matters today. Recover project context after breaks. Track half-finished work. Replace Notion, task apps, and phone notes.
-
-ContextOS should help the user answer, within roughly 30 seconds:
-
-- What matters today?
-- What is overdue?
-- What did I capture?
-- What was I recently working on?
-- What needs recovery?
-- What is blocked, waiting, or half-finished?
-
----
-
-## 2. Non-Goals
-
-ContextOS is **not**:
-
-- A journal.
-- A finance tracker.
-- A health tracker.
-- A social or relationship analysis system.
-- A book note system.
-- A general life archive.
-- A full autonomous agent platform.
-- A general Notion clone or arbitrary database builder.
-- A task-manager clone with excessive metadata.
-- A maintenance-heavy productivity system.
-
-The current product should optimize for execution and recovery, not broad life capture. It may replace Notion pages that support execution, recovery, PARA organization, or searchable resources; it should not recreate Notion's fully customizable database/platform surface.
-
----
-
-## 3. Core Product Principles
-
-### 3.1 Execution First
-
-The system is organized around what needs action, what is open, what is blocked, and what should be resumed.
-
-### 3.2 Fast Capture
-
-Capture must be possible without choosing a destination, project, tag, or type.
-
-Default behavior:
+The definitive work hierarchy is:
 
 ```text
-Raw sentence -> Inbox
+Area -> Project -> Task
 ```
 
-### 3.3 Project Recovery
+- Areas are long-lived responsibilities.
+- Projects are bounded outcomes and belong to exactly one Area.
+- Projects do not contain Projects.
+- Tasks belong to exactly one Project or directly to one Area.
+- ContextDates belong to exactly one Project or Area.
+- Deep knowledge is not stored as a second project-document system inside ContextOS.
 
-Every active project should make it easy to resume after a break.
+The visible product should remain small enough that ordinary use does not require maintaining a taxonomy about the taxonomy.
 
-A project page should answer:
+## 2. Definitive navigation
 
-> I have not touched this in a day or two. What was happening, and what do I do next?
-
-### 3.4 Minimal Required Metadata
-
-Required fields should be minimal. Optional structure should exist, but should not block capture or creation.
-
-### 3.5 Human Applies AI Suggestions
-
-If an AI suggestion surface is enabled in a future version, it may suggest next actions, triage, summaries, and status updates, but it cannot directly write, edit, delete, archive, or modify records without explicit user action.
-
-### 3.6 Actionable Surfacing Only
-
-The app should surface items the user can act on. It should avoid guilt pings, abstract reminders, or vague productivity noise.
-
-### 3.7 PARA Foundation
-
-ContextOS should use PARA as its organizational foundation:
+Desktop:
 
 ```text
-Projects = outcomes and nested subcontexts
-Areas = ongoing responsibilities and systems
-Resources = reusable notes, lists, and reference material
-Archives = inactive records hidden from active work
-```
-
-PARA is used to make execution context recoverable. It should not add capture friction or require the user to classify every thought before saving it.
-
----
-
-## 4. Current Product Scope
-
-### 4.1 Included in v1
-
-- Authentication with email/password.
-- Public product landing page at `/`; authenticated workspace entry at `/dashboard`.
-- Local-first PWA with user-scoped cached workspace state after a successful authenticated bootstrap.
-- Offline capture/edit queue for supported core mutations.
-- Versioned service-worker application shell with production-build offline reopen and hard-refresh coverage for the documented core workspace.
-- Sync-when-online.
-- Responsive mobile UI.
-- Dashboard.
-- Inbox.
-- Dashboard daily task selection.
-- `/today` and `/this-week` compatibility redirects.
-- Projects.
-- Project detail pages.
-- Project subcontexts / nested projects.
-- Areas.
-- Resources.
-- Dates.
-- Archive.
-- Search.
-- Settings.
-- Dashboard markdown canvas.
-- Rich text editor with Markdown shortcuts.
-- Slash-command capture.
-- Daily startup review.
-- Daily shutdown review.
-- Weekly review.
-- Markdown export.
-- Soft delete / recoverable trash.
-
-### 4.2 Later
-
-- Full offline conflict merge UI.
-- Optional read-only/manual AI suggestion surface.
-- Full Agents page.
-- Agent runs/logs/profiles.
-- Agent write permissions.
-- Calendar integration.
-- Meeting objects.
-- Semantic search.
-- More advanced automation.
-- More advanced mobile-native features.
-
----
-
-## 5. Top-Level Navigation
-
-The public root `/` is a product landing page. Authenticated workspace navigation begins at `/dashboard`.
-
-Current visible primary navigation:
-
-```text
-Dashboard
-Inbox
+Home
+Work
+  Projects
+  Areas
+  Dates
+LifeOS
 Search
-```
-
-Desktop also includes a persistent Projects sidebar section with active root projects and active-branch subcontexts. Mobile uses four bottom tabs:
-
-```text
-Dashboard
-Inbox
-Projects
-Search
-```
-
-Utility routes remain valid but are not primary navigation:
-
-```text
-Areas
-Resources
-Archive
-Dates
-Reviews
 Settings
 ```
 
-`/today` and `/this-week` redirect to `/dashboard`; Dashboard is canonical for daily work selection.
-
-There is no top-level `Workspaces` page in v1.
-
-There is no top-level `Agents` page in v1.
-
-Agent suggestions are not shown in the Phase 1 simplified visible surface.
-
----
-
-## 6. PARA, Areas, and Domains
-
-Areas are ongoing responsibilities, skills, and systems. In v0.1.x, the existing `Domain` object acts as the lightweight Area model.
-
-Domains/Areas are default organizational groupings. They are visible through the Areas page and are also used for filtering and grouping projects, notes, tasks, dates, and resources.
-
-Default domains:
+Mobile:
 
 ```text
-Research
-Engineering
-University
-Planning
-Long-Term Goals
-AI Agent Context
-Creative Work
-Notes
-```
-
-### 6.1 Area / Domain Behavior
-
-- Domains are used for filtering and grouping projects, notes, tasks, dates, and resources.
-- Defaults are provided.
-- User can rename domains.
-- User can add domains.
-- User can archive domains.
-- Domains should not become mandatory friction during quick capture.
-- The Areas page should summarize each domain's projects, open tasks, resources, and important dates.
-
-### 6.2 Resources
-
-Resources are standalone notes and reference lists that do not belong to a single active project.
-
-Examples:
-
-```text
-Skill practice repertoire
-Vocabulary list
-Useful tools / links
-Practice theory notes
-```
-
-Rules:
-
-```text
-Resources are searchable.
-Resources can contain Markdown and checklists.
-Resources do not surface in Today unless converted into tasks, dates, or project context.
-Resources live under an Area/Domain.
-```
-
----
-
-## 7. Main Data Objects
-
-Core v1 objects:
-
-```text
-Domain
-Project
-Task
-Capture
-Note
-Date
-Review
-```
-
-Derived/lightweight concepts:
-
-```text
-Area = Domain
-Resource = standalone Note
-Subcontext = Project with parentProjectId
-```
-
-Deferred lightweight/generated concept:
-
-```text
-Agent Suggestion
-```
-
-Agent suggestions are not a current visible workflow object. If introduced later, they remain generated suggestions that the user applies manually.
-
----
-
-## 8. Project Model
-
-### 8.1 Definition
-
-A project is a larger container with an outcome.
-
-Examples:
-
-```text
-Benchmark Evaluation
-ContextOS
-Product Launch
-Prototype Iteration
-Support Rotation
-```
-
-Smaller work items belong as tasks, not separate projects. However, large projects may contain subcontexts when the child has its own recovery context, next action, recovery notes, dates, or open loops.
-
-Examples of valid subcontexts:
-
-```text
-Support Rotation -> Queue Review
-Learning Track -> Module 2
-ContextOS -> Dashboard 2.0 Foundation
-Research -> Medical XAI Paper
-```
-
-### 8.2 Required Fields
-
-```text
-Project name
-Domain
-Current objective
-```
-
-### 8.3 Optional Fields
-
-```text
-Status
-Date
-Next action
-Freeform recovery notes
-Parent project
-```
-
-### 8.4 Project Statuses
-
-```text
-Active
-Paused
-Done
-Archived
-```
-
-### 8.5 Project Detail Layout
-
-Project pages should prioritize recovery and execution.
-
-Recommended order:
-
-```text
-Header with editable title and metadata
-Main page editor backed by recovery notes
-Pinned Tasks, expanded
-Pinned Dates
-Compact Recovery fields: Next Action, Latest Status, Current Objective, Open Loops
-Subcontexts
-Project actions
-```
-
-### 8.6 Subcontexts / Nested Projects
-
-Projects can be nested through `parentProjectId`.
-
-Rules:
-
-```text
-Root projects appear on the Projects page.
-Child projects appear as subcontexts under their parent.
-Child projects use the same recovery fields as root projects.
-Parent project pages roll up non-archived, non-trashed descendant tasks and dates.
-Rolled-up child tasks/dates must be labeled with their subcontext.
-Adding a task or date from a parent page creates it directly on the parent unless the user navigates into a child.
-Archiving/trashing a parent does not automatically archive/trash children.
-If a parent is hidden or missing, visible children should be promoted to root visibility.
-```
-
-This model supports massive projects without introducing a separate subproject object too early.
-
-### 8.7 Special Project Fields
-
-#### Next Action
-
-- Always visible.
-- Separate from the task list.
-- Used as the primary recovery handle.
-
-#### Latest Status
-
-- Special field, separate from notes.
-- Should be near the top of the project page.
-- Used to resume after breaks or half-finished work.
-
-Example:
-
-```text
-Benchmark support audit is complete. one benchmark regression scenario still needs validation.
-```
-
-### 8.8 Open Loops / Blockers
-
-Open loops and blockers should be visible near the top of the project page. They should not be buried inside notes.
-
----
-
-## 9. Task Model
-
-### 9.1 Required Fields
-
-```text
-Title
-```
-
-### 9.2 Optional Fields
-
-```text
-Planned date
-Due date
-Scheduled time
-Project/context
-```
-
-### 9.3 Statuses
-
-```text
-Todo
-In Progress
-Blocked
-Waiting
-Done
-Dropped
-```
-
-### 9.4 Planned Date vs Due Date
-
-The UI must distinguish between planned date and due date.
-
-```text
-Planned date = when the user intends to work on the task.
-Due date = when the task must be completed.
-```
-
-A task can be planned today without being due today. A task can be due today without being manually planned.
-
-### 9.5 Scheduled Time
-
-A task may have one optional `scheduledTime` value. It represents when the task is intended to happen, not a start/finish range or duration.
-
-Daily task surfaces show only occupied times plus untimed tasks. They do not render a full empty-day grid.
-
-The Dashboard live Tasks block is derived from real task records:
-
-```text
-Overdue active tasks
-Tasks planned today
-Tasks due today
-In-progress tasks
-Done tasks that are still planned or due today
-Upcoming active tasks
-Unscheduled active tasks
-```
-
-Backlog and future tasks now appear in the same live Dashboard Tasks block rather than a separate all-task reservoir. The block can be grouped by time, Area, or Project, and scoped to all areas or a single Domain.
-
-### 9.6 No Priority Subsystem
-
-There is no global task priority field in v1.
-
-There is no separate daily or weekly priority object. Today selection is expressed through planned dates, due dates, task state, and the Dashboard live Tasks block.
-
----
-
-## 10. Date Model
-
-### 10.1 Required Fields
-
-```text
-Title
-Date
-```
-
-### 10.2 Optional Fields
-
-```text
-Related project
-Related tasks
-Notes
-```
-
-### 10.3 Date Behavior
-
-Dates are separate objects from task due dates.
-
-A Date records an important real-world date such as an exam, flight, appointment, event, or final milestone. It is not a task and is not completed with a checkbox.
-
-A Date can govern multiple related tasks.
-
-Example:
-
-```text
-Date: Submit thesis proposal
-Date: June 10
-Related project: Benchmark Evaluation
-Related tasks:
-- Finish methodology
-- Proofread
-- Send to advisor
-```
-
-Dates can be edited, archived, restored, or deleted. Visible UI uses `Date`/`Dates`; the internal `Deadline` storage and `/deadline` capture command remain compatibility aliases during v0.2.x.
-
----
-
-## 11. Capture and Inbox
-
-### 11.1 Default Capture Behavior
-
-Default capture should require no destination.
-
-```text
-Raw sentence -> Inbox
-```
-
-The smallest useful captured item is a sentence.
-
-### 11.2 Slash Commands
-
-v1 slash commands:
-
-```text
-/task
-/note
-/project
-/date
-/deadline (compatibility alias)
-/status
-```
-
-Examples:
-
-```text
-/task finish RF baseline rerun
-/note dashboard should show overdue before inbox
-/project ContextOS
-/date final exam June 10
-/status Benchmark Evaluation: RF rerun done, next action is compare calibration tables
-```
-
-### 11.3 Capture Parsing
-
-v1 supports basic date parsing only.
-
-Example:
-
-```text
-/date submit report June 10
-```
-
-Should create:
-
-```text
-Title: submit report
-Date: June 10
-```
-
-v1 should not attempt heavy natural-language parsing, project inference, or domain inference.
-
-### 11.4 Inbox Item Lifecycle
-
-Inbox items are either unprocessed or acted upon.
-
-```text
-Unprocessed -> converted / attached / archived / deleted
-```
-
-No deferred inbox state in v1.
-
-### 11.5 Inbox Triage Actions
-
-```text
-Convert to Task
-Convert to Project
-Convert to Note
-Attach to Existing Project
-Set Date
-Archive
-Delete
-```
-
-### 11.6 Inbox Cadence
-
-Inbox should be cleared daily, but the prompt must be skippable.
-
-The app should encourage daily triage without enforcing it.
-
----
-
-## 12. Dashboard
-
-### 12.1 Dashboard Purpose
-
-The dashboard is the daily command center.
-
-It should answer:
-
-```text
-What matters today?
-What is overdue?
-What did I capture?
-What was I working on recently?
-What needs recovery?
-```
-
-### 12.2 Visible by Default
-
-```text
-Page editor / scratchpad
-Live Tasks
-Dates
-```
-
-The visible order is fixed for Phase 1 command pages. Legacy stored dashboard section orders are normalized so old `allTasks` values and previous section order values do not reintroduce hidden sections.
-
-### 12.3 First-Load Behavior
-
-When opening the dashboard:
-
-- The page editor should be the main writing surface.
-- `/task` commands should create structured tasks and clear the command line.
-- `/date` commands should create structured Dates and clear the command line.
-- Plain Markdown checkboxes should remain scratch content.
-- Live Tasks should show active workspace tasks, including overdue, today, in-progress, upcoming, unscheduled, and done-today groups.
-- Dates should show overdue, today, and upcoming important Dates separately from task checkboxes.
-
-The dashboard should orient the user before asking for more input.
-
-### 12.4 Dashboard Canvas
-
-The Dashboard should include a persistent Markdown page body inspired by the user's Notion-style editor demo.
-
-Purpose:
-
-```text
-Loose daily notepad
-Ad hoc dates/checklists
-Short goal reminders
-Scratch planning that is not yet structured
-Structured command entry
-```
-
-Rules:
-
-```text
-The page body is stored in DashboardScratchpad.content.
-The page body supports Markdown/checklist text.
-Only explicit /task and /date command lines create structured records.
-Checkboxes inside the page body stay local scratch content.
-Live Tasks and Dates blocks remain responsible for execution surfacing.
-```
-
-The Dashboard should feel markdown-friendly without becoming a full Notion page builder or arbitrary database system.
-
----
-
-## 13. Today and This Week Compatibility
-
-Dashboard is canonical for daily work selection in the simplified Phase 1 surface.
-
-Compatibility behavior:
-
-```text
-/today -> /dashboard
-/this-week -> /dashboard
-```
-
-Weekly and broader planning remain represented through Dates, active Projects, and Search until real use proves a separate weekly surface is needed again.
-
----
-
-## 15. Reviews
-
-Reviews are stored and searchable. They support context recovery.
-
-### 15.1 Daily Startup
-
-Daily startup asks only:
-
-```text
-What needs focus today?
-```
-
-### 15.2 Daily Shutdown
-
-Daily shutdown asks:
-
-```text
-What changed today?
-What is still open?
-What should be resumed tomorrow?
-Any inbox items to triage?
-```
-
-### 15.3 Weekly Review
-
-Weekly review asks:
-
-```text
-What outcomes matter this week?
-Which projects are active?
-Which projects are stale?
-What important dates are coming?
-What should be dropped, deferred, or blocked?
-What should be planned for this week?
-```
-
-### 15.4 Review Storage
-
-All reviews should be:
-
-```text
-Stored
-Searchable
-Usable for project recovery
-```
-
-### 15.5 Review-to-Project Suggestions
-
-When a review mentions a project, a future/manual suggestion surface may propose attaching the entry to that project or updating the project’s Latest Status.
-
-The user must apply this manually.
-
-Example:
-
-```text
-Shutdown note:
-Worked on ContextOS. Finished v1 screen decisions. Need to update blueprint tomorrow.
-
-Suggested project update:
-Project: ContextOS
-Latest Status: v1 screen decisions finalized. Next action is to update blueprint/spec.
-```
-
----
-
-## 16. Notes
-
-### 16.1 Notes Behavior
-
-Notes are mostly attached to projects, but standalone notes are allowed.
-
-Rules:
-
-```text
-Project notes are default when inside a project.
-Standalone notes are Resources.
-Standalone notes live under an Area/Domain, often Notes.
-Notes are searchable.
-Notes support execution and recovery, but should not dominate the system.
-```
-
-### 16.2 Notes Editor
-
-Use a rich text editor with Markdown shortcuts.
-
-Supported shortcuts should include:
-
-```text
-# headings
-## subheadings
-- lists
-[] checkboxes
-> quotes
-``` code blocks ```
-```
-
-### 16.3 Checkboxes in Notes
-
-Checkboxes inside notes stay local unless explicitly converted into structured tasks.
-
----
-
-## 17. Search
-
-### 17.1 v1 Search
-
-Basic text search across:
-
-```text
+Home
 Projects
-Tasks
-Captures
-Notes
-Resources
-Dates
-Reviews
+Search
+LifeOS
 ```
 
-### 17.2 v1 Filters
+Supporting detail routes include Project Detail and Area Detail.
 
-Light filters:
+Compatibility aliases remain only to migrate old bookmarks:
 
 ```text
-Type
-Domain
-Project
-Status
-Date
+/today      -> /dashboard
+/this-week  -> /dashboard
+/deadlines  -> /dates
+/inbox      -> /dashboard
+/resources  -> /lifeos
+/reviews    -> /lifeos
+/archive    -> /search
 ```
 
-### 17.3 Later Search
+The aliases are not independent product surfaces.
 
-Later versions may add semantic search.
+## 3. Home
 
----
+Home answers, in order:
 
-## 18. Archive and Trash
+1. What should I do today?
+2. Where can I put unstructured working memory today?
+3. Is there a useful explainable Insight?
+4. Which Projects/Areas are in context today?
+5. What temporal facts are coming up?
 
-### 18.1 Archive Behavior
-
-Archived items are:
+Desktop hierarchy:
 
 ```text
-Moved to Archive page
-Hidden from active views
-Still searchable
-Restorable
+Today | Daily Notes + Insights | In Context Today + Upcoming
 ```
 
-### 18.2 Delete Behavior
-
-Use recoverable soft deletion / synchronized tombstones for ordinary record deletion.
+Mobile hierarchy:
 
 ```text
-Delete -> Trash / recoverable tombstone
-Restore available
-No automatic 30-day purge
-No irreversible per-record purge in the current product
+Today
+Daily Notes
+Insights
+In Context Today
+Upcoming
 ```
 
-Permanent account deletion is a separate authenticated flow requiring password re-verification and exact `DELETE` confirmation. Per-record irreversible purge remains unavailable until the product has an explicit anti-resurrection protocol for stale offline clients.
+### Dayline
 
----
+The Dayline contains:
 
-## 19. Agent Behavior
+- Tasks planned for today with a scheduled time.
+- Events occurring today.
+- untimed planned Tasks under **Anytime**.
+- completed Tasks faded in place.
 
-This section describes a deferred suggestion-only design boundary. The current visible product does not expose a runtime Agents surface and does not require an external AI service for core operation.
+A same-day Deadline is not a Dayline event. Future Events and Deadlines appear under Upcoming.
 
-### 19.1 Agent Access
+### Daily Notes
 
-A future suggestion-only agent integration may read allowed domains.
+Daily Notes are the frictionless unstructured capture surface.
 
-Default readable domains:
+- one note per local calendar day;
+- no required Area, Project, type, tag, or status;
+- today's note is edited on Home;
+- historical Daily Notes are discoverable and readable through Search.
+
+Daily Notes are not the old Dashboard Scratchpad and do not inherit its structure.
+
+### Insights
+
+Insights are temporary, evidence-backed suggestions.
+
+- no user-facing backlog/archive;
+- existence means currently relevant;
+- actions may include Create Task, Add Date, Open Context, Open Module, or Dismiss;
+- no fake fixtures when no real provider exists.
+
+## 4. Area
+
+Canonical fields:
 
 ```text
-Research
-Engineering
-University
-Planning
-Long-Term Goals
-AI Agent Context
-Creative Work
-Notes, except private notes
+id
+name
+state: Active | Archived
 ```
 
-Excluded by default:
+Area Detail shows:
+
+- Active Projects
+- Direct Tasks
+- Direct Dates
+- Archived Projects
+
+Archiving an Area does not archive its Projects. Project lifecycle remains independent.
+
+## 5. Project
+
+Canonical fields:
 
 ```text
-Archived items
-Deleted items
-Private notes
+id
+name
+areaId
+objective
+state: Active | Archived
 ```
 
-### 19.2 Agent Writes
+Project Detail shows:
 
-Agents cannot directly write in v1.
+- Project metadata / objective
+- Tasks
+- Dates
+- Linked Knowledge
 
-Agents cannot directly:
+Linked Knowledge is an honest integration boundary with Canon. ContextOS must not invent durable knowledge content when Canon is not connected.
+
+There are no:
+
+- nested Projects;
+- nextAction;
+- latestStatus;
+- openLoops;
+- recovery-note subsystems;
+- progress percentages;
+- extra project workflow states.
+
+Legacy persistence fields may remain until C8 migration, but definitive UI and Search do not expose them.
+
+## 6. Task
+
+Canonical fields:
 
 ```text
-Create records
-Edit records
-Delete records
-Archive records
-Modify fields
+id
+title
+Project OR Area parent
+plannedDate?
+scheduledTime? (only when plannedDate exists)
+state: Open | Done
 ```
 
-Agents can only suggest actions. The user applies suggestions manually.
+There is no canonical:
 
-### 19.3 Allowed Agent Suggestions
+- dueDate;
+- archive state;
+- blocked/waiting/dropped state;
+- priority subsystem.
+
+Legacy surviving non-done Task states map to Open during the compatibility period. Legacy `dropped` also maps to Open.
+
+## 7. ContextDate
+
+ContextDate kinds:
 
 ```text
-Suggested tasks
-Suggested next actions
-Suggested project status updates
-Suggested inbox triage
-Suggested important-date extraction
-Suggested handoff summaries
-Suggested stale project review
+Event
+Deadline
 ```
 
-### 19.4 Agent Suggestions UI
-
-Agent suggestions are deferred from the Phase 1 simplified visible surface. They may return later as an explicitly requested, collapsed/manual review aid in:
+Canonical fields:
 
 ```text
-Project detail pages
-Dashboard collapsed section
+id
+title
+kind
+date
+startTime?
+endTime?        # Event only
+details
+exactly one parent: Project OR Area
 ```
 
-There is no full Agents page in v1.
+Global/orphan Dates are not allowed.
 
----
+Dates have no completion checkbox and no archive lifecycle.
 
-## 20. Markdown Export
+Derived temporal groups:
 
-Markdown export should support:
+- Today
+- Upcoming
+- Past
+
+The Dates page provides All / Events / Deadlines filters.
+
+## 8. Search
+
+Definitive Search indexes only:
+
+- Projects
+- Areas
+- Tasks
+- ContextDates
+- Daily Notes
+
+Historical canonical records remain discoverable:
+
+- Archived Projects/Areas
+- Done Tasks
+- Past Dates
+- historical Daily Notes
+
+Search deliberately excludes retired legacy Captures, Resources, Reviews, Dashboard Scratchpad content, legacy Deadline rows, Task due dates, and recovery metadata.
+
+Selecting a result opens exact Search detail. Contextual actions use ordinary language such as **Open project**, **Open area**, or **Open Today**.
+
+## 9. Command palette
+
+Cmd/Ctrl+K is the universal canonical search/navigation palette.
+
+It supports:
+
+- keyboard navigation with Up/Down;
+- Enter to activate;
+- Escape to close;
+- canonical Search results;
+- navigation to Home, Projects, Areas, Dates, Search, LifeOS, Settings;
+- direct **New Task**;
+- direct **New Date**.
+
+Task/Date quick-create requires an explicit Project or Area context.
+
+## 10. LifeOS hub
+
+ContextOS includes a shallow LifeOS hub for:
+
+- Ravel
+- SocialOS
+- Ledger
+- Canon
+
+The hub renders only information exposed through an explicit module provider.
+
+It must not:
+
+- duplicate full module internals;
+- invent placeholder metrics;
+- imply a connection that does not exist.
+
+Optional module destinations are configured through:
 
 ```text
-Project summaries
-Notes
-Tasks
-Dates
-Daily reviews
-Weekly reviews
-Agent handoff summaries
+NEXT_PUBLIC_LIFEOS_RAVEL_URL
+NEXT_PUBLIC_LIFEOS_SOCIALOS_URL
+NEXT_PUBLIC_LIFEOS_LEDGER_URL
+NEXT_PUBLIC_LIFEOS_CANON_URL
 ```
 
-Export is required to preserve durability and prevent lock-in.
+Unconfigured/invalid destinations render **Not connected**.
 
----
+Browser-visible module destinations are separate from authentication/SSO configuration.
 
-## 21. Mobile and PWA
+## 11. Settings
 
-### 21.1 v1 Mobile Behavior
+Definitive sections:
 
 ```text
-Installable PWA
-Responsive mobile layout
-Mobile-friendly quick capture
-Cached core workspace can reopen after a successful authenticated bootstrap on the device
-Supported offline mutations queue locally
-Reconnect synchronization when connectivity returns
+Account
+Appearance
+Offline & Sync
+Data
+Security
+Advanced
 ```
 
-Offline support is deliberately scoped to cached workspace views and supported queued mutations. It is not a claim that arbitrary server functionality works offline.
+Area management does not belong in Settings.
 
-### 21.2 Later Mobile Behavior
+Appearance and the shell use one shared theme preference.
 
-```text
-Full collaborative/conflict-merge UI
-More advanced mobile-native integrations
-Broader provider/device-specific PWA upgrade coverage
-```
+Advanced remains empty until a legitimate product-level advanced setting exists.
 
-v1 mobile goal:
+## 12. Retired first-class surfaces
 
-```text
-Open phone -> capture sentence -> done
-```
+### Inbox
 
----
+Retired in C7.
 
-## 22. Authentication
+Replacement:
 
-v1 authentication:
+- Daily Notes for frictionless unstructured capture;
+- contextual creation;
+- Cmd/Ctrl+K New Task / New Date.
 
-```text
-Email/password
-```
+Existing Capture rows remain preserved during C7 for C8 migration, but no new demo/handoff Inbox captures are created.
 
-Later authentication options may include:
+### Resources
 
-```text
-Google
-GitHub
-Other OAuth providers
-```
+Retired in C7.
 
----
+Durable knowledge belongs to future Canon/Knowledge Base. Existing standalone Note rows remain preserved until C8 migration.
 
-## 23. Review and Surfacing Rules
+### Reviews
 
-### 23.1 Useful Surfacing
+Retired in C7.
 
-The app should surface:
+Reflection/history belongs primarily to Ledger. Existing Review rows remain preserved until C8 migration.
 
-```text
-Overdue tasks
-Recent contexts
-Upcoming important dates
-Daily planning prompts
-Weekly planning/review prompts
-Agent-suggested actions, only when an explicit future/manual suggestion surface exists
-```
+### Archive / Trash page
 
-### 23.2 Maybe Surfacing
+Retired in C7.
 
-These may be useful but should be handled carefully:
+- Area/Project archival is visible in-place.
+- canonical historical state is discoverable through Search.
+- legacy tombstone state remains preserved behind the compatibility boundary until C8 so old offline state cannot be silently lost or resurrected.
 
-```text
-Stale projects
-Abandoned captures
-Unresolved decisions
-```
+There is no standalone Archive page in the definitive product.
 
-### 23.3 Avoid Surfacing
+## 13. LifeOS handoff compatibility
 
-Do not proactively nag about:
+The historical `lifeos-handoff/v1` fragment parser remains readable for compatibility.
 
-```text
-“You mentioned this before” reminders
-Contexts missing summaries
-Non-actionable notifications
-Things the user cannot act on
-```
+C7 does **not** convert accepted handoffs into retired Inbox Captures.
 
----
+Until a canonical inter-module action contract is defined:
 
-## 24. Existing Tool Replacement Strategy
+- `/handoff` may preview a valid private proposal;
+- it does not save the proposal;
+- the user may explicitly create a Task/Date through Home or Cmd/Ctrl+K.
 
-ContextOS should replace:
+This is preferable to silently writing invisible legacy data.
 
-```text
-Notion execution dashboards
-Notion project/area/resource recovery pages
-Todo/task apps
-Phone notes
-```
+## 14. Local-first contract
 
-ContextOS should sit beside:
+After a successful authenticated bootstrap on a device, the canonical workspace supports cached reopen and supported local mutations while offline.
 
-```text
-GitHub
-AI chats
-```
+Canonical offline surfaces:
 
-ContextOS should ignore or not attempt to replace:
+- `/dashboard`
+- `/projects`
+- `/projects/:id`
+- `/dates`
+- `/areas`
+- `/areas/:id`
+- `/lifeos`
+- `/search`
+- `/settings`
 
-```text
-Local folders
-Paper notebook/journals
-Google Docs
-Google Sheets
-Obsidian
-Formula-heavy Notion databases
-Specialized spaced-repetition or practice engines
-```
+Retired aliases may still resolve through the cached shell to their canonical destinations; they do not restore retired UI.
 
-Piano repertoire, vocabulary lists, and similar personal systems should start as Areas plus Resources. If they need dynamic scheduling, rotations, formulas, or review algorithms, those capabilities belong in a later version after the execution-first loop is validated.
+Local-first rules include:
 
----
+- user-scoped IndexedDB state;
+- atomic workspace + outbox commits;
+- pending mutations retained until acknowledged;
+- explicit stale/conflict warnings;
+- no fabricated first-time offline authentication;
+- explicit local identity selection when multiple verified workspaces exist;
+- true logout/account deletion remain network-bound where server state must change.
 
-## 25. 7-Day Validation Test
+## 15. Persistence compatibility boundary
 
-ContextOS succeeds if, after one week:
+C7 is a **surface retirement**, not the broad persistence migration.
 
-```text
-1. User opens Dashboard at least once per workday.
-2. User captures ideas/tasks in ContextOS instead of phone notes.
-3. User uses Dashboard for daily work selection.
-4. User resumes at least one paused or half-finished project using Latest Status + Next Action.
-5. User uses at least one subcontext for a large project.
-6. User writes or edits the Dashboard Canvas at least once.
-7. Notion/task app usage drops sharply.
-```
+Until C8, storage/sync/import/export may still contain:
 
-If these do not happen, the product has failed its primary purpose.
+- legacy Capture rows;
+- standalone Note rows;
+- Review rows;
+- legacy Deadline rows;
+- old Task fields/statuses;
+- Dashboard Scratchpad/Preference rows;
+- project recovery metadata;
+- nested-project fields.
 
----
+Rules during this compatibility period:
 
-## 26. Implementation Priority
+1. definitive UI must not revive retired concepts;
+2. Search must not index them;
+3. demo reset must not seed new retired Capture/Resource/Review data;
+4. old rows must remain scoped, exportable, and migration-safe;
+5. tombstone/stale-write protection remains intact;
+6. C8 owns destructive schema/storage migration after migration behavior is verified.
 
-The sequence below is the historical build order retained for design context. It is not the current backlog.
+## 16. Ownership across LifeOS
 
-Recommended implementation order:
+- **ContextOS:** operational execution context.
+- **Ravel:** finances.
+- **SocialOS:** relationships.
+- **Ledger:** reflection/history.
+- **Canon:** durable knowledge and deep documentation.
 
-```text
-1. Auth + core layout
-2. Domains
-3. PARA navigation: Projects, Areas, Resources, Archive
-4. Projects
-5. Project subcontexts and parent rollups
-6. Tasks
-7. Dashboard + Dashboard Canvas
-8. Inbox + quick capture
-9. Dashboard daily task selection
-10. Dates
-11. Reviews
-12. Notes / Resources editor
-13. Search
-14. Archive/trash
-15. Agent suggestions as read-only/manual suggestions
-16. Markdown export
-17. PWA polish
-```
+ContextOS may expose links/summaries/actions across modules, but it should not become a duplicate database for their internals.
 
----
+## 17. Product constraints
 
-## 27. Final v1 Decision Rule
+ContextOS remains:
 
-Use this rule for scope decisions:
+- single-user oriented within one active identity;
+- self-hostable;
+- local-first within the documented boundary;
+- explicit about sync/offline failure;
+- conservative about destructive migration;
+- free of fake AI/module data;
+- optimized for a small, understandable operational model rather than maximal configurability.
 
-> If it helps capture fast, choose today’s work, recover project context, or prevent forgotten open loops, it belongs in v1.
->
-> If it mainly helps organize, customize, decorate, automate, or archive, it waits.
-
----
-
-## 28. Open Questions for Later Versions
-
-These are intentionally not v1 blockers:
-
-- Should meetings/calendar be added later?
-- Should full offline conflict resolution become an explicit merge UI, remain stale-write rejection, or use another user-mediated model?
-- Should semantic search use local embeddings or an external service?
-- Should optional agent suggestions become persistent objects with apply/dismiss history?
-- Should agents ever create tasks or project updates with explicit approval?
-- Should domains have access-control presets?
-- Should project templates exist?
-- Should recurring tasks exist?
-- Should Areas become a separate model from Domains?
-- Should Resources become a separate model from standalone Notes?
-- Should personal systems such as piano practice have routines/rotations?
-- Should vocabulary resources gain flashcard or spaced-repetition behavior?
-- Should weekly review generate a weekly plan automatically?
-- Should provider/device-specific PWA upgrade coverage expand beyond the verified same-origin rehearsal?
-- Should irreversible per-record purge be introduced only after a version/generation anti-resurrection protocol exists?
-
-These should not be solved before the execution-first workflow and current local-first boundary justify the added complexity.
+Historical Stage 7-10 evidence remains repository provenance. Current product semantics are defined by this blueprint and the active implementation, while C8 will complete the persistence migration behind the already-retired legacy surfaces.

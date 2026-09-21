@@ -75,5 +75,6 @@ test("fresh first run exposes restore and completes a workspace replacement", as
   await expect(page.getByTestId("workspace-import-success")).toContainText("Workspace restored from export.");
   await expect(page.getByTestId("workspace-import-preview")).toHaveCount(0);
   await expect(page.getByTestId("pending-count")).toHaveText("0");
-  await expect(page.getByLabel("Area name Restored Personal")).toHaveValue("Restored Personal");
+  await page.goto("/areas");
+  await expect(page.getByText("Restored Personal", { exact: true })).toBeVisible();
 });

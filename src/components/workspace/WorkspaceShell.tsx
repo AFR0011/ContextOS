@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   Boxes,
@@ -27,6 +27,7 @@ import { WorkspaceCommandPalette } from "@/components/workspace/WorkspaceCommand
 import type { PublicUser } from "@/lib/auth";
 import { useWorkspace } from "@/lib/client-store";
 import { useLocalRouter } from "@/lib/local-router";
+import { useContextOsTheme } from "@/lib/theme-preference";
 
 const mobileBottomNav = [
   { href: "/dashboard", label: "Home", icon: Home },
@@ -164,23 +165,10 @@ function NavButton({
 export default function WorkspaceShell({ user, children }: { user: PublicUser; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState<boolean | null>(null);
   const localRouter = useLocalRouter();
   const currentPath = localRouter.location.pathname;
   const { loading, sync, syncNow, forceRefreshFromServer } = useWorkspace();
-  const isDark = darkMode ?? false;
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem("contextos-theme");
-    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
-    setDarkMode(stored ? stored === "dark" : prefersDark);
-  }, []);
-
-  useEffect(() => {
-    if (darkMode === null) return;
-    document.documentElement.classList.toggle("dark", darkMode);
-    window.localStorage.setItem("contextos-theme", darkMode ? "dark" : "light");
-  }, [darkMode]);
+  const { isDark, setTheme } = useContextOsTheme();
 
   if (loading) {
     return (
@@ -231,7 +219,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           <button
             type="button"
             className="cos-btn-ghost ml-auto grid h-9 w-9 place-items-center rounded-lg text-[var(--cos-text-muted)]"
-            onClick={() => setDarkMode(!isDark)}
+            onClick={() => setTheme(isDark ? "light" : "dark")}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >

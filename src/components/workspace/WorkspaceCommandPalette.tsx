@@ -109,10 +109,6 @@ export function WorkspaceCommandPalette() {
       hint: result.typeLabel,
       icon: resultIcon(result.kind),
       onSelect: () => {
-        if (result.contextHref && result.kind !== "date" && result.kind !== "daily-note") {
-          navigate(result.contextHref);
-          return;
-        }
         const params = new URLSearchParams();
         params.set("q", query.trim() || result.title);
         params.set("selected", result.key);

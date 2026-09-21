@@ -57,6 +57,7 @@ export function isCoreWorkspacePath(pathname: string) {
     normalized.startsWith("/projects/") ||
     normalized === "/dates" ||
     normalized === "/areas" ||
+    normalized.startsWith("/areas/") ||
     normalized === "/resources" ||
     normalized === "/lifeos" ||
     normalized === "/search" ||

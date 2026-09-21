@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the current local-first boundary for ContextOS as a single-user operational workspace for one active identity at a time, with PostgreSQL-backed synchronization and user-scoped local persistence.
+This document defines the current local-first boundary for ContextOS as a **single-user local-first workspace** for one active identity at a time, with PostgreSQL-backed synchronization and user-scoped local persistence.
 
 The contract is deliberately narrower than "all functionality works without a server."
 

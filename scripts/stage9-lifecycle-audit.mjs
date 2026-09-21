@@ -18,7 +18,6 @@ const accountDelete = read("src/app/api/account/delete/route.ts");
 const clientStore = read("src/lib/client-store.tsx");
 const syncServer = read("src/lib/sync-server.ts");
 const schema = read("prisma/schema.prisma");
-const archiveLifecycle = read("src/components/workspace/ArchiveLifecycleView.tsx");
 
 check(
   "user-scoped IndexedDB cleanup",
@@ -130,11 +129,11 @@ check(
   "Projects, tasks, notes, and dates require recoverable tombstone state."
 );
 check(
-  "trash UI restores tombstones",
-  archiveLifecycle.includes('tab, setTab] = useState<"archived" | "trash">') &&
-    archiveLifecycle.includes("trashedAt: null") &&
-    archiveLifecycle.includes("Trash is empty"),
-  "Recoverable deletion must remain visible and reversible through the Archive/Trash UI."
+  "legacy tombstones remain migration-safe after Archive UI retirement",
+  clientStore.includes("trashedAt") &&
+    syncServer.includes("trashedAt") &&
+    syncServer.includes("shouldApplyOrWarn"),
+  "C7 retires the standalone Archive/Trash UI, but legacy tombstone state and stale-write protection must remain intact until C8 migration."
 );
 
 const failed = checks.filter((item) => !item.ok);

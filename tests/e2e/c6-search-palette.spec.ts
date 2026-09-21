@@ -41,16 +41,17 @@ test("Search is the read-only history viewer for past Daily Notes", async ({ pag
   const pastDate = addDaysToDateKey(localDateKey(), -2)!;
   const content = `Past Daily Note ${Date.now()} with a unique history phrase.`;
   const timestamp = new Date().toISOString();
+  const noteId = `c6-note-${Date.now()}`;
 
   const response = await page.request.post("/api/sync", {
     data: {
       mutations: [{
-        mutationId: `c6-daily-note-${Date.now()}`,
+        mutationId: `c6-daily-note-${noteId}`,
         entityType: "dailyNotes",
-        entityId: `c6-note-${Date.now()}`,
+        entityId: noteId,
         operation: "upsert",
         payload: {
-          id: `c6-note-${Date.now()}`,
+          id: noteId,
           localDate: pastDate,
           content,
           createdAt: timestamp,

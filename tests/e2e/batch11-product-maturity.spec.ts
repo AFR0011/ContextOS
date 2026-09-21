@@ -48,10 +48,12 @@ test("machine claims guard enforces self-hostable maturity and keeps broad claim
 test("repo map reflects focused workspace view ownership", () => {
   const repoMap = read("docs/REPO_MAP.md");
 
-  for (const file of ["AreasView.tsx", "DatesView.tsx", "ProjectsView.tsx", "ProjectDetailView.tsx", "ReviewsView.tsx"]) {
+  for (const file of ["HomeView.tsx", "AreasView.tsx", "DatesView.tsx", "ProjectsView.tsx", "ProjectDetailView.tsx", "ProductSearchView.tsx"]) {
     expect(repoMap).toContain(file);
   }
   expect(repoMap).toContain("stable export facade");
   expect(repoMap).toContain("LegacyWorkspaceViews.tsx");
   expect(repoMap).toContain("removed in Batch 10");
+  expect(repoMap).toContain("Inbox, Resources, Reviews, and standalone Archive");
+  expect(repoMap).toContain("retired in C7");
 });

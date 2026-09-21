@@ -1,5 +1,5 @@
-import WorkspaceRouteHandoff from "@/components/workspace/WorkspaceRouteHandoff";
+import { redirect } from "next/navigation";
 
-export default function ReviewsPage() {
-  return <WorkspaceRouteHandoff />;
+export default function ReviewsCompatibilityPage() {
+  redirect("/lifeos");
 }

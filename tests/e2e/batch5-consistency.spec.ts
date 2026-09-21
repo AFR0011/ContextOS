@@ -34,29 +34,34 @@ async function preferenceId(request: APIRequestContext) {
   return id!;
 }
 
-test("Search indexes recovery context and deep-targets the exact matched record", async ({ page }) => {
+test("Search indexes canonical operational context and deep-targets the selected record", async ({ page }) => {
   await loginDemo(page);
   await page.goto("/search");
 
   const input = page.getByPlaceholder("Search workspace...");
-  await input.fill("Experiment recovery note");
+  await input.fill("Keep experiments and handoffs recoverable");
   const projectResult = page.getByTestId(/search-result-project-/).filter({ hasText: "Benchmark Evaluation" }).first();
   await expect(projectResult).toBeVisible();
-  await projectResult.getByRole("button", { name: "Inspect exact record Benchmark Evaluation" }).click();
+  await projectResult.click();
   await expect(page).toHaveURL(/\/search\?.*selected=project%3A/);
   const selected = page.getByTestId("search-selected-record");
   await expect(selected).toContainText("Benchmark Evaluation");
-  await expect(selected).toContainText("Last useful context: compare benchmark outputs after the regression run finishes.");
-  await expect(selected).toContainText("Confirm regression behavior");
+  await expect(selected).toContainText("Keep experiments and handoffs recoverable after breaks.");
+  await expect(selected.getByRole("button", { name: "Open project" })).toBeVisible();
 
   await page.reload();
-  await expect(page.getByTestId("search-selected-record")).toContainText("Experiment recovery note");
+  await expect(page.getByTestId("search-selected-record")).toContainText("Benchmark Evaluation");
 
-  await input.fill("capture -> triage -> today -> recovery loop");
-  const dateResult = page.getByTestId(/search-result-date-/).filter({ hasText: "ContextOS v0.1 verification pass" }).first();
+  await input.fill("blocking issues");
+  const dateResult = page.getByTestId(/search-result-date-/).filter({ hasText: "ContextOS verification pass" }).first();
   await expect(dateResult).toBeVisible();
-  await dateResult.getByRole("button", { name: "Inspect exact record ContextOS v0.1 verification pass" }).click();
+  await dateResult.click();
   await expect(page).toHaveURL(/\/search\?.*selected=date%3A/);
-  await expect(page.getByTestId("search-selected-record")).toContainText("Run the full capture -> triage -> today -> recovery loop.");
+  await expect(page.getByTestId("search-selected-record")).toContainText("Complete the current verification pass and record any blocking issues.");
+
+  await input.fill("Experiment recovery note");
+  await expect(page.getByText("No matching ContextOS records.", { exact: true })).toBeVisible();
+  await input.fill("Practice Schedule");
+  await expect(page.getByText("No matching ContextOS records.", { exact: true })).toBeVisible();
 });
 

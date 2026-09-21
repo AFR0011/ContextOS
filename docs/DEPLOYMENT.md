@@ -39,6 +39,9 @@ Set these variables in the deployment provider before building:
 - `SEED_DEMO_EMAIL` / `SEED_DEMO_PASSWORD`: only for deliberate disposable/demo seeding.
 - `CONTEXTOS_SSO_SECRET`: optional ContextOS→SocialOS bridge signing secret; use a distinct high-entropy value of at least 32 characters.
 - `SOCIALOS_APP_URL`: exact HTTPS SocialOS origin for that optional bridge.
+- `NEXT_PUBLIC_LIFEOS_RAVEL_URL`, `NEXT_PUBLIC_LIFEOS_SOCIALOS_URL`, `NEXT_PUBLIC_LIFEOS_LEDGER_URL`, `NEXT_PUBLIC_LIFEOS_CANON_URL`: optional browser-visible LifeOS module entry points. Each may be a root-relative route or absolute HTTP(S) URL. Leave a value unset to render that module as **Not connected**.
+
+Because these are `NEXT_PUBLIC_` values, changing a module destination requires rebuilding/redeploying the client bundle. The `NEXT_PUBLIC_LIFEOS_*_URL` variables only control visible module navigation. They do not enable SSO, authentication sharing, data synchronization, or module summaries. In particular, `NEXT_PUBLIC_LIFEOS_SOCIALOS_URL` is intentionally separate from the server-side `SOCIALOS_APP_URL` used by the optional ContextOS→SocialOS SSO bridge.
 
 The SSO bridge is optional and is not part of core ContextOS authentication. If `CONTEXTOS_SSO_SECRET` is absent or shorter than 32 characters, token issuance fails closed. Do not reuse `AUTH_SECRET` as the SSO secret. The exact destination origin must also be configured; the bridge does not accept an arbitrary return host.
 

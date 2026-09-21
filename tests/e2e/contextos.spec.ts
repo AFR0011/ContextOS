@@ -302,7 +302,7 @@ test("deployment headers, metadata, and service worker cache routes are configur
 
   const swResponse = await page.request.get("/sw.js");
   const serviceWorker = await swResponse.text();
-  expect(serviceWorker).toContain('const SHELL_VERSION = "v5"');
+  expect(serviceWorker).toContain('const SHELL_VERSION = "v8"');
   expect(serviceWorker).toContain('const SHELL_MANIFEST_KEY = "/__contextos_shell_manifest__"');
   expect(serviceWorker).toContain('"/dates"');
   expect(serviceWorker).toContain('"/deadlines"');
@@ -724,11 +724,12 @@ test("settings exposes sync visibility and server refresh controls", async ({ pa
 
 test("global server refresh replaces stale local workspace after external reset", async ({ page }) => {
   await login(page);
-  await page.goto("/settings");
+  await page.goto("/areas");
   const staleDomain = `Stale cache domain ${Date.now()}`;
-  await page.getByPlaceholder("Add Area...").fill(staleDomain);
-  await page.getByPlaceholder("Add Area...").press("Enter");
-  await expectInputValue(page, "input", staleDomain);
+  await page.getByRole("button", { name: "New Area", exact: true }).click();
+  await page.getByPlaceholder("Area name").fill(staleDomain);
+  await page.getByRole("button", { name: "Create Area", exact: true }).click();
+  await expect(page.getByText(staleDomain, { exact: true })).toBeVisible();
   await expect.poll(async () => {
     const response = await page.request.get("/api/bootstrap");
     const workspace = await response.json();
@@ -737,12 +738,12 @@ test("global server refresh replaces stale local workspace after external reset"
   await expect(page.getByTestId("pending-count")).toHaveText("0");
 
   await resetDemo(page);
-  await expectInputValue(page, "input", staleDomain);
+  await expect(page.getByText(staleDomain, { exact: true })).toBeVisible();
 
   await expect(page.getByTestId("global-refresh-from-server")).toBeEnabled();
   await page.getByTestId("global-refresh-from-server").click();
-  await expectNoInputValue(page, "input", staleDomain);
-  await expectInputValue(page, "input", "Research");
+  await expect(page.getByText(staleDomain, { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Research", { exact: true }).first()).toBeVisible();
   await expect(page.getByTestId("pending-count")).toHaveText("0");
 });
 
@@ -969,12 +970,12 @@ test("canonical Date remains stable after save and legacy route redirects", asyn
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 });
 
-test("project sections follow the definitive C4 order", async ({ page }) => {
+test("project sections follow the definitive C5 order", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   const headings = await page.locator("main section h2").allTextContents();
-  expect(headings.slice(0, 3)).toEqual(["Project", "Tasks", "Linked Knowledge"]);
+  expect(headings.slice(0, 4)).toEqual(["Project", "Tasks", "Dates", "Linked Knowledge"]);
   await expect(page.getByTestId("project-live-tasks")).toBeVisible();
 });
 

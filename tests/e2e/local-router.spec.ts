@@ -21,6 +21,11 @@ test("core workspace navigation changes local history without network access", a
   await nav.getByRole("button", { name: "Areas", exact: true }).click();
   await expectPath(page, "/areas");
   await expect(page.getByRole("heading", { name: "Areas", exact: true })).toBeVisible();
+  await page.getByText("Research", { exact: true }).first().click();
+  await expect.poll(() => page.evaluate(() => window.location.pathname.startsWith("/areas/"))).toBe(true);
+  await expect(page.getByTestId("area-detail")).toBeVisible();
+  await page.getByRole("button", { name: "Areas", exact: true }).click();
+  await expectPath(page, "/areas");
 
   await nav.getByRole("button", { name: "Projects", exact: true }).click();
   await expectPath(page, "/projects");
@@ -72,10 +77,10 @@ test("query-string navigation stays inside the local workspace router", async ({
 
   await context.setOffline(true);
   const input = page.getByPlaceholder("Search workspace...");
-  await input.fill("Experiment recovery note");
+  await input.fill("Keep experiments and handoffs recoverable");
   const result = page.getByTestId(/search-result-project-/).filter({ hasText: "Benchmark Evaluation" }).first();
   await expect(result).toBeVisible();
-  await result.getByRole("button", { name: "Inspect exact record Benchmark Evaluation" }).click();
+  await result.click();
 
   await expectPath(page, "/search");
   await expect.poll(() => page.evaluate(() => window.location.search)).toMatch(/selected=project%3A/);
@@ -90,7 +95,9 @@ test("search result navigation resolves records locally while offline", async ({
   await context.setOffline(true);
   const title = "Validate benchmark regression";
   await page.getByPlaceholder("Search workspace...").fill(title);
-  await page.getByRole("button", { name: new RegExp(`Task ${title}`) }).click();
+  const result = page.getByTestId(/search-result-task-/).filter({ hasText: title }).first();
+  await result.click();
+  await page.getByTestId("search-selected-record").getByRole("button", { name: "Open project" }).click();
 
   await expect.poll(() => page.evaluate(() => window.location.pathname.startsWith("/projects/"))).toBe(true);
   await expect(page.getByLabel(`Task title ${title}`)).toBeVisible();

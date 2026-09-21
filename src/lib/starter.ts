@@ -249,34 +249,6 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
     skipDuplicates: true
   });
 
-  await tx.deadline.createMany({
-    data: [
-      {
-        id: idFor(userId, "deadline-demo"),
-        userId,
-        title: "ContextOS v0.1 verification pass",
-        date: dateOnly(4),
-        time: null,
-        location: "",
-        projectId: contextOfflineProjectId,
-        taskIds: [],
-        notes: "Run the full capture -> triage -> today -> recovery loop."
-      },
-      {
-        id: idFor(userId, "deadline-weekly"),
-        userId,
-        title: "Weekly review",
-        date: dateOnly(5),
-        time: null,
-        location: "",
-        projectId: null,
-        taskIds: [],
-        notes: ""
-      }
-    ],
-    skipDuplicates: true
-  });
-
   await tx.capture.createMany({
     data: [
       {

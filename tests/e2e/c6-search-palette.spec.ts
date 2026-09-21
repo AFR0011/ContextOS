@@ -132,3 +132,25 @@ test("Cmd Ctrl K creates canonical Dates with mandatory context", async ({ page 
   await expect(result).toBeVisible();
   await expect(result).toContainText("Deadline");
 });
+
+
+test("Settings follows the definitive six-section structure and shares theme state with the shell", async ({ page }) => {
+  await login(page);
+  await page.goto("/settings");
+
+  for (const heading of ["Account", "Appearance", "Offline & Sync", "Data", "Security", "Advanced"]) {
+    await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+  }
+
+  await expect(page.getByPlaceholder("Add Area...")).toHaveCount(0);
+  await expect(page.getByText("Areas are stable responsibilities", { exact: false })).toHaveCount(0);
+
+  const appearance = page.getByTestId("appearance-settings");
+  await appearance.getByRole("button", { name: "Dark", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(true);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("contextos-theme"))).toBe("dark");
+
+  await appearance.getByRole("button", { name: "Light", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(false);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("contextos-theme"))).toBe("light");
+});

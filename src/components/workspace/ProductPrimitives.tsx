@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { CalendarDays, Check, ChevronRight, Circle, Clock3, Search, X } from "lucide-react";
 
 export function PageHeader({
@@ -305,27 +305,80 @@ export function CommandPalette({
   items: CommandPaletteItem[];
   onClose: () => void;
 }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    if (!open) return;
+    setActiveIndex(0);
+  }, [open, query, items.length]);
+
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setActiveIndex((index) => items.length ? (index + 1) % items.length : 0);
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setActiveIndex((index) => items.length ? (index - 1 + items.length) % items.length : 0);
+        return;
+      }
+      if (event.key === "Enter" && items[activeIndex]) {
+        event.preventDefault();
+        items[activeIndex].onSelect();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [activeIndex, items, onClose, open]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-start justify-center bg-slate-950/35 px-4 pt-[12vh] backdrop-blur-sm" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section role="dialog" aria-modal="true" aria-label="Command palette" className="w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] shadow-[var(--cos-shadow-lg)]">
+    <div
+      className="fixed inset-0 z-[90] flex items-start justify-center bg-slate-950/35 px-4 pt-[12vh] backdrop-blur-sm"
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        data-testid="command-palette"
+        className="w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] shadow-[var(--cos-shadow-lg)]"
+      >
         <div className="flex items-center gap-3 border-b border-[var(--cos-border-soft)] px-4">
           <Search className="h-4 w-4 text-[var(--cos-text-subtle)]" />
-          <input autoFocus value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Search or run a command…" className="h-12 min-w-0 flex-1 bg-transparent text-sm text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]" />
+          <input
+            autoFocus
+            aria-label="Search or run a command"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="Search or run a command…"
+            className="h-12 min-w-0 flex-1 bg-transparent text-sm text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
+          />
         </div>
-        <div className="max-h-[22rem] overflow-y-auto p-2">
-          {items.length ? items.map((item) => (
-            <button key={item.id} type="button" onClick={item.onSelect} className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-[var(--cos-bg-soft)]">
+        <div className="max-h-[22rem] overflow-y-auto p-2" role="listbox" aria-label="Command palette results">
+          {items.length ? items.map((item, index) => (
+            <button
+              key={item.id}
+              type="button"
+              role="option"
+              aria-selected={index === activeIndex}
+              data-testid={`command-palette-item-${item.id}`}
+              onMouseEnter={() => setActiveIndex(index)}
+              onClick={item.onSelect}
+              className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left ${
+                index === activeIndex ? "bg-[var(--cos-primary-soft)]" : "hover:bg-[var(--cos-bg-soft)]"
+              }`}
+            >
               <span className="text-[var(--cos-text-subtle)]">{item.icon}</span>
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--cos-text-strong)]">{item.label}</span>
               {item.hint ? <span className="text-[11px] text-[var(--cos-text-subtle)]">{item.hint}</span> : null}

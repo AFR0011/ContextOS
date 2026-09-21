@@ -1,6 +1,6 @@
 # ContextOS Product Blueprint
 
-Status: canonical product specification after C7 surface retirement, September 2026.
+Status: canonical product specification after C7 surface retirement, September 2026.\n\n**Package Version:** v1.0.0
 
 ContextOS is the operational-context module of LifeOS. It is a self-hostable local-first application for deciding what to do today, keeping active work recoverable, and carrying just enough temporal/contextual state to resume without reconstructing everything from memory.
 

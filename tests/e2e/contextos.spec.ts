@@ -970,12 +970,12 @@ test("canonical Date remains stable after save and legacy route redirects", asyn
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 });
 
-test("project sections follow the definitive C4 order", async ({ page }) => {
+test("project sections follow the definitive C5 order", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   const headings = await page.locator("main section h2").allTextContents();
-  expect(headings.slice(0, 3)).toEqual(["Project", "Tasks", "Linked Knowledge"]);
+  expect(headings.slice(0, 4)).toEqual(["Project", "Tasks", "Dates", "Linked Knowledge"]);
   await expect(page.getByTestId("project-live-tasks")).toBeVisible();
 });
 

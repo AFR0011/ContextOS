@@ -113,7 +113,7 @@ test("verified readiness means the complete versioned shell is cached", async ({
 
   const snapshot = await page.evaluate(async () => {
     const cacheNames = await caches.keys();
-    const cacheName = cacheNames.find((name) => name === "contextos-shell-v5");
+    const cacheName = cacheNames.find((name) => name === "contextos-shell-v9");
     if (!cacheName) return { cacheName: null, version: null, resources: [] as string[], missing: ["cache"] };
 
     const cache = await caches.open(cacheName);
@@ -129,8 +129,8 @@ test("verified readiness means the complete versioned shell is cached", async ({
     return { cacheName, version: manifest.version ?? null, resources, missing };
   });
 
-  expect(snapshot.cacheName).toBe("contextos-shell-v5");
-  expect(snapshot.version).toBe("v5");
+  expect(snapshot.cacheName).toBe("contextos-shell-v9");
+  expect(snapshot.version).toBe("v9");
   expect(snapshot.resources).toContain("/dashboard");
   expect(snapshot.resources).toContain("/manifest.webmanifest");
   expect(snapshot.resources.some((resource) => resource.startsWith("/_next/static/"))).toBe(true);
@@ -180,15 +180,11 @@ test("core workspace routes and a dynamic project cold-open and hard-refresh off
 
   const routes: Array<[string, (page: Page) => Promise<void>]> = [
     ["/dashboard", async (routePage) => expect(routePage.getByRole("heading", { name: "Today", exact: true })).toBeVisible()],
-    ["/inbox", async (routePage) => expect(routePage.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible()],
     ["/projects", async (routePage) => expect(routePage.getByRole("heading", { name: "Projects", exact: true })).toBeVisible()],
     ["/dates", async (routePage) => expect(routePage.getByRole("heading", { name: "Dates", exact: true })).toBeVisible()],
     ["/areas", async (routePage) => expect(routePage.getByRole("heading", { name: "Areas", exact: true })).toBeVisible()],
-    ["/resources", async (routePage) => expect(routePage.getByRole("heading", { name: "Resources", exact: true })).toBeVisible()],
     ["/lifeos", async (routePage) => expect(routePage.getByRole("heading", { name: "Module hub", exact: true })).toBeVisible()],
     ["/search", async (routePage) => expect(routePage.getByRole("heading", { name: "Search", exact: true })).toBeVisible()],
-    ["/archive", async (routePage) => expect(routePage.getByRole("heading", { name: "Archive", exact: true })).toBeVisible()],
-    ["/reviews", async (routePage) => expect(routePage.getByRole("heading", { name: "Reviews", exact: true })).toBeVisible()],
     ["/settings", async (routePage) => expect(routePage.getByRole("heading", { name: "Settings", exact: true })).toBeVisible()],
     [`/projects/${projectId}`, async (routePage) => expect(routePage.getByTestId("project-command-page")).toBeVisible()],
     [`/areas/${areaId}`, async (routePage) => expect(routePage.getByTestId("area-detail")).toBeVisible()]
@@ -196,6 +192,20 @@ test("core workspace routes and a dynamic project cold-open and hard-refresh off
 
   for (const [route, assertion] of routes) {
     await openOfflineRoute(context, route, assertion);
+  }
+
+  const aliases: Array<[string, string, (page: Page) => Promise<void>]> = [
+    ["/inbox", "/dashboard", async (routePage) => expect(routePage.getByRole("heading", { name: "Today", exact: true })).toBeVisible()],
+    ["/resources", "/lifeos", async (routePage) => expect(routePage.getByRole("heading", { name: "Module hub", exact: true })).toBeVisible()],
+    ["/reviews", "/lifeos", async (routePage) => expect(routePage.getByRole("heading", { name: "Module hub", exact: true })).toBeVisible()],
+    ["/archive", "/search", async (routePage) => expect(routePage.getByRole("heading", { name: "Search", exact: true })).toBeVisible()]
+  ];
+
+  for (const [route, target, assertion] of aliases) {
+    await openOfflineRoute(context, route, async (routePage) => {
+      await expect.poll(() => new URL(routePage.url()).pathname).toBe(target);
+      await assertion(routePage);
+    });
   }
 });
 

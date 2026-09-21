@@ -1,10 +1,11 @@
-const SHELL_VERSION = "v8";
+const SHELL_VERSION = "v9";
 const CACHE_NAME = `contextos-shell-${SHELL_VERSION}`;
 const CACHE_PREFIX = "contextos-shell-";
 const SHELL_ENTRY = "/dashboard";
 const SHELL_MANIFEST_KEY = "/__contextos_shell_manifest__";
 const CORE_WORKSPACE_ROUTES = new Set([
   "/dashboard",
+  // Compatibility aliases resolve inside the local router; these are not first-class product surfaces.
   "/inbox",
   "/today",
   "/this-week",

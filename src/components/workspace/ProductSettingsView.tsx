@@ -9,7 +9,6 @@ import {
   FileText,
   Moon,
   RefreshCw,
-  ShieldCheck,
   SlidersHorizontal,
   Sun,
   Trash2,

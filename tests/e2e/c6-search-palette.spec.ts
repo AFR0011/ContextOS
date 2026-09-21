@@ -102,8 +102,9 @@ test("Cmd Ctrl K supports keyboard navigation and direct Task creation", async (
   await palette.getByLabel("Search or run a command").fill(title);
   await expect(palette.getByText(title, { exact: true })).toBeVisible();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/projects\//);
-  await expect(page.getByText(title, { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/search\?.*selected=task%3A/);
+  await expect(page.getByTestId("search-selected-record")).toContainText(title);
+  await expect(page.getByTestId("search-selected-record").getByRole("button", { name: "Open project" })).toBeVisible();
 });
 
 test("Cmd Ctrl K creates canonical Dates with mandatory context", async ({ page }) => {

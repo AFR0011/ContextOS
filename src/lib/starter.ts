@@ -19,8 +19,7 @@ export const defaultDomainTemplates = [
   ["career", "Planning"],
   ["longterm", "Long-Term Goals"],
   ["ai", "AI Agent Context"],
-  ["creative", "Creative Work"],
-  ["notes", "Notes"]
+  ["creative", "Creative Work"]
 ] as const;
 
 export async function clearWorkspace(tx: Tx, userId: string) {
@@ -107,7 +106,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         domainId: domains.dev,
         parentProjectId: null,
         status: "active",
-        currentObjective: "Turn the blueprint into a daily-use system for capture, execution, and recovery.",
+        currentObjective: "Keep daily execution, temporal context, and project recovery coherent.",
         nextAction: "Run one real workday through Dashboard, Inbox, Today, and project recovery.",
         latestStatus: "Next/Postgres direction chosen. Offline core views and local auth are part of v0.1.",
         recoveryNotes: "## Working notes\n- Keep dashboard capture fast.\n- Keep project recovery structured but editable.\n\n## Demo handoff\n- Auth should feel real locally\n- Offline capture should not lose anything\n- Project pages should answer what to do next",
@@ -116,11 +115,11 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
       {
         id: contextDashboardProjectId,
         userId,
-        name: "Dashboard 2.0 Foundation",
+        name: "Home & Navigation",
         domainId: domains.dev,
         parentProjectId: contextProjectId,
         status: "active",
-        currentObjective: "Make the dashboard feel like a daily command page with a markdown canvas plus fixed widgets.",
+        currentObjective: "Keep Home, Search, and navigation calm and useful for daily execution.",
         nextAction: "Use the dashboard canvas during the next real work session.",
         latestStatus: "Dashboard canvas is being validated as the Notion-style layer for v0.1.x.",
         recoveryNotes: "",
@@ -174,7 +173,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
       {
         id: idFor(userId, "task-inbox"),
         userId,
-        title: "Process inbox captures",
+        title: "Review today's open work",
         plannedDate: dateOnly(0),
         dueDate: null,
         scheduledTime: "09:30",
@@ -185,7 +184,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
       {
         id: idFor(userId, "task-status"),
         userId,
-        title: "Write one clean latest-status note",
+        title: "Refine Home and navigation copy",
         plannedDate: dateOnly(0),
         dueDate: dateOnly(1),
         scheduledTime: "10:30",
@@ -244,77 +243,6 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         details: "Review current benchmark results and decide the next experiment.",
         projectId: null,
         domainId: domains.research
-      }
-    ],
-    skipDuplicates: true
-  });
-
-  await tx.capture.createMany({
-    data: [
-      {
-        id: idFor(userId, "capture-task"),
-        userId,
-        text: "/task Clean up deployment checklist",
-        status: "unprocessed",
-        type: "task",
-        convertedToId: null
-      },
-      {
-        id: idFor(userId, "capture-status"),
-        userId,
-        text: "/status ContextOS Demo: auth and offline sync need a verification pass",
-        status: "unprocessed",
-        type: "status",
-        convertedToId: null
-      }
-    ],
-    skipDuplicates: true
-  });
-
-  await tx.note.createMany({
-    data: [
-      {
-        id: idFor(userId, "note-dashboard-canvas"),
-        userId,
-        title: "Dashboard Canvas",
-        content: "## Notepad\n- Try using this as the Dashboard 2.0 scratch layer.\n- Keep widgets for execution; keep loose thoughts here.\n\n## Dates\n- Add one real exam, flight, event, or final milestone\n\n## Goals\n- [ ] Decide whether this canvas reduces Notion dashboard use",
-        projectId: null,
-        domainId: domains.notes
-      },
-      {
-        id: idFor(userId, "note-practice-schedule"),
-        userId,
-        title: "Practice Schedule",
-        content: [
-          "| Index | Song | Today? | Status |",
-          "| --- | --- | --- | --- |",
-          "| 1 | Current warmup piece | Yes | Refine |",
-          "| 2 | Harder variation study | Yes | Learn Harder Variation |",
-          "| 3 | Repertoire maintenance | No | Perfect |",
-          "",
-          "## Status options",
-          "- New",
-          "- Learn Harder Variation",
-          "- Refine",
-          "- Perfect"
-        ].join("\n"),
-        projectId: null,
-        domainId: domains.creative
-      }
-    ],
-    skipDuplicates: true
-  });
-
-  await tx.review.createMany({
-    data: [
-      {
-        id: idFor(userId, "review-startup"),
-        userId,
-        type: "daily-startup",
-        date: new Date(),
-        responses: {
-          focus: "Verify the ContextOS core loop, process stale captures, and update one project status."
-        }
       }
     ],
     skipDuplicates: true

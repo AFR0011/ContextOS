@@ -10,7 +10,7 @@ const payload = {
   target: "contextos",
   kind: "next-action",
   title: "Review tomorrow's attention",
-  body: "A proposed next action that still needs Inbox triage.",
+  body: "A proposed next action that still needs explicit user action.",
   area: "career-research",
   sourceRef: { entryId: "daily-1", entryType: "daily", date: "2026-07-15" },
   createdAt: "2026-07-15T12:00:00.000Z",

@@ -2,10 +2,10 @@
 
 import { Boxes, ChevronRight } from "lucide-react";
 import { EmptyState, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
-import { disconnectedLifeOsModuleProvider } from "@/lib/lifeos-modules";
+import { configuredLifeOsModuleProvider } from "@/lib/lifeos-modules";
 
 export function LifeOSFoundationView() {
-  const modules = disconnectedLifeOsModuleProvider.getModules();
+  const modules = configuredLifeOsModuleProvider.getModules();
 
   return (
     <div className="cos-page" data-testid="lifeos-hub">
@@ -47,7 +47,7 @@ export function LifeOSFoundationView() {
                 </a>
               ) : (
                 <div className="mt-4 rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] px-3 py-2 text-xs text-[var(--cos-text-subtle)]">
-                  Entry point not connected
+                  Not connected
                 </div>
               )}
             </article>

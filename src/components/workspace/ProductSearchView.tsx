@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ArrowRight, Search } from "lucide-react";
 import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import { buildCanonicalSearchResults, searchCanonicalResults, type CanonicalSearchResult } from "@/lib/canonical-search";
@@ -45,7 +45,7 @@ export function ProductSearchView() {
   }
 
   const selectedDetails = useMemo(() => {
-    if (!selectedResult) return [] as Array<React.ReactNode>;
+    if (!selectedResult) return [] as ReactNode[];
 
     switch (selectedResult.kind) {
       case "project": {

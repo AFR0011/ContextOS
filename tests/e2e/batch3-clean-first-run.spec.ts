@@ -26,6 +26,7 @@ async function bootstrapData(page: Page) {
     captures: unknown[];
     notes: unknown[];
     deadlines: unknown[];
+    contextDates: unknown[];
     reviews: unknown[];
     dailyNotes: unknown[];
     dashboardScratchpads: unknown[];
@@ -55,6 +56,7 @@ test("new accounts start clean, survive bootstrap, and reach useful work through
   expect(data.captures).toHaveLength(0);
   expect(data.notes).toHaveLength(0);
   expect(data.deadlines).toHaveLength(0);
+  expect(data.contextDates).toHaveLength(0);
   expect(data.reviews).toHaveLength(0);
   expect(data.dailyNotes).toHaveLength(0);
   expect(data.dashboardScratchpads).toHaveLength(1);

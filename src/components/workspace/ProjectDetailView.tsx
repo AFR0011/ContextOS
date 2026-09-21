@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
-import { EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
+import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
 import { useWorkspace } from "@/lib/client-store";
 import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
+import { localDateKey } from "@/lib/dates";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
 
 function EditableText({
@@ -61,7 +62,7 @@ function EditableText({
 
 export function ProjectDetailView({ projectId }: { projectId: string }) {
   const router = useRouter();
-  const { data, addTask, updateProject, updateTask } = useWorkspace();
+  const { data, addTask, addContextDate, updateProject, updateTask } = useWorkspace();
   const canonical = useMemo(() => adaptLegacyWorkspace(data).workspace, [data]);
   const project = canonical.projects.find((item) => item.id === projectId);
   const legacyProject = data.projects.find((item) => item.id === projectId);
@@ -69,6 +70,12 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const [taskTitle, setTaskTitle] = useState("");
   const [plannedDate, setPlannedDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
+  const [dateTitle, setDateTitle] = useState("");
+  const [dateKind, setDateKind] = useState<"event" | "deadline">("deadline");
+  const [dateValue, setDateValue] = useState(localDateKey());
+  const [dateStartTime, setDateStartTime] = useState("");
+  const [dateEndTime, setDateEndTime] = useState("");
+  const [dateDetails, setDateDetails] = useState("");
 
   if (!project || !legacyProject) {
     return (
@@ -86,6 +93,9 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   );
   const openTasks = projectTasks.filter((task) => task.state === "open");
   const doneTasks = projectTasks.filter((task) => task.state === "done").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const projectDates = canonical.dates
+    .filter((item) => item.parent.type === "project" && item.parent.projectId === project.id)
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
 
   function addProjectTask() {
     const title = taskTitle.trim();
@@ -100,6 +110,25 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
     setTaskTitle("");
     setPlannedDate("");
     setScheduledTime("");
+  }
+
+  function addProjectDate() {
+    const title = dateTitle.trim();
+    if (!title || !dateValue) return;
+    addContextDate({
+      title,
+      kind: dateKind,
+      date: dateValue,
+      startTime: dateStartTime || null,
+      endTime: dateKind === "event" ? dateEndTime || null : null,
+      details: dateDetails.trim(),
+      projectId: project.id,
+      domainId: null
+    });
+    setDateTitle("");
+    setDateStartTime("");
+    setDateEndTime("");
+    setDateDetails("");
   }
 
   function archive() {
@@ -231,6 +260,48 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
               <button type="button" onClick={addProjectTask} disabled={!taskTitle.trim()} className="cos-btn cos-btn-primary px-3 py-2 text-sm disabled:opacity-50">
                 <Plus className="h-4 w-4" /> Add
               </button>
+            </div>
+          ) : null}
+        </div>
+      </Section>
+
+      <Section title="Dates" description="Events and external deadlines tied to this Project." className="mt-8">
+        <div className="cos-surface p-3" data-testid="project-dates">
+          <div className="space-y-1">
+            {projectDates.map((item) => (
+              <DateRow
+                key={item.id}
+                title={item.title}
+                kind={item.kind}
+                time={item.startTime}
+                meta={item.date}
+                onOpen={() => router.push("/dates")}
+              />
+            ))}
+            {!projectDates.length ? <p className="px-3 py-4 text-sm text-[var(--cos-text-subtle)]">No Dates for this Project.</p> : null}
+          </div>
+
+          {project.state === "active" ? (
+            <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 lg:grid-cols-[7rem_minmax(0,1fr)_10rem_8rem_8rem_auto]">
+              <select
+                value={dateKind}
+                onChange={(event) => {
+                  const next = event.target.value as "event" | "deadline";
+                  setDateKind(next);
+                  if (next === "deadline") setDateEndTime("");
+                }}
+                aria-label="Date kind"
+                className="cos-input px-3 py-2 text-sm"
+              >
+                <option value="event">Event</option>
+                <option value="deadline">Deadline</option>
+              </select>
+              <input value={dateTitle} onChange={(event) => setDateTitle(event.target.value)} placeholder="Add a Date..." className="cos-input px-3 py-2 text-sm" />
+              <input type="date" value={dateValue} onChange={(event) => setDateValue(event.target.value)} aria-label="Date" className="cos-input px-3 py-2 text-sm" />
+              <input type="time" value={dateStartTime} onChange={(event) => setDateStartTime(event.target.value)} aria-label="Date start time" className="cos-input px-3 py-2 text-sm" />
+              <input type="time" value={dateEndTime} onChange={(event) => setDateEndTime(event.target.value)} aria-label="Date end time" disabled={dateKind === "deadline"} className="cos-input px-3 py-2 text-sm disabled:opacity-45" />
+              <button type="button" onClick={addProjectDate} disabled={!dateTitle.trim() || !dateValue} className="cos-btn cos-btn-primary px-3 py-2 text-sm disabled:opacity-50"><Plus className="h-4 w-4" /> Add</button>
+              <textarea value={dateDetails} onChange={(event) => setDateDetails(event.target.value)} placeholder="Details (optional)" rows={2} className="cos-input resize-y px-3 py-2 text-sm lg:col-span-6" />
             </div>
           ) : null}
         </div>

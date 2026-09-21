@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Dayline, EmptyState, EntityRow, InsightCard, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
+import { DateRow, Dayline, EmptyState, EntityRow, InsightCard, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
 import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
-import { getContextsForToday, getTodayTasks } from "@/lib/canonical-selectors";
+import { getContextsForToday, getTodayEvents, getTodayTasks, getUpcomingDates } from "@/lib/canonical-selectors";
 import { useWorkspace } from "@/lib/client-store";
 import { dateKeyToLocalDate, localDateKey } from "@/lib/dates";
 import { noOpInsightProvider } from "@/lib/insights";
@@ -106,6 +106,16 @@ function taskContext(task: CanonicalTask, projects: { id: string; name: string }
   return areas.find((area) => area.id === parent.areaId)?.name ?? "";
 }
 
+function dateContext(
+  date: { parent: { type: "project"; projectId: string } | { type: "area"; areaId: string } },
+  projects: { id: string; name: string }[],
+  areas: { id: string; name: string }[]
+) {
+  return date.parent.type === "project"
+    ? projects.find((project) => project.id === date.parent.projectId)?.name ?? ""
+    : areas.find((area) => area.id === date.parent.areaId)?.name ?? "";
+}
+
 export function HomeView() {
   const router = useLocalRouter();
   const { data, updateTask, updateDailyNote } = useWorkspace();
@@ -114,6 +124,14 @@ export function HomeView() {
 
   const todayTasks = useMemo(
     () => getTodayTasks(canonical, today),
+    [canonical, today]
+  );
+  const todayEvents = useMemo(
+    () => getTodayEvents(canonical, today),
+    [canonical, today]
+  );
+  const upcomingDates = useMemo(
+    () => getUpcomingDates(canonical, today).slice(0, 6),
     [canonical, today]
   );
   const timedTasks = useMemo(
@@ -146,15 +164,24 @@ export function HomeView() {
   const date = dateKeyToLocalDate(today);
   const humanDate = date ? format(date, "EEEE, MMMM d") : today;
 
-  const daylineItems = timedTasks.map((task) => ({
-    id: task.id,
-    type: "task" as const,
-    time: task.scheduledTime,
-    title: task.title,
-    done: task.state === "done",
-    meta: taskContext(task, canonical.projects, canonical.areas),
-    onToggle: () => updateTask(task.id, { status: task.state === "open" ? "done" : "todo" })
-  }));
+  const daylineItems = [
+    ...timedTasks.map((task) => ({
+      id: task.id,
+      type: "task" as const,
+      time: task.scheduledTime,
+      title: task.title,
+      done: task.state === "done",
+      meta: taskContext(task, canonical.projects, canonical.areas),
+      onToggle: () => updateTask(task.id, { status: task.state === "open" ? "done" : "todo" })
+    })),
+    ...todayEvents.map((event) => ({
+      id: event.id,
+      type: "event" as const,
+      time: event.startTime,
+      title: event.title,
+      meta: dateContext(event, canonical.projects, canonical.areas)
+    }))
+  ].sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99") || a.title.localeCompare(b.title));
 
   return (
     <div data-testid="home-view" className="cos-page">
@@ -171,11 +198,11 @@ export function HomeView() {
           className="md:col-span-2 xl:col-span-1"
         >
           <div data-testid="home-dayline" className="min-h-[18rem]">
-            {timedTasks.length ? (
+            {daylineItems.length ? (
               <Dayline items={daylineItems} />
             ) : (
               <EmptyState
-                title="No timed work planned"
+                title="No timed work or events today"
                 description="Planned tasks without a time will appear under Anytime."
               />
             )}
@@ -292,6 +319,26 @@ export function HomeView() {
               )}
             </div>
           </Section>
+
+          {upcomingDates.length ? (
+            <Section
+              title="Upcoming"
+              description="Future Events and Deadlines that may affect what you do next."
+            >
+              <div data-testid="home-upcoming" className="space-y-1">
+                {upcomingDates.map((item) => (
+                  <DateRow
+                    key={item.id}
+                    title={item.title}
+                    kind={item.kind}
+                    time={item.startTime}
+                    meta={`${item.date} · ${dateContext(item, canonical.projects, canonical.areas)}`}
+                    onOpen={() => router.push("/dates")}
+                  />
+                ))}
+              </div>
+            </Section>
+          ) : null}
 
         </div>
       </div>

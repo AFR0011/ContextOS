@@ -13,6 +13,7 @@ const models = [
   "capture",
   "note",
   "deadline",
+  "contextDate",
   "review",
   "dailyNote",
   "dashboardScratchpad",

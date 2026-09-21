@@ -20,7 +20,7 @@ const timestampSchema = z.string().min(1).max(80).refine((value) => !Number.isNa
 
 const mutationSchema = z.object({
   mutationId: z.string().min(1).max(160),
-  entityType: z.enum(["domains", "projects", "tasks", "captures", "notes", "deadlines", "reviews", "dailyNotes", "priorities", "dashboardScratchpads", "dashboardPreferences"]),
+  entityType: z.enum(["domains", "projects", "tasks", "captures", "notes", "deadlines", "contextDates", "reviews", "dailyNotes", "priorities", "dashboardScratchpads", "dashboardPreferences"]),
   entityId: z.string().min(1).max(160),
   operation: z.enum(["upsert", "delete"]),
   payload: z.record(z.string().max(80), z.unknown()).nullable(),

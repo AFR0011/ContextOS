@@ -28,6 +28,7 @@ export async function clearWorkspace(tx: Tx, userId: string) {
   await tx.dashboardPreference.deleteMany({ where: { userId } });
   await tx.dashboardScratchpad.deleteMany({ where: { userId } });
   await tx.dailyNote.deleteMany({ where: { userId } });
+  await tx.contextDate.deleteMany({ where: { userId } });
   await tx.review.deleteMany({ where: { userId } });
   await tx.deadline.deleteMany({ where: { userId } });
   await tx.note.deleteMany({ where: { userId } });
@@ -213,6 +214,36 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         projectId: releaseProjectId,
         domainId: domains.career,
         status: "todo"
+      }
+    ],
+    skipDuplicates: true
+  });
+
+  await tx.contextDate.createMany({
+    data: [
+      {
+        id: idFor(userId, "date-contextos-demo"),
+        userId,
+        title: "ContextOS verification pass",
+        kind: "deadline",
+        date: dateOnly(4),
+        startTime: null,
+        endTime: null,
+        details: "Complete the current verification pass and record any blocking issues.",
+        projectId: contextOfflineProjectId,
+        domainId: null
+      },
+      {
+        id: idFor(userId, "date-research-session"),
+        userId,
+        title: "Research review session",
+        kind: "event",
+        date: dateOnly(1),
+        startTime: "14:00",
+        endTime: "15:00",
+        details: "Review current benchmark results and decide the next experiment.",
+        projectId: null,
+        domainId: domains.research
       }
     ],
     skipDuplicates: true

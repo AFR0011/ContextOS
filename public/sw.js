@@ -1,4 +1,4 @@
-const SHELL_VERSION = "v6";
+const SHELL_VERSION = "v7";
 const CACHE_NAME = `contextos-shell-${SHELL_VERSION}`;
 const CACHE_PREFIX = "contextos-shell-";
 const SHELL_ENTRY = "/dashboard";

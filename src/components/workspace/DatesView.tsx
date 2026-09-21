@@ -1,208 +1,271 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { Calendar, CalendarClock, MapPin, Plus, Trash2 } from "lucide-react";
-import { MarkdownEditor } from "@/components/workspace/MarkdownEditor";
+import { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
+import { DateRow, EmptyState, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
+import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
+import type { ContextDate as CanonicalDate, ContextDateKind } from "@/lib/canonical-domain";
 import { useWorkspace } from "@/lib/client-store";
 import { localDateKey } from "@/lib/dates";
-import type { Project } from "@/lib/types";
+import { useLocalRouter as useRouter } from "@/lib/local-router";
 
-function projectName(projects: Project[], id: string | null | undefined) {
-  if (!id) return "";
-  return projects.find((project) => project.id === id)?.name || "";
+type Filter = "all" | ContextDateKind;
+
+function parentValue(date: CanonicalDate) {
+  return date.parent.type === "project" ? `project:${date.parent.projectId}` : `area:${date.parent.areaId}`;
 }
 
-function Page({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode }) {
-  return (
-    <div className="cos-page">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">{title}</h1>
-          {subtitle ? <p className="mt-1 max-w-2xl text-sm text-[var(--cos-text-muted)]">{subtitle}</p> : null}
-        </div>
-        {action}
-      </div>
-      {children}
-    </div>
-  );
+function contextLabel(
+  date: CanonicalDate,
+  projects: { id: string; name: string }[],
+  areas: { id: string; name: string }[]
+) {
+  return date.parent.type === "project"
+    ? projects.find((project) => project.id === date.parent.projectId)?.name ?? "Project"
+    : areas.find((area) => area.id === date.parent.areaId)?.name ?? "Area";
 }
 
-function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description?: string }) {
-  return (
-    <div className="cos-empty px-4 py-8 text-center">
-      <Icon className="mx-auto mb-3 h-10 w-10 text-[var(--cos-text-subtle)]" />
-      <p className="text-sm font-medium text-[var(--cos-text-muted)]">{title}</p>
-      {description ? <p className="mt-1 text-xs text-[var(--cos-text-subtle)]">{description}</p> : null}
-    </div>
-  );
-}
-
-function EditableField({
-  value,
-  placeholder,
-  multiline,
-  rows = 3,
-  className = "",
-  inputClassName = "",
-  onSave
+function DateEditor({
+  date,
+  projects,
+  areas,
+  onUpdate
 }: {
-  value: string;
-  placeholder: string;
-  multiline?: boolean;
-  rows?: number;
-  className?: string;
-  inputClassName?: string;
-  onSave: (value: string) => void;
+  date: CanonicalDate;
+  projects: { id: string; name: string; state: "active" | "archived" }[];
+  areas: { id: string; name: string; state: "active" | "archived" }[];
+  onUpdate: (updates: {
+    title?: string;
+    kind?: ContextDateKind;
+    date?: string;
+    startTime?: string | null;
+    endTime?: string | null;
+    details?: string;
+    projectId?: string | null;
+    domainId?: string | null;
+  }) => void;
 }) {
-  const { sync } = useWorkspace();
-  const [draft, setDraft] = useState(value);
-  const [savedFlash, setSavedFlash] = useState(false);
-  const dirty = draft !== value;
-
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  function commit() {
-    if (!dirty) return;
-    onSave(draft);
-    setSavedFlash(true);
-    window.setTimeout(() => setSavedFlash(false), 1200);
-  }
-
-  function reset() {
-    setDraft(value);
-    setSavedFlash(false);
-  }
-
-  const baseClass = `w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-sm outline-none placeholder:text-[var(--cos-text-subtle)] hover:bg-[var(--cos-bg-soft)] focus:border-[var(--cos-primary-border)] focus:bg-[var(--cos-bg-elevated)] focus:ring-2 focus:ring-[var(--cos-focus)] ${inputClassName}`;
-
   return (
-    <div className={`min-w-0 ${className}`}>
-      {multiline ? (
-        <textarea
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onBlur={commit}
-          onKeyDown={(event) => {
-            if ((event.ctrlKey || event.metaKey) && event.key === "Enter") commit();
-            if (event.key === "Escape") reset();
-          }}
-          rows={rows}
-          placeholder={placeholder}
-          className={`${baseClass} min-h-24 resize-y`}
+    <details className="cos-surface group">
+      <summary className="list-none cursor-pointer">
+        <DateRow
+          title={date.title}
+          kind={date.kind}
+          time={date.startTime}
+          meta={`${date.date} · ${contextLabel(date, projects, areas)}`}
         />
-      ) : (
-        <input
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onBlur={commit}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              commit();
-              event.currentTarget.blur();
-            }
-            if (event.key === "Escape") reset();
-          }}
-          placeholder={placeholder}
-          className={baseClass}
-        />
-      )}
-      {(dirty || savedFlash) ? (
-        <div className="mt-1 flex flex-wrap items-center justify-end gap-2 text-[11px]">
-          <span className={dirty ? "text-[var(--cos-warning-text)]" : "text-[var(--cos-success-text)]"}>{dirty ? "Unsaved changes" : "Saved"}</span>
-          {dirty && !sync.online ? <span data-testid="offline-edit-warning" className="cos-pill cos-pill-warning">Offline: save will queue</span> : null}
-          {dirty ? (
-            <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={commit} className="rounded px-2 py-0.5 font-semibold text-[var(--cos-primary-text)] hover:bg-[var(--cos-primary-soft)]">
-              Save
-            </button>
-          ) : null}
+      </summary>
+      <div className="grid gap-3 border-t border-[var(--cos-border-soft)] p-4 lg:grid-cols-2">
+        <label className="space-y-1 lg:col-span-2">
+          <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Title</span>
+          <input
+            defaultValue={date.title}
+            onBlur={(event) => {
+              const title = event.target.value.trim();
+              if (title && title !== date.title) onUpdate({ title });
+              else if (!title) event.target.value = date.title;
+            }}
+            className="cos-input w-full px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Kind</span>
+          <select
+            value={date.kind}
+            onChange={(event) => {
+              const kind = event.target.value as ContextDateKind;
+              onUpdate({ kind, endTime: kind === "deadline" ? null : date.endTime });
+            }}
+            className="cos-input w-full px-3 py-2 text-sm"
+          >
+            <option value="event">Event</option>
+            <option value="deadline">Deadline</option>
+          </select>
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Context</span>
+          <select
+            value={parentValue(date)}
+            onChange={(event) => {
+              const [type, id] = event.target.value.split(":");
+              onUpdate(type === "project"
+                ? { projectId: id, domainId: null }
+                : { projectId: null, domainId: id });
+            }}
+            className="cos-input w-full px-3 py-2 text-sm"
+          >
+            <optgroup label="Projects">
+              {projects.map((project) => <option key={project.id} value={`project:${project.id}`}>{project.name}{project.state === "archived" ? " (archived)" : ""}</option>)}
+            </optgroup>
+            <optgroup label="Areas">
+              {areas.map((area) => <option key={area.id} value={`area:${area.id}`}>{area.name}{area.state === "archived" ? " (archived)" : ""}</option>)}
+            </optgroup>
+          </select>
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Date</span>
+          <input type="date" value={date.date} onChange={(event) => event.target.value && onUpdate({ date: event.target.value })} className="cos-input w-full px-3 py-2 text-sm" />
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="space-y-1">
+            <span className="text-xs font-semibold text-[var(--cos-text-muted)]">{date.kind === "event" ? "Start" : "Time"}</span>
+            <input type="time" value={date.startTime ?? ""} onChange={(event) => onUpdate({ startTime: event.target.value || null })} className="cos-input w-full px-3 py-2 text-sm" />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs font-semibold text-[var(--cos-text-muted)]">End</span>
+            <input type="time" value={date.endTime ?? ""} onChange={(event) => onUpdate({ endTime: event.target.value || null })} disabled={date.kind === "deadline"} className="cos-input w-full px-3 py-2 text-sm disabled:opacity-45" />
+          </label>
         </div>
-      ) : null}
-    </div>
+        <label className="space-y-1 lg:col-span-2">
+          <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Details</span>
+          <textarea
+            defaultValue={date.details}
+            onBlur={(event) => {
+              if (event.target.value !== date.details) onUpdate({ details: event.target.value });
+            }}
+            rows={3}
+            className="cos-input w-full resize-y px-3 py-2 text-sm"
+          />
+        </label>
+      </div>
+    </details>
   );
 }
 
 export function DatesView() {
-  const { data, addDeadline, updateDeadline } = useWorkspace();
+  const router = useRouter();
+  const { data, addContextDate, updateContextDate } = useWorkspace();
+  const canonical = useMemo(() => adaptLegacyWorkspace(data).workspace, [data]);
+  const today = localDateKey();
+  const [filter, setFilter] = useState<Filter>("all");
   const [showAdd, setShowAdd] = useState(false);
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState(localDateKey());
-  const [time, setTime] = useState("");
-  const [location, setLocation] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const activeProjects = data.projects.filter((project) => !project.trashedAt && project.status !== "archived");
-  const deadlines = data.deadlines.filter((deadline) => !deadline.trashedAt).sort((a, b) => a.date.localeCompare(b.date));
+  const [kind, setKind] = useState<ContextDateKind>("event");
+  const [date, setDate] = useState(today);
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [details, setDetails] = useState("");
+  const [parent, setParent] = useState("");
 
-  function create() {
-    if (!title.trim()) return;
-    addDeadline({ title: title.trim(), date, time: time || null, location: location.trim(), projectId: projectId || null });
+  const projects = canonical.projects;
+  const areas = canonical.areas;
+  const activeProjects = projects.filter((project) => project.state === "active");
+  const activeAreas = areas.filter((area) => area.state === "active");
+  const filtered = canonical.dates.filter((item) => filter === "all" || item.kind === filter);
+  const todayDates = filtered.filter((item) => item.date === today).sort((a, b) => (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99") || a.title.localeCompare(b.title));
+  const upcoming = filtered.filter((item) => item.date > today).sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
+  const past = filtered.filter((item) => item.date < today).sort((a, b) => b.date.localeCompare(a.date) || (b.startTime ?? "").localeCompare(a.startTime ?? ""));
+
+  function createDate() {
+    const trimmed = title.trim();
+    if (!trimmed || !parent || !date) return;
+    const [type, id] = parent.split(":");
+    addContextDate({
+      title: trimmed,
+      kind,
+      date,
+      startTime: startTime || null,
+      endTime: kind === "event" ? endTime || null : null,
+      details: details.trim(),
+      projectId: type === "project" ? id : null,
+      domainId: type === "area" ? id : null
+    });
     setTitle("");
-    setTime("");
-    setLocation("");
-    setProjectId("");
+    setStartTime("");
+    setEndTime("");
+    setDetails("");
     setShowAdd(false);
   }
 
-  return (
-    <Page title="Dates" subtitle="Important real-world dates, kept separate from task due dates." action={<button onClick={() => setShowAdd(true)} className="cos-btn cos-btn-primary px-4 py-2 text-sm"><Plus className="h-4 w-4" /> Add Date</button>}>
-      {showAdd ? (
-        <div className="cos-surface mb-4 p-4">
-          <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Date title..." className="cos-input w-full px-3 py-2 text-sm" />
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:flex lg:items-center">
-            <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="cos-input w-full px-3 py-2 text-sm lg:w-auto" />
-            <input aria-label="Date time" type="time" value={time} onChange={(event) => setTime(event.target.value)} className="cos-input w-full px-3 py-2 text-sm lg:w-auto" />
-            <input aria-label="Date location" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Location" className="cos-input min-w-0 px-3 py-2 text-sm lg:flex-1" />
-            <select value={projectId} onChange={(event) => setProjectId(event.target.value)} className="cos-input w-full px-3 py-2 text-sm lg:w-auto">
-              <option value="">No project</option>
-              {activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-            </select>
-            <button onClick={create} className="cos-btn cos-btn-primary px-4 py-2 text-sm">Add</button>
-          </div>
-        </div>
-      ) : null}
+  const renderGroup = (items: CanonicalDate[], empty: string) =>
+    items.length ? (
       <div className="space-y-2">
-        {deadlines.map((deadline) => {
-          const overdue = deadline.date < localDateKey() && !deadline.archivedAt;
-          return (
-            <div key={deadline.id} className={`rounded-lg border bg-[var(--cos-bg-elevated)] p-3 shadow-[var(--cos-shadow-sm)] ${overdue ? "border-[var(--cos-danger-border)]" : "border-[var(--cos-border)]"} ${deadline.archivedAt ? "opacity-60" : ""}`}>
-              <div className="flex items-start gap-3">
-                <Calendar className={`mt-2 h-4 w-4 ${overdue ? "text-[var(--cos-danger)]" : "text-[var(--cos-date)]"}`} />
-                <div className="min-w-0 flex-1">
-                  <EditableField value={deadline.title} placeholder="Date title" onSave={(nextTitle) => updateDeadline(deadline.id, { title: nextTitle })} inputClassName={`font-medium ${overdue ? "text-[var(--cos-danger-text)]" : "text-[var(--cos-text-strong)]"}`} />
-                  <div className="flex flex-wrap gap-1.5 px-3 text-xs text-[var(--cos-text-subtle)]">
-                    {deadline.time ? <span className="cos-pill cos-pill-primary"><CalendarClock className="h-3 w-3" />{deadline.time}</span> : null}
-                    {deadline.location ? <span className="cos-pill cos-pill-muted"><MapPin className="h-3 w-3" />{deadline.location}</span> : null}
-                    {projectName(data.projects, deadline.projectId) ? <span>{projectName(data.projects, deadline.projectId)}</span> : null}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:flex lg:items-start lg:pl-7">
-                <input type="date" value={deadline.date} onChange={(event) => updateDeadline(deadline.id, { date: event.target.value })} className="cos-input w-full px-3 py-2 text-sm lg:w-auto lg:px-2 lg:py-1 lg:text-xs" />
-                <input aria-label={`${deadline.title} time`} type="time" value={deadline.time ?? ""} onChange={(event) => updateDeadline(deadline.id, { time: event.target.value || null })} className="cos-input w-full px-3 py-2 text-sm lg:w-auto lg:px-2 lg:py-1 lg:text-xs" />
-                <div className="min-w-0 lg:w-36"><EditableField value={deadline.location} placeholder="Location" onSave={(nextLocation) => updateDeadline(deadline.id, { location: nextLocation })} inputClassName="px-3 py-2 text-sm lg:px-2 lg:py-1 lg:text-xs" /></div>
-                <select aria-label={`${deadline.title} project`} value={deadline.projectId ?? ""} onChange={(event) => updateDeadline(deadline.id, { projectId: event.target.value || null })} className="cos-input w-full px-3 py-2 text-sm lg:w-40 lg:px-2 lg:py-1 lg:text-xs">
-                  <option value="">No project</option>
-                  {activeProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-                </select>
-                <button aria-label={deadline.archivedAt ? `Restore ${deadline.title}` : `Archive ${deadline.title}`} onClick={() => updateDeadline(deadline.id, { archivedAt: deadline.archivedAt ? null : new Date().toISOString() })} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-xs">{deadline.archivedAt ? "Restore" : "Archive"}</button>
-                <button aria-label={`Delete ${deadline.title}`} onClick={() => updateDeadline(deadline.id, { trashedAt: new Date().toISOString() })} className="grid h-10 w-10 place-items-center rounded-md text-[var(--cos-text-subtle)] hover:bg-[var(--cos-danger-soft)] hover:text-[var(--cos-danger)]"><Trash2 className="h-4 w-4" /></button>
-              </div>
-              <div className="mt-3 lg:pl-7">
-                <MarkdownEditor
-                  value={deadline.notes}
-                  placeholder="Date notes..."
-                  minLines={2}
-                  mode="compact"
-                  dataTestId={`deadline-notes-${deadline.id}`}
-                  onSave={(notes) => updateDeadline(deadline.id, { notes })}
-                />
-              </div>
-            </div>
-          );
-        })}
-        {!deadlines.length ? <EmptyState icon={Calendar} title="No important dates" /> : null}
+        {items.map((item) => (
+          <DateEditor
+            key={item.id}
+            date={item}
+            projects={projects}
+            areas={areas}
+            onUpdate={(updates) => updateContextDate(item.id, updates)}
+          />
+        ))}
       </div>
-    </Page>
+    ) : <p className="text-sm text-[var(--cos-text-subtle)]">{empty}</p>;
+
+  return (
+    <div className="cos-page" data-testid="dates-view">
+      <PageHeader
+        eyebrow="Time"
+        title="Dates"
+        description="Events and external deadlines. Task planning remains separate."
+        action={<button type="button" onClick={() => setShowAdd(true)} className="cos-btn cos-btn-primary px-4 py-2 text-sm"><Plus className="h-4 w-4" /> Add Date</button>}
+      />
+
+      <div className="mb-6 flex flex-wrap gap-2" aria-label="Date filters">
+        {(["all", "event", "deadline"] as const).map((value) => (
+          <button key={value} type="button" onClick={() => setFilter(value)} className={`cos-btn px-3 py-1.5 text-xs ${filter === value ? "cos-btn-primary" : "cos-btn-secondary"}`}>
+            {value === "all" ? "All" : value === "event" ? "Events" : "Deadlines"}
+          </button>
+        ))}
+      </div>
+
+      {showAdd ? (
+        <section className="cos-surface mb-8 p-4" data-testid="context-date-create">
+          <div className="grid gap-3 lg:grid-cols-2">
+            <label className="space-y-1 lg:col-span-2">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Title</span>
+              <input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Date title" className="cos-input w-full px-3 py-2 text-sm" />
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Kind</span>
+              <select value={kind} onChange={(event) => { const next = event.target.value as ContextDateKind; setKind(next); if (next === "deadline") setEndTime(""); }} className="cos-input w-full px-3 py-2 text-sm">
+                <option value="event">Event</option>
+                <option value="deadline">Deadline</option>
+              </select>
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Context</span>
+              <select value={parent} onChange={(event) => setParent(event.target.value)} className="cos-input w-full px-3 py-2 text-sm">
+                <option value="">Choose Project or Area…</option>
+                {activeProjects.length ? <optgroup label="Projects">{activeProjects.map((project) => <option key={project.id} value={`project:${project.id}`}>{project.name}</option>)}</optgroup> : null}
+                {activeAreas.length ? <optgroup label="Areas">{activeAreas.map((area) => <option key={area.id} value={`area:${area.id}`}>{area.name}</option>)}</optgroup> : null}
+              </select>
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Date</span>
+              <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="space-y-1">
+                <span className="text-xs font-semibold text-[var(--cos-text-muted)]">{kind === "event" ? "Start" : "Time"}</span>
+                <input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs font-semibold text-[var(--cos-text-muted)]">End</span>
+                <input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} disabled={kind === "deadline"} className="cos-input w-full px-3 py-2 text-sm disabled:opacity-45" />
+              </label>
+            </div>
+            <label className="space-y-1 lg:col-span-2">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Details</span>
+              <textarea value={details} onChange={(event) => setDetails(event.target.value)} rows={3} className="cos-input w-full resize-y px-3 py-2 text-sm" />
+            </label>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button type="button" onClick={createDate} disabled={!title.trim() || !parent || !date} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50">Add Date</button>
+            <button type="button" onClick={() => setShowAdd(false)} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
+          </div>
+        </section>
+      ) : null}
+
+      {!projects.length && !areas.length ? (
+        <EmptyState title="Create an Area first" description="Every Date must belong to a Project or Area." action={<button type="button" onClick={() => router.push("/areas")} className="cos-btn cos-btn-secondary px-4 py-2 text-sm">Open Areas</button>} />
+      ) : (
+        <>
+          <Section title="Today">{renderGroup(todayDates, "No Dates today.")}</Section>
+          <Section title="Upcoming" className="mt-8">{renderGroup(upcoming, "No upcoming Dates.")}</Section>
+          <Section title="Past" className="mt-8">{renderGroup(past, "No past Dates.")}</Section>
+        </>
+      )}
+    </div>
   );
 }

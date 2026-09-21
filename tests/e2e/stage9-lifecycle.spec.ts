@@ -112,6 +112,7 @@ async function seedOtherLocalUser(page: Page) {
       captures: [],
       notes: [],
       deadlines: [],
+      contextDates: [],
       reviews: [],
       dailyNotes: [],
       dashboardScratchpads: [],

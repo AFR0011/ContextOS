@@ -14,6 +14,7 @@ export interface LegacyDiscardReport {
   unscopedTasks: number;
   tasksWithMissingProject: number;
   tasksWithMissingArea: number;
+  contextDatesWithInvalidParent: number;
 }
 
 export interface CanonicalAdaptationResult {
@@ -48,7 +49,8 @@ export function adaptLegacyWorkspace(source: WorkspaceData): CanonicalAdaptation
     archivedOrTrashedTasks: 0,
     unscopedTasks: 0,
     tasksWithMissingProject: 0,
-    tasksWithMissingArea: 0
+    tasksWithMissingArea: 0,
+    contextDatesWithInvalidParent: 0
   };
 
   const areas = source.domains.map((area) => ({
@@ -122,7 +124,42 @@ export function adaptLegacyWorkspace(source: WorkspaceData): CanonicalAdaptation
       areas,
       projects,
       tasks,
-      dates: [],
+      dates: (source.contextDates ?? []).flatMap((date) => {
+        if (date.projectId) {
+          if (date.domainId || !projectIds.has(date.projectId)) {
+            discarded.contextDatesWithInvalidParent += 1;
+            return [];
+          }
+          return [{
+            id: date.id,
+            title: date.title,
+            kind: date.kind,
+            parent: { type: "project" as const, projectId: date.projectId },
+            date: date.date,
+            startTime: date.startTime,
+            endTime: date.endTime,
+            details: date.details,
+            createdAt: date.createdAt,
+            updatedAt: date.updatedAt
+          }];
+        }
+        if (date.domainId && areaIds.has(date.domainId)) {
+          return [{
+            id: date.id,
+            title: date.title,
+            kind: date.kind,
+            parent: { type: "area" as const, areaId: date.domainId },
+            date: date.date,
+            startTime: date.startTime,
+            endTime: date.endTime,
+            details: date.details,
+            createdAt: date.createdAt,
+            updatedAt: date.updatedAt
+          }];
+        }
+        discarded.contextDatesWithInvalidParent += 1;
+        return [];
+      }),
       dailyNotes: (source.dailyNotes ?? []).map((note) => ({
         id: note.id,
         localDate: note.localDate,

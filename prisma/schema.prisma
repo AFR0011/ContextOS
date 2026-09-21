@@ -20,6 +20,7 @@ model User {
   captures      Capture[]
   notes         Note[]
   deadlines     Deadline[]
+  contextDates  ContextDate[]
   reviews       Review[]
   dailyNotes    DailyNote[]
   dashboardScratchpads  DashboardScratchpad[]
@@ -156,6 +157,28 @@ model Deadline {
 
   @@index([userId])
   @@index([userId, date])
+}
+
+model ContextDate {
+  id        String   @id
+  userId    String
+  title     String
+  kind      String
+  date      DateTime
+  startTime String?
+  endTime   String?
+  details   String   @default("")
+  projectId String?
+  domainId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([userId, projectId])
+  @@index([userId, domainId])
 }
 
 model Review {

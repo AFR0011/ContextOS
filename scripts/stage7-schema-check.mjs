@@ -14,6 +14,7 @@ const userOwnedModels = [
   "Capture",
   "Note",
   "Deadline",
+  "ContextDate",
   "Review",
   "DailyNote",
   "DashboardScratchpad",

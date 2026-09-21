@@ -4,6 +4,7 @@ import type {
   Capture,
   DashboardPreference,
   DashboardScratchpad,
+  ContextDate,
   DailyNote,
   Deadline,
   Domain,
@@ -19,13 +20,14 @@ import { utcDateToDateKey } from "./dates";
 const iso = (date: Date | null | undefined) => (date ? date.toISOString() : null);
 
 export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
-  const [domains, projects, tasks, captures, notes, deadlines, reviews, dailyNotes, dashboardScratchpads, dashboardPreferences] = await Promise.all([
+  const [domains, projects, tasks, captures, notes, deadlines, contextDates, reviews, dailyNotes, dashboardScratchpads, dashboardPreferences] = await Promise.all([
     prisma.domain.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
     prisma.project.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.task.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.capture.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
     prisma.note.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
     prisma.deadline.findMany({ where: { userId }, orderBy: { date: "asc" } }),
+    prisma.contextDate.findMany({ where: { userId }, orderBy: { date: "asc" } }),
     prisma.review.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
     prisma.dailyNote.findMany({ where: { userId }, orderBy: { localDate: "desc" } }),
     prisma.dashboardScratchpad.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } }),
@@ -104,6 +106,19 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       updatedAt: d.updatedAt.toISOString(),
       archivedAt: iso(d.archivedAt),
       trashedAt: iso(d.trashedAt)
+    })),
+    contextDates: contextDates.map((d): ContextDate => ({
+      id: d.id,
+      title: d.title,
+      kind: d.kind as ContextDate["kind"],
+      date: utcDateToDateKey(d.date) ?? "",
+      startTime: d.startTime,
+      endTime: d.endTime,
+      details: d.details,
+      projectId: d.projectId,
+      domainId: d.domainId,
+      createdAt: d.createdAt.toISOString(),
+      updatedAt: d.updatedAt.toISOString()
     })),
     reviews: reviews.map((r): Review => ({
       id: r.id,

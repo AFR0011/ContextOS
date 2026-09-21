@@ -80,7 +80,7 @@ test("existing task editor remains functional while Home projects the edited tas
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await page.getByRole("button", { name: "Edit task Process inbox captures" }).click();
+  await page.getByRole("button", { name: "Edit task Review today's open work" }).click();
 
   const dialog = page.getByTestId("task-edit-dialog");
   await dialog.getByLabel("Title").fill(editedTitle);
@@ -118,7 +118,7 @@ test("task editor stays usable on mobile and preserves project-area inheritance"
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
 
-  const editButton = page.getByRole("button", { name: "Edit task Process inbox captures" });
+  const editButton = page.getByRole("button", { name: "Edit task Review today's open work" });
   await expectMinTouchTarget(editButton);
   await editButton.click();
 
@@ -137,7 +137,7 @@ test("task editor stays usable on mobile and preserves project-area inheritance"
   await expectMinTouchTarget(dialog.getByRole("button", { name: "Save task" }));
   await dialog.getByRole("button", { name: "Save task" }).click();
 
-  await expect.poll(() => taskSnapshot(page, "Process inbox captures")).toMatchObject({
+  await expect.poll(() => taskSnapshot(page, "Review today's open work")).toMatchObject({
     status: "waiting",
     plannedDate: "2030-04-02",
     dueDate: "2030-04-05",

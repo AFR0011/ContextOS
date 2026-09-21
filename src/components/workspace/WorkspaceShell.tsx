@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { LogoutDialog } from "@/components/workspace/LogoutDialog";
 import { OfflineReadiness } from "@/components/workspace/OfflineReadiness";
+import { WorkspaceCommandPalette } from "@/components/workspace/WorkspaceCommandPalette";
 import type { PublicUser } from "@/lib/auth";
 import { useWorkspace } from "@/lib/client-store";
 import { useLocalRouter } from "@/lib/local-router";
@@ -203,6 +204,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
   return (
     <div className="flex min-h-screen bg-[var(--cos-bg)] text-[var(--cos-text)]">
       <LogoutDialog open={logoutOpen} user={user} sync={sync} syncNow={syncNow} onClose={() => setLogoutOpen(false)} />
+      <WorkspaceCommandPalette />
 
       {open ? (
         <button

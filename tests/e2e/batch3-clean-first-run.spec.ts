@@ -86,12 +86,6 @@ test("new accounts start clean, survive bootstrap, and reach useful work through
   await expect(page).toHaveURL(/\/projects\//);
   await expect(page.getByPlaceholder("Project name")).toHaveValue(projectName);
 
-  await page.goto("/resources");
-  const resourceTitle = `First resource ${Date.now()}`;
-  await page.getByPlaceholder("Resource title...").fill(resourceTitle);
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(page.getByPlaceholder("Note title")).toHaveValue(resourceTitle);
-
   await page.reload();
   await expect(page.getByTestId("first-run-setup")).toHaveCount(0);
   await expect(page.getByText("ContextOS Demo", { exact: true })).toHaveCount(0);
@@ -110,22 +104,12 @@ test("first Area setup is usable on a narrow mobile viewport without horizontal 
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 });
 
-test("quick Project conversion never silently files a Project into the Notes Area", async ({ page }) => {
+test("demo reset no longer seeds retired Inbox Resource or Review product data", async ({ page }) => {
   await loginDemo(page);
-  await page.goto("/inbox");
+  const data = await bootstrapData(page);
 
-  const projectName = `Batch 3 project ${Date.now()}`;
-  await page.getByPlaceholder(/Quick capture/i).fill(`/project ${projectName}`);
-  await page.getByPlaceholder(/Quick capture/i).press("Enter");
-
-  const capture = page.getByTestId("capture-card").filter({ hasText: projectName });
-  await expect(capture).toBeVisible();
-  await capture.getByRole("button", { name: "Convert to project" }).click();
-
-  await expect.poll(async () => {
-    const current = await bootstrapData(page);
-    const project = current.projects.find((item) => item.name === projectName);
-    if (!project) return null;
-    return current.domains.find((domain) => domain.id === project.domainId)?.name ?? null;
-  }).not.toBe("Notes");
+  expect(data.captures).toHaveLength(0);
+  expect(data.notes).toHaveLength(0);
+  expect(data.reviews).toHaveLength(0);
+  expect(data.domains.some((domain) => domain.name === "Notes")).toBe(false);
 });

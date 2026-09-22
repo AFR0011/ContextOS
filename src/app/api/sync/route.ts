@@ -96,7 +96,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid sync payload." }, { status: 400 });
     }
 
-    const mutations = parsed.data.mutations as QueuedMutation[];
+    const mutations = parsed.data.mutations as unknown as QueuedMutation[];
     const restoreBarrier = await enforceWorkspaceRestoreBarrier(user.id, mutations);
     const syncResult = await applySyncMutations(user.id, restoreBarrier.allowed);
     const data = await getWorkspaceData(user.id);

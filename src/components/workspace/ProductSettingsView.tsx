@@ -149,12 +149,23 @@ export function ProductSettingsView() {
       });
       const body = await response.json().catch(() => null) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error || "Workspace import failed.");
-      await forceRefreshFromServer();
-      setImportSuccess(importMode === "replace" ? "Workspace restored from export." : "Workspace export merged into this account.");
+
+      const refreshed = await forceRefreshFromServer();
       setImportBundle(null);
       setImportPreview(null);
       setImportFileName("");
       setImportConfirmation("");
+
+      if (!refreshed) {
+        setImportError(
+          importMode === "replace"
+            ? "The workspace was restored on the server, but this tab could not refresh the restored data. Use Refresh from server before making further edits."
+            : "The workspace was merged on the server, but this tab could not refresh the merged data. Use Refresh from server before making further edits."
+        );
+        return;
+      }
+
+      setImportSuccess(importMode === "replace" ? "Workspace restored from export." : "Workspace export merged into this account.");
     } catch (error) {
       setImportError(error instanceof Error ? error.message : "Workspace import failed.");
     } finally {

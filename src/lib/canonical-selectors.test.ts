@@ -5,21 +5,21 @@ import { getContextsForToday, getProjectDates, getProjectOpenTasks, getTodayEven
 
 const workspace: CanonicalWorkspace = {
   areas: [
-    { id: "a1", name: "Research", state: "active", createdAt: "", updatedAt: "" },
-    { id: "a2", name: "Career", state: "active", createdAt: "", updatedAt: "" }
+    { id: "a1", name: "Research", state: "active", createdAt: "", updatedAt: "", revision: 1 },
+    { id: "a2", name: "Career", state: "active", createdAt: "", updatedAt: "", revision: 1 }
   ],
   projects: [
-    { id: "p1", name: "Paper", areaId: "a1", objective: "Submit", state: "active", createdAt: "", updatedAt: "" }
+    { id: "p1", name: "Paper", areaId: "a1", objective: "Submit", state: "active", createdAt: "", updatedAt: "", revision: 1 }
   ],
   tasks: [
-    { id: "t1", title: "Write", parent: { type: "project", projectId: "p1" }, plannedDate: "2026-09-20", scheduledTime: "10:00", state: "open", createdAt: "", updatedAt: "" },
-    { id: "t2", title: "Email", parent: { type: "area", areaId: "a2" }, plannedDate: "2026-09-20", scheduledTime: null, state: "done", createdAt: "", updatedAt: "" },
-    { id: "t3", title: "Later", parent: { type: "project", projectId: "p1" }, plannedDate: "2026-09-21", scheduledTime: null, state: "open", createdAt: "", updatedAt: "" }
+    { id: "t1", title: "Write", parent: { type: "project", projectId: "p1" }, plannedDate: "2026-09-20", scheduledTime: "10:00", state: "open", createdAt: "", updatedAt: "", revision: 1 },
+    { id: "t2", title: "Email", parent: { type: "area", areaId: "a2" }, plannedDate: "2026-09-20", scheduledTime: null, state: "done", createdAt: "", updatedAt: "", revision: 1 },
+    { id: "t3", title: "Later", parent: { type: "project", projectId: "p1" }, plannedDate: "2026-09-21", scheduledTime: null, state: "open", createdAt: "", updatedAt: "", revision: 1 }
   ],
   dates: [
-    { id: "d1", title: "Call", kind: "event", parent: { type: "area", areaId: "a2" }, date: "2026-09-20", startTime: "09:00", endTime: "09:30", details: "", createdAt: "", updatedAt: "" },
-    { id: "d2", title: "Deadline", kind: "deadline", parent: { type: "project", projectId: "p1" }, date: "2026-09-22", startTime: null, endTime: null, details: "", createdAt: "", updatedAt: "" },
-    { id: "d3", title: "Review", kind: "event", parent: { type: "project", projectId: "p1" }, date: "2026-09-21", startTime: "14:00", endTime: null, details: "", createdAt: "", updatedAt: "" }
+    { id: "d1", title: "Call", kind: "event", parent: { type: "area", areaId: "a2" }, date: "2026-09-20", startTime: "09:00", endTime: "09:30", details: "", createdAt: "", updatedAt: "", revision: 1 },
+    { id: "d2", title: "Deadline", kind: "deadline", parent: { type: "project", projectId: "p1" }, date: "2026-09-22", startTime: null, endTime: null, details: "", createdAt: "", updatedAt: "", revision: 1 },
+    { id: "d3", title: "Review", kind: "event", parent: { type: "project", projectId: "p1" }, date: "2026-09-21", startTime: "14:00", endTime: null, details: "", createdAt: "", updatedAt: "", revision: 1 }
   ],
   dailyNotes: [],
   insights: []

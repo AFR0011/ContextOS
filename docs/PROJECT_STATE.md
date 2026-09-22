@@ -6,7 +6,7 @@ ContextOS is a self-hostable, local-first workspace application with an evidence
 
 Package version: `1.0.0`.
 
-The post-release redesign has completed C1–C6 on `main`; C7 is the current surface-retirement phase. The definitive product is now based on flat Areas, Projects, Tasks, ContextDates, Daily Notes, canonical Search, a command palette, and a shallow LifeOS hub.
+The post-release canonical redesign has completed C1–C9 on `main`. C10 is the current definitive product-acceptance and baseline-freeze phase. The product is based on flat Areas, Projects, Tasks, ContextDates, Daily Notes, canonical Search, a command palette, and a shallow LifeOS hub.
 
 Historical assurance remains important provenance. Stage 9 closed against GitHub Actions run `31798664757`. Stage 10's verified acceptance candidate is commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`. Later product changes preserve the applicable engineering boundaries while updating tests/docs when semantics intentionally change.
 
@@ -68,7 +68,7 @@ Definitive Settings sections:
 
 Area management lives under Areas, not Settings.
 
-## C7 Surface Retirement
+## Retired Surface Boundary
 
 Inbox, Resources, Reviews, and the standalone Archive page are retired first-class product surfaces.
 
@@ -144,12 +144,14 @@ The canonical offline surfaces are Home, Projects/Project Detail, Dates, Areas/A
 
 The historical Stage 7–10 ladder remains repository provenance and the current verification ladder continues to include the applicable static/security/deployment/lifecycle controls, TypeScript/build gates, production/offline browser tests, and development E2E tests.
 
-Current C7 implementation specifically changes assurance where product semantics changed:
+Current assurance reflects the canonical C8–C9 product while preserving older Stage 7–10 evidence as historical provenance:
 
 - retired-route tests verify explicit redirects rather than deleted UI;
-- local atomicity/user-isolation tests use canonical Daily Notes rather than Inbox Captures;
-- stale-write assurance now protects canonical last-write behavior without relying on retired tombstone fields;
-- production offline checks cover canonical routes plus offline-compatible aliases.
+- local atomicity/user-isolation tests use canonical records rather than retired Inbox/Resource/Review state;
+- stale-write assurance protects canonical last-write behavior without relying on retired tombstone fields;
+- production offline checks cover canonical routes plus compatibility aliases;
+- C9 adds hostile-long-content, touch, keyboard-focus, and full canonical offline mutation/reconnect convergence coverage;
+- C10 adds a separate current acceptance registry rather than rewriting the historical Stage 10 record.
 
 ## Known Boundaries
 
@@ -166,7 +168,7 @@ Current C7 implementation specifically changes assurance where product semantics
 - no irreversible per-record purge without an anti-resurrection protocol;
 - no rolling pre-C8 local workspace/outbox upgrade is promised; incompatible old local state is reset at IndexedDB v3.
 
-Historical note: Stage 10 closed in August 2026 against the earlier **portfolio-stage** local-first boundary. That wording is historical provenance, not the current product maturity label.
+Historical note: Stage 10 closed in August 2026 against the earlier **portfolio-stage** local-first boundary. That wording is historical provenance, not the current product maturity label. Current C10 (September 2026) is a separate post-redesign acceptance program anchored to the accepted C9 baseline.
 
 ## Canonical References
 

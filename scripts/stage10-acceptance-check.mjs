@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 const registryPath = "audits/stage10-acceptance.json";
 const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+const retirements = JSON.parse(fs.readFileSync("audits/historical-artifact-retirements.json", "utf8")).retirements ?? {};
 const entries = Array.isArray(registry.evidence) ? registry.evidence : [];
 const allowedStatuses = new Set(registry.statusValues ?? []);
 const errors = [];
@@ -42,7 +43,20 @@ for (const entry of entries) {
     if (typeof artifact !== "string" || !artifact.trim()) {
       errors.push(`${entry.id}: invalid artifact path.`);
     } else if (!fs.existsSync(artifact)) {
-      errors.push(`${entry.id}: missing artifact ${artifact}`);
+      const retirement = retirements[artifact];
+      if (!retirement) {
+        errors.push(`${entry.id}: missing historical artifact ${artifact} without an explicit retirement record.`);
+        continue;
+      }
+      if (!Array.isArray(retirement.replacements) || retirement.replacements.length === 0) {
+        errors.push(`${entry.id}: retired artifact ${artifact} has no current replacement evidence.`);
+        continue;
+      }
+      for (const replacement of retirement.replacements) {
+        if (!fs.existsSync(replacement)) {
+          errors.push(`${entry.id}: retired artifact ${artifact} points to missing replacement ${replacement}.`);
+        }
+      }
     }
   }
 }
@@ -82,4 +96,4 @@ if (errors.length) {
 const counts = Object.fromEntries(
   [...allowedStatuses].map((status) => [status, entries.filter((entry) => entry.status === status).length])
 );
-console.log(`Stage 10 acceptance registry passed: ${entries.length} unique items. ${JSON.stringify(counts)}`);
+console.log(`Historical Stage 10 acceptance registry passed provenance validation: ${entries.length} unique items. ${JSON.stringify(counts)}`);

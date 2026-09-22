@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
 import { useWorkspace } from "@/lib/client-store";
-import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import { localDateKey } from "@/lib/dates";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
 
@@ -62,10 +61,8 @@ function EditableText({
 
 export function ProjectDetailView({ projectId }: { projectId: string }) {
   const router = useRouter();
-  const { data, addTask, addContextDate, updateProject, updateTask } = useWorkspace();
-  const canonical = useMemo(() => adaptLegacyWorkspace(data).workspace, [data]);
-  const project = canonical.projects.find((item) => item.id === projectId);
-  const legacyProject = data.projects.find((item) => item.id === projectId);
+  const { data, addTask, addDate, updateProject, updateTask } = useWorkspace();
+  const project = data.projects.find((item) => item.id === projectId);
   const [showCompleted, setShowCompleted] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
   const [plannedDate, setPlannedDate] = useState("");
@@ -77,7 +74,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const [dateEndTime, setDateEndTime] = useState("");
   const [dateDetails, setDateDetails] = useState("");
 
-  if (!project || !legacyProject) {
+  if (!project) {
     return (
       <div className="cos-page">
         <PageHeader title="Project not found" description="This Project is unavailable in the canonical workspace." />
@@ -86,14 +83,14 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
     );
   }
 
-  const currentArea = data.domains.find((domain) => domain.id === project.areaId);
-  const areaChoices = data.domains.filter((domain) => !domain.archived || domain.id === project.areaId);
-  const projectTasks = canonical.tasks.filter(
+  const currentArea = data.areas.find((area) => area.id === project.areaId);
+  const areaChoices = data.areas.filter((domain) => area.state === "active" || area.id === project.areaId);
+  const projectTasks = data.tasks.filter(
     (task) => task.parent.type === "project" && task.parent.projectId === project.id
   );
   const openTasks = projectTasks.filter((task) => task.state === "open");
   const doneTasks = projectTasks.filter((task) => task.state === "done").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const projectDates = canonical.dates
+  const projectDates = data.dates
     .filter((item) => item.parent.type === "project" && item.parent.projectId === project.id)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
 
@@ -102,8 +99,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
     if (!title) return;
     addTask({
       title,
-      projectId: project.id,
-      domainId: null,
+      parent: { type: "project", projectId: project.id },
       plannedDate: plannedDate || null,
       scheduledTime: plannedDate ? scheduledTime || null : null
     });
@@ -115,15 +111,14 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   function addProjectDate() {
     const title = dateTitle.trim();
     if (!title || !dateValue) return;
-    addContextDate({
+    addDate({
       title,
       kind: dateKind,
       date: dateValue,
       startTime: dateStartTime || null,
       endTime: dateKind === "event" ? dateEndTime || null : null,
       details: dateDetails.trim(),
-      projectId: project.id,
-      domainId: null
+      parent: { type: "project", projectId: project.id }
     });
     setDateTitle("");
     setDateStartTime("");
@@ -132,11 +127,11 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   }
 
   function archive() {
-    updateProject(project.id, { status: "archived", archivedAt: new Date().toISOString() });
+    updateProject(project.id, { state: "archived" });
   }
 
   function restore() {
-    updateProject(project.id, { status: "active", archivedAt: null });
+    updateProject(project.id, { state: "active" });
   }
 
   return (
@@ -166,27 +161,27 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         <div className="cos-surface grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
           <label className="space-y-1">
             <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Name</span>
-            <EditableText value={legacyProject.name} placeholder="Project name" onSave={(name) => name && updateProject(project.id, { name })} />
+            <EditableText value={project.name} placeholder="Project name" onSave={(name) => name && updateProject(project.id, { name })} />
           </label>
           <label className="space-y-1">
             <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Area</span>
             <select
-              value={legacyProject.domainId}
-              onChange={(event) => updateProject(project.id, { domainId: event.target.value })}
+              value={project.areaId}
+              onChange={(event) => updateProject(project.id, { areaId: event.target.value })}
               className="cos-input w-full px-3 py-2 text-sm"
             >
               {areaChoices.map((area) => (
-                <option key={area.id} value={area.id}>{area.name}{area.archived ? " (archived)" : ""}</option>
+                <option key={area.id} value={area.id}>{area.name}{area.state === "archived" ? " (archived)" : ""}</option>
               ))}
             </select>
           </label>
           <label className="space-y-1 lg:col-span-2">
             <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Objective</span>
             <EditableText
-              value={legacyProject.currentObjective}
+              value={project.objective}
               multiline
               placeholder="What outcome is this Project trying to reach?"
-              onSave={(currentObjective) => updateProject(project.id, { currentObjective })}
+              onSave={(objective) => updateProject(project.id, { objective })}
             />
           </label>
         </div>
@@ -210,7 +205,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                 title={task.title}
                 done={false}
                 meta={[task.plannedDate ? `Planned ${task.plannedDate}` : "", task.scheduledTime ?? ""].filter(Boolean).join(" · ") || "Unscheduled"}
-                onToggle={() => updateTask(task.id, { status: "done" })}
+                onToggle={() => updateTask(task.id, { state: "done" })}
               />
             ))}
             {!openTasks.length ? <p className="px-3 py-4 text-sm text-[var(--cos-text-subtle)]">No open tasks.</p> : null}
@@ -224,7 +219,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                   title={task.title}
                   done
                   meta={task.plannedDate ? `Planned ${task.plannedDate}` : "Completed"}
-                  onToggle={() => updateTask(task.id, { status: "todo" })}
+                  onToggle={() => updateTask(task.id, { state: "open" })}
                 />
               ))}
             </div>

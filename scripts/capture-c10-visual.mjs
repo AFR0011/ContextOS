@@ -30,7 +30,8 @@ run(npx, [
   "-c",
   "playwright.production.config.ts",
   "tests/offline-production/c10-visual-offline.spec.ts",
-  "--project=chromium"
+  "--project=chromium",
+  "--output=test-results/c10-production"
 ]);
 
 run(npx, [
@@ -39,5 +40,6 @@ run(npx, [
   "tests/e2e/c10-visual-baseline.spec.ts",
   "tests/e2e/c10-visual-stress.spec.ts",
   "tests/e2e/c10-visual-empty.spec.ts",
-  "--project=chromium"
+  "--project=chromium",
+  "--output=test-results/c10-standard"
 ]);

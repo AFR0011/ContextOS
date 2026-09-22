@@ -23,8 +23,9 @@ function resultKey(kind: CanonicalSearchKind, id: string) {
 }
 
 function taskContext(task: Task, workspace: CanonicalWorkspace) {
-  if (task.parent.type === "project") {
-    const project = workspace.projects.find((item) => item.id === task.parent.projectId);
+  const parent = task.parent;
+  if (parent.type === "project") {
+    const project = workspace.projects.find((item) => item.id === parent.projectId);
     const area = project ? workspace.areas.find((item) => item.id === project.areaId) : null;
     return {
       label: [project?.name, area?.name].filter(Boolean).join(" · "),
@@ -32,7 +33,7 @@ function taskContext(task: Task, workspace: CanonicalWorkspace) {
       action: project ? "Open project" : null
     };
   }
-  const area = workspace.areas.find((item) => item.id === task.parent.areaId);
+  const area = workspace.areas.find((item) => item.id === parent.areaId);
   return {
     label: area?.name ?? "",
     href: area ? `/areas/${encodeURIComponent(area.id)}` : null,
@@ -41,8 +42,9 @@ function taskContext(task: Task, workspace: CanonicalWorkspace) {
 }
 
 function dateContext(date: ContextDate, workspace: CanonicalWorkspace) {
-  if (date.parent.type === "project") {
-    const project = workspace.projects.find((item) => item.id === date.parent.projectId);
+  const parent = date.parent;
+  if (parent.type === "project") {
+    const project = workspace.projects.find((item) => item.id === parent.projectId);
     const area = project ? workspace.areas.find((item) => item.id === project.areaId) : null;
     return {
       label: [project?.name, area?.name].filter(Boolean).join(" · "),
@@ -50,7 +52,7 @@ function dateContext(date: ContextDate, workspace: CanonicalWorkspace) {
       action: project ? "Open project" : null
     };
   }
-  const area = workspace.areas.find((item) => item.id === date.parent.areaId);
+  const area = workspace.areas.find((item) => item.id === parent.areaId);
   return {
     label: area?.name ?? "",
     href: area ? `/areas/${encodeURIComponent(area.id)}` : null,

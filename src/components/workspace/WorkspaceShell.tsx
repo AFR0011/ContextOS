@@ -206,7 +206,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
 
   if (loading) {
     return (
-      <main data-testid="workspace-local-loading" className="grid min-h-screen place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
+      <main data-testid="workspace-local-loading" className="grid min-h-dvh place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
         <section className="cos-surface flex w-full max-w-md items-center gap-3 p-5">
           <RefreshCw className="h-5 w-5 animate-spin text-[var(--cos-primary)]" />
           <div>
@@ -234,7 +234,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--cos-bg)] text-[var(--cos-text)]">
+    <div className="flex min-h-dvh bg-[var(--cos-bg)] text-[var(--cos-text)]">
       <a
         href="#workspace-main-content"
         onClick={(event) => {
@@ -267,7 +267,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
         aria-hidden={navigationIsHidden ? true : undefined}
         inert={navigationIsHidden ? true : undefined}
         tabIndex={open ? -1 : undefined}
-        className={`fixed inset-y-0 left-0 z-40 flex w-[15.5rem] flex-col border-r border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/96 shadow-[var(--cos-shadow-md)] backdrop-blur-xl transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-[15.5rem] flex-col border-r border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/96 shadow-[var(--cos-shadow-md)] backdrop-blur-xl transition-transform lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 lg:shadow-none ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >

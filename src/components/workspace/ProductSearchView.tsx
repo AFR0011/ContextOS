@@ -127,6 +127,10 @@ export function ProductSearchView() {
         />
       </label>
 
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {query.trim() ? `${results.length} search result${results.length === 1 ? "" : "s"}.` : "Enter a search query."}
+      </div>
+
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)]">
         <section className="cos-surface overflow-hidden" aria-label="Search results">
           {!query.trim() ? (
@@ -144,6 +148,7 @@ export function ProductSearchView() {
               type="button"
               data-testid={`search-result-${result.kind}-${result.id}`}
               onClick={() => selectResult(result)}
+              aria-pressed={selected === result.key}
               className={`flex min-h-16 w-full items-start gap-3 border-b border-[var(--cos-border-soft)] p-4 text-left last:border-b-0 hover:bg-[var(--cos-bg-soft)] ${
                 selected === result.key ? "bg-[var(--cos-primary-soft)]" : ""
               }`}
@@ -160,7 +165,7 @@ export function ProductSearchView() {
           ))}
         </section>
 
-        <aside className="cos-surface p-4" data-testid="search-selected-record">
+        <aside className="cos-surface p-4" data-testid="search-selected-record" aria-label="Selected search result details">
           {!selectedResult ? (
             <p className="text-sm text-[var(--cos-text-muted)]">
               Choose a result to view the record without leaving Search.

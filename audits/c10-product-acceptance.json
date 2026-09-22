@@ -60,7 +60,7 @@
     {
       "id": "CLAIMS-001",
       "title": "Active public documentation describes the canonical C8-C9 product and scopes historical assurance correctly",
-      "status": "pending",
+      "status": "passed",
       "artifacts": [
         "README.md",
         "DESIGN.md",
@@ -69,7 +69,8 @@
         "docs/LOCAL_FIRST_CONTRACT.md",
         "docs/RUN_PROTOCOL.md",
         "docs/DEPLOYMENT.md",
-        "SECURITY.md"
+        "SECURITY.md",
+        "docs/c10/SCREENSHOT_BASELINE.md"
       ]
     },
     {
@@ -92,6 +93,17 @@
         "README.md",
         "docs/LOCAL_FIRST_CONTRACT.md",
         "SECURITY.md"
+      ]
+    },
+    {
+      "id": "VISUAL-001",
+      "title": "Canonical screenshot baseline is captured from a real browser and reviewed for clipping overlap theme and responsive defects",
+      "status": "pending",
+      "artifacts": [
+        "docs/c10/SCREENSHOT_BASELINE.md",
+        "tests/e2e/contextos.spec.ts",
+        "tests/e2e/c6-search-palette.spec.ts",
+        "tests/e2e/stage9-lifecycle.spec.ts"
       ]
     },
     {

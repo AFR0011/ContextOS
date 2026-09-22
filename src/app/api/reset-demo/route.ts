@@ -22,7 +22,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await createStarterWorkspace(prisma, user.id, true);
+    const demoEmail = (process.env.SEED_DEMO_EMAIL ?? "demo@contextos.local").trim().toLowerCase();
+    if (user.email.toLowerCase() !== demoEmail) {
+      return NextResponse.json({ error: "Demo reset is available only for the configured demo account." }, { status: 403 });
+    }
+
+    await prisma.$transaction((tx) => createStarterWorkspace(tx, user.id, true));
     const data = await getWorkspaceData(user.id);
     return NextResponse.json({ data });
   } catch (error) {

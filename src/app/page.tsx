@@ -55,7 +55,7 @@ const principles = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-dvh overflow-hidden bg-[var(--cos-bg)] text-[var(--cos-text)]">
+    <div className="min-h-dvh overflow-hidden bg-[var(--cos-bg)] text-[var(--cos-text)]">
       <header className="border-b border-[var(--cos-border)] bg-[color:rgba(255,255,255,0.88)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <Link href="/" className="flex items-center gap-3" aria-label="ContextOS home">
@@ -94,6 +94,7 @@ export default function HomePage() {
         </div>
       </header>
 
+      <main>
       <section className="relative">
         <div className="pointer-events-none absolute left-1/2 top-[-18rem] h-[42rem] w-[42rem] -translate-x-1/2 rounded-full bg-[color:rgba(94,106,210,0.09)] blur-3xl" />
         <div className="relative mx-auto grid max-w-[1240px] gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-14 lg:py-28">
@@ -250,6 +251,8 @@ export default function HomePage() {
         </div>
       </section>
 
+      </main>
+
       <footer className="border-t border-white/10 bg-[#111424] text-white/50">
         <div className="mx-auto flex max-w-[1240px] flex-col gap-2 px-5 py-6 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <span>ContextOS · self-hostable workspace software</span>
@@ -258,6 +261,6 @@ export default function HomePage() {
           </a>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }

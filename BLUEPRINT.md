@@ -348,7 +348,7 @@ Retired in C7.
 
 - Area/Project archival is visible in-place.
 - canonical historical state is discoverable through Search.
-- C8 removes the old per-record tombstone fields; incompatible pre-C8 local workspace/outbox state is reset at the IndexedDB v3 boundary rather than rolled forward.
+- C8 removes the old per-record tombstone fields; incompatible pre-C8 local workspace/outbox state is reset at the IndexedDB v4 boundary rather than rolled forward.
 
 There is no standalone Archive page in the definitive product.
 
@@ -421,7 +421,7 @@ Retired persistence is removed rather than left behind as hidden compatibility s
 
 Migration rules are one-way and deterministic. Invalid/orphaned legacy rows are discarded according to the locked clean-break rules; surviving records are normalized into the canonical model.
 
-IndexedDB v3 preserves remembered verified-user identity but clears incompatible pre-C8 workspace/outbox snapshots. The next authenticated bootstrap rebuilds canonical local state. Old clients and queued legacy mutation shapes are not supported through a rolling protocol.
+IndexedDB v4 preserves remembered verified-user identity but clears incompatible pre-C8 workspace/outbox snapshots. The next authenticated bootstrap rebuilds canonical local state. Old clients and queued legacy mutation shapes are not supported through a rolling protocol.
 
 Sync accepts only canonical entity types and upsert operations. Export format v2 uses canonical names.
 

@@ -15,6 +15,8 @@ type Variant = {
 const variants: Variant[] = [
   { name: "desktop-light", width: 1440, height: 1000, theme: "light", mobile: false },
   { name: "desktop-dark", width: 1440, height: 1000, theme: "dark", mobile: false },
+  { name: "compact-desktop-light", width: 1024, height: 768, theme: "light", mobile: false },
+  { name: "compact-desktop-dark", width: 1024, height: 768, theme: "dark", mobile: false },
   { name: "mobile-light", width: 390, height: 844, theme: "light", mobile: true },
   { name: "mobile-dark", width: 390, height: 844, theme: "dark", mobile: true }
 ];

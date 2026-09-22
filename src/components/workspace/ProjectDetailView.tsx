@@ -278,7 +278,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           </div>
 
           {project.state === "active" ? (
-            <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 lg:grid-cols-[7rem_minmax(0,1fr)_10rem_8rem_8rem_auto]">
+            <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 md:grid-cols-2 xl:grid-cols-[7rem_minmax(0,1fr)_10rem_8rem_8rem_auto]">
               <select
                 value={dateKind}
                 onChange={(event) => {
@@ -297,7 +297,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
               <input type="time" value={dateStartTime} onChange={(event) => setDateStartTime(event.target.value)} aria-label="Date start time" className="cos-input px-3 py-2 text-sm" />
               <input type="time" value={dateEndTime} onChange={(event) => setDateEndTime(event.target.value)} aria-label="Date end time" disabled={dateKind === "deadline"} className="cos-input px-3 py-2 text-sm disabled:opacity-45" />
               <button type="button" onClick={addProjectDate} disabled={!dateTitle.trim() || !dateValue} className="cos-btn cos-btn-primary px-3 py-2 text-sm disabled:opacity-50"><Plus className="h-4 w-4" /> Add</button>
-              <textarea value={dateDetails} onChange={(event) => setDateDetails(event.target.value)} placeholder="Details (optional)" aria-label="Date details" rows={2} className="cos-input resize-y px-3 py-2 text-sm lg:col-span-6" />
+              <textarea value={dateDetails} onChange={(event) => setDateDetails(event.target.value)} placeholder="Details (optional)" aria-label="Date details" rows={2} className="cos-input resize-y px-3 py-2 text-sm md:col-span-2 xl:col-span-6" />
             </div>
           ) : null}
         </div>

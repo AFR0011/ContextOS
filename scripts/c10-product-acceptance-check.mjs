@@ -93,7 +93,7 @@ if (!syncServer.includes("updateMany") || !syncServer.includes("revision: { incr
 }
 for (const model of ["Area", "Project", "Task", "ContextDate", "DailyNote"]) {
   const block = schema.match(new RegExp(`model ${model} \\\\{([\\\\s\\\\S]*?)\\\\n\\\\}`, "m"))?.[1] ?? "";
-  if (!/revision\\s+Int\\s+@default\\(1\\)/.test(block)) {
+  if (!/revision\s+Int\s+@default\(1\)/.test(block)) {
     errors.push(`${model} is missing the server-owned revision field.`);
   }
 }

@@ -3,130 +3,70 @@ import type { WorkspaceData } from "./types";
 import { dateKeyToUtcDate } from "./dates";
 
 export const CONTEXTOS_EXPORT_FORMAT = "contextos-workspace" as const;
-export const CONTEXTOS_EXPORT_VERSION = 1 as const;
+export const CONTEXTOS_EXPORT_VERSION = 2 as const;
 
 const idSchema = z.string().min(1).max(200);
 const timestampSchema = z.string().min(1).max(100).refine((value) => !Number.isNaN(Date.parse(value)), "Invalid timestamp.");
-const nullableTimestampSchema = timestampSchema.nullable();
-const dateKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const contextDateKeySchema = dateKeySchema.refine((value) => Boolean(dateKeyToUtcDate(value)), "Invalid calendar date.");
+const dateKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => Boolean(dateKeyToUtcDate(value)), "Invalid calendar date.");
 const timeKeySchema = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
 
-const domainSchema = z.object({
+const areaSchema = z.object({
   id: idSchema,
-  name: z.string(),
-  archived: z.boolean(),
+  name: z.string().trim().min(1).max(500),
+  state: z.enum(["active", "archived"]),
   createdAt: timestampSchema,
   updatedAt: timestampSchema
 }).strict();
 
 const projectSchema = z.object({
   id: idSchema,
-  name: z.string(),
-  domainId: idSchema,
-  parentProjectId: idSchema.nullable(),
-  status: z.enum(["active", "paused", "done", "archived"]),
-  currentObjective: z.string(),
-  nextAction: z.string(),
-  latestStatus: z.string(),
-  recoveryNotes: z.string(),
-  openLoops: z.array(z.string()),
+  name: z.string().trim().min(1).max(500),
+  areaId: idSchema,
+  objective: z.string(),
+  state: z.enum(["active", "archived"]),
   createdAt: timestampSchema,
-  updatedAt: timestampSchema,
-  archivedAt: nullableTimestampSchema,
-  trashedAt: nullableTimestampSchema
+  updatedAt: timestampSchema
 }).strict();
+
+const taskParentSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("project"), projectId: idSchema }).strict(),
+  z.object({ type: z.literal("area"), areaId: idSchema }).strict()
+]);
 
 const taskSchema = z.object({
   id: idSchema,
-  title: z.string(),
+  title: z.string().trim().min(1).max(500),
+  parent: taskParentSchema,
   plannedDate: dateKeySchema.nullable(),
-  dueDate: dateKeySchema.nullable(),
-  scheduledTime: z.string().nullable(),
-  projectId: idSchema.nullable(),
-  domainId: idSchema.nullable(),
-  status: z.enum(["todo", "in-progress", "blocked", "waiting", "done", "dropped"]),
-  createdAt: timestampSchema,
-  updatedAt: timestampSchema,
-  archivedAt: nullableTimestampSchema,
-  trashedAt: nullableTimestampSchema
-}).strict();
-
-const captureSchema = z.object({
-  id: idSchema,
-  text: z.string(),
-  status: z.enum(["unprocessed", "converted", "attached", "archived", "deleted"]),
-  type: z.enum(["task", "note", "project", "deadline", "status"]).nullable(),
-  parsedData: z.record(z.string(), z.unknown()).nullable(),
-  convertedToId: idSchema.nullable(),
+  scheduledTime: timeKeySchema.nullable(),
+  state: z.enum(["open", "done"]),
   createdAt: timestampSchema,
   updatedAt: timestampSchema
-}).strict();
+}).strict().superRefine((task, ctx) => {
+  if (!task.plannedDate && task.scheduledTime) {
+    ctx.addIssue({ code: "custom", path: ["scheduledTime"], message: "scheduledTime requires plannedDate." });
+  }
+});
 
-const noteSchema = z.object({
-  id: idSchema,
-  title: z.string(),
-  content: z.string(),
-  projectId: idSchema.nullable(),
-  domainId: idSchema,
-  createdAt: timestampSchema,
-  updatedAt: timestampSchema,
-  archivedAt: nullableTimestampSchema,
-  trashedAt: nullableTimestampSchema
-}).strict();
-
-const deadlineSchema = z.object({
-  id: idSchema,
-  title: z.string(),
-  date: dateKeySchema,
-  time: z.string().nullable(),
-  location: z.string(),
-  projectId: idSchema.nullable(),
-  taskIds: z.array(idSchema),
-  notes: z.string(),
-  createdAt: timestampSchema,
-  updatedAt: timestampSchema,
-  archivedAt: nullableTimestampSchema,
-  trashedAt: nullableTimestampSchema
-}).strict();
-
-const reviewSchema = z.object({
-  id: idSchema,
-  type: z.enum(["daily-startup", "daily-shutdown", "weekly"]),
-  date: timestampSchema,
-  responses: z.record(z.string(), z.string()),
-  createdAt: timestampSchema,
-  updatedAt: timestampSchema
-}).strict();
+const dateParentSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("project"), projectId: idSchema }).strict(),
+  z.object({ type: z.literal("area"), areaId: idSchema }).strict()
+]);
 
 const contextDateSchema = z.object({
   id: idSchema,
   title: z.string().trim().min(1).max(500),
   kind: z.enum(["event", "deadline"]),
-  date: contextDateKeySchema,
+  parent: dateParentSchema,
+  date: dateKeySchema,
   startTime: timeKeySchema.nullable(),
   endTime: timeKeySchema.nullable(),
   details: z.string(),
-  projectId: idSchema.nullable(),
-  domainId: idSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema
 }).strict().superRefine((date, ctx) => {
-  const hasProject = Boolean(date.projectId);
-  const hasArea = Boolean(date.domainId);
-  if (hasProject === hasArea) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["projectId"],
-      message: "ContextDate must reference exactly one Project or Area."
-    });
-  }
   if (date.kind === "deadline" && date.endTime !== null) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["endTime"],
-      message: "Deadline endTime must be null."
-    });
+    ctx.addIssue({ code: "custom", path: ["endTime"], message: "Deadline endTime must be null." });
   }
 });
 
@@ -138,37 +78,12 @@ const dailyNoteSchema = z.object({
   updatedAt: timestampSchema
 }).strict();
 
-const dashboardScratchpadSchema = z.object({
-  id: idSchema,
-  content: z.string(),
-  createdAt: timestampSchema,
-  updatedAt: timestampSchema
-}).strict();
-
-const dashboardPreferenceSchema = z.object({
-  id: idSchema,
-  sectionOrder: z.array(z.enum(["notepad", "dates", "tasks", "allTasks", "projects"])),
-  collapsedSections: z.array(z.enum(["notepad", "dates", "tasks", "allTasks", "projects"])),
-  reviewPromptDismissals: z.array(z.string()),
-  dateWindowDays: z.number().int().min(1).max(365),
-  showCompleted: z.boolean(),
-  taskSortMode: z.enum(["recent", "oldest", "schedule", "date"]),
-  createdAt: timestampSchema,
-  updatedAt: timestampSchema
-}).strict();
-
 export const portableWorkspaceSchema = z.object({
-  domains: z.array(domainSchema),
+  areas: z.array(areaSchema),
   projects: z.array(projectSchema),
   tasks: z.array(taskSchema),
-  captures: z.array(captureSchema),
-  notes: z.array(noteSchema),
-  deadlines: z.array(deadlineSchema),
-  contextDates: z.array(contextDateSchema).default([]),
-  reviews: z.array(reviewSchema),
-  dailyNotes: z.array(dailyNoteSchema).default([]),
-  dashboardScratchpads: z.array(dashboardScratchpadSchema).max(1),
-  dashboardPreferences: z.array(dashboardPreferenceSchema).max(1)
+  dates: z.array(contextDateSchema),
+  dailyNotes: z.array(dailyNoteSchema)
 }).strict();
 
 export const workspaceExportBundleSchema = z.object({
@@ -179,17 +94,11 @@ export const workspaceExportBundleSchema = z.object({
 }).strict().superRefine((bundle, ctx) => {
   const { workspace } = bundle;
   const sets = {
-    domains: new Set<string>(),
+    areas: new Set<string>(),
     projects: new Set<string>(),
     tasks: new Set<string>(),
-    captures: new Set<string>(),
-    notes: new Set<string>(),
-    deadlines: new Set<string>(),
-    contextDates: new Set<string>(),
-    reviews: new Set<string>(),
-    dailyNotes: new Set<string>(),
-    dashboardScratchpads: new Set<string>(),
-    dashboardPreferences: new Set<string>()
+    dates: new Set<string>(),
+    dailyNotes: new Set<string>()
   };
 
   for (const [collection, records] of Object.entries(workspace) as [keyof typeof sets, { id: string }[]][]) {
@@ -202,94 +111,35 @@ export const workspaceExportBundleSchema = z.object({
   }
 
   for (const project of workspace.projects) {
-    if (!sets.domains.has(project.domainId)) {
+    if (!sets.areas.has(project.areaId)) {
       ctx.addIssue({ code: "custom", path: ["workspace", "projects"], message: `Project ${project.id} references a missing Area.` });
-    }
-    if (project.parentProjectId && !sets.projects.has(project.parentProjectId)) {
-      ctx.addIssue({ code: "custom", path: ["workspace", "projects"], message: `Project ${project.id} references a missing parent Project.` });
-    }
-    if (project.parentProjectId === project.id) {
-      ctx.addIssue({ code: "custom", path: ["workspace", "projects"], message: `Project ${project.id} cannot be its own parent.` });
-    }
-  }
-
-  const projectById = new Map(workspace.projects.map((project) => [project.id, project]));
-  for (const project of workspace.projects) {
-    const seen = new Set<string>([project.id]);
-    let parentId = project.parentProjectId;
-    while (parentId) {
-      if (seen.has(parentId)) {
-        ctx.addIssue({ code: "custom", path: ["workspace", "projects"], message: `Project hierarchy contains a cycle involving ${project.id}.` });
-        break;
-      }
-      seen.add(parentId);
-      parentId = projectById.get(parentId)?.parentProjectId ?? null;
     }
   }
 
   for (const task of workspace.tasks) {
-    if (task.projectId && !sets.projects.has(task.projectId)) {
+    if (task.parent.type === "project" && !sets.projects.has(task.parent.projectId)) {
       ctx.addIssue({ code: "custom", path: ["workspace", "tasks"], message: `Task ${task.id} references a missing Project.` });
     }
-    if (task.domainId && !sets.domains.has(task.domainId)) {
+    if (task.parent.type === "area" && !sets.areas.has(task.parent.areaId)) {
       ctx.addIssue({ code: "custom", path: ["workspace", "tasks"], message: `Task ${task.id} references a missing Area.` });
     }
-    if (task.projectId) {
-      const project = projectById.get(task.projectId);
-      if (project && task.domainId !== project.domainId) {
-        ctx.addIssue({ code: "custom", path: ["workspace", "tasks"], message: `Task ${task.id} Area does not match its Project Area.` });
-      }
+  }
+
+  for (const date of workspace.dates) {
+    if (date.parent.type === "project" && !sets.projects.has(date.parent.projectId)) {
+      ctx.addIssue({ code: "custom", path: ["workspace", "dates"], message: `Date ${date.id} references a missing Project.` });
+    }
+    if (date.parent.type === "area" && !sets.areas.has(date.parent.areaId)) {
+      ctx.addIssue({ code: "custom", path: ["workspace", "dates"], message: `Date ${date.id} references a missing Area.` });
     }
   }
 
-  for (const note of workspace.notes) {
-    if (!sets.domains.has(note.domainId)) {
-      ctx.addIssue({ code: "custom", path: ["workspace", "notes"], message: `Resource ${note.id} references a missing Area.` });
+  const localDates = new Set<string>();
+  for (const note of workspace.dailyNotes) {
+    if (localDates.has(note.localDate)) {
+      ctx.addIssue({ code: "custom", path: ["workspace", "dailyNotes"], message: `Duplicate Daily Note date: ${note.localDate}` });
     }
-    if (note.projectId && !sets.projects.has(note.projectId)) {
-      ctx.addIssue({ code: "custom", path: ["workspace", "notes"], message: `Resource ${note.id} references a missing Project.` });
-    }
-  }
-
-  for (const contextDate of workspace.contextDates) {
-    const hasProject = Boolean(contextDate.projectId);
-    const hasArea = Boolean(contextDate.domainId);
-    if (hasProject === hasArea) {
-      ctx.addIssue({ code: "custom", path: ["workspace", "contextDates"], message: `Date ${contextDate.id} must reference exactly one Project or Area.` });
-      continue;
-    }
-    if (contextDate.projectId && !sets.projects.has(contextDate.projectId)) {
-      ctx.addIssue({ code: "custom", path: ["workspace", "contextDates"], message: `Date ${contextDate.id} references a missing Project.` });
-    }
-    if (contextDate.domainId && !sets.domains.has(contextDate.domainId)) {
-      ctx.addIssue({ code: "custom", path: ["workspace", "contextDates"], message: `Date ${contextDate.id} references a missing Area.` });
-    }
-  }
-
-  for (const deadline of workspace.deadlines) {
-    if (deadline.projectId && !sets.projects.has(deadline.projectId)) {
-      ctx.addIssue({ code: "custom", path: ["workspace", "deadlines"], message: `Date ${deadline.id} references a missing Project.` });
-    }
-    for (const taskId of deadline.taskIds) {
-      if (!sets.tasks.has(taskId)) {
-        ctx.addIssue({ code: "custom", path: ["workspace", "deadlines"], message: `Date ${deadline.id} references a missing Task.` });
-      }
-    }
-  }
-
-  const convertedTargets = new Set<string>();
-  for (const collection of [workspace.projects, workspace.tasks, workspace.notes, workspace.deadlines]) {
-    for (const record of collection) {
-      if (convertedTargets.has(record.id)) {
-        ctx.addIssue({ code: "custom", path: ["workspace"], message: `Converted-record target id ${record.id} is ambiguous across collections.` });
-      }
-      convertedTargets.add(record.id);
-    }
-  }
-  for (const capture of workspace.captures) {
-    if (capture.convertedToId && !convertedTargets.has(capture.convertedToId)) {
-      ctx.addIssue({ code: "custom", path: ["workspace", "captures"], message: `Capture ${capture.id} references a missing converted record.` });
-    }
+    localDates.add(note.localDate);
   }
 });
 
@@ -303,34 +153,22 @@ export function createWorkspaceExportBundle(data: WorkspaceData, exportedAt = ne
     version: CONTEXTOS_EXPORT_VERSION,
     exportedAt,
     workspace: {
-      domains: data.domains,
+      areas: data.areas,
       projects: data.projects,
       tasks: data.tasks,
-      captures: data.captures,
-      notes: data.notes,
-      deadlines: data.deadlines,
-      contextDates: data.contextDates,
-      reviews: data.reviews,
-      dailyNotes: data.dailyNotes,
-      dashboardScratchpads: data.dashboardScratchpads,
-      dashboardPreferences: data.dashboardPreferences
+      dates: data.dates,
+      dailyNotes: data.dailyNotes
     }
   });
 }
 
 export function portabilityCounts(workspace: PortableWorkspace) {
   return {
-    areas: workspace.domains.length,
+    areas: workspace.areas.length,
     projects: workspace.projects.length,
     tasks: workspace.tasks.length,
-    captures: workspace.captures.length,
-    resources: workspace.notes.length,
-    dates: workspace.contextDates.length,
-    legacyDates: workspace.deadlines.length,
-    reviews: workspace.reviews.length,
-    dailyNotes: workspace.dailyNotes.length,
-    scratchpads: workspace.dashboardScratchpads.length,
-    preferences: workspace.dashboardPreferences.length
+    dates: workspace.dates.length,
+    dailyNotes: workspace.dailyNotes.length
   };
 }
 
@@ -345,43 +183,46 @@ export function workspaceExportToMarkdown(bundle: WorkspaceExportBundle) {
   ];
 
   lines.push("## Areas", "");
-  for (const item of w.domains) lines.push(`- ${item.name}${item.archived ? " (archived)" : ""}`);
+  for (const item of w.areas) {
+    lines.push(`- ${item.name}${item.state === "archived" ? " (archived)" : ""}`);
+  }
 
   lines.push("", "## Projects", "");
   for (const item of w.projects) {
-    lines.push(`### ${item.name}`, "", `- Status: ${item.status}`, `- Area: ${w.domains.find((domain) => domain.id === item.domainId)?.name ?? item.domainId}`);
-    if (item.currentObjective) lines.push(`- Objective: ${item.currentObjective}`);
-    if (item.nextAction) lines.push(`- Next action: ${item.nextAction}`);
-    if (item.latestStatus) lines.push(`- Latest status: ${item.latestStatus}`);
-    if (item.openLoops.length) lines.push(`- Open loops: ${item.openLoops.join("; ")}`);
-    if (item.recoveryNotes) lines.push("", item.recoveryNotes);
+    const area = w.areas.find((candidate) => candidate.id === item.areaId);
+    lines.push(
+      `### ${item.name}`,
+      "",
+      `- State: ${item.state}`,
+      `- Area: ${area?.name ?? item.areaId}`
+    );
+    if (item.objective) lines.push(`- Objective: ${item.objective}`);
     lines.push("");
   }
 
   lines.push("## Tasks", "");
-  for (const item of w.tasks) lines.push(`- [${item.status === "done" ? "x" : " "}] ${item.title}${item.plannedDate ? ` | planned ${item.plannedDate}` : ""}${item.dueDate ? ` | due ${item.dueDate}` : ""}${item.scheduledTime ? ` | ${item.scheduledTime}` : ""}`);
+  for (const item of w.tasks) {
+    const parent = item.parent.type === "project"
+      ? w.projects.find((project) => project.id === item.parent.projectId)?.name ?? item.parent.projectId
+      : w.areas.find((area) => area.id === item.parent.areaId)?.name ?? item.parent.areaId;
+    lines.push(
+      `- [${item.state === "done" ? "x" : " "}] ${item.title} | ${parent}${item.plannedDate ? ` | planned ${item.plannedDate}` : ""}${item.scheduledTime ? ` | ${item.scheduledTime}` : ""}`
+    );
+  }
 
   lines.push("", "## Dates", "");
-  for (const item of w.deadlines) lines.push(`- ${item.date}${item.time ? ` ${item.time}` : ""} — ${item.title}${item.location ? ` @ ${item.location}` : ""}`);
-
-  lines.push("", "## Resources", "");
-  for (const item of w.notes) lines.push(`### ${item.title}`, "", item.content, "");
-
-  lines.push("## Inbox captures", "");
-  for (const item of w.captures) lines.push(`- [${item.status}] ${item.text}`);
+  for (const item of w.dates) {
+    const parent = item.parent.type === "project"
+      ? w.projects.find((project) => project.id === item.parent.projectId)?.name ?? item.parent.projectId
+      : w.areas.find((area) => area.id === item.parent.areaId)?.name ?? item.parent.areaId;
+    lines.push(`- ${item.date}${item.startTime ? ` ${item.startTime}` : ""} — [${item.kind}] ${item.title} | ${parent}`);
+    if (item.details) lines.push(`  ${item.details}`);
+  }
 
   lines.push("", "## Daily Notes", "");
   for (const item of [...w.dailyNotes].sort((a, b) => a.localDate.localeCompare(b.localDate))) {
     lines.push(`### ${item.localDate}`, "", item.content, "");
   }
 
-  lines.push("", "## Reviews", "");
-  for (const item of w.reviews) {
-    lines.push(`### ${item.type} — ${item.date}`, "");
-    for (const [question, response] of Object.entries(item.responses)) lines.push(`- ${question}: ${response}`);
-    lines.push("");
-  }
-
-  lines.push("## Dashboard scratchpad", "", w.dashboardScratchpads[0]?.content ?? "", "");
   return lines.join("\n").trimEnd() + "\n";
 }

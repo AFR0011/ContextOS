@@ -1,6 +1,7 @@
 import fs from "node:fs";
 
 const docs = {
+  design: fs.readFileSync("DESIGN.md", "utf8"),
   readme: fs.readFileSync("README.md", "utf8"),
   state: fs.readFileSync("docs/PROJECT_STATE.md", "utf8"),
   contract: fs.readFileSync("docs/LOCAL_FIRST_CONTRACT.md", "utf8"),
@@ -14,6 +15,13 @@ const errors = [];
 const requireMatch = (name, pattern, message) => {
   if (!pattern.test(docs[name])) errors.push(`${name}: ${message}`);
 };
+
+requireMatch("design", /status: canonical/i, "must be the active canonical design contract");
+requireMatch("design", /Light and dark are both first-class/i, "must describe the current first-class theme behavior");
+requireMatch("design", /Cmd\/Ctrl\+K is the keyboard-first canonical command\/search layer/i, "must describe the current command palette");
+requireMatch("design", /Retired visible concepts:/i, "must distinguish retired concepts explicitly");
+requireMatch("design", /320px width does not horizontally overflow/i, "must retain narrow-screen acceptance");
+requireMatch("design", /interactive hit target is at least 40px/i, "must retain the touch-target floor");
 
 requireMatch("readme", /self-hostable local-first application/i, "must state the current self-hostable application boundary");
 requireMatch(

@@ -144,7 +144,7 @@ export function SessionManagementPanel({ online, refreshToken = 0 }: { online: b
       </div>
 
       {!online ? (
-        <p className="mt-4 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
+        <p role="status" className="mt-4 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
           Session management requires an online server connection.
         </p>
       ) : null}
@@ -212,12 +212,12 @@ export function SessionManagementPanel({ online, refreshToken = 0 }: { online: b
       </div>
 
       {error ? (
-        <p data-testid="session-management-error" className="mt-3 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">
+        <p data-testid="session-management-error" role="alert" className="mt-3 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">
           {error}
         </p>
       ) : null}
       {success ? (
-        <p data-testid="session-management-success" className="mt-3 rounded-lg border border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] px-3 py-2 text-sm text-[var(--cos-success-text)]">
+        <p data-testid="session-management-success" role="status" className="mt-3 rounded-lg border border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] px-3 py-2 text-sm text-[var(--cos-success-text)]">
           {success}
         </p>
       ) : null}

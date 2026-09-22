@@ -147,17 +147,22 @@ export type PortableWorkspace = z.infer<typeof portableWorkspaceSchema>;
 export type WorkspaceExportBundle = z.infer<typeof workspaceExportBundleSchema>;
 export type WorkspaceImportMode = "replace" | "merge";
 
+function stripRevision<T extends { revision: number }>(record: T) {
+  const { revision: _revision, ...portable } = record;
+  return portable;
+}
+
 export function createWorkspaceExportBundle(data: WorkspaceData, exportedAt = new Date().toISOString()): WorkspaceExportBundle {
   return workspaceExportBundleSchema.parse({
     format: CONTEXTOS_EXPORT_FORMAT,
     version: CONTEXTOS_EXPORT_VERSION,
     exportedAt,
     workspace: {
-      areas: data.areas,
-      projects: data.projects,
-      tasks: data.tasks,
-      dates: data.dates,
-      dailyNotes: data.dailyNotes
+      areas: data.areas.map(stripRevision),
+      projects: data.projects.map(stripRevision),
+      tasks: data.tasks.map(stripRevision),
+      dates: data.dates.map(stripRevision),
+      dailyNotes: data.dailyNotes.map(stripRevision)
     }
   });
 }

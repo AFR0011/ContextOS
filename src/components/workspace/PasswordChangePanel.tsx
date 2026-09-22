@@ -97,7 +97,7 @@ export function PasswordChangePanel({ online }: { online: boolean }) {
             New password
             <input
               aria-label="New password"
-              aria-describedby="new-password-requirements new-password-validation"
+              aria-describedby="new-password-requirements new-password-length-validation new-password-difference-validation"
               aria-invalid={Boolean(newPassword && (!validLength || currentPassword === newPassword))}
               type="password"
               autoComplete="new-password"
@@ -133,9 +133,9 @@ export function PasswordChangePanel({ online }: { online: boolean }) {
               <span id="new-password-requirements" className="text-xs text-[var(--cos-text-subtle)]">New passwords must be 8–128 characters.</span>
             </div>
             {!online ? <p className="mt-2 text-sm text-[var(--cos-warning-text)]">Password changes require an online server connection.</p> : null}
-            {newPassword && !validLength ? <p id="new-password-validation" role="status" className="mt-2 text-sm text-[var(--cos-warning-text)]">Use between 8 and 128 characters.</p> : null}
+            {newPassword && !validLength ? <p id="new-password-length-validation" role="status" className="mt-2 text-sm text-[var(--cos-warning-text)]">Use between 8 and 128 characters.</p> : null}
             {confirmation && !confirmationMatches ? <p id="password-confirmation-validation" role="status" className="mt-2 text-sm text-[var(--cos-warning-text)]">The new passwords do not match.</p> : null}
-            {currentPassword && newPassword && currentPassword === newPassword ? <p id="new-password-validation" role="status" className="mt-2 text-sm text-[var(--cos-warning-text)]">Choose a password different from the current one.</p> : null}
+            {currentPassword && newPassword && currentPassword === newPassword ? <p id="new-password-difference-validation" role="status" className="mt-2 text-sm text-[var(--cos-warning-text)]">Choose a password different from the current one.</p> : null}
             {error ? <p data-testid="password-change-error" role="alert" className="mt-3 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
             {success ? <p data-testid="password-change-success" role="status" className="mt-3 rounded-lg border border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] px-3 py-2 text-sm text-[var(--cos-success-text)]">{success}</p> : null}
           </div>

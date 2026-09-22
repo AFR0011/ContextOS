@@ -136,8 +136,8 @@ export function PasswordChangePanel({ online }: { online: boolean }) {
             {newPassword && !validLength ? <p id="new-password-length-validation" role="status" className="mt-2 text-sm text-[var(--cos-warning-text)]">Use between 8 and 128 characters.</p> : null}
             {confirmation && !confirmationMatches ? <p id="password-confirmation-validation" role="status" className="mt-2 text-sm text-[var(--cos-warning-text)]">The new passwords do not match.</p> : null}
             {currentPassword && newPassword && currentPassword === newPassword ? <p id="new-password-difference-validation" role="status" className="mt-2 text-sm text-[var(--cos-warning-text)]">Choose a password different from the current one.</p> : null}
-            {error ? <p data-testid="password-change-error" role="alert" className="mt-3 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
-            {success ? <p data-testid="password-change-success" role="status" className="mt-3 rounded-lg border border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] px-3 py-2 text-sm text-[var(--cos-success-text)]">{success}</p> : null}
+            {error ? <p data-testid="password-change-error" role="alert" className="mt-3 break-words rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)] [overflow-wrap:anywhere]">{error}</p> : null}
+            {success ? <p data-testid="password-change-success" role="status" className="mt-3 break-words rounded-lg border border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] px-3 py-2 text-sm text-[var(--cos-success-text)] [overflow-wrap:anywhere]">{success}</p> : null}
           </div>
         </form>
       </section>

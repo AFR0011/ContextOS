@@ -131,6 +131,7 @@ const firstRunTest = fs.readFileSync("tests/e2e/batch3-clean-first-run.spec.ts",
 
 for (const marker of [
   "command palette exposes combobox ownership and active descendant state",
+  "command palette stays inside a short mobile viewport and scrolls its results",
   "inline create disclosures expose state and return focus when cancelled",
   "light-theme subtle text token keeps AA contrast on canonical surfaces",
   "dynamic import errors are exposed as alerts"
@@ -154,6 +155,9 @@ if (stage9Lifecycle.includes("indexedDB.open(databaseName, 3)") ||
     !stage9Lifecycle.includes("indexedDB.open(databaseName, 4)")) {
   errors.push("Stage 9 lifecycle coverage must use the current IndexedDB v4 contract.");
 }
+if (!stage9Lifecycle.includes("logout dialog stays reachable on a short mobile viewport with pending-error content")) {
+  errors.push("Stage 9 lifecycle coverage must retain short-viewport logout overflow protection.");
+}
 if (stage9Lifecycle.includes('expect(fixtureResponse.status(), JSON.stringify(fixtureBody)).toBe(200)')) {
   errors.push("Stage 9 lifecycle coverage must not expect demo reset success for a non-demo account.");
 }
@@ -163,6 +167,11 @@ if (!firstRunTest.includes('getByRole("heading", { name: "Home", exact: true })'
 }
 
 
+const productPrimitives = fs.readFileSync("src/components/workspace/ProductPrimitives.tsx", "utf8");
+const logoutDialog = fs.readFileSync("src/components/workspace/LogoutDialog.tsx", "utf8");
+const authForm = fs.readFileSync("src/components/AuthForm.tsx", "utf8");
+const workspaceGate = fs.readFileSync("src/components/workspace/WorkspaceGate.tsx", "utf8");
+const handoffPage = fs.readFileSync("src/app/handoff/page.tsx", "utf8");
 const visualBaselineSpec = fs.readFileSync("tests/e2e/c10-visual-baseline.spec.ts", "utf8");
 const screenshotBaseline = fs.readFileSync("docs/c10/SCREENSHOT_BASELINE.md", "utf8");
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -198,6 +207,25 @@ if (!screenshotBaseline.includes("npm run capture:c10:visual") ||
   errors.push("C10 screenshot documentation must retain the executable capture command and current render-evidence boundary.");
 }
 
+
+if (!productPrimitives.includes("sm:max-h-[calc(88dvh-1rem)]") ||
+    !productPrimitives.includes("sm:max-h-[calc(100dvh-2rem)]")) {
+  errors.push("Shared overlays must remain bounded by the dynamic viewport at narrow and sm breakpoints.");
+}
+if (!logoutDialog.includes("max-h-[calc(100dvh-2rem)]") ||
+    !logoutDialog.includes("overflow-y-auto")) {
+  errors.push("Logout dialog must remain scrollable inside short viewports.");
+}
+for (const [label, source] of [
+  ["authentication", authForm],
+  ["workspace gate", workspaceGate],
+  ["handoff gate", handoffPage],
+  ["workspace shell", workspaceShell]
+]) {
+  if (!source.includes("dvh")) {
+    errors.push(`Phase C dynamic viewport contract is missing from ${label}.`);
+  }
+}
 
 const buildTsconfig = fs.readFileSync("tsconfig.build.json", "utf8");
 const nextConfigSource = fs.readFileSync("next.config.ts", "utf8");

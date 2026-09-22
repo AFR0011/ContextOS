@@ -123,6 +123,46 @@ for (const [label, literal] of [
 }
 
 
+const accessibilityTest = fs.readFileSync("tests/e2e/c10-accessibility.spec.ts", "utf8");
+const workspaceShell = fs.readFileSync("src/components/workspace/WorkspaceShell.tsx", "utf8");
+const globalCss = fs.readFileSync("src/app/globals.css", "utf8");
+const stage9Lifecycle = fs.readFileSync("tests/e2e/stage9-lifecycle.spec.ts", "utf8");
+const firstRunTest = fs.readFileSync("tests/e2e/batch3-clean-first-run.spec.ts", "utf8");
+
+for (const marker of [
+  "command palette exposes combobox ownership and active descendant state",
+  "inline create disclosures expose state and return focus when cancelled",
+  "light-theme subtle text token keeps AA contrast on canonical surfaces",
+  "dynamic import errors are exposed as alerts"
+]) {
+  if (!accessibilityTest.includes(marker)) {
+    errors.push(`C10 accessibility regression coverage is missing: ${marker}`);
+  }
+}
+if (!workspaceShell.includes("inert={navigationIsHidden ? true : undefined}") ||
+    !workspaceShell.includes('aria-hidden={navigationIsHidden ? true : undefined}')) {
+  errors.push("Closed mobile navigation must remain inert and aria-hidden.");
+}
+if (!globalCss.includes("--cos-text-subtle: #646c79;")) {
+  errors.push("Light-theme subtle text must retain the audited AA contrast token.");
+}
+if (!accessibilityTest.includes("contrastRatio(tokens.subtle, background)") ||
+    !accessibilityTest.includes("toBeGreaterThanOrEqual(4.5)")) {
+  errors.push("C10 must retain executable subtle-text contrast coverage.");
+}
+if (stage9Lifecycle.includes("indexedDB.open(databaseName, 3)") ||
+    !stage9Lifecycle.includes("indexedDB.open(databaseName, 4)")) {
+  errors.push("Stage 9 lifecycle coverage must use the current IndexedDB v4 contract.");
+}
+if (stage9Lifecycle.includes('expect(fixtureResponse.status(), JSON.stringify(fixtureBody)).toBe(200)')) {
+  errors.push("Stage 9 lifecycle coverage must not expect demo reset success for a non-demo account.");
+}
+if (!firstRunTest.includes('getByRole("heading", { name: "Home", exact: true })') ||
+    !firstRunTest.includes("toBeFocused()")) {
+  errors.push("First-run acceptance must verify focus moves into Home when setup disappears.");
+}
+
+
 if (errors.length) {
   for (const error of errors) console.error(`FAIL ${error}`);
   process.exit(1);

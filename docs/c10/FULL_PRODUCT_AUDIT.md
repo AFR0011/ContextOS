@@ -442,6 +442,87 @@ Therefore **Phase B source remediation is complete, but ACCESS-001 remains pendi
 
 # Phase C — Responsive / layout / visual risk
 
-Status: **Not started**
+Status: **C-00 render-evidence infrastructure complete; current-candidate visual inspection blocked pending a runnable build**
 
-Phase C is the next audit step. It will inspect real rendered panels and breakpoints for clipping, overlap, overflow, hidden/offscreen controls, stacking, safe-area behavior, visually untested states, and light/dark presentation. It must not be marked complete from source inspection alone.
+Phase C must inspect real rendered panels and breakpoints for clipping, overlap, overflow, hidden/offscreen controls, stacking, safe-area behavior, visually untested states, and light/dark presentation. It must not be marked complete from source inspection alone.
+
+## C-00 — Render evidence infrastructure and deployment boundary
+
+Status: **Complete**
+
+### Deployment history finding
+
+The current product cannot truthfully use the old hosted preview as C10 visual evidence.
+
+Vercel history shows:
+- C3 main at `4b452711c50b4937193c07e7df957c55f155297a` is not the relevant baseline and must not be reused for C10 screenshots;
+- the last READY production deployment is C3 main at `4b452711c50baf8a301c79f298fcc9a613432d61`;
+- C4 main at `81670fb7d3c3a8467af57fdbb2f4fdd69de5893e` failed during `npm run build` with a lint/type error;
+- C9 main at `16dffb7ad52dbcb9f2a8fd3ffbf0128c1a896d1f` also failed during `npm run build`;
+- later previews include install-stage failures;
+- the latest C10 status is additionally blocked by Vercel build-rate limiting.
+
+The first bullet above intentionally distinguishes the older C3 implementation checkpoint in project history from the exact last READY Vercel commit in the deployment history. Only the exact deployment commit may be used as hosted evidence.
+
+### Capture harness added
+
+The prose-only screenshot contract is now executable through:
+- `tests/e2e/c10-visual-baseline.spec.ts`;
+- `scripts/capture-c10-visual.mjs`;
+- `npm run capture:c10:visual`.
+
+The standard capture matrix covers:
+- desktop 1440x1000 light and dark;
+- mobile 390x844 light and dark;
+- Home;
+- Projects;
+- Project Detail;
+- Areas;
+- Area Detail;
+- Dates;
+- Search selected-detail state;
+- LifeOS;
+- Settings;
+- Add Date open state;
+- command palette;
+- New Task sheet;
+- New Date sheet;
+- long Settings import filename;
+- mobile drawer;
+- logout dialog.
+
+Each screenshot capture first requires no horizontal document overflow.
+
+The visual capture suite is gated behind `CAPTURE_C10_VISUAL=1` so ordinary E2E runs do not create screenshot artifacts accidentally.
+
+### Still pending as separate Phase C slices
+
+- 320x720 hostile-content visual stress;
+- production-runtime Offline / pending / reconnect screenshots;
+- clean first-run / empty-account screenshots;
+- actual manual review of every generated image;
+- correction and recapture of any defects found.
+
+### Current blocker
+
+This environment cannot clone/install/run the repository because outbound sandbox network access is unavailable, while the current Vercel path is build-rate limited and the advertised Vercel build-log connector is not operational.
+
+Therefore C-00 is complete, but **Phase C visual acceptance remains open**. The next runtime-capable environment must first get the current C10 candidate building, then run `npm run capture:c10:visual`.
+
+## C-01 — Primary surface rendered inspection
+
+Status: **Pending runnable current candidate**
+
+Required evidence:
+- Home;
+- Projects;
+- Project Detail;
+- Areas;
+- Area Detail;
+- Dates;
+- Search;
+- LifeOS;
+- Settings;
+- desktop/mobile;
+- light/dark.
+

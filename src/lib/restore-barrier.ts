@@ -16,8 +16,9 @@ export async function enforceWorkspaceRestoreBarrier(userId: string, mutations: 
   }
 
   const blocked = mutations.filter((mutation) => {
-    const createdAt = new Date(mutation.createdAt);
-    return !Number.isNaN(createdAt.getTime()) && createdAt.getTime() <= barrier.createdAt.getTime();
+    const baseline = mutation.baseServerSyncedAt ? new Date(mutation.baseServerSyncedAt) : null;
+    if (!baseline || Number.isNaN(baseline.getTime())) return true;
+    return baseline.getTime() <= barrier.createdAt.getTime();
   });
   const blockedIds = new Set(blocked.map((mutation) => mutation.mutationId));
   const allowed = mutations.filter((mutation) => !blockedIds.has(mutation.mutationId));
@@ -43,9 +44,9 @@ export async function enforceWorkspaceRestoreBarrier(userId: string, mutations: 
     entityType: mutation.entityType,
     entityId: mutation.entityId,
     reason: "stale",
-    message: "Skipped a queued change created before the most recent workspace restore.",
+    message: "Skipped a queued change based on a workspace snapshot from before the most recent restore.",
     serverUpdatedAt: barrier.createdAt.toISOString(),
-    incomingUpdatedAt: mutation.createdAt
+    incomingUpdatedAt: mutation.baseServerSyncedAt ?? null
   }));
 
   return { allowed, blockedMutationIds: blocked.map((mutation) => mutation.mutationId), warnings };

@@ -108,12 +108,12 @@ function SyncIndicator({
       {sync.error ? (
         <p role="alert" className="mt-1.5 flex items-start gap-1.5 font-medium">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>{sync.error}</span>
+          <span className="min-w-0 break-words [overflow-wrap:anywhere]">{sync.error}</span>
         </p>
       ) : sync.lastWarning ? (
         <p role="status" className="mt-1.5 flex items-start gap-1.5 font-medium">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>{sync.lastWarning}</span>
+          <span className="min-w-0 break-words [overflow-wrap:anywhere]">{sync.lastWarning}</span>
         </p>
       ) : null}
       {onRefreshFromServer ? (

@@ -151,7 +151,7 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
   if (state.status === "checking") {
     return (
       <main className="grid min-h-screen place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
-        <section data-testid="workspace-gate-checking" className="cos-surface flex w-full max-w-md items-center gap-3 p-5">
+        <section data-testid="workspace-gate-checking" role="status" aria-live="polite" aria-atomic="true" aria-busy="true" className="cos-surface flex w-full max-w-md items-center gap-3 p-5">
           <LoaderCircle className="h-5 w-5 animate-spin text-[var(--cos-primary)]" />
           <div>
             <h1 className="font-semibold text-[var(--cos-text-strong)]">Opening ContextOS</h1>
@@ -166,7 +166,7 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
   return (
     <main className="grid min-h-screen place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
       <section data-testid="workspace-gate-blocked" className="cos-surface w-full max-w-lg space-y-4 p-6">
-        <div className="flex items-start gap-3">
+        <div role="status" aria-live="polite" aria-atomic="true" className="flex items-start gap-3">
           {offline ? (
             <WifiOff className="mt-0.5 h-6 w-6 text-[var(--cos-warning-text)]" />
           ) : (
@@ -179,7 +179,7 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
         </div>
 
         {state.candidates?.length ? (
-          <div data-testid="local-account-chooser" className="space-y-2">
+          <div data-testid="local-account-chooser" role="group" aria-label="Verified local workspaces" className="space-y-2">
             {state.candidates.map((candidate) => (
               <button
                 key={candidate.id}

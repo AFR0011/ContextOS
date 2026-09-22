@@ -22,6 +22,8 @@ export interface SyncWarning {
   message: string;
   serverUpdatedAt: string | null;
   incomingUpdatedAt: string | null;
+  serverRevision?: number | null;
+  baseRevision?: number | null;
 }
 
 export interface QueuedMutation {
@@ -38,4 +40,10 @@ export interface QueuedMutation {
    * baseline fails closed.
    */
   baseServerSyncedAt?: string | null;
+  /**
+   * Last server-owned revision observed for this record. Null means the client
+   * believes it is creating the record. Older queued mutations may omit it;
+   * existing-record writes without a matching revision fail closed as stale.
+   */
+  baseRevision?: number | null;
 }

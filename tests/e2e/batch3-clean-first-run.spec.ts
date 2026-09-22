@@ -70,8 +70,8 @@ test("new accounts start with an empty canonical workspace and reach useful work
   await expect(page).toHaveURL(/\/projects$/);
   await page.getByRole("button", { name: /New Project/i }).click();
   const projectName = `First real project ${Date.now()}`;
-  await page.getByPlaceholder("Project name...").fill(projectName);
-  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByPlaceholder("Project name").fill(projectName);
+  await page.getByRole("button", { name: "Create Project", exact: true }).click();
   await expect(page).toHaveURL(/\/projects\//);
   await expect(page.getByPlaceholder("Project name")).toHaveValue(projectName);
 

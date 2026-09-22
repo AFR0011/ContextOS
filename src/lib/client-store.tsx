@@ -307,7 +307,8 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         entityId: touched.id,
         operation: "upsert",
         payload: touched,
-        createdAt: committedAt
+        createdAt: committedAt,
+        baseServerSyncedAt: dataRef.current.serverSyncedAt || null
       } as QueuedMutation);
     }
 

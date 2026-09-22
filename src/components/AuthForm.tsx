@@ -67,7 +67,7 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
           </div>
 
           {serviceStatus ? (
-            <p data-testid="auth-service-status" role="status" className="mt-4 rounded-[var(--cos-radius-md)] border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
+            <p data-testid="auth-service-status" role="status" className="mt-4 break-words rounded-[var(--cos-radius-md)] border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)] [overflow-wrap:anywhere]">
               {serviceStatus}
             </p>
           ) : null}
@@ -99,7 +99,7 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
             />
           </label>
 
-          {error ? <p role="alert" className="mt-4 rounded-[var(--cos-radius-md)] border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
+          {error ? <p role="alert" className="mt-4 break-words rounded-[var(--cos-radius-md)] border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)] [overflow-wrap:anywhere]">{error}</p> : null}
 
           <button
             type="submit"

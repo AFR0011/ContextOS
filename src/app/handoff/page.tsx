@@ -136,7 +136,7 @@ export default function HandoffPage() {
   if (authState === "ready" && user) return <HandoffPreview />;
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
+    <main className="grid min-h-dvh place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
       <section className="cos-surface w-full max-w-lg space-y-3 p-6">
         <h1 tabIndex={-1} className="text-xl font-semibold text-[var(--cos-text-strong)] outline-none">Preparing ContextOS handoff</h1>
         {authState === "checking" ? <p role="status" className="text-sm text-[var(--cos-text-muted)]">Checking your sign-in before showing the private proposal...</p> : null}

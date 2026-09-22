@@ -55,22 +55,21 @@ The former `LegacyWorkspaceViews.tsx` monolith was removed in Batch 10; the rema
 ## Canonical domain/search
 
 - `src/lib/canonical-domain.ts`: Area, Project, Task, ContextDate, DailyNote, Insight types.
-- `src/lib/canonical-adapters.ts`: clean-break projection from still-compatible persistence.
 - `src/lib/canonical-selectors.ts`: Home/Project/Date derived selectors.
 - `src/lib/canonical-search.ts`: shared Search/command-palette canonical index.
 
 ## Persistence / synchronization
 
-- `src/lib/types.ts`: compatibility-era persisted workspace types.
-- `src/lib/client-store.tsx`: IndexedDB state, atomic outbox mutations, compatibility client actions.
+- `src/lib/types.ts`: canonical persisted workspace and sync types.
+- `src/lib/client-store.tsx`: canonical IndexedDB state and atomic outbox mutations.
 - `src/lib/local-db.ts`: per-user IndexedDB storage.
-- `src/lib/sync-server.ts`: server mutation validation/replay and compatibility handling.
+- `src/lib/sync-server.ts`: canonical server mutation validation/replay, ownership checks, and stale-write handling.
 - `src/lib/data.ts`: authenticated bootstrap serialization.
 - `src/lib/portability.ts`: import/export validation and relationship checks.
 - `src/lib/starter.ts`: empty production scaffold plus neutral canonical demo seed.
 - `prisma/schema.prisma`: current database schema.
 
-C7 intentionally leaves legacy Capture/Note/Review/Deadline and related compatibility storage in place until C8 migration is verified.
+C8 removes the retired persistence layer. Server bootstrap, local storage, sync, and export now share the canonical Area / Project / Task / Date / DailyNote shape.
 
 ## LifeOS integration
 
@@ -88,14 +87,14 @@ C7 intentionally leaves legacy Capture/Note/Review/Deadline and related compatib
 
 - `scripts/stage7-*.mjs`: repository/security/config/data-scope controls.
 - `scripts/stage8-*.mjs`: deployment/operations controls.
-- `scripts/stage9-lifecycle-audit.mjs`: current lifecycle/tombstone safety guard.
+- `scripts/stage9-lifecycle-audit.mjs`: current lifecycle and canonical no-tombstone safety guard.
 - `scripts/stage10-*.mjs`: historical final-acceptance/claims integrity.
 - `tests/e2e/`: development interaction, local-first, compatibility, persistence, and regression tests.
 - `tests/offline-production/`: optimized-runtime offline/PWA/security checks.
 - `docs/stage8/`, `docs/stage9/`, `docs/stage10/`: historical verification provenance.
 
-## Legacy / migration boundary
+## Migration boundary
 
-Inbox, Resources, Reviews, and standalone Archive are **retired in C7** as first-class UI. Their compatibility URLs redirect as documented above.
+Inbox, Resources, Reviews, and standalone Archive remain retired first-class UI. Their compatibility URLs redirect to canonical destinations.
 
-Underlying legacy data is deliberately preserved until C8. Removing a UI module is not equivalent to deleting stored user records.
+C8 is the persistence boundary: retired storage/models are removed, export format v2 is canonical, sync is canonical-only, and IndexedDB v3 clears incompatible pre-C8 workspace/outbox state while retaining verified local identity.

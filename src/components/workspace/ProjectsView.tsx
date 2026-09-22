@@ -34,10 +34,10 @@ function ProjectRow({
     <div className={`cos-entity-row ${archived ? "opacity-70" : ""}`}>
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="truncate text-sm font-semibold text-[var(--cos-text-strong)]">{name}</span>
-          <span className="cos-pill cos-pill-muted">{area}</span>
+          <span className="break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{name}</span>
+          <span className="cos-pill cos-pill-muted max-w-full whitespace-normal break-words [overflow-wrap:anywhere]">{area}</span>
         </div>
-        <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--cos-text-muted)]">
+        <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">
           {objective || "No objective yet."}
         </p>
         <p className="mt-1 text-[11px] text-[var(--cos-text-subtle)]">
@@ -49,7 +49,7 @@ function ProjectRow({
           type="button"
           onClick={onArchive}
           aria-label={`Archive ${name}`}
-          className="cos-btn cos-btn-ghost min-h-9 shrink-0 px-3 py-2 text-xs"
+          className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs"
         >
           <Archive className="h-3.5 w-3.5" /> Archive
         </button>

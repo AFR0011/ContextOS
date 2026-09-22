@@ -16,7 +16,7 @@ async function login(page: Page, email = DEMO_EMAIL, password = DEMO_PASSWORD) {
 async function localStateForEmail(page: Page, email: string) {
   return page.evaluate(async ({ databaseName, targetEmail }) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 3);
+      const request = indexedDB.open(databaseName, 4);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -47,7 +47,7 @@ async function localStateForEmail(page: Page, email: string) {
 async function seedPendingOutbox(page: Page, email: string) {
   return page.evaluate(async ({ databaseName, targetEmail }) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 3);
+      const request = indexedDB.open(databaseName, 4);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -96,7 +96,7 @@ async function seedPendingOutbox(page: Page, email: string) {
 async function seedOtherLocalUser(page: Page) {
   return page.evaluate(async (databaseName) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 3);
+      const request = indexedDB.open(databaseName, 4);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });

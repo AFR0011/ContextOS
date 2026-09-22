@@ -135,19 +135,22 @@ check(
   "Retired persistence and old lifecycle fields must be physically absent after C8."
 );
 check(
-  "stale canonical writes still fail safely",
-  syncServer.includes("shouldApplyOrWarn") &&
+  "stale canonical writes use server-owned revision compare-and-swap",
+  syncServer.includes("shouldApplyRevision") &&
+    syncServer.includes("revisionConflictAfterFailedCas") &&
     syncServer.includes('reason: "stale"') &&
-    syncServer.includes("server has a newer update"),
-  "Removing tombstones must not remove last-write/stale-write protection for surviving records."
+    syncServer.includes("server record revision changed") &&
+    syncServer.includes("revision: { increment: 1 }") &&
+    syncRoute.includes("baseRevision"),
+  "Current conflict protection must be based on server-owned record revisions rather than client wall-clock ordering."
 );
 check(
-  "IndexedDB v3 intentionally resets obsolete workspace and outbox state",
-  localDb.includes("const DB_VERSION = 3") &&
-    localDb.includes("oldVersion < 3") &&
+  "IndexedDB v4 intentionally resets revisionless workspace and outbox state",
+  localDb.includes("const DB_VERSION = 4") &&
+    localDb.includes("oldVersion < 4") &&
     localDb.includes("objectStore(WORKSPACE_STORE).clear()") &&
     localDb.includes("objectStore(OUTBOX_STORE).clear()"),
-  "With no real users, C8 performs an explicit local clean break rather than pretending to migrate obsolete queued shapes."
+  "The revision protocol requires an explicit local v4 clean break rather than inventing server revisions for older cached records."
 );
 
 const failed = checks.filter((item) => !item.ok);

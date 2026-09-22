@@ -6,7 +6,7 @@ This document defines the current local-first boundary for ContextOS as a **sing
 
 The contract is deliberately narrower than "all functionality works without a server."
 
-Historical Stage 10 final acceptance remains provenance for the boundary verified at commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40` / CI run `31800346837`. C7 updates the visible product surfaces while preserving the applicable identity, synchronization, lifecycle, and anti-resurrection guarantees.
+Historical Stage 10 final acceptance remains provenance for the boundary verified at commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40` / CI run `31800346837`. The current C8-C10 product preserves the applicable identity/lifecycle guarantees while using the canonical five-collection model and the C10 revision-based synchronization protocol.
 
 ## Operating Model
 
@@ -89,18 +89,27 @@ The synchronization system:
 - replays accepted IDs idempotently;
 - validates ownership and payload/reference boundaries;
 - retains pending work until acknowledged;
-- warns/skips stale writes rather than silently overwriting newer state;
-- skips stale canonical writes rather than silently overwriting newer server state.
+- attaches the last observed server snapshot baseline to queued mutations so replace-restore can reject pre-restore work without trusting device clocks;
+- uses a server-owned integer revision on every canonical record;
+- requires an existing-record mutation's `baseRevision` to match the current server revision;
+- advances accepted record revisions atomically with database compare-and-swap updates;
+- rejects the rest of a queued same-record mutation chain after its first conflict;
+- warns/skips revision conflicts rather than silently overwriting newer server state.
 
-The implementation does not promise CRDTs, peer-to-peer sync, simultaneous collaborative editing, or a merge-conflict editor.
+Client `createdAt`/`updatedAt` timestamps remain useful record metadata but do not decide write conflicts.
 
-## C8 Canonical Persistence Boundary
+The implementation does not promise CRDTs, peer-to-peer sync, simultaneous collaborative editing, automatic field-level merge, or a merge-conflict editor.
 
-C8 removes the retired compatibility storage rather than carrying it forward indefinitely.
+## Canonical Persistence and Revision Boundary
 
-The canonical persisted workspace is Area / Project / Task / Date / DailyNote across PostgreSQL, bootstrap serialization, user-scoped IndexedDB, sync, and portability export v2.
+C8 removed retired compatibility storage and established the five canonical user-data collections: Area / Project / Task / Date / DailyNote.
 
-IndexedDB v4 is an intentional clean break: remembered verified identities survive the database upgrade, while incompatible pre-C8 workspace and outbox snapshots are discarded and rebuilt from authenticated server bootstrap. No rolling old-client/outbox protocol is promised because the product had no real users at this migration point.
+C10 adds internal synchronization metadata without changing that user-facing model:
+- PostgreSQL, bootstrap, WorkspaceData, IndexedDB, and sync carry a server-owned `revision` for each canonical record;
+- queued mutations carry `baseRevision` and `baseServerSyncedAt`;
+- portability export v2 deliberately omits revision metadata because revisions are device/server conflict-control state, not portable user data.
+
+IndexedDB v4 is an intentional C10 clean break from revisionless v3 caches. Remembered verified identities survive; cached workspace/outbox snapshots are discarded and rebuilt from authenticated server bootstrap. This is acceptable under the previously approved no-real-users migration boundary and avoids inventing server revisions that older caches never observed.
 
 The sync contract accepts canonical entity types only and ordinary client mutations are upsert-only. Retired Capture/Resource/Review/legacy Deadline/Dashboard/recovery/tombstone fields are not synchronized.
 

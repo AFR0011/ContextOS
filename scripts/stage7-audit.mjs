@@ -276,17 +276,11 @@ record(
 );
 
 const requiredOwnedModels = [
-  "Domain",
+  "Area",
   "Project",
   "Task",
-  "Capture",
-  "Note",
-  "Deadline",
   "ContextDate",
-  "Review",
   "DailyNote",
-  "DashboardScratchpad",
-  "DashboardPreference",
   "SyncMutation"
 ];
 const missingUserScope = [];

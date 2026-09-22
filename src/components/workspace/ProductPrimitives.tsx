@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { useDialogFocusTrap } from "@/lib/use-dialog-focus-trap";
 import { CalendarDays, Check, ChevronRight, Circle, Clock3, Search, X } from "lucide-react";
 
 export function PageHeader({
@@ -260,26 +261,19 @@ export function DetailSheet({
   children: ReactNode;
   footer?: ReactNode;
 }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  const dialogRef = useDialogFocusTrap({ open, onClose });
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/45 backdrop-blur-[2px] sm:items-center sm:p-4" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section role="dialog" aria-modal="true" aria-label={title} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] shadow-[var(--cos-shadow-lg)] sm:max-w-xl sm:rounded-2xl">
+      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] shadow-[var(--cos-shadow-lg)] sm:max-w-xl sm:rounded-2xl">
         <header className="sticky top-0 z-10 flex items-start gap-3 border-b border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/95 px-5 py-4 backdrop-blur">
           <div className="min-w-0 flex-1">
             <h2 className="break-words text-lg font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{title}</h2>
             {description ? <p className="mt-1 text-sm text-[var(--cos-text-muted)]">{description}</p> : null}
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="cos-btn-ghost grid h-9 w-9 place-items-center rounded-lg"><X className="h-4 w-4" /></button>
+          <button type="button" onClick={onClose} aria-label="Close" className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-lg"><X className="h-4 w-4" /></button>
         </header>
         <div className="p-5">{children}</div>
         {footer ? <footer className="sticky bottom-0 border-t border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/95 px-5 py-4 backdrop-blur">{footer}</footer> : null}
@@ -310,6 +304,7 @@ export function CommandPalette({
   onClose: () => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const dialogRef = useDialogFocusTrap({ open, onClose });
 
   useEffect(() => {
     if (!open) return;
@@ -319,11 +314,6 @@ export function CommandPalette({
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-        return;
-      }
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setActiveIndex((index) => items.length ? (index + 1) % items.length : 0);
@@ -352,6 +342,8 @@ export function CommandPalette({
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
     >
       <section
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
@@ -384,8 +376,8 @@ export function CommandPalette({
               }`}
             >
               <span className="text-[var(--cos-text-subtle)]">{item.icon}</span>
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--cos-text-strong)]">{item.label}</span>
-              {item.hint ? <span className="text-[11px] text-[var(--cos-text-subtle)]">{item.hint}</span> : null}
+              <span className="min-w-0 flex-1 break-words text-sm font-medium text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{item.label}</span>
+              {item.hint ? <span className="shrink-0 text-[11px] text-[var(--cos-text-subtle)]">{item.hint}</span> : null}
             </button>
           )) : <p className="px-3 py-6 text-center text-sm text-[var(--cos-text-muted)]">No matching commands.</p>}
         </div>

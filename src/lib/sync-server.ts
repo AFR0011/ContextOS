@@ -99,6 +99,25 @@ function shouldApplyRevision(
   return false;
 }
 
+async function revisionConflictAfterFailedCas(
+  tx: Tx,
+  model: OwnedModel,
+  id: string,
+  userId: string,
+  mutation: QueuedMutation,
+  warnings: SyncWarning[],
+  conflictedEntities: Set<string>
+) {
+  const latest = await ownedRecord(tx, model, id, userId);
+  conflictedEntities.add(revisionKey(mutation));
+  warnRevisionConflict(
+    latest,
+    mutation,
+    warnings,
+    `Skipped offline change for ${mutation.entityType} because another write advanced the server record revision first.`
+  );
+}
+
 function requireDateKey(value: unknown, field: string) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new SyncPayloadError(`Sync payload has invalid ${field}.`);
@@ -197,10 +216,13 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           if (shouldApplyRevision(existing, mutation, warnings, conflictedEntities)) {
             const updatedAt = new Date();
             if (existing) {
-              await tx.area.update({
-                where: { id },
+              const result = await tx.area.updateMany({
+                where: { id, userId, revision: mutation.baseRevision! },
                 data: { name, state, updatedAt, revision: { increment: 1 } }
               });
+              if (result.count === 0) {
+                await revisionConflictAfterFailedCas(tx, "area", id, userId, mutation, warnings, conflictedEntities);
+              }
             } else {
               await tx.area.create({
                 data: { id, userId, name, state, createdAt: toDate(payload.createdAt) ?? updatedAt, updatedAt, revision: 1 }
@@ -226,7 +248,13 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               updatedAt
             };
             if (existing) {
-              await tx.project.update({ where: { id }, data: { ...data, revision: { increment: 1 } } });
+              const result = await tx.project.updateMany({
+                where: { id, userId, revision: mutation.baseRevision! },
+                data: { ...data, revision: { increment: 1 } }
+              });
+              if (result.count === 0) {
+                await revisionConflictAfterFailedCas(tx, "project", id, userId, mutation, warnings, conflictedEntities);
+              }
             } else {
               await tx.project.create({
                 data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? updatedAt, revision: 1 }
@@ -265,7 +293,13 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               updatedAt
             };
             if (existing) {
-              await tx.task.update({ where: { id }, data: { ...data, revision: { increment: 1 } } });
+              const result = await tx.task.updateMany({
+                where: { id, userId, revision: mutation.baseRevision! },
+                data: { ...data, revision: { increment: 1 } }
+              });
+              if (result.count === 0) {
+                await revisionConflictAfterFailedCas(tx, "task", id, userId, mutation, warnings, conflictedEntities);
+              }
             } else {
               await tx.task.create({
                 data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? updatedAt, revision: 1 }
@@ -310,7 +344,13 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               updatedAt
             };
             if (existing) {
-              await tx.contextDate.update({ where: { id }, data: { ...data, revision: { increment: 1 } } });
+              const result = await tx.contextDate.updateMany({
+                where: { id, userId, revision: mutation.baseRevision! },
+                data: { ...data, revision: { increment: 1 } }
+              });
+              if (result.count === 0) {
+                await revisionConflictAfterFailedCas(tx, "contextDate", id, userId, mutation, warnings, conflictedEntities);
+              }
             } else {
               await tx.contextDate.create({
                 data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? updatedAt, revision: 1 }
@@ -342,10 +382,13 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               updatedAt
             };
             if (existing) {
-              await tx.dailyNote.update({
-                where: { id: existing.id },
+              const result = await tx.dailyNote.updateMany({
+                where: { id: existing.id, userId, revision: mutation.baseRevision! },
                 data: { ...data, revision: { increment: 1 } }
               });
+              if (result.count === 0) {
+                await revisionConflictAfterFailedCas(tx, "dailyNote", existing.id, userId, mutation, warnings, conflictedEntities);
+              }
             } else {
               await tx.dailyNote.create({
                 data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? updatedAt, revision: 1 }

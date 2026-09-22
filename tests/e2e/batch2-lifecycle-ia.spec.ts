@@ -72,13 +72,12 @@ test("archiving an Area does not cascade into its Projects", async ({ page }) =>
   expect(bootstrap.ok()).toBeTruthy();
   const workspace = await bootstrap.json();
   const project = workspace.data.projects.find(
-    (item: { status?: string; trashedAt?: string | null; archivedAt?: string | null }) =>
-      item.status === "active" && !item.trashedAt && !item.archivedAt
+    (item: { state?: string }) => item.state === "active"
   );
   expect(project?.id).toBeTruthy();
-  const area = workspace.data.domains.find((item: { id: string }) => item.id === project.domainId);
+  const area = workspace.data.areas.find((item: { id: string }) => item.id === project.areaId);
   expect(area?.id).toBeTruthy();
-  const initialProjectStatus = project.status;
+  const initialProjectState = project.state;
 
   await page.goto("/areas");
   await page.getByRole("button", { name: `Archive ${area.name}`, exact: true }).click();
@@ -86,14 +85,14 @@ test("archiving an Area does not cascade into its Projects", async ({ page }) =>
   await expect.poll(async () => {
     const response = await page.request.get("/api/bootstrap");
     const result = await response.json();
-    return result.data.domains.find((item: { id: string }) => item.id === area.id)?.archived ?? false;
-  }).toBe(true);
+    return result.data.areas.find((item: { id: string; state: string }) => item.id === area.id)?.state;
+  }).toBe("archived");
 
   await expect.poll(async () => {
     const response = await page.request.get("/api/bootstrap");
     const result = await response.json();
-    return result.data.projects.find((item: { id: string }) => item.id === project.id)?.status;
-  }).toBe(initialProjectStatus);
+    return result.data.projects.find((item: { id: string; state: string }) => item.id === project.id)?.state;
+  }).toBe(initialProjectState);
 
   await page.goto("/projects");
   await expect(page.getByText(project.name, { exact: true }).first()).toBeVisible();

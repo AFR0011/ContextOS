@@ -20,17 +20,12 @@ async function bootstrapData(page: Page) {
   expect(response.ok()).toBeTruthy();
   const payload = await response.json();
   return payload.data as {
-    domains: { id: string; name: string; archived: boolean }[];
-    projects: { id: string; name: string; domainId: string }[];
+    areas: { id: string; name: string; state: "active" | "archived" }[];
+    projects: { id: string; name: string; areaId: string; state: "active" | "archived" }[];
     tasks: unknown[];
-    captures: unknown[];
-    notes: unknown[];
-    deadlines: unknown[];
-    contextDates: unknown[];
-    reviews: unknown[];
+    dates: unknown[];
     dailyNotes: unknown[];
-    dashboardScratchpads: unknown[];
-    dashboardPreferences: unknown[];
+    serverSyncedAt: string;
   };
 }
 
@@ -46,27 +41,21 @@ async function loginDemo(page: Page) {
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
-test("new accounts start clean, survive bootstrap, and reach useful work through first Area setup", async ({ page }) => {
+test("new accounts start with an empty canonical workspace and reach useful work through first Area setup", async ({ page }) => {
   await registerFreshAccount(page, "batch3-clean");
 
   let data = await bootstrapData(page);
-  expect(data.domains).toHaveLength(0);
+  expect(data.areas).toHaveLength(0);
   expect(data.projects).toHaveLength(0);
   expect(data.tasks).toHaveLength(0);
-  expect(data.captures).toHaveLength(0);
-  expect(data.notes).toHaveLength(0);
-  expect(data.deadlines).toHaveLength(0);
-  expect(data.contextDates).toHaveLength(0);
-  expect(data.reviews).toHaveLength(0);
+  expect(data.dates).toHaveLength(0);
   expect(data.dailyNotes).toHaveLength(0);
-  expect(data.dashboardScratchpads).toHaveLength(1);
-  expect(data.dashboardPreferences).toHaveLength(1);
 
   await expect(page.getByText("ContextOS Demo", { exact: true })).toHaveCount(0);
   await page.reload();
   await expect(page.getByTestId("first-run-setup")).toBeVisible();
   data = await bootstrapData(page);
-  expect(data.domains).toHaveLength(0);
+  expect(data.areas).toHaveLength(0);
   expect(data.projects).toHaveLength(0);
 
   const areaName = `Work ${Date.now()}`;
@@ -75,7 +64,7 @@ test("new accounts start clean, survive bootstrap, and reach useful work through
   await expect(page.getByTestId("first-run-setup")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 
-  await expect.poll(async () => (await bootstrapData(page)).domains.some((domain) => domain.name === areaName)).toBeTruthy();
+  await expect.poll(async () => (await bootstrapData(page)).areas.some((area) => area.name === areaName)).toBeTruthy();
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await expect(page).toHaveURL(/\/projects$/);
@@ -104,12 +93,22 @@ test("first Area setup is usable on a narrow mobile viewport without horizontal 
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 });
 
-test("demo reset no longer seeds retired Inbox Resource or Review product data", async ({ page }) => {
+test("demo reset returns only canonical workspace collections", async ({ page }) => {
   await loginDemo(page);
   const data = await bootstrapData(page);
 
-  expect(data.captures).toHaveLength(0);
-  expect(data.notes).toHaveLength(0);
-  expect(data.reviews).toHaveLength(0);
-  expect(data.domains.some((domain) => domain.name === "Notes")).toBe(false);
+  expect(data.areas.length).toBeGreaterThan(0);
+  expect(data.projects.length).toBeGreaterThan(0);
+  expect(data.tasks.length).toBeGreaterThan(0);
+  expect(data.dates.length).toBeGreaterThan(0);
+  expect(data.areas.some((area) => area.name === "Notes")).toBe(false);
+
+  expect(Object.keys(data).sort()).toEqual([
+    "areas",
+    "dailyNotes",
+    "dates",
+    "projects",
+    "serverSyncedAt",
+    "tasks"
+  ]);
 });

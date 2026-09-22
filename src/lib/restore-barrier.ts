@@ -31,7 +31,7 @@ export async function enforceWorkspaceRestoreBarrier(userId: string, mutations: 
         entityType: mutation.entityType,
         entityId: mutation.entityId,
         operation: mutation.operation,
-        payload: (mutation.payload ?? {}) as Prisma.InputJsonValue,
+        payload: (mutation.payload ?? {}) as unknown as Prisma.InputJsonValue,
         createdAt: new Date(mutation.createdAt),
         appliedAt: new Date()
       })),

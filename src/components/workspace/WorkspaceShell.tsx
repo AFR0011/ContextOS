@@ -63,7 +63,7 @@ function SyncIndicator({
 }: {
   sync: SyncSnapshot;
   compact?: boolean;
-  onRefreshFromServer?: () => Promise<void>;
+  onRefreshFromServer?: () => Promise<boolean>;
 }) {
   const Icon = sync.syncing ? RefreshCw : sync.online ? Wifi : WifiOff;
   const tone = sync.error

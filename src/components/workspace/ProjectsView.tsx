@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Archive, FolderKanban, Plus, RotateCcw } from "lucide-react";
 import { EmptyState, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
 import { useWorkspace } from "@/lib/client-store";
@@ -75,6 +75,7 @@ export function ProjectsView() {
   const [name, setName] = useState("");
   const [areaId, setAreaId] = useState("");
   const [objective, setObjective] = useState("");
+  const newProjectTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const activeAreas = data.areas.filter((area) => area.state === "active");
   const activeProjects = data.projects.filter((project) => project.state === "active");
@@ -102,6 +103,11 @@ export function ProjectsView() {
     router.push(`/projects/${id}`);
   }
 
+  function cancelProjectCreation() {
+    setShowNew(false);
+    window.requestAnimationFrame(() => newProjectTriggerRef.current?.focus());
+  }
+
   function archiveProject(projectId: string) {
     updateProject(projectId, { state: "archived" });
   }
@@ -118,9 +124,12 @@ export function ProjectsView() {
         description="Bounded work with one objective, one Area, and the tasks needed to move it forward."
         action={
           <button
+            ref={newProjectTriggerRef}
             type="button"
             onClick={() => setShowNew(true)}
             disabled={!activeAreas.length}
+            aria-expanded={showNew}
+            aria-controls="project-create-form"
             className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50"
           >
             <Plus className="h-4 w-4" /> New Project
@@ -129,7 +138,7 @@ export function ProjectsView() {
       />
 
       {showNew ? (
-        <section className="cos-surface mb-6 p-4" data-testid="project-create-form">
+        <section id="project-create-form" className="cos-surface mb-6 p-4" data-testid="project-create-form">
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_14rem]">
             <label className="space-y-1">
               <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Name</span>
@@ -166,7 +175,7 @@ export function ProjectsView() {
             <button type="button" onClick={createProject} disabled={!name.trim()} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50">
               Create Project
             </button>
-            <button type="button" onClick={() => setShowNew(false)} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">
+            <button type="button" onClick={cancelProjectCreation} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">
               Cancel
             </button>
           </div>

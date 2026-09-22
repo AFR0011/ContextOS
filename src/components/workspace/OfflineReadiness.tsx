@@ -108,6 +108,9 @@ export function OfflineReadiness() {
     return (
       <div
         data-testid="offline-shell-readiness"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
         data-ready="true"
         title={state.version ? `Cached application shell ${state.version}` : "Cached application shell is complete"}
         className="mb-3 flex items-center gap-2 rounded-lg border border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] px-3 py-2 text-xs font-semibold text-[var(--cos-success-text)]"
@@ -123,6 +126,9 @@ export function OfflineReadiness() {
     return (
       <div
         data-testid="offline-shell-readiness"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
         data-ready="false"
         className="mb-3 flex items-center gap-2 rounded-lg border border-[var(--cos-border)] bg-[var(--cos-bg-soft)] px-3 py-2 text-xs font-semibold text-[var(--cos-text-muted)]"
       >
@@ -135,6 +141,9 @@ export function OfflineReadiness() {
   return (
     <div
       data-testid="offline-shell-readiness"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
       data-ready="false"
       title={state.status === "incomplete" && state.version ? `Shell ${state.version} is missing ${state.missing} required resource${state.missing === 1 ? "" : "s"}.` : undefined}
       className="mb-3 flex items-center gap-2 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-xs font-semibold text-[var(--cos-warning-text)]"

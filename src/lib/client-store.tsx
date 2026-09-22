@@ -80,7 +80,7 @@ function byId<T extends { id: string }>(items: T[], id: string) {
 
 function warningSummary(warnings: SyncWarning[]) {
   if (warnings.length === 1) return warnings[0].message;
-  return `${warnings.length} older offline changes were skipped because the server had newer updates.`;
+  return `${warnings.length} queued changes were skipped because their server record revisions were no longer current.`;
 }
 
 interface SyncState {

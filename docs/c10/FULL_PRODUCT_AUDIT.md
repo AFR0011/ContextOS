@@ -684,9 +684,25 @@ Projects had a physical `src/app/(workspace)/projects/[id]/page.tsx` handoff rou
 
 Added `src/app/(workspace)/areas/[id]/page.tsx` with the same `WorkspaceRouteHandoff` boundary. The local workspace router remains the canonical client renderer, while Next now has an equivalent direct-navigation route for Area detail.
 
+### C-PROD-04 — production characterization selector became ambiguous
+
+Severity: **Assurance defect, Low**  
+Status: **Fixed on audit branch**
+
+After the auth and Area-route fixes, the local-first convergence scenario reached Project creation and exposed an ambiguous Playwright selector: `getByLabel("Area")` also matched the navigation control named “Areas.”
+
+The test now scopes the exact Area select to `project-create-form`. Product accessibility names were not weakened to satisfy the test.
+
+### Controlled rerun evidence
+
+The intermediate commits provide direct isolation evidence:
+- WorkspaceGate v4 correction removed all three `VersionError` failures, leaving only the pre-existing auth/Area-route failures.
+- browser-origin auth correction removed the reset 401; that run then exposed the selector ambiguity and still lacked the Area route.
+- adding the physical Area route made the offline Area cold-open/hard-refresh test pass; that run had 25/26 production tests pass, with only the selector ambiguity remaining.
+
 ### Evidence boundary
 
-The fixes above are covered by structural C10 guards and are being rerun through the full production matrix. They are not considered passed until the browser rerun confirms them.
+The final candidate includes all four remediations and structural guards. It is not considered passed until the full production browser rerun confirms the complete set.
 
 ## C-01 — Primary surface rendered inspection
 

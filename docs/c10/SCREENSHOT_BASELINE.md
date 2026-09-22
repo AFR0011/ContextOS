@@ -39,7 +39,7 @@ The repository now includes an explicit browser-capture matrix:
 - `scripts/capture-c10-visual.mjs`
 - `npm run capture:c10:visual`
 
-The capture runner is intentionally separate from the normal E2E ladder. Visual specs are skipped unless `CAPTURE_C10_VISUAL=1`, and the npm command sets that flag cross-platform. The runner now fails fast on `npm run build`, captures standard/hostile/clean-account states through the normal browser config, then starts the production server through `playwright.production.config.ts` for offline/pending/reconnect evidence.
+The capture runner is intentionally separate from the normal E2E ladder. Visual specs are skipped unless `CAPTURE_C10_VISUAL=1`, and the npm command sets that flag cross-platform. The runner now fails fast on `npm run build`, runs production offline/pending/reconnect capture immediately against that build through `playwright.production.config.ts`, then runs standard/hostile/clean-account captures through the normal dev-browser config. Production runs first so `next dev` cannot mutate `.next` before `next start` uses it.
 
 Current automated capture coverage:
 - 1440x1000 desktop light/dark;

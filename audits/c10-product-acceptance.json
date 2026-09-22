@@ -43,7 +43,13 @@
       "artifacts": [
         "tests/e2e/local-first-characterization.spec.ts",
         "tests/offline-production/offline-shell.spec.ts",
-        "docs/LOCAL_FIRST_CONTRACT.md"
+        "docs/LOCAL_FIRST_CONTRACT.md",
+        "tests/e2e/local-db-v4.spec.ts",
+        "tests/e2e/contextos.spec.ts",
+        "tests/e2e/portability.spec.ts",
+        "src/lib/sync-server.ts",
+        "src/lib/restore-barrier.ts",
+        "prisma/migrations/20260922190000_server_record_revisions/migration.sql"
       ]
     },
     {

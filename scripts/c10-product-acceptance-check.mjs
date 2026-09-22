@@ -92,7 +92,9 @@ if (!syncServer.includes("updateMany") || !syncServer.includes("revision: { incr
   errors.push("C10 revision updates must remain atomic database compare-and-swap operations.");
 }
 for (const model of ["Area", "Project", "Task", "ContextDate", "DailyNote"]) {
-  const block = schema.match(new RegExp(`model ${model} \\\\{([\\\\s\\\\S]*?)\\\\n\\\\}`, "m"))?.[1] ?? "";
+  const start = schema.indexOf(`model ${model} {`);
+  const end = start >= 0 ? schema.indexOf("\n}", start) : -1;
+  const block = start >= 0 && end > start ? schema.slice(start, end + 2) : "";
   if (!/revision\s+Int\s+@default\(1\)/.test(block)) {
     errors.push(`${model} is missing the server-owned revision field.`);
   }

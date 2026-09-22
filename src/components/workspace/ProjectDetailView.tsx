@@ -192,7 +192,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         description="Concrete actions belonging to this Project."
         className="mt-8"
         action={doneTasks.length ? (
-          <button type="button" onClick={() => setShowCompleted((value) => !value)} className="cos-btn cos-btn-ghost px-3 py-1.5 text-xs">
+          <button type="button" onClick={() => setShowCompleted((value) => !value)} aria-expanded={showCompleted} aria-controls="project-completed-tasks" className="cos-btn cos-btn-ghost px-3 py-1.5 text-xs">
             {showCompleted ? "Hide completed" : `Show completed (${doneTasks.length})`}
           </button>
         ) : null}
@@ -212,7 +212,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           </div>
 
           {showCompleted && doneTasks.length ? (
-            <div className="mt-3 border-t border-[var(--cos-border-soft)] pt-3">
+            <div id="project-completed-tasks" className="mt-3 border-t border-[var(--cos-border-soft)] pt-3">
               {doneTasks.map((task) => (
                 <TaskRow
                   key={task.id}
@@ -232,6 +232,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                 onChange={(event) => setTaskTitle(event.target.value)}
                 onKeyDown={(event) => event.key === "Enter" && addProjectTask()}
                 placeholder="Add a task..."
+                aria-label="Task title"
                 className="cos-input px-3 py-2 text-sm"
               />
               <input
@@ -291,12 +292,12 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                 <option value="event">Event</option>
                 <option value="deadline">Deadline</option>
               </select>
-              <input value={dateTitle} onChange={(event) => setDateTitle(event.target.value)} placeholder="Add a Date..." className="cos-input px-3 py-2 text-sm" />
+              <input value={dateTitle} onChange={(event) => setDateTitle(event.target.value)} placeholder="Add a Date..." aria-label="Date title" className="cos-input px-3 py-2 text-sm" />
               <input type="date" value={dateValue} onChange={(event) => setDateValue(event.target.value)} aria-label="Date" className="cos-input px-3 py-2 text-sm" />
               <input type="time" value={dateStartTime} onChange={(event) => setDateStartTime(event.target.value)} aria-label="Date start time" className="cos-input px-3 py-2 text-sm" />
               <input type="time" value={dateEndTime} onChange={(event) => setDateEndTime(event.target.value)} aria-label="Date end time" disabled={dateKind === "deadline"} className="cos-input px-3 py-2 text-sm disabled:opacity-45" />
               <button type="button" onClick={addProjectDate} disabled={!dateTitle.trim() || !dateValue} className="cos-btn cos-btn-primary px-3 py-2 text-sm disabled:opacity-50"><Plus className="h-4 w-4" /> Add</button>
-              <textarea value={dateDetails} onChange={(event) => setDateDetails(event.target.value)} placeholder="Details (optional)" rows={2} className="cos-input resize-y px-3 py-2 text-sm lg:col-span-6" />
+              <textarea value={dateDetails} onChange={(event) => setDateDetails(event.target.value)} placeholder="Details (optional)" aria-label="Date details" rows={2} className="cos-input resize-y px-3 py-2 text-sm lg:col-span-6" />
             </div>
           ) : null}
         </div>

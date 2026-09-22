@@ -63,13 +63,15 @@ This is a bounded self-hosted recovery mechanism, not self-service password rese
 
 ## Synchronization and deletion boundary
 
-Synchronization requests enforce a total request-size limit, mutation-count limit, per-mutation UTF-8 payload-byte limit, bounded identifiers/field keys, parseable bounded timestamps, and `entityId === payload.id` consistency for upserts. Server application then revalidates ownership of target records and user-owned references before writing.
+Synchronization requests enforce a total request-size limit, mutation-count limit, per-mutation UTF-8 payload-byte limit, bounded identifiers/field keys, parseable mutation timestamps, and `entityId === payload.id` consistency. Server application then revalidates ownership of target records and user-owned references before writing.
 
 Per-user mutation IDs are unique in PostgreSQL, accepted replays are idempotent, and stale updates are surfaced as warnings rather than silently overwriting newer server state.
 
-The sync schema still accepts the historical `delete` operation for compatibility. The current server treats that operation as a mutation-ledger compatibility no-op. Current client code does not use it for ordinary user-facing deletion.
+C8 narrows the sync protocol to canonical entity types only: Areas, Projects, Tasks, Dates, and Daily Notes. Ordinary sync mutations are upsert-only; the historical compatibility `delete` wire is rejected.
 
-Projects, Tasks, standalone Notes, and Dates use synchronized `trashedAt` state for recoverable deletion. Inbox captures use synchronized `status = "deleted"`. These state changes retain the normal updated-at conflict rule, so an older offline update is rejected rather than silently resurrecting a newer tombstone. ContextOS does not claim irreversible per-record purge until an anti-resurrection/version-generation protocol is implemented and verified.
+Canonical lifecycle state is deliberately small: Areas and Projects are active/archived, Tasks are open/done, and Dates have no completion/archive state. The canonical schema contains no Capture/Resource/Review/legacy Deadline/Dashboard/recovery or per-record tombstone fields.
+
+IndexedDB v3 is a clean persistence break. Verified local identity survives the upgrade, while incompatible pre-C8 workspace/outbox snapshots are discarded rather than transformed through an unverified rolling-client protocol.
 
 ## Logout and local-device boundary
 

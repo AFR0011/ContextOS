@@ -182,6 +182,9 @@ const visualStressSpec = fs.readFileSync("tests/e2e/c10-visual-stress.spec.ts", 
 const visualEmptySpec = fs.readFileSync("tests/e2e/c10-visual-empty.spec.ts", "utf8");
 const visualOfflineSpec = fs.readFileSync("tests/offline-production/c10-visual-offline.spec.ts", "utf8");
 const offlineProductionSpec = fs.readFileSync("tests/offline-production/offline-shell.spec.ts", "utf8");
+const workspaceGateTest = fs.readFileSync("tests/e2e/workspace-gate.spec.ts", "utf8");
+const localFirstCharacterization = fs.readFileSync("tests/e2e/local-first-characterization.spec.ts", "utf8");
+const areaDetailRoute = fs.readFileSync("src/app/(workspace)/areas/[id]/page.tsx", "utf8");
 const visualCaptureRunner = fs.readFileSync("scripts/capture-c10-visual.mjs", "utf8");
 const ciWorkflow = fs.readFileSync(".github/workflows/ci.yml", "utf8");
 const visualBaselineSpec = fs.readFileSync("tests/e2e/c10-visual-baseline.spec.ts", "utf8");
@@ -241,6 +244,21 @@ if (visualOfflineSpec.includes('indexedDB.open("contextos-offline-v1", 3)') ||
 if (offlineProductionSpec.includes('indexedDB.open("contextos-offline-v1", 3)') ||
     !offlineProductionSpec.includes('indexedDB.open("contextos-offline-v1", 4)')) {
   errors.push("Production offline behavioral coverage must use the current IndexedDB v4 contract.");
+}
+if (workspaceGateTest.includes("indexedDB.open(databaseName, 3)") ||
+    !workspaceGateTest.includes("indexedDB.open(databaseName, 4)")) {
+  errors.push("Workspace-gate offline identity coverage must use the current IndexedDB v4 contract.");
+}
+if (localFirstCharacterization.includes('indexedDB.open("contextos-offline-v1", 3)') ||
+    !localFirstCharacterization.includes('indexedDB.open("contextos-offline-v1", 4)')) {
+  errors.push("Local-first characterization must use the current IndexedDB v4 contract.");
+}
+if (!localFirstCharacterization.includes('fetch("/api/reset-demo", { method: "POST" })') ||
+    !localFirstCharacterization.includes('fetch("/api/bootstrap", { cache: "no-store" })')) {
+  errors.push("Production local-first characterization must use browser-origin authenticated requests.");
+}
+if (!areaDetailRoute.includes("WorkspaceRouteHandoff")) {
+  errors.push("Area detail must retain a physical App Router handoff route for direct/offline navigation.");
 }
 if (!visualCaptureRunner.includes('run(npm, ["run", "build"])') ||
     !visualCaptureRunner.includes("c10-visual-stress.spec.ts") ||

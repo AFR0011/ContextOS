@@ -51,14 +51,14 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
             <Zap className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-[var(--cos-text-strong)]">ContextOS</h1>
+            <p className="text-xl font-bold tracking-tight text-[var(--cos-text-strong)]">ContextOS</p>
             <p className="text-sm text-[var(--cos-text-muted)]">Execution-first context recovery</p>
           </div>
         </div>
 
         <form onSubmit={submit} className="cos-surface p-5 sm:p-6">
           <div>
-            <h2 className="cos-page-title">{mode === "login" ? "Sign in" : "Create account"}</h2>
+            <h1 className="cos-page-title">{mode === "login" ? "Sign in" : "Create account"}</h1>
             <p className="mt-1 text-sm text-[var(--cos-text-muted)]">
               {mode === "login"
                 ? "Sign in to your workspace."
@@ -67,7 +67,7 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
           </div>
 
           {serviceStatus ? (
-            <p data-testid="auth-service-status" className="mt-4 rounded-[var(--cos-radius-md)] border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
+            <p data-testid="auth-service-status" role="status" className="mt-4 rounded-[var(--cos-radius-md)] border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
               {serviceStatus}
             </p>
           ) : null}
@@ -99,9 +99,11 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
             />
           </label>
 
-          {error ? <p className="mt-4 rounded-[var(--cos-radius-md)] border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
+          {error ? <p role="alert" className="mt-4 rounded-[var(--cos-radius-md)] border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
 
           <button
+            type="submit"
+            aria-busy={loading}
             disabled={loading || Boolean(serviceStatus) || (mode === "register" && !registrationEnabled)}
             className="cos-btn cos-btn-primary mt-6 w-full px-4 py-2.5 text-sm disabled:opacity-60"
           >

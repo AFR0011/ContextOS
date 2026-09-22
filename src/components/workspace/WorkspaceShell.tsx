@@ -28,6 +28,7 @@ import type { PublicUser } from "@/lib/auth";
 import { useWorkspace } from "@/lib/client-store";
 import { useLocalRouter } from "@/lib/local-router";
 import { useContextOsTheme } from "@/lib/theme-preference";
+import { useDialogFocusTrap } from "@/lib/use-dialog-focus-trap";
 
 const mobileBottomNav = [
   { href: "/dashboard", label: "Home", icon: Home },
@@ -82,6 +83,9 @@ function SyncIndicator({
     return (
       <div
         data-testid="global-sync-indicator"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
         className={`ml-auto flex min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${tone}`}
       >
         <Icon className={`h-3.5 w-3.5 shrink-0 ${sync.syncing ? "animate-spin" : ""}`} />
@@ -91,7 +95,7 @@ function SyncIndicator({
   }
 
   return (
-    <div data-testid="global-sync-indicator" className={`rounded-xl border px-3 py-2.5 text-xs ${tone}`}>
+    <div data-testid="global-sync-indicator" role="status" aria-live="polite" aria-atomic="true" className={`rounded-xl border px-3 py-2.5 text-xs ${tone}`}>
       <div className="flex items-center gap-2 font-semibold">
         <Icon className={`h-3.5 w-3.5 shrink-0 ${sync.syncing ? "animate-spin" : ""}`} />
         <span>{syncStatusLabel(sync)}</span>
@@ -102,12 +106,12 @@ function SyncIndicator({
         ) : null}
       </div>
       {sync.error ? (
-        <p className="mt-1.5 flex items-start gap-1.5 font-medium">
+        <p role="alert" className="mt-1.5 flex items-start gap-1.5 font-medium">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>{sync.error}</span>
         </p>
       ) : sync.lastWarning ? (
-        <p className="mt-1.5 flex items-start gap-1.5 font-medium">
+        <p role="status" className="mt-1.5 flex items-start gap-1.5 font-medium">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>{sync.lastWarning}</span>
         </p>
@@ -169,6 +173,10 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
   const currentPath = localRouter.location.pathname;
   const { loading, sync, syncNow, forceRefreshFromServer } = useWorkspace();
   const { isDark, setTheme } = useContextOsTheme();
+  const navigationDialogRef = useDialogFocusTrap({
+    open,
+    onClose: () => setOpen(false)
+  });
 
   if (loading) {
     return (
@@ -189,21 +197,36 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
     setOpen(false);
   }
 
+  function openLogout() {
+    if (!open) {
+      setLogoutOpen(true);
+      return;
+    }
+
+    setOpen(false);
+    window.requestAnimationFrame(() => setLogoutOpen(true));
+  }
+
   return (
     <div className="flex min-h-screen bg-[var(--cos-bg)] text-[var(--cos-text)]">
       <LogoutDialog open={logoutOpen} user={user} sync={sync} syncNow={syncNow} onClose={() => setLogoutOpen(false)} />
       <WorkspaceCommandPalette />
 
       {open ? (
-        <button
-          type="button"
-          aria-label="Close navigation"
+        <div
+          aria-hidden="true"
           className="fixed inset-0 z-30 bg-slate-950/40 backdrop-blur-[2px] lg:hidden"
-          onClick={() => setOpen(false)}
+          onMouseDown={() => setOpen(false)}
         />
       ) : null}
 
       <aside
+        id="workspace-navigation-drawer"
+        ref={navigationDialogRef}
+        role={open ? "dialog" : undefined}
+        aria-modal={open ? true : undefined}
+        aria-label={open ? "Workspace navigation menu" : undefined}
+        tabIndex={open ? -1 : undefined}
         className={`fixed inset-y-0 left-0 z-40 flex w-[15.5rem] flex-col border-r border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/96 shadow-[var(--cos-shadow-md)] backdrop-blur-xl transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:shadow-none ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
@@ -278,7 +301,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             </div>
             <button
               type="button"
-              onClick={() => setLogoutOpen(true)}
+              onClick={openLogout}
               className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-lg text-[var(--cos-text-muted)]"
               title="Log out"
               aria-label="Log out"
@@ -296,6 +319,8 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-lg text-[var(--cos-text)]"
             onClick={() => setOpen(true)}
             aria-label="Open navigation"
+            aria-expanded={open}
+            aria-controls="workspace-navigation-drawer"
           >
             <Menu className="h-5 w-5" />
           </button>

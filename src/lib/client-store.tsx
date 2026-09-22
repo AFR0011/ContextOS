@@ -28,13 +28,20 @@ function now() {
   return new Date().toISOString();
 }
 
+function withRevision<T extends { revision?: number }>(record: T) {
+  return {
+    ...record,
+    revision: Number.isInteger(record.revision) && (record.revision ?? 0) >= 0 ? record.revision! : 0
+  };
+}
+
 function normalizeWorkspace(value: Partial<WorkspaceData> | null | undefined): WorkspaceData {
   return {
-    areas: value?.areas ?? [],
-    projects: value?.projects ?? [],
-    tasks: value?.tasks ?? [],
-    dates: value?.dates ?? [],
-    dailyNotes: value?.dailyNotes ?? [],
+    areas: (value?.areas ?? []).map(withRevision),
+    projects: (value?.projects ?? []).map(withRevision),
+    tasks: (value?.tasks ?? []).map(withRevision),
+    dates: (value?.dates ?? []).map(withRevision),
+    dailyNotes: (value?.dailyNotes ?? []).map(withRevision),
     serverSyncedAt: value?.serverSyncedAt ?? ""
   };
 }
@@ -296,7 +303,14 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
     const mutations: QueuedMutation[] = [];
 
     for (const change of changes) {
-      const touched = { ...change.record, updatedAt: committedAt } as WorkspaceRecord;
+      const baseRevision = Number.isInteger(change.record.revision) && change.record.revision > 0
+        ? change.record.revision
+        : null;
+      const touched = {
+        ...change.record,
+        updatedAt: committedAt,
+        revision: (baseRevision ?? 0) + 1
+      } as WorkspaceRecord;
       next = {
         ...next,
         [change.collection]: replaceIn(next[change.collection] as WorkspaceRecord[], touched)
@@ -308,7 +322,8 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         operation: "upsert",
         payload: touched,
         createdAt: committedAt,
-        baseServerSyncedAt: dataRef.current.serverSyncedAt || null
+        baseServerSyncedAt: dataRef.current.serverSyncedAt || null,
+        baseRevision
       } as QueuedMutation);
     }
 
@@ -464,7 +479,8 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         name: name.trim(),
         state: "active",
         createdAt: ts,
-        updatedAt: ts
+        updatedAt: ts,
+        revision: 0
       };
       mutate("areas", area);
       return area.id;
@@ -482,7 +498,8 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         objective: input.objective ?? "",
         state: "active",
         createdAt: ts,
-        updatedAt: ts
+        updatedAt: ts,
+        revision: 0
       };
       mutate("projects", project);
       return project.id;
@@ -501,7 +518,8 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         scheduledTime: input.plannedDate ? input.scheduledTime ?? null : null,
         state: "open",
         createdAt: ts,
-        updatedAt: ts
+        updatedAt: ts,
+        revision: 0
       };
       mutate("tasks", task);
       return task.id;
@@ -527,7 +545,8 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         endTime: input.kind === "event" ? input.endTime ?? null : null,
         details: input.details ?? "",
         createdAt: ts,
-        updatedAt: ts
+        updatedAt: ts,
+        revision: 0
       };
       mutate("dates", date);
       return date.id;
@@ -551,7 +570,8 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
             localDate,
             content,
             createdAt: ts,
-            updatedAt: ts
+            updatedAt: ts,
+            revision: 0
           };
       mutate("dailyNotes", note);
     }

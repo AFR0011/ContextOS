@@ -28,9 +28,12 @@
       "title": "Definitive workflow Open -> understand day -> execute -> note -> open context -> resume project -> see upcoming -> find history -> enter LifeOS is exercised end-to-end",
       "status": "pending",
       "artifacts": [
+        "tests/e2e/c10-product-workflow.spec.ts",
         "BLUEPRINT.md",
-        "tests/e2e/contextos.spec.ts",
-        "tests/e2e/c6-search-palette.spec.ts"
+        "src/components/workspace/HomeView.tsx",
+        "src/components/workspace/ProjectDetailView.tsx",
+        "src/components/workspace/ProductSearchView.tsx",
+        "src/components/workspace/LifeOSFoundationView.tsx"
       ]
     },
     {

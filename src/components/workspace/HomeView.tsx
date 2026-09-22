@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { DateRow, Dayline, EmptyState, EntityRow, InsightCard, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
-import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import { getContextsForToday, getTodayEvents, getTodayTasks, getUpcomingDates } from "@/lib/canonical-selectors";
 import { useWorkspace } from "@/lib/client-store";
 import { dateKeyToLocalDate, localDateKey } from "@/lib/dates";
@@ -120,7 +119,7 @@ export function HomeView() {
   const router = useLocalRouter();
   const { data, updateTask, updateDailyNote } = useWorkspace();
   const today = useCurrentLocalDateKey();
-  const canonical = useMemo(() => adaptLegacyWorkspace(data).workspace, [data]);
+  const canonical = data;
 
   const todayTasks = useMemo(
     () => getTodayTasks(canonical, today),
@@ -172,7 +171,7 @@ export function HomeView() {
       title: task.title,
       done: task.state === "done",
       meta: taskContext(task, canonical.projects, canonical.areas),
-      onToggle: () => updateTask(task.id, { status: task.state === "open" ? "done" : "todo" })
+      onToggle: () => updateTask(task.id, { state: task.state === "open" ? "done" : "open" })
     })),
     ...todayEvents.map((event) => ({
       id: event.id,
@@ -218,7 +217,7 @@ export function HomeView() {
                     >
                       <button
                         type="button"
-                        onClick={() => updateTask(task.id, { status: task.state === "open" ? "done" : "todo" })}
+                        onClick={() => updateTask(task.id, { state: task.state === "open" ? "done" : "open" })}
                         aria-label={task.state === "done" ? `Reopen ${task.title}` : `Complete ${task.title}`}
                         className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px] ${
                           task.state === "done"

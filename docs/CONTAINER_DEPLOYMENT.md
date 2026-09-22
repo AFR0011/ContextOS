@@ -99,7 +99,7 @@ printf '%s' "$CONTEXTOS_PASSWORD" | \
 unset CONTEXTOS_PASSWORD
 ```
 
-The create command refuses to overwrite an existing account and creates only the production workspace scaffold. It does not create demo Areas, projects, tasks, captures, notes, dates, or reviews.
+The create command refuses to overwrite an existing account and creates only the empty production workspace scaffold. It does not create demo Areas, Projects, Tasks, Dates, or Daily Notes.
 
 ## Password Recovery
 

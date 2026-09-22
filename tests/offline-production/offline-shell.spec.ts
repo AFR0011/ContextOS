@@ -181,7 +181,7 @@ test("canonical Area mutation queues offline, survives reload, and drains after 
 
   await expect.poll(async () => page.evaluate(async (expectedName) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("contextos-offline-v1", 3);
+      const request = indexedDB.open("contextos-offline-v1", 4);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -222,7 +222,7 @@ test("canonical Area mutation queues offline, survives reload, and drains after 
   await context.setOffline(false);
   await expect.poll(async () => page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("contextos-offline-v1", 3);
+      const request = indexedDB.open("contextos-offline-v1", 4);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });

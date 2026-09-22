@@ -72,7 +72,7 @@
     {
       "id": "CI-001",
       "title": "Active CI and verification commands reference only current canonical tests while retaining historical provenance audits",
-      "status": "pending",
+      "status": "passed",
       "artifacts": [
         ".github/workflows/ci.yml",
         "package.json",

@@ -127,7 +127,7 @@ export function LogoutDialog({ open, user, sync, syncNow, onClose }: LogoutDialo
         ) : null}
 
         {error ? (
-          <div data-testid="logout-error" className="mt-4 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] p-3 text-sm text-[var(--cos-danger-text)]">
+          <div data-testid="logout-error" role="alert" className="mt-4 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] p-3 text-sm text-[var(--cos-danger-text)]">
             {error}
           </div>
         ) : null}

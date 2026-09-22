@@ -167,6 +167,20 @@ test("command palette stays inside a short mobile viewport and scrolls its resul
     const active = await palette.locator('[role="option"][aria-selected="true"]').boundingBox();
     return Boolean(listBox && active && active.y >= listBox.y && active.y + active.height <= listBox.y + listBox.height + 1);
   }).toBe(true);
+
+  await page.keyboard.press("Escape");
+  await expect(palette).toHaveCount(0);
+
+  await page.setViewportSize({ width: 700, height: 400 });
+  await page.keyboard.press("Control+K");
+  const landscapePalette = page.getByTestId("command-palette");
+  await expect(landscapePalette).toBeVisible();
+  const landscapeMetrics = await landscapePalette.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { top: rect.top, bottom: rect.bottom, viewportHeight: window.innerHeight };
+  });
+  expect(landscapeMetrics.top).toBeGreaterThanOrEqual(0);
+  expect(landscapeMetrics.bottom).toBeLessThanOrEqual(landscapeMetrics.viewportHeight);
 });
 
 test("canonical quick-entry fields expose accessible names instead of placeholder-only controls", async ({ page }) => {

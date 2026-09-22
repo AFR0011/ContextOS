@@ -125,7 +125,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
         {area.state === "active" ? (
           <div className="cos-surface mt-4 grid gap-2 p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto]">
             <input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="New Project name" aria-label="Project name" className="cos-input px-3 py-2 text-sm" />
-            <input value={projectObjective} onChange={(event) => setProjectObjective(event.target.value)} onKeyDown={(event) => event.key === "Enter" && createProject()} placeholder="Objective (optional)" aria-label="Project objective" className="cos-input px-3 py-2 text-sm" />
+            <input value={projectObjective} onChange={(event) => setProjectObjective(event.target.value)} onKeyDown={(event) => event.key === "Enter" && !event.nativeEvent.isComposing && createProject()} placeholder="Objective (optional)" aria-label="Project objective" className="cos-input px-3 py-2 text-sm" />
             <button type="button" onClick={createProject} disabled={!projectName.trim()} className="cos-btn cos-btn-primary px-3 py-2 text-sm disabled:opacity-50">
               <Plus className="h-4 w-4" /> Add Project
             </button>
@@ -156,7 +156,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
 
           {area.state === "active" ? (
             <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 lg:grid-cols-[minmax(0,1fr)_10rem_8rem_auto]">
-              <input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && createTask()} placeholder="Add a direct task..." aria-label="Task title" className="cos-input px-3 py-2 text-sm" />
+              <input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && !event.nativeEvent.isComposing && createTask()} placeholder="Add a direct task..." aria-label="Task title" className="cos-input px-3 py-2 text-sm" />
               <input type="date" value={plannedDate} onChange={(event) => { setPlannedDate(event.target.value); if (!event.target.value) setScheduledTime(""); }} aria-label="Planned day" className="cos-input px-3 py-2 text-sm" />
               <input type="time" value={scheduledTime} onChange={(event) => setScheduledTime(event.target.value)} disabled={!plannedDate} aria-label="Scheduled time" className="cos-input px-3 py-2 text-sm disabled:opacity-50" />
               <button type="button" onClick={createTask} disabled={!taskTitle.trim()} className="cos-btn cos-btn-primary px-3 py-2 text-sm disabled:opacity-50"><Plus className="h-4 w-4" /> Add</button>

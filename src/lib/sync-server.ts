@@ -182,7 +182,7 @@ async function recordMutation(tx: Tx, userId: string, mutation: QueuedMutation) 
       entityType: mutation.entityType,
       entityId: mutation.entityId,
       operation: mutation.operation,
-      payload: mutation.payload as Prisma.InputJsonValue,
+      payload: mutation.payload as unknown as Prisma.InputJsonValue,
       createdAt: toDate(mutation.createdAt) ?? new Date(),
       appliedAt: new Date()
     }

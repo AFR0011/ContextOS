@@ -29,7 +29,7 @@ The create command:
 - requires a valid email and a password between 8 and 128 characters;
 - refuses to overwrite an existing account;
 - creates the same empty production workspace scaffold as normal registration; and
-- does **not** create demo Areas, projects, tasks, captures, or resources.
+- does **not** create demo Areas, Projects, Tasks, Dates, or Daily Notes.
 
 Do not use `npm run db:seed` as an account-provisioning tool. The demo seed is intentionally destructive for its configured demo workspace and is reserved for local or disposable preview environments.
 
@@ -54,7 +54,7 @@ An operator password reset:
 
 - changes only the account password hash;
 - revokes **all** server sessions for that account;
-- leaves Areas, projects, tasks, captures, notes, dates, reviews, local-first server state, and other workspace records unchanged; and
+- leaves canonical Areas, Projects, Tasks, Dates, Daily Notes, local-first server state, and other non-authentication workspace records unchanged; and
 - does not create a browser session automatically.
 
 Previously cached workspace data may still remain on offline client devices. Revoking server sessions prevents those devices from authenticating or synchronizing again until the new password is used to establish a fresh server session. This is not remote device erasure.

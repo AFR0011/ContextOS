@@ -97,24 +97,21 @@ The demo reset no longer creates Capture, standalone Note/Resource, or Review fi
 
 The historical `/handoff` parser remains readable for compatibility, but C7 no longer writes approved proposals into a retired Inbox. Until a canonical inter-module action contract is defined, the route is a private read-only preview that does not save the proposal.
 
-## Persistence Compatibility Until C8
+## Canonical Persistence After C8
 
-C7 retires surfaces, not the broad persistence model.
+C8 completes the clean persistence break.
 
-Existing storage/sync/import/export may still contain:
+Current persisted workspace collections are:
 
-- Capture;
-- standalone Note;
-- Review;
-- legacy Deadline;
-- legacy Task metadata/statuses;
-- DashboardScratchpad / DashboardPreference;
-- project recovery/nesting metadata;
-- tombstones for legacy recoverable records.
+- Area;
+- Project;
+- Task;
+- ContextDate (exposed as Dates in WorkspaceData/export);
+- DailyNote.
 
-These remain user-scoped and migration-safe until C8. Definitive UI and Search must not revive them.
+Removed persistence concepts include Capture, standalone Note/Resource, Review, legacy Deadline, DashboardScratchpad / DashboardPreference, project recovery/nesting metadata, legacy Task status/due/archive fields, and per-record tombstone fields.
 
-Tombstone and stale-write protections remain active even though the standalone Archive/Trash UI is retired.
+The sync wire accepts canonical entity types only and ordinary mutations are upsert-only. Export format v2 uses canonical names. IndexedDB v3 preserves verified local identity while clearing incompatible pre-C8 workspace/outbox snapshots so authenticated bootstrap can rebuild canonical state.
 
 ## Local-First Architecture
 
@@ -151,7 +148,7 @@ Current C7 implementation specifically changes assurance where product semantics
 
 - retired-route tests verify explicit redirects rather than deleted UI;
 - local atomicity/user-isolation tests use canonical Daily Notes rather than Inbox Captures;
-- Stage 9 tombstone assurance protects storage/sync anti-resurrection behavior rather than requiring a standalone Archive UI;
+- stale-write assurance now protects canonical last-write behavior without relying on retired tombstone fields;
 - production offline checks cover canonical routes plus offline-compatible aliases.
 
 ## Known Boundaries
@@ -167,7 +164,7 @@ Current C7 implementation specifically changes assurance where product semantics
 - no production SLA/on-call guarantee;
 - no remote erasure of another offline device;
 - no irreversible per-record purge without an anti-resurrection protocol;
-- broad legacy persistence migration is intentionally deferred to C8.
+- no rolling pre-C8 local workspace/outbox upgrade is promised; incompatible old local state is reset at IndexedDB v3.
 
 Historical note: Stage 10 closed in August 2026 against the earlier **portfolio-stage** local-first boundary. That wording is historical provenance, not the current product maturity label.
 

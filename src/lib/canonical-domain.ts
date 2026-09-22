@@ -9,6 +9,7 @@ export interface Area {
   state: AreaState;
   createdAt: string;
   updatedAt: string;
+  revision: number;
 }
 
 export interface Project {
@@ -19,6 +20,7 @@ export interface Project {
   state: ProjectState;
   createdAt: string;
   updatedAt: string;
+  revision: number;
 }
 
 export type TaskParent =
@@ -34,6 +36,7 @@ export interface Task {
   state: TaskState;
   createdAt: string;
   updatedAt: string;
+  revision: number;
 }
 
 export type ContextDateParent =
@@ -51,6 +54,7 @@ export interface ContextDate {
   details: string;
   createdAt: string;
   updatedAt: string;
+  revision: number;
 }
 
 export interface DailyNote {
@@ -59,6 +63,7 @@ export interface DailyNote {
   content: string;
   createdAt: string;
   updatedAt: string;
+  revision: number;
 }
 
 export interface InsightAction {

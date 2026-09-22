@@ -67,6 +67,13 @@ Current automated capture coverage:
 
 Every capture first asserts that the rendered document has no horizontal page overflow. Screenshots are attached to the Playwright report and written into the test output directory for human review.
 
+CI artifact handling:
+- production-runtime images are written under `test-results/c10-production`;
+- standard/hostile/empty-account images are written under `test-results/c10-standard`;
+- on pushes to `c10-product-acceptance`, CI runs `npm run capture:c10:visual` after the ordinary browser suites;
+- CI uploads both PNG trees as `c10-visual-audit-<commit>` with 14-day retention;
+- artifact upload still runs when the visual-capture step itself fails, preserving any images created before the failure.
+
 ## Current render-evidence blocker — 2026-09-22
 
 Phase C requires evidence from the current C10 branch, not an old working deployment.

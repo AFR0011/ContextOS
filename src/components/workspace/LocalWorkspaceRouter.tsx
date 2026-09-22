@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import {
   AreaDetailView,
   AreasView,
@@ -41,6 +41,18 @@ function isWorkspaceProductRoute(pathname: string) {
 export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNode }) {
   const { pathname } = useLocalLocation();
   const { data } = useWorkspace();
+  const firstRunVisibleRef = useRef(data.areas.length === 0);
+
+  useEffect(() => {
+    const firstRunWasVisible = firstRunVisibleRef.current;
+    firstRunVisibleRef.current = data.areas.length === 0;
+    if (!firstRunWasVisible || data.areas.length === 0) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>("#workspace-main-content h1")?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [data.areas.length]);
 
   if (data.areas.length === 0 && pathname !== "/settings" && isWorkspaceProductRoute(pathname)) {
     return <FirstRunSetup />;

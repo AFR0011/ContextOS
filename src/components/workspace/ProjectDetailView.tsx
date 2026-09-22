@@ -83,15 +83,17 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
     );
   }
 
-  const currentArea = data.areas.find((area) => area.id === project.areaId);
-  const areaChoices = data.areas.filter((area) => area.state === "active" || area.id === project.areaId);
+  const currentProject = project;
+
+  const currentArea = data.areas.find((area) => area.id === currentProject.areaId);
+  const areaChoices = data.areas.filter((area) => area.state === "active" || area.id === currentProject.areaId);
   const projectTasks = data.tasks.filter(
-    (task) => task.parent.type === "project" && task.parent.projectId === project.id
+    (task) => task.parent.type === "project" && task.parent.projectId === currentProject.id
   );
   const openTasks = projectTasks.filter((task) => task.state === "open");
   const doneTasks = projectTasks.filter((task) => task.state === "done").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const projectDates = data.dates
-    .filter((item) => item.parent.type === "project" && item.parent.projectId === project.id)
+    .filter((item) => item.parent.type === "project" && item.parent.projectId === currentProject.id)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
 
   function addProjectTask() {
@@ -99,7 +101,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
     if (!title) return;
     addTask({
       title,
-      parent: { type: "project", projectId: project.id },
+      parent: { type: "project", projectId: currentProject.id },
       plannedDate: plannedDate || null,
       scheduledTime: plannedDate ? scheduledTime || null : null
     });
@@ -118,7 +120,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       startTime: dateStartTime || null,
       endTime: dateKind === "event" ? dateEndTime || null : null,
       details: dateDetails.trim(),
-      parent: { type: "project", projectId: project.id }
+      parent: { type: "project", projectId: currentProject.id }
     });
     setDateTitle("");
     setDateStartTime("");
@@ -127,11 +129,11 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   }
 
   function archive() {
-    updateProject(project.id, { state: "archived" });
+    updateProject(currentProject.id, { state: "archived" });
   }
 
   function restore() {
-    updateProject(project.id, { state: "active" });
+    updateProject(currentProject.id, { state: "active" });
   }
 
   return (
@@ -142,10 +144,10 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
 
       <PageHeader
         eyebrow={currentArea?.name ?? "Project"}
-        title={project.name}
-        description={project.state === "archived" ? "Archived Project" : "Active Project"}
+        title={currentProject.name}
+        description={currentProject.state === "archived" ? "Archived Project" : "Active Project"}
         action={
-          project.state === "archived" ? (
+          currentProject.state === "archived" ? (
             <button type="button" onClick={restore} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
               <RotateCcw className="h-4 w-4" /> Restore
             </button>
@@ -161,13 +163,13 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         <div className="cos-surface grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
           <label className="space-y-1">
             <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Name</span>
-            <EditableText value={project.name} placeholder="Project name" onSave={(name) => name && updateProject(project.id, { name })} />
+            <EditableText value={currentProject.name} placeholder="Project name" onSave={(name) => name && updateProject(currentProject.id, { name })} />
           </label>
           <label className="space-y-1">
             <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Area</span>
             <select
-              value={project.areaId}
-              onChange={(event) => updateProject(project.id, { areaId: event.target.value })}
+              value={currentProject.areaId}
+              onChange={(event) => updateProject(currentProject.id, { areaId: event.target.value })}
               className="cos-input w-full px-3 py-2 text-sm"
             >
               {areaChoices.map((area) => (
@@ -178,10 +180,10 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           <label className="space-y-1 lg:col-span-2">
             <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Objective</span>
             <EditableText
-              value={project.objective}
+              value={currentProject.objective}
               multiline
               placeholder="What outcome is this Project trying to reach?"
-              onSave={(objective) => updateProject(project.id, { objective })}
+              onSave={(objective) => updateProject(currentProject.id, { objective })}
             />
           </label>
         </div>
@@ -225,7 +227,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
             </div>
           ) : null}
 
-          {project.state === "active" ? (
+          {currentProject.state === "active" ? (
             <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 lg:grid-cols-[minmax(0,1fr)_10rem_8rem_auto]">
               <input
                 value={taskTitle}
@@ -277,7 +279,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
             {!projectDates.length ? <p className="px-3 py-4 text-sm text-[var(--cos-text-subtle)]">No Dates for this Project.</p> : null}
           </div>
 
-          {project.state === "active" ? (
+          {currentProject.state === "active" ? (
             <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 md:grid-cols-2 xl:grid-cols-[7rem_minmax(0,1fr)_10rem_8rem_8rem_auto]">
               <select
                 value={dateKind}

@@ -16,6 +16,7 @@ Use the demo seed after a clean reset unless the scenario explicitly creates hos
 
 Capture:
 - desktop at 1440x1000;
+- compact desktop at 1024x768, the breakpoint where the permanent sidebar first appears;
 - mobile at 390x844;
 - narrow stress at 320x720 where specified;
 - light and dark for every primary surface;
@@ -43,6 +44,8 @@ The capture runner is intentionally separate from the normal E2E ladder. The vis
 Current automated capture coverage:
 - 1440x1000 desktop light;
 - 1440x1000 desktop dark;
+- 1024x768 compact desktop light;
+- 1024x768 compact desktop dark;
 - 390x844 mobile light;
 - 390x844 mobile dark;
 - Home;
@@ -85,6 +88,15 @@ Vercel deployment history shows:
 Therefore the old C3 deployment cannot be used as C10 visual evidence, and repeated preview pushes must not be treated as a substitute for a successful current build.
 
 The next Phase C runtime step is to run the current branch in an executable environment, resolve any build/type failure that remains, execute `npm run capture:c10:visual`, and manually inspect the resulting images.
+
+Source preflight has already identified and corrected several render risks before image capture:
+- short-viewport logout content could extend beyond the visible screen;
+- command-palette height did not account for its responsive top offset;
+- full-screen auth/workspace/handoff shells used static viewport height rather than dynamic viewport height;
+- user/server-controlled diagnostic, identity, and handoff strings had several unbounded-wrap paths;
+- Project Detail and Area Detail used a six-column Date composer at the 1024px sidebar breakpoint, compressing the Date title field to an impractically narrow width.
+
+Those fixes remain subject to real-browser confirmation. The 1024px breakpoint is now part of the permanent capture matrix rather than a one-off check.
 
 ## Baseline set
 

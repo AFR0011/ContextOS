@@ -34,11 +34,11 @@ export function LogoutDialog({ open, user, sync, syncNow, onClose }: LogoutDialo
   const [working, setWorking] = useState<LogoutAction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  if (!open) return null;
-
   const busy = working !== null;
   const hasPending = sync.pendingCount > 0;
   const dialogRef = useDialogFocusTrap({ open, onClose, closeOnEscape: !busy });
+
+  if (!open) return null;
 
   async function finishLogout(action: LogoutAction) {
     if (busy) return;

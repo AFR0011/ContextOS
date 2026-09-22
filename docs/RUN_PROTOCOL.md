@@ -34,6 +34,7 @@ npm run audit:stage9:lifecycle
 npm run audit:stage9:evidence
 npm run audit:stage10:acceptance
 npm run audit:stage10:claims
+npm run audit:c10:product
 npm run audit:release
 npx prisma validate
 npx prisma generate
@@ -47,7 +48,7 @@ npx playwright test --config=playwright.production.config.ts --workers=1
 npm run test:e2e -- --workers=1
 ```
 
-The committed CI workflow runs the corresponding ladder against disposable PostgreSQL when GitHub Actions is available.
+The committed CI workflow runs the corresponding ladder against disposable PostgreSQL when GitHub Actions is available. Historical Stage 9/10 validators preserve exact provenance; `audit:c10:product` owns the current post-redesign acceptance registry.
 
 Historical Stage 10 final acceptance is recorded at commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, run `31800346837`. Later product phases update current tests when intentional semantics change rather than pretending obsolete UI is still part of acceptance.
 
@@ -69,6 +70,16 @@ The production matrix owns:
 - proof that `/api/*` traffic is network-only and absent from shell caches.
 
 The development suite owns broader interaction, local atomicity, synchronization, route redirects, account lifecycle, stale-state handling, user isolation, accessibility, and fixture regression.
+
+## Definitive Workflow Acceptance
+
+The current C10 product path is:
+
+```text
+Open -> understand day -> execute -> note -> open context -> resume Project -> see upcoming -> find history -> LifeOS boundary
+```
+
+`tests/e2e/c10-product-workflow.spec.ts` exercises that path through normal UI interactions.
 
 ## Core Manual Product Checks
 

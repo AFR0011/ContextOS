@@ -76,6 +76,9 @@ const nextConfig: NextConfig = {
   ...(useStandaloneOutput ? { output: "standalone" as const } : {}),
   reactStrictMode: true,
   poweredByHeader: false,
+  typescript: {
+    tsconfigPath: "tsconfig.build.json"
+  },
   async headers() {
     return [
       {

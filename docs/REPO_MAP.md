@@ -88,10 +88,14 @@ C8 removes the retired persistence layer. Server bootstrap, local storage, sync,
 - `scripts/stage7-*.mjs`: repository/security/config/data-scope controls.
 - `scripts/stage8-*.mjs`: deployment/operations controls.
 - `scripts/stage9-lifecycle-audit.mjs`: current lifecycle and canonical no-tombstone safety guard.
-- `scripts/stage10-*.mjs`: historical final-acceptance/claims integrity.
+- `scripts/stage10-*.mjs`: historical Stage 10 acceptance/claims provenance integrity.
+- `scripts/c10-product-acceptance-check.mjs`: current post-redesign C10 acceptance registry guard.
+- `audits/c10-product-acceptance.json`: current C10 acceptance state.
+- `audits/historical-artifact-retirements.json`: explicit map for intentionally removed historical assurance artifacts.
 - `tests/e2e/`: development interaction, local-first, compatibility, persistence, and regression tests.
 - `tests/offline-production/`: optimized-runtime offline/PWA/security checks.
 - `docs/stage8/`, `docs/stage9/`, `docs/stage10/`: historical verification provenance.
+- `docs/c10/C10_ACCEPTANCE.md`: current definitive product-acceptance program.
 
 ## Migration boundary
 

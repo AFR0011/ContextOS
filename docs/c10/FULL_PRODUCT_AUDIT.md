@@ -18,7 +18,7 @@ This audit is intentionally split into independent phases. Findings are not mixe
 
 # Phase A — Functional behavior + data integrity
 
-Status: **source audit complete; non-architectural fixes applied; protocol decisions pending**
+Status: **source audit complete; identified correctness defects fixed; product-gap items deferred to Phase D**
 
 ## Scope reviewed
 
@@ -145,89 +145,109 @@ Status: **Fixed on audit branch**
   - honest LifeOS/Insight provider boundaries;
 - current assurance docs now distinguish historical Stage 9/10 tombstone evidence from active C8-C10 behavior.
 
-## A-05 — Replace-restore anti-resurrection barrier trusts a client clock
+## A-05 — Replace-restore anti-resurrection barrier trusted a client clock
 
 Severity: **High**  
-Status: **Open — protocol decision required**
+Status: **Fixed on audit branch — user selected Option A**
 
-### Current behavior
+### Problem
 
-Replace import writes a server restore barrier with server time.
+Replace restore originally compared the server restore-barrier time with client-supplied `mutation.createdAt`.
 
-A later sync blocks queued mutations only when:
+A stale offline device could therefore bypass the barrier when:
+- its wall clock was ahead; or
+- it made a stale edit after the restore occurred while still offline.
 
-```text
-mutation.createdAt <= restoreBarrier.createdAt
-```
+### Fix
 
-But `mutation.createdAt` is client supplied.
+Queued mutations now carry `baseServerSyncedAt`, the last server snapshot observed by the client before that mutation chain.
 
-### Failure mode
+After a replace restore:
+- a mutation with no server baseline fails closed;
+- a mutation whose baseline is at/before the latest restore barrier is acknowledged with a stale warning but not applied;
+- only work based on a server snapshot observed after the restore can pass the anti-resurrection gate.
 
-A stale offline device can hold a pre-restore workspace. Other sessions are revoked during replace, but the stale device can later reauthenticate.
+The decision no longer depends on the device clock.
 
-If its queued mutation has a timestamp later than the restore barrier because:
-- the device clock is ahead; or
-- the stale edit was made after the restore happened while the device was still offline,
+### Regression
 
-the mutation can bypass the barrier even though it is based on the pre-restore workspace.
+Portability coverage now deliberately submits:
+1. a stale mutation with a client timestamp one day in the future but a pre-restore server baseline;
+2. a stale mutation with no baseline.
 
-This means the current claim:
+Both must be rejected as stale and leave the restored workspace unchanged.
 
-> stale devices cannot repopulate the pre-restore workspace
-
-is stronger than the current protocol proves.
-
-### Recommended protocol correction
-
-Add a server-baseline field to queued mutations, e.g. `baseServerSyncedAt`.
-
-When a local mutation is created, record the workspace's last authenticated/bootstrap/sync server baseline.
-
-After replace restore:
-- mutations with no baseline are conservatively treated as stale;
-- mutations whose baseline is at/before the latest restore barrier are blocked;
-- only mutations based on a workspace observed after the restore may apply.
-
-This is independent of the device wall clock and requires no new user-facing concept.
-
-## A-06 — General stale-write ordering trusts client `updatedAt`
+## A-06 — General stale-write ordering trusted client `updatedAt`
 
 Severity: **Medium-High**  
-Status: **Open — protocol hardening decision required**
+Status: **Fixed on audit branch — user selected stronger Option B**
 
-### Current behavior
+### Problem
 
-For an existing record, server last-write-wins comparison is:
+Existing-record conflict ordering was previously client-clock last-write-wins:
 
 ```text
 incoming payload.updatedAt >= server record.updatedAt
 ```
 
-The incoming timestamp is client generated and is also written back as the record's server `updatedAt`.
+A future-skewed device clock could dominate later legitimate writes. The check also did not provide a server-owned causal precondition for concurrent requests.
 
-### Risks
+### Fix: server-owned record revisions
 
-- a device clock far in the future can make one write dominate later writes from correctly configured devices;
-- stale detection is a wall-clock heuristic, not a server-owned causal/version comparison;
-- a client can currently send mutation `createdAt` and payload `updatedAt` values that differ.
+Every canonical server record now carries an internal integer `revision`:
+- Area;
+- Project;
+- Task;
+- ContextDate;
+- DailyNote.
 
-This is not a cross-user authorization flaw, but it weakens multi-device conflict correctness.
+Client behavior:
+- bootstrap/sync returns the current server revision;
+- a queued existing-record mutation carries `baseRevision`;
+- a newly created record uses a null base revision;
+- optimistic local edits advance the local revision speculatively so several offline edits form an ordered mutation chain.
 
-### Reasonable near-term options
+Server behavior:
+- new records are created at revision 1;
+- an existing-record mutation is accepted only when `baseRevision` equals the current server revision;
+- accepted updates increment the revision;
+- the database update itself uses atomic compare-and-swap through `updateMany(... revision: baseRevision)`;
+- if another request wins the race first, the CAS updates zero rows and the mutation becomes a stale conflict;
+- once one queued mutation for a record conflicts, later mutations for that same record in the same request are rejected as dependent conflicts rather than leapfrogging the failed edit.
 
-**Option 1 — Minimal hardening for C10**
-- require ordinary sync `payload.updatedAt === mutation.createdAt`;
-- reject timestamps beyond a small allowed future-skew window;
-- retain current last-write-wins semantics;
-- document that cross-device ordering is timestamp-based and not a CRDT/version-vector guarantee.
+Client `createdAt`/`updatedAt` remain metadata only. They no longer decide conflicts.
 
-**Option 2 — Stronger versioned conflict protocol**
-- introduce server-owned record/base revision metadata or equivalent causal baseline;
-- make conflict decisions from revisions rather than wall-clock time;
-- larger sync/storage/test migration.
+### Portability behavior
 
-Recommendation for the current release: **Option 1 now**, then design Option 2 only if multi-device concurrent editing becomes a real product requirement.
+Revision metadata is intentionally internal sync state:
+- JSON/Markdown export format v2 does **not** include revisions;
+- replace import creates fresh revision-1 records;
+- merge import increments revisions for matching server records;
+- stale clients therefore cannot overwrite a merge-imported change using an old revision.
+
+### Local cache boundary
+
+Revisionless IndexedDB v3 state cannot provide a trustworthy `baseRevision`.
+
+Because the already-approved migration boundary still has no real users:
+- IndexedDB is bumped to v4;
+- remembered verified identities survive;
+- v3 workspace/outbox snapshots are discarded;
+- authenticated bootstrap rebuilds revision-aware local state.
+
+The active v3 test is retired and replaced with `local-db-v4.spec.ts`.
+
+### Regression coverage
+
+Added/updated coverage for:
+- future-dated stale writes losing to server revision state;
+- dependent queued edits not leapfrogging an earlier conflict;
+- sequential queued edits advancing revisions in order;
+- two simultaneous requests racing the same base revision, with exactly one winner;
+- export v2 containing no revision fields;
+- merge import incrementing matching server revisions;
+- v3 -> v4 local clean break preserving identity while discarding revisionless workspace/outbox state;
+- server bootstrap repopulating positive revisions after the v4 reset.
 
 ## A-07 — Tasks are not editable after creation
 
@@ -293,4 +313,4 @@ Those remain mandatory before C10 closure.
 
 Status: **Not started**
 
-Phase B begins only after the open Phase A protocol decision is resolved or explicitly deferred.
+Phase A protocol decisions are resolved. Phase B may proceed independently.

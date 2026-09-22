@@ -24,7 +24,8 @@ const mutationSchema = z.object({
   entityId: z.string().min(1).max(160),
   operation: z.literal("upsert"),
   payload: z.record(z.string().max(80), z.unknown()).nullable(),
-  createdAt: timestampSchema
+  createdAt: timestampSchema,
+  baseServerSyncedAt: timestampSchema.nullable().optional()
 }).superRefine((mutation, ctx) => {
   const payloadBytes = utf8Bytes(JSON.stringify(mutation.payload ?? {}));
   if (payloadBytes > MAX_PAYLOAD_BYTES) {

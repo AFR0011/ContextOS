@@ -107,7 +107,7 @@ export function LogoutDialog({ open, user, sync, syncNow, onClose }: LogoutDialo
           <div className="min-w-0 flex-1">
             <h2 id="logout-dialog-title" className="text-lg font-semibold text-[var(--cos-text-strong)]">Log out of ContextOS</h2>
             <p className="mt-1 text-sm text-[var(--cos-text-muted)]">
-              Your local workspace is preserved by default for <span className="font-medium text-[var(--cos-text)]">{user.email}</span>.
+              Your local workspace is preserved by default for <span className="break-words font-medium text-[var(--cos-text)] [overflow-wrap:anywhere]">{user.email}</span>.
             </p>
           </div>
         </div>
@@ -127,7 +127,7 @@ export function LogoutDialog({ open, user, sync, syncNow, onClose }: LogoutDialo
         ) : null}
 
         {error ? (
-          <div data-testid="logout-error" role="alert" className="mt-4 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] p-3 text-sm text-[var(--cos-danger-text)]">
+          <div data-testid="logout-error" role="alert" className="mt-4 break-words rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] p-3 text-sm text-[var(--cos-danger-text)] [overflow-wrap:anywhere]">
             {error}
           </div>
         ) : null}

@@ -85,7 +85,7 @@ export function AreasView() {
             autoFocus
             value={name}
             onChange={(event) => setName(event.target.value)}
-            onKeyDown={(event) => event.key === "Enter" && createArea()}
+            onKeyDown={(event) => event.key === "Enter" && !event.nativeEvent.isComposing && createArea()}
             placeholder="Area name"
             aria-label="Area name"
             className="cos-input min-w-0 flex-1 px-3 py-2 text-sm"

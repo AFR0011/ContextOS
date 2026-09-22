@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "purpose": "Preserve historical Stage 9/10 evidence references after intentional C7/C8 removal of obsolete product artifacts.",
+  "rule": "A missing artifact in a closed historical registry is acceptable only when it is listed here and every replacement path still exists. This does not rewrite the historical claim; it records why the old implementation artifact is no longer active.",
+  "retirements": {
+    "tests/e2e/stage9-tombstones.spec.ts": {
+      "removedIn": "C8 canonical persistence clean break",
+      "reason": "Per-record tombstone lifecycle was intentionally removed from the canonical product.",
+      "replacements": [
+        "scripts/stage9-lifecycle-audit.mjs",
+        "tests/e2e/stage9-lifecycle.spec.ts",
+        "tests/e2e/local-first-characterization.spec.ts"
+      ]
+    },
+    "tests/offline-production/stage9-tombstone.spec.ts": {
+      "removedIn": "C8 canonical persistence clean break",
+      "reason": "Production offline assurance moved from legacy tombstone reconstruction to canonical local mutation durability and reconnect convergence.",
+      "replacements": [
+        "tests/offline-production/offline-shell.spec.ts",
+        "tests/e2e/local-first-characterization.spec.ts"
+      ]
+    },
+    "tests/e2e/local-db-v2.spec.ts": {
+      "removedIn": "C8 IndexedDB v3 clean break",
+      "reason": "The v2 local database upgrade contract was replaced by the explicit v3 identity-preserving workspace/outbox reset boundary.",
+      "replacements": [
+        "tests/e2e/local-db-v3.spec.ts",
+        "src/lib/local-db.ts"
+      ]
+    }
+  }
+}

@@ -95,7 +95,7 @@ interface StoreApi {
   loading: boolean;
   sync: SyncState;
   syncNow: () => Promise<void>;
-  forceRefreshFromServer: () => Promise<void>;
+  forceRefreshFromServer: () => Promise<boolean>;
   resetDemoData: () => Promise<void>;
   addArea: (name: string) => string;
   updateArea: (id: string, updates: Partial<Area>) => void;
@@ -187,7 +187,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
       setOnline(false);
       setError("Offline. Changes are queued until you reconnect.");
       setLastErrorAt(now());
-      return;
+      return false;
     }
 
     setOnline(true);
@@ -238,7 +238,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
   }, [saveWorkspace, user]);
 
   const forceRefreshFromServer = useCallback(async () => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return false;
     if (!navigator.onLine) {
       setOnline(false);
       setError("Cannot refresh from server while offline.");
@@ -252,7 +252,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
     if (outbox.length > 0) {
       setError("Sync pending changes before refreshing from server.");
       setLastErrorAt(now());
-      return;
+      return false;
     }
 
     const refreshMutationVersion = localMutationVersion.current;
@@ -271,15 +271,17 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         setPendingCount(latestOutbox.length);
         setError("Server refresh was skipped because local changes were made while it was in progress. Sync pending changes first.");
         setLastErrorAt(now());
-        return;
+        return false;
       }
 
       await saveWorkspace(result.data);
       setLastSyncedAt(result.data.serverSyncedAt);
       setLastRefreshAt(now());
+      return true;
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Refresh failed.");
       setLastErrorAt(now());
+      return false;
     } finally {
       setRefreshing(false);
     }

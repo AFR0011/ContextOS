@@ -244,7 +244,17 @@ for (const required of ['"src/**/*.ts"', '"src/**/*.tsx"', '".next/types/**/*.ts
     errors.push(`Production build tsconfig is missing required include ${required}.`);
   }
 }
-for (const excluded of ['"tests"', '"scripts"', '"docs"', '"audits"', '"prisma"']) {
+for (const excluded of [
+  '"tests"',
+  '"scripts"',
+  '"docs"',
+  '"audits"',
+  '"prisma"',
+  '"src/**/*.test.ts"',
+  '"src/**/*.test.tsx"',
+  '"src/**/*.spec.ts"',
+  '"src/**/*.spec.tsx"'
+]) {
   if (!buildTsconfig.includes(excluded)) {
     errors.push(`Production build tsconfig is missing non-runtime exclusion ${excluded}.`);
   }

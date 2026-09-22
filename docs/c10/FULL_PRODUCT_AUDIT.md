@@ -506,6 +506,30 @@ This environment cannot clone/install/run the repository because outbound sandbo
 
 Therefore C-00 is complete, but **Phase C visual acceptance remains open**. The next runtime-capable environment must first get the current C10 candidate building, then run `npm run capture:c10:visual`.
 
+## C-00.5 — Build and preview prerequisite hardening
+
+Status: **source remediation complete; runtime verification blocked by Vercel build-rate limit**
+
+The render audit exposed two independent deployment concerns.
+
+### Preview install failure
+
+Branch previews repeatedly failed during `npm install` before any application build occurred. Repository Stage 8 evidence already documented the cause pattern: `postinstall` runs `prisma generate`, while `prisma.config.ts` used `env("DATABASE_URL")`, which throws when preview/install contexts do not expose database credentials.
+
+Prisma ORM v7 explicitly states that `prisma generate` does not require a database URL, even though `env()` can make config loading fail. The config now reads `process.env.DATABASE_URL ?? ""` directly. Database-dependent commands still require a valid URL when they actually connect.
+
+### Production build typecheck boundary
+
+The root TypeScript configuration intentionally checks the full repository, including Playwright tests and scripts. Next production builds previously used the same config, coupling deployment compilation to non-runtime tooling.
+
+The branch now contains `tsconfig.build.json`, limited to `src/**` plus generated Next route types, and `next.config.ts` points Next's production checker to that file. The existing repository-wide `npm run typecheck` remains unchanged and strict.
+
+This is not `ignoreBuildErrors`; application/runtime TypeScript errors still fail production builds.
+
+### Verification boundary
+
+New Vercel builds cannot currently start because the account reports its build-rate limit. Therefore these fixes are source-complete but not runtime-verified yet.
+
 ## C-01 — Primary surface rendered inspection
 
 Status: **Pending runnable current candidate**

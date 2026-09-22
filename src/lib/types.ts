@@ -31,4 +31,11 @@ export interface QueuedMutation {
   operation: "upsert";
   payload: Area | Project | Task | ContextDate | DailyNote;
   createdAt: string;
+  /**
+   * Server snapshot observed by the client before this mutation was created.
+   * Current clients always send it; the field remains optional so pre-C10
+   * queued mutations can still be parsed. After a replace restore, a missing
+   * baseline fails closed.
+   */
+  baseServerSyncedAt?: string | null;
 }

@@ -180,6 +180,8 @@ const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 for (const marker of [
   "desktop-light",
   "desktop-dark",
+  "compact-desktop-light",
+  "compact-desktop-dark",
   "mobile-light",
   "mobile-dark",
   "01-home",

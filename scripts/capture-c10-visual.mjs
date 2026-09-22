@@ -5,6 +5,7 @@ const args = [
   "playwright",
   "test",
   "tests/e2e/c10-visual-baseline.spec.ts",
+  "tests/e2e/c10-visual-stress.spec.ts",
   "--project=chromium"
 ];
 

@@ -80,6 +80,24 @@ test("new accounts start with an empty canonical workspace and reach useful work
   await expect(page.getByText("ContextOS Demo", { exact: true })).toHaveCount(0);
 });
 
+test("demo reset is restricted to the configured demo identity", async ({ page }) => {
+  await registerFreshAccount(page, "batch3-reset-boundary");
+
+  const before = await bootstrapData(page);
+  expect(before.areas).toHaveLength(0);
+
+  const reset = await page.request.post("/api/reset-demo");
+  expect(reset.status()).toBe(403);
+  expect((await reset.json()).error).toContain("configured demo account");
+
+  const after = await bootstrapData(page);
+  expect(after.areas).toHaveLength(0);
+  expect(after.projects).toHaveLength(0);
+  expect(after.tasks).toHaveLength(0);
+  expect(after.dates).toHaveLength(0);
+  expect(after.dailyNotes).toHaveLength(0);
+});
+
 test("first Area setup is usable on a narrow mobile viewport without horizontal overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await registerFreshAccount(page, "batch3-mobile");

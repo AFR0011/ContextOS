@@ -41,20 +41,21 @@ function isWorkspaceProductRoute(pathname: string) {
 export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNode }) {
   const { pathname } = useLocalLocation();
   const { data } = useWorkspace();
-  const firstRunVisibleRef = useRef(data.areas.length === 0);
+  const firstRunVisible = data.areas.length === 0 && pathname !== "/settings" && isWorkspaceProductRoute(pathname);
+  const firstRunVisibleRef = useRef(firstRunVisible);
 
   useEffect(() => {
     const firstRunWasVisible = firstRunVisibleRef.current;
-    firstRunVisibleRef.current = data.areas.length === 0;
-    if (!firstRunWasVisible || data.areas.length === 0) return;
+    firstRunVisibleRef.current = firstRunVisible;
+    if (!firstRunWasVisible || firstRunVisible) return;
 
     const frame = window.requestAnimationFrame(() => {
       document.querySelector<HTMLElement>("#workspace-main-content h1")?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [data.areas.length]);
+  }, [firstRunVisible]);
 
-  if (data.areas.length === 0 && pathname !== "/settings" && isWorkspaceProductRoute(pathname)) {
+  if (firstRunVisible) {
     return <FirstRunSetup />;
   }
 

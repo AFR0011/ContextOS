@@ -24,8 +24,7 @@ async function activeDemoProjectId(page: Page) {
     if (!response.ok) throw new Error(`bootstrap failed with ${response.status}`);
     const result = await response.json();
     const project = result.data.projects.find(
-      (item: { archivedAt?: string | null; trashedAt?: string | null; status?: string }) =>
-        !item.archivedAt && !item.trashedAt && item.status === "active"
+      (item: { state?: string }) => item.state === "active"
     );
     if (!project?.id) throw new Error("No active project found in demo workspace");
     return project.id as string;

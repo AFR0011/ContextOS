@@ -280,6 +280,19 @@ The store/server support the operation already.
 
 This is probably worth adding in Area Detail, but it is not required for data integrity and will be decided in the product-gap phase.
 
+## Phase A assurance follow-up discovered during Phase B
+
+Two active Stage 9 lifecycle test assumptions had not been carried through the A-02/A-06 protocol changes:
+
+1. stage9-lifecycle.spec.ts still opened contextos-offline-v1 with IndexedDB version 3 even though production now requires the revision-aware v4 boundary. Opening an existing v4 database with an explicitly lower version can fail with VersionError.
+2. the disposable non-demo account helper still called /api/reset-demo and expected HTTP 200 even though A-02 intentionally restricts demo reset to the configured demo identity.
+
+Both stale assumptions are fixed:
+- Stage 9 lifecycle helpers now open IndexedDB v4;
+- the account-deletion lifecycle test stays on a genuinely clean first-run account instead of relying on demo reseeding.
+
+These were assurance defects rather than new product-state defects, but they would have made the active regression ladder fail or test the wrong contract.
+
 ## Verified canonical invariants
 
 Source inspection confirmed:
@@ -311,6 +324,124 @@ Those remain mandatory before C10 closure.
 
 # Phase B — Interaction / keyboard / accessibility
 
+Status: **source audit complete; identified interaction/accessibility defects fixed; runtime verification pending**
+
+## Scope reviewed
+
+- keyboard reachability and visible focus;
+- modal/drawer focus containment and focus return;
+- route-change and first-run focus transitions;
+- skip navigation;
+- semantic names for controls and quick-entry fields;
+- disclosure, filter, selection, and pressed state;
+- command-palette combobox/listbox semantics;
+- dynamic status, warning, error, autosave, sync, and loading announcements;
+- authentication and public-page landmark structure;
+- IME-safe Enter handling;
+- reduced-motion support;
+- light/dark theme text contrast;
+- active accessibility/lifecycle regression coverage.
+
+## B-01 — Closed mobile navigation remained offscreen but keyboard-reachable
+
+Severity: **High for keyboard users**  
+Status: **Fixed on audit branch**
+
+The mobile navigation drawer was translated offscreen when closed, but it remained in the DOM with live buttons and links. CSS position does not remove controls from sequential keyboard navigation or the accessibility tree.
+
+The shell now tracks the desktop breakpoint. When the drawer is closed on mobile it is both inert and aria-hidden. Opening removes those constraints and the existing dialog focus trap takes ownership. Escape closes the drawer and restores focus to the menu trigger.
+
+C10 regression coverage now proves the closed/open/closed inert state, focus containment, Escape behavior, and trigger focus return.
+
+## B-02 — Dynamic product state was not consistently available to assistive technology
+
+Severity: **Medium-High**  
+Status: **Fixed on audit branch**
+
+The audit found visually understandable but inconsistently announced state across global sync/offline state, offline-shell readiness, logout failures, account deletion, Settings sync/import results, password validation/results, session-management results, Daily Note autosave, Search result count/selection, and handoff loading/authentication.
+
+The affected surfaces now use appropriate status, live-region, alert, busy, invalid, and described-by semantics without duplicating noisy announcements.
+
+## B-03 — Interactive state was visually encoded without enough semantic state
+
+Severity: **Medium**  
+Status: **Fixed on audit branch**
+
+- Date filters now expose pressed state.
+- completed-task disclosure exposes expanded state and its controlled region.
+- Search result selection exposes pressed state and result-count status.
+- the command palette exposes complete combobox/listbox ownership and active-descendant state.
+- Area/Project/Task/Date quick-entry fields have explicit accessible names.
+
+## B-04 — Focus could be lost across local navigation and transient UI removal
+
+Severity: **Medium-High**  
+Status: **Fixed on audit branch**
+
+The workspace now provides a Skip to main content link. Local route changes focus the new page heading without scrolling. Programmatically focused headings are valid focus targets.
+
+New Area, New Project, and Add Date expose expanded/controls state. Cancelling returns focus to the trigger. Successful Area/Date creation returns focus after the form disappears. Project creation navigates into the new Project, where route focus takes over.
+
+First-run completion is handled separately because the setup view disappears without a URL change: when the first Area is created, focus moves to the new Home heading.
+
+## B-05 — Enter shortcuts were unsafe during IME composition
+
+Severity: **Medium for IME users**  
+Status: **Fixed on audit branch**
+
+Quick-entry and inline-edit Enter handlers now avoid submitting or committing while native IME composition is active.
+
+## B-06 — Light-theme subtle text token failed AA contrast on common surfaces
+
+Severity: **Medium**  
+Status: **Fixed on audit branch**
+
+The former light-theme subtle token (#7a8190) produced approximately 3.91:1 on white and 3.59:1 on the primary canvas, despite being used for meaningful 10–12px metadata.
+
+The light token is now #646c79. It reaches at least 4.5:1 on the canonical light canvas, soft, elevated, inset, and primary-soft surfaces. The dark-theme subtle token already clears that threshold on the canonical dark surfaces.
+
+C10 accessibility coverage calculates the contrast ratio from the actual runtime CSS custom properties and requires at least 4.5:1 on those light surfaces.
+
+## B-07 — Landmark/loading semantics were inconsistent on non-workspace entry surfaces
+
+Severity: **Low-Medium**  
+Status: **Fixed on audit branch**
+
+Authentication now has a main landmark; public header/footer remain outside main; WorkspaceGate checking/blocked states are announced; verified local-workspace choices are grouped semantically; and handoff checking/error/headings expose appropriate status/focus semantics.
+
+## B-08 — Existing modal and keyboard foundations were verified rather than reimplemented
+
+Status: **Verified by source inspection; runtime regression retained**
+
+The audit confirmed the existing C9/C6 foundation remains appropriate:
+- shared dialog focus trap filters CSS-hidden controls;
+- Tab and Shift+Tab are contained;
+- Escape closes when permitted;
+- focus returns to the invoking control;
+- palette ArrowUp/ArrowDown/Enter/Escape behavior remains explicit;
+- active palette option scrolls into view;
+- reduced-motion CSS collapses transition/animation duration;
+- global focus-visible treatment remains present.
+
+## Accessibility regression surface
+
+Active coverage now includes:
+- tests/e2e/c10-accessibility.spec.ts;
+- tests/e2e/c6-search-palette.spec.ts;
+- tests/e2e/stage9-lifecycle.spec.ts;
+- tests/e2e/batch3-clean-first-run.spec.ts;
+- existing responsive/reduced-motion/theme coverage under tests/e2e/contextos.spec.ts.
+
+## Runtime verification limitation
+
+The connector-only environment cannot execute TypeScript typecheck, Next.js build, Playwright, or production-offline Playwright.
+
+Therefore **Phase B source remediation is complete, but ACCESS-001 remains pending until the current branch runs the acceptance ladder in an executable environment.**
+
+---
+
+# Phase C — Responsive / layout / visual risk
+
 Status: **Not started**
 
-Phase A protocol decisions are resolved. Phase B may proceed independently.
+Phase C is the next audit step. It will inspect real rendered panels and breakpoints for clipping, overlap, overflow, hidden/offscreen controls, stacking, safe-area behavior, visually untested states, and light/dark presentation. It must not be marked complete from source inspection alone.

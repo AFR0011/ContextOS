@@ -348,7 +348,7 @@ Retired in C7.
 
 - Area/Project archival is visible in-place.
 - canonical historical state is discoverable through Search.
-- C8 removes the old per-record tombstone fields; incompatible pre-C8 local workspace/outbox state is reset at the IndexedDB v4 boundary rather than rolled forward.
+- C8 removes the old per-record tombstone fields. C8's canonical local shape was later superseded by the C10 IndexedDB v4 revision boundary; revisionless local workspace/outbox snapshots are reset rather than assigned fabricated conflict metadata.
 
 There is no standalone Archive page in the definitive product.
 
@@ -406,7 +406,7 @@ The persisted workspace has five canonical collections:
 - Dates (ContextDate records);
 - Daily Notes.
 
-The same shape is used by PostgreSQL/Prisma, authenticated bootstrap, WorkspaceData, IndexedDB, sync, and portability export v2.
+The same five user-data collections are used by PostgreSQL/Prisma, authenticated bootstrap, WorkspaceData, IndexedDB, sync, and portability export v2. PostgreSQL/bootstrap/WorkspaceData/IndexedDB/sync additionally carry internal server-owned record revisions; portability export v2 intentionally omits that synchronization metadata.
 
 Retired persistence is removed rather than left behind as hidden compatibility state. This includes:
 
@@ -421,9 +421,9 @@ Retired persistence is removed rather than left behind as hidden compatibility s
 
 Migration rules are one-way and deterministic. Invalid/orphaned legacy rows are discarded according to the locked clean-break rules; surviving records are normalized into the canonical model.
 
-IndexedDB v4 preserves remembered verified-user identity but clears incompatible pre-C8 workspace/outbox snapshots. The next authenticated bootstrap rebuilds canonical local state. Old clients and queued legacy mutation shapes are not supported through a rolling protocol.
+IndexedDB v4 preserves remembered verified-user identity but clears revisionless v3 workspace/outbox snapshots. The next authenticated bootstrap rebuilds revision-aware canonical local state. Old queued mutations without a trustworthy record revision are not promoted into the new conflict protocol.
 
-Sync accepts only canonical entity types and upsert operations. Export format v2 uses canonical names.
+Sync accepts only canonical entity types and upsert operations. Existing-record writes use server-owned revision compare-and-swap rather than client-clock last-write-wins. Replace restore additionally gates queued mutations by the last server snapshot they observed. Export format v2 uses canonical names and excludes revision metadata.
 
 ## 16. Ownership across LifeOS
 

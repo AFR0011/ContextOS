@@ -702,6 +702,58 @@ test("sequential queued edits advance server revisions in order", async ({ page 
   expect(afterArea.revision).toBe(area.revision + 2);
 });
 
+test("simultaneous writes to the same server revision allow only one winner", async ({ page }) => {
+  await login(page);
+  const bootstrap = await page.request.get("/api/bootstrap");
+  expect(bootstrap.ok()).toBeTruthy();
+  const workspace = await bootstrap.json();
+  const area = workspace.data.areas[0];
+  expect(area.revision).toBeGreaterThan(0);
+
+  const now = new Date().toISOString();
+  const makeMutation = (suffix: string, name: string) => ({
+    mutations: [{
+      mutationId: `cas-race-${suffix}-${Date.now()}`,
+      entityType: "areas",
+      entityId: area.id,
+      operation: "upsert",
+      payload: {
+        ...area,
+        name,
+        updatedAt: now,
+        revision: area.revision + 1
+      },
+      createdAt: now,
+      baseServerSyncedAt: workspace.data.serverSyncedAt,
+      baseRevision: area.revision
+    }]
+  });
+
+  const [left, right] = await Promise.all([
+    page.request.post("/api/sync", { data: makeMutation("left", "CAS left winner") }),
+    page.request.post("/api/sync", { data: makeMutation("right", "CAS right winner") })
+  ]);
+
+  expect(left.status()).toBe(200);
+  expect(right.status()).toBe(200);
+
+  const leftBody = await left.json();
+  const rightBody = await right.json();
+  const warnings = [...(leftBody.warnings ?? []), ...(rightBody.warnings ?? [])];
+  expect(warnings).toHaveLength(1);
+  expect(warnings[0]).toEqual(expect.objectContaining({
+    reason: "stale",
+    serverRevision: area.revision + 1,
+    baseRevision: area.revision
+  }));
+
+  const after = await page.request.get("/api/bootstrap");
+  const afterWorkspace = await after.json();
+  const afterArea = afterWorkspace.data.areas.find((item: { id: string }) => item.id === area.id);
+  expect(["CAS left winner", "CAS right winner"]).toContain(afterArea.name);
+  expect(afterArea.revision).toBe(area.revision + 1);
+});
+
 test("sync rejects oversized payloads and cross-user record ids", async ({ page }) => {
   await login(page);
   const bootstrap = await page.request.get("/api/bootstrap");

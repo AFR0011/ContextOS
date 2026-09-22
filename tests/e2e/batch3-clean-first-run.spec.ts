@@ -62,6 +62,9 @@ test("new accounts start with an empty canonical workspace and reach useful work
   await page.getByLabel("Area name").fill(areaName);
   await page.getByRole("button", { name: "Add Area" }).click();
   await expect(page.getByTestId("first-run-setup")).toHaveCount(0);
+  const homeHeading = page.getByRole("heading", { name: "Home", exact: true });
+  await expect(homeHeading).toBeVisible();
+  await expect(homeHeading).toBeFocused();
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 
   await expect.poll(async () => (await bootstrapData(page)).areas.some((area) => area.name === areaName)).toBeTruthy();

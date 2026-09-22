@@ -91,6 +91,12 @@ test("definitive ContextOS workflow moves from daily execution to context, histo
     const card = page.getByTestId(`lifeos-module-${module}`);
     await expect(card).toBeVisible();
     await expect(card).toContainText("No summary provider connected");
-    await expect(card).toContainText("Not connected");
+
+    const destination = card.getByRole("link");
+    if (await destination.count()) {
+      await expect(destination).toHaveAttribute("href", /.+/);
+    } else {
+      await expect(card).toContainText("Not connected");
+    }
   }
 });

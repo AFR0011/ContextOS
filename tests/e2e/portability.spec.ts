@@ -44,7 +44,17 @@ async function bootstrap(request: APIRequestContext) {
 
 function workspaceOnly(data: any) {
   const { serverSyncedAt: _serverSyncedAt, ...workspace } = data;
-  return workspace;
+  return Object.fromEntries(
+    Object.entries(workspace).map(([collection, records]) => [
+      collection,
+      Array.isArray(records)
+        ? records.map((record: any) => {
+            const { revision: _revision, ...portable } = record;
+            return portable;
+          })
+        : records
+    ])
+  );
 }
 
 function normalizeWorkspace(workspace: any) {
@@ -200,6 +210,11 @@ test("replace import round-trips the canonical workspace and blocks pre-restore 
 
   expect(bundle.version).toBe(2);
   expect(bundle.workspace.areas.length).toBeGreaterThan(0);
+  for (const records of Object.values(bundle.workspace)) {
+    for (const record of records as any[]) {
+      expect(record).not.toHaveProperty("revision");
+    }
+  }
 
   const markdown = await page.request.get("/api/portability/export?format=markdown");
   expect(markdown.status()).toBe(200);
@@ -369,6 +384,38 @@ test("invalid canonical imports are rejected before mutation", async ({ page }) 
 
   const after = workspaceOnly(await bootstrap(page.request));
   expect(after).toEqual(before);
+});
+
+test("merge import advances matching server revisions while export v2 remains revision-free", async ({ page }) => {
+  await login(page.request);
+  await resetDemo(page.request);
+
+  const before = await bootstrap(page.request);
+  const area = before.areas[0];
+  expect(area.revision).toBeGreaterThan(0);
+
+  const bundle: any = await exportBundle(page.request);
+  expect(bundle.workspace.areas[0]).not.toHaveProperty("revision");
+  const exportedArea = bundle.workspace.areas.find((item: any) => item.id === area.id);
+  expect(exportedArea).toBeTruthy();
+  exportedArea.name = `Merged revision ${Date.now()}`;
+  exportedArea.updatedAt = new Date().toISOString();
+
+  const merged = await page.request.post("/api/portability/import", {
+    data: {
+      action: "restore",
+      mode: "merge",
+      bundle,
+      confirmedNoPendingChanges: true,
+      confirmation: "MERGE"
+    }
+  });
+  expect(merged.status()).toBe(200);
+
+  const after = await bootstrap(page.request);
+  const afterArea = after.areas.find((item: any) => item.id === area.id);
+  expect(afterArea.name).toBe(exportedArea.name);
+  expect(afterArea.revision).toBe(area.revision + 1);
 });
 
 test("merge keeps existing canonical records while adding an imported workspace", async ({ page }) => {

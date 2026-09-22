@@ -12,7 +12,7 @@ function idFor(userId: string, key: string) {
   return `${key}-${userId.slice(-8)}`;
 }
 
-export const defaultDomainTemplates = [
+export const defaultAreaTemplates = [
   ["research", "Research"],
   ["dev", "Engineering"],
   ["university", "University"],
@@ -24,76 +24,45 @@ export const defaultDomainTemplates = [
 
 export async function clearWorkspace(tx: Tx, userId: string) {
   await tx.syncMutation.deleteMany({ where: { userId } });
-  await tx.dashboardPreference.deleteMany({ where: { userId } });
-  await tx.dashboardScratchpad.deleteMany({ where: { userId } });
   await tx.dailyNote.deleteMany({ where: { userId } });
   await tx.contextDate.deleteMany({ where: { userId } });
-  await tx.review.deleteMany({ where: { userId } });
-  await tx.deadline.deleteMany({ where: { userId } });
-  await tx.note.deleteMany({ where: { userId } });
-  await tx.capture.deleteMany({ where: { userId } });
   await tx.task.deleteMany({ where: { userId } });
   await tx.project.deleteMany({ where: { userId } });
-  await tx.domain.deleteMany({ where: { userId } });
+  await tx.area.deleteMany({ where: { userId } });
 }
 
-export async function createWorkspaceScaffold(tx: Tx, userId: string) {
-  await tx.dashboardScratchpad.createMany({
-    data: [
-      {
-        id: idFor(userId, "dashboard-scratchpad"),
-        userId,
-        content: ""
-      }
-    ],
-    skipDuplicates: true
-  });
-
-  await tx.dashboardPreference.createMany({
-    data: [
-      {
-        id: idFor(userId, "dashboard-preferences"),
-        userId,
-        sectionOrder: ["tasks", "dates", "projects", "notepad"],
-        collapsedSections: [],
-        reviewPromptDismissals: [],
-        dateWindowDays: 14,
-        showCompleted: false,
-        taskSortMode: "recent"
-      }
-    ],
-    skipDuplicates: true
-  });
+/**
+ * Production accounts intentionally start empty. Kept as an explicit hook so
+ * registration/bootstrap/operator flows can state that scaffold creation is a
+ * no-op rather than silently manufacturing default workspace records.
+ */
+export async function createWorkspaceScaffold(_tx: Tx, _userId: string) {
+  return;
 }
 
 export async function createStarterWorkspace(tx: Tx, userId: string, reset = false) {
-  if (reset) {
-    await clearWorkspace(tx, userId);
-  }
+  if (reset) await clearWorkspace(tx, userId);
 
-  const existingDomains = await tx.domain.count({ where: { userId } });
-  if (existingDomains > 0 && !reset) {
-    await createWorkspaceScaffold(tx, userId);
-    return;
-  }
+  const existingAreas = await tx.area.count({ where: { userId } });
+  if (existingAreas > 0 && !reset) return;
 
-  const domains = Object.fromEntries(
-    defaultDomainTemplates.map(([key]) => [key, idFor(userId, `dom-${key}`)])
+  const areas = Object.fromEntries(
+    defaultAreaTemplates.map(([key]) => [key, idFor(userId, `area-${key}`)])
   );
 
-  await tx.domain.createMany({
-    data: defaultDomainTemplates.map(([key, name]) => ({
-      id: domains[key],
+  await tx.area.createMany({
+    data: defaultAreaTemplates.map(([key, name]) => ({
+      id: areas[key],
       userId,
       name,
-      archived: false
+      state: "active"
     })),
     skipDuplicates: true
   });
 
   const contextProjectId = idFor(userId, "proj-contextos");
-  const contextDashboardProjectId = idFor(userId, "proj-contextos-dashboard");
-  const contextOfflineProjectId = idFor(userId, "proj-contextos-offline");
+  const homeProjectId = idFor(userId, "proj-contextos-home");
+  const offlineProjectId = idFor(userId, "proj-contextos-offline");
   const benchmarkProjectId = idFor(userId, "proj-thesis");
   const releaseProjectId = idFor(userId, "proj-career");
 
@@ -103,66 +72,41 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         id: contextProjectId,
         userId,
         name: "ContextOS Demo",
-        domainId: domains.dev,
-        parentProjectId: null,
-        status: "active",
-        currentObjective: "Keep daily execution, temporal context, and project recovery coherent.",
-        nextAction: "Run one real workday through Dashboard, Inbox, Today, and project recovery.",
-        latestStatus: "Next/Postgres direction chosen. Offline core views and local auth are part of v0.1.",
-        recoveryNotes: "## Working notes\n- Keep dashboard capture fast.\n- Keep project recovery structured but editable.\n\n## Demo handoff\n- Auth should feel real locally\n- Offline capture should not lose anything\n- Project pages should answer what to do next",
-        openLoops: ["Verify offline sync after reconnect", "Replace demo notes with real project context"]
+        areaId: areas.dev,
+        objective: "Keep daily execution, temporal context, and project recovery coherent.",
+        state: "active"
       },
       {
-        id: contextDashboardProjectId,
+        id: homeProjectId,
         userId,
         name: "Home & Navigation",
-        domainId: domains.dev,
-        parentProjectId: contextProjectId,
-        status: "active",
-        currentObjective: "Keep Home, Search, and navigation calm and useful for daily execution.",
-        nextAction: "Use the dashboard canvas during the next real work session.",
-        latestStatus: "Dashboard canvas is being validated as the Notion-style layer for v0.1.x.",
-        recoveryNotes: "",
-        openLoops: ["Confirm canvas is useful without replacing Today widgets"]
+        areaId: areas.dev,
+        objective: "Keep Home, Search, and navigation calm and useful for daily execution.",
+        state: "active"
       },
       {
-        id: contextOfflineProjectId,
+        id: offlineProjectId,
         userId,
         name: "Offline Sync Trust",
-        domainId: domains.dev,
-        parentProjectId: contextProjectId,
-        status: "active",
-        currentObjective: "Keep offline edits durable, visible, and recoverable.",
-        nextAction: "Run an offline edit and confirm pending sync clears.",
-        latestStatus: "Draft-save warnings and stale mutation warnings are visible in v0.1.4.",
-        recoveryNotes: "",
-        openLoops: ["Production offline hydration still needs a production-build smoke"]
+        areaId: areas.dev,
+        objective: "Keep offline edits durable, visible, and recoverable.",
+        state: "active"
       },
       {
         id: benchmarkProjectId,
         userId,
         name: "Benchmark Evaluation",
-        domainId: domains.research,
-        parentProjectId: null,
-        status: "active",
-        currentObjective: "Keep experiments and handoffs recoverable after breaks.",
-        nextAction: "Write the next verifiable experiment packet.",
-        latestStatus: "Benchmark support audit is complete. one benchmark regression scenario still needs validation.",
-        recoveryNotes: "## Experiment recovery note\nLast useful context: compare benchmark outputs after the regression run finishes.",
-        openLoops: ["Confirm regression behavior", "Decide whether the benchmark table belongs in release notes"]
+        areaId: areas.research,
+        objective: "Keep experiments and handoffs recoverable after breaks.",
+        state: "active"
       },
       {
         id: releaseProjectId,
         userId,
         name: "Release Planning",
-        domainId: domains.career,
-        parentProjectId: null,
-        status: "paused",
-        currentObjective: "Keep release tasks ready without crowding daily execution.",
-        nextAction: "Review one release milestone and update the checklist.",
-        latestStatus: "Draft release materials exist; next useful move is to identify schedule risk.",
-        recoveryNotes: "",
-        openLoops: []
+        areaId: areas.career,
+        objective: "Keep release tasks ready without crowding daily execution.",
+        state: "archived"
       }
     ],
     skipDuplicates: true
@@ -171,48 +115,44 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
   await tx.task.createMany({
     data: [
       {
-        id: idFor(userId, "task-inbox"),
+        id: idFor(userId, "task-open-work"),
         userId,
         title: "Review today's open work",
         plannedDate: dateOnly(0),
-        dueDate: null,
         scheduledTime: "09:30",
         projectId: contextProjectId,
-        domainId: domains.dev,
-        status: "todo"
+        areaId: null,
+        state: "open"
       },
       {
-        id: idFor(userId, "task-status"),
+        id: idFor(userId, "task-home-copy"),
         userId,
         title: "Refine Home and navigation copy",
         plannedDate: dateOnly(0),
-        dueDate: dateOnly(1),
         scheduledTime: "10:30",
-        projectId: contextDashboardProjectId,
-        domainId: domains.dev,
-        status: "in-progress"
+        projectId: homeProjectId,
+        areaId: null,
+        state: "open"
       },
       {
         id: idFor(userId, "task-benchmark"),
         userId,
         title: "Validate benchmark regression",
         plannedDate: dateOnly(1),
-        dueDate: dateOnly(3),
         scheduledTime: null,
         projectId: benchmarkProjectId,
-        domainId: domains.research,
-        status: "blocked"
+        areaId: null,
+        state: "open"
       },
       {
-        id: idFor(userId, "task-deadlines"),
+        id: idFor(userId, "task-release"),
         userId,
         title: "Review release milestones and identify risk points",
         plannedDate: null,
-        dueDate: dateOnly(0),
-        scheduledTime: "15:00",
+        scheduledTime: null,
         projectId: releaseProjectId,
-        domainId: domains.career,
-        status: "todo"
+        areaId: null,
+        state: "open"
       }
     ],
     skipDuplicates: true
@@ -229,8 +169,8 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         startTime: null,
         endTime: null,
         details: "Complete the current verification pass and record any blocking issues.",
-        projectId: contextOfflineProjectId,
-        domainId: null
+        projectId: offlineProjectId,
+        areaId: null
       },
       {
         id: idFor(userId, "date-research-session"),
@@ -242,11 +182,9 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         endTime: "15:00",
         details: "Review current benchmark results and decide the next experiment.",
         projectId: null,
-        domainId: domains.research
+        areaId: areas.research
       }
     ],
     skipDuplicates: true
   });
-
-  await createWorkspaceScaffold(tx, userId);
 }

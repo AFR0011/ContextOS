@@ -114,7 +114,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
                   <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{project.name}</span>
                   <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{project.objective || "No objective yet."}</span>
                 </button>
-                <button type="button" onClick={() => updateProject(project.id, { state: "archived" })} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
+                <button type="button" onClick={() => updateProject(project.id, { state: "archived" })} aria-label={`Archive ${project.name}`} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
                   <Archive className="h-3.5 w-3.5" /> Archive
                 </button>
               </div>
@@ -124,8 +124,8 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
 
         {area.state === "active" ? (
           <div className="cos-surface mt-4 grid gap-2 p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto]">
-            <input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="New Project name" className="cos-input px-3 py-2 text-sm" />
-            <input value={projectObjective} onChange={(event) => setProjectObjective(event.target.value)} onKeyDown={(event) => event.key === "Enter" && createProject()} placeholder="Objective (optional)" className="cos-input px-3 py-2 text-sm" />
+            <input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="New Project name" aria-label="Project name" className="cos-input px-3 py-2 text-sm" />
+            <input value={projectObjective} onChange={(event) => setProjectObjective(event.target.value)} onKeyDown={(event) => event.key === "Enter" && createProject()} placeholder="Objective (optional)" aria-label="Project objective" className="cos-input px-3 py-2 text-sm" />
             <button type="button" onClick={createProject} disabled={!projectName.trim()} className="cos-btn cos-btn-primary px-3 py-2 text-sm disabled:opacity-50">
               <Plus className="h-4 w-4" /> Add Project
             </button>
@@ -156,7 +156,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
 
           {area.state === "active" ? (
             <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 lg:grid-cols-[minmax(0,1fr)_10rem_8rem_auto]">
-              <input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && createTask()} placeholder="Add a direct task..." className="cos-input px-3 py-2 text-sm" />
+              <input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && createTask()} placeholder="Add a direct task..." aria-label="Task title" className="cos-input px-3 py-2 text-sm" />
               <input type="date" value={plannedDate} onChange={(event) => { setPlannedDate(event.target.value); if (!event.target.value) setScheduledTime(""); }} aria-label="Planned day" className="cos-input px-3 py-2 text-sm" />
               <input type="time" value={scheduledTime} onChange={(event) => setScheduledTime(event.target.value)} disabled={!plannedDate} aria-label="Scheduled time" className="cos-input px-3 py-2 text-sm disabled:opacity-50" />
               <button type="button" onClick={createTask} disabled={!taskTitle.trim()} className="cos-btn cos-btn-primary px-3 py-2 text-sm disabled:opacity-50"><Plus className="h-4 w-4" /> Add</button>
@@ -196,12 +196,12 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
                 <option value="event">Event</option>
                 <option value="deadline">Deadline</option>
               </select>
-              <input value={dateTitle} onChange={(event) => setDateTitle(event.target.value)} placeholder="Add a direct Date..." className="cos-input px-3 py-2 text-sm" />
+              <input value={dateTitle} onChange={(event) => setDateTitle(event.target.value)} placeholder="Add a direct Date..." aria-label="Date title" className="cos-input px-3 py-2 text-sm" />
               <input type="date" value={dateValue} onChange={(event) => setDateValue(event.target.value)} aria-label="Date" className="cos-input px-3 py-2 text-sm" />
               <input type="time" value={dateStartTime} onChange={(event) => setDateStartTime(event.target.value)} aria-label="Date start time" className="cos-input px-3 py-2 text-sm" />
               <input type="time" value={dateEndTime} onChange={(event) => setDateEndTime(event.target.value)} aria-label="Date end time" disabled={dateKind === "deadline"} className="cos-input px-3 py-2 text-sm disabled:opacity-45" />
               <button type="button" onClick={createDate} disabled={!dateTitle.trim() || !dateValue} className="cos-btn cos-btn-primary px-3 py-2 text-sm disabled:opacity-50"><Plus className="h-4 w-4" /> Add</button>
-              <textarea value={dateDetails} onChange={(event) => setDateDetails(event.target.value)} placeholder="Details (optional)" rows={2} className="cos-input resize-y px-3 py-2 text-sm lg:col-span-6" />
+              <textarea value={dateDetails} onChange={(event) => setDateDetails(event.target.value)} placeholder="Details (optional)" aria-label="Date details" rows={2} className="cos-input resize-y px-3 py-2 text-sm lg:col-span-6" />
             </div>
           ) : null}
         </div>
@@ -216,7 +216,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
                   <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{project.name}</span>
                   <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{project.objective || "No objective yet."}</span>
                 </button>
-                <button type="button" onClick={() => updateProject(project.id, { state: "active" })} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
+                <button type="button" onClick={() => updateProject(project.id, { state: "active" })} aria-label={`Restore ${project.name}`} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
                   <RotateCcw className="h-3.5 w-3.5" /> Restore
                 </button>
               </div>

@@ -74,7 +74,7 @@ export function AccountDeletionPanel({ user }: { user: PublicUser }) {
             <Trash2 className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-[var(--cos-text-strong)]">Delete account permanently</h1>
+            <h1 tabIndex={-1} className="text-xl font-semibold text-[var(--cos-text-strong)] outline-none">Delete account permanently</h1>
             <p className="mt-1 text-sm leading-6 text-[var(--cos-text-muted)]">
               This deletes the server account for <span className="font-medium text-[var(--cos-text)]">{user.email}</span>, its sessions, and all server-owned ContextOS records. The current browser's cached workspace and pending changes are also removed.
             </p>

@@ -19,14 +19,17 @@ async function warmServiceWorker(page: Page) {
 
 
 async function resetDemo(page: Page) {
-  const response = await page.request.post("/api/reset-demo");
-  expect(response.status()).toBe(200);
+  const result = await page.evaluate(async () => {
+    const response = await fetch("/api/reset-demo", { method: "POST" });
+    return { status: response.status, body: await response.text() };
+  });
+  expect(result.status, result.body).toBe(200);
 }
 
 async function localWorkspaceState(page: Page) {
   return page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("contextos-offline-v1", 3);
+      const request = indexedDB.open("contextos-offline-v1", 4);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -63,9 +66,11 @@ async function localWorkspaceState(page: Page) {
 }
 
 async function serverWorkspace(page: Page) {
-  const response = await page.request.get("/api/bootstrap");
-  expect(response.status()).toBe(200);
-  return (await response.json()).data;
+  return page.evaluate(async () => {
+    const response = await fetch("/api/bootstrap", { cache: "no-store" });
+    if (!response.ok) throw new Error(`bootstrap failed with ${response.status}`);
+    return (await response.json()).data;
+  });
 }
 
 async function activeDemoProjectId(page: Page) {

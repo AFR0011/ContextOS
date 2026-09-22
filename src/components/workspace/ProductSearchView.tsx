@@ -65,10 +65,11 @@ export function ProductSearchView() {
         const task = canonical.tasks.find((item) => item.id === selectedResult.id);
         if (!task) return [];
         let context = "";
-        if (task.parent.type === "project") {
-          context = canonical.projects.find((item) => item.id === task.parent.projectId)?.name ?? "";
+        const parent = task.parent;
+        if (parent.type === "project") {
+          context = canonical.projects.find((item) => item.id === parent.projectId)?.name ?? "";
         } else {
-          context = canonical.areas.find((item) => item.id === task.parent.areaId)?.name ?? "";
+          context = canonical.areas.find((item) => item.id === parent.areaId)?.name ?? "";
         }
         return [
           detailRow("State", task.state === "done" ? "Done" : "Open"),
@@ -81,10 +82,11 @@ export function ProductSearchView() {
         const date = canonical.dates.find((item) => item.id === selectedResult.id);
         if (!date) return [];
         let context = "";
-        if (date.parent.type === "project") {
-          context = canonical.projects.find((item) => item.id === date.parent.projectId)?.name ?? "";
+        const parent = date.parent;
+        if (parent.type === "project") {
+          context = canonical.projects.find((item) => item.id === parent.projectId)?.name ?? "";
         } else {
-          context = canonical.areas.find((item) => item.id === date.parent.areaId)?.name ?? "";
+          context = canonical.areas.find((item) => item.id === parent.areaId)?.name ?? "";
         }
         return [
           detailRow("Kind", date.kind === "event" ? "Event" : "Deadline"),

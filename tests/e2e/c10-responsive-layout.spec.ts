@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function resetDemo(page: Page) {
   const response = await page.request.post("/api/reset-demo");
@@ -16,7 +16,7 @@ async function login(page: Page) {
   await expect(page.getByTestId("home-view")).toBeVisible();
 }
 
-async function expectUsableFieldWidth(locator: ReturnType<Page["locator"]>, minimum = 200) {
+async function expectUsableFieldWidth(locator: Locator, minimum = 200) {
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
   expect(box, "Expected visible control to have a bounding box").not.toBeNull();

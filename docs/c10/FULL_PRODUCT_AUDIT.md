@@ -522,6 +522,8 @@ Branch previews repeatedly failed during `npm install` before any application bu
 
 Prisma ORM v7 explicitly states that `prisma generate` does not require a database URL, even though `env()` can make config loading fail. The config now reads `process.env.DATABASE_URL ?? ""` directly. Database-dependent commands still require a valid URL when they actually connect.
 
+**Runtime evidence:** Vercel deployment `dpl_TuCb8Y4P8aHXaw6YnRbkYQmJGybo` for commit `c38fdabe14ddb2dfbf64875cd99261b7bf29ea4e` progressed past installation and failed later in the build step with `lint_or_type_error`. That verifies the preview-install blocker itself is resolved.
+
 ### Production build typecheck boundary
 
 The root TypeScript configuration intentionally checks the full repository, including Playwright tests and scripts. Next production builds previously used the same config, coupling deployment compilation to non-runtime tooling.

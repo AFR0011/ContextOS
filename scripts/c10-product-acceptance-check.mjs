@@ -167,6 +167,7 @@ if (!firstRunTest.includes('getByRole("heading", { name: "Home", exact: true })'
 }
 
 
+const responsiveLayoutTest = fs.readFileSync("tests/e2e/c10-responsive-layout.spec.ts", "utf8");
 const productPrimitives = fs.readFileSync("src/components/workspace/ProductPrimitives.tsx", "utf8");
 const logoutDialog = fs.readFileSync("src/components/workspace/LogoutDialog.tsx", "utf8");
 const authForm = fs.readFileSync("src/components/AuthForm.tsx", "utf8");
@@ -208,6 +209,10 @@ if (!screenshotBaseline.includes("npm run capture:c10:visual") ||
 }
 
 
+if (!responsiveLayoutTest.includes("detail Date composers remain usable at the 1024px sidebar breakpoint") ||
+    !responsiveLayoutTest.includes("toBeGreaterThanOrEqual(minimum)")) {
+  errors.push("C10 responsive layout coverage must protect usable Date-composer width at the 1024px sidebar breakpoint.");
+}
 if (!productPrimitives.includes("sm:max-h-[calc(88dvh-1rem)]") ||
     !productPrimitives.includes("sm:max-h-[calc(100dvh-2rem)]")) {
   errors.push("Shared overlays must remain bounded by the dynamic viewport at narrow and sm breakpoints.");

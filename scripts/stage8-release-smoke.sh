@@ -76,7 +76,7 @@ if (email !== 'stage8.preview@contextos.local') {
 }
 const data = bootstrap?.data;
 if (!data) throw new Error('Bootstrap response did not contain workspace data.');
-if (!Array.isArray(data.domains) || data.domains.length < 1) throw new Error('Bootstrap has no domains.');
+if (!Array.isArray(data.areas) || data.areas.length < 1) throw new Error('Bootstrap has no areas.');
 if (!Array.isArray(data.projects) || data.projects.length < 1) throw new Error('Bootstrap has no projects.');
 if (!Array.isArray(data.tasks) || data.tasks.length < 1) throw new Error('Bootstrap has no tasks.');
 NODE

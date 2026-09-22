@@ -24,27 +24,78 @@ export class SyncPayloadError extends Error {
   }
 }
 
-function shouldApply(existingUpdatedAt: Date | null | undefined, incomingUpdatedAt: string | undefined) {
-  if (!existingUpdatedAt || !incomingUpdatedAt) return true;
-  return new Date(incomingUpdatedAt).getTime() >= existingUpdatedAt.getTime();
+type OwnedRecord = {
+  id: string;
+  userId: string;
+  updatedAt: Date | null;
+  revision: number;
+};
+
+function revisionKey(mutation: QueuedMutation) {
+  return `${mutation.entityType}:${mutation.entityId}`;
 }
 
-function shouldApplyOrWarn(
-  existingUpdatedAt: Date | null | undefined,
-  incomingUpdatedAt: string | undefined,
+function warnRevisionConflict(
+  existing: OwnedRecord | null,
   mutation: QueuedMutation,
-  warnings: SyncWarning[]
+  warnings: SyncWarning[],
+  message: string
 ) {
-  if (shouldApply(existingUpdatedAt, incomingUpdatedAt)) return true;
   warnings.push({
     mutationId: mutation.mutationId,
     entityType: mutation.entityType,
     entityId: mutation.entityId,
     reason: "stale",
-    message: `Skipped older offline change for ${mutation.entityType} because the server has a newer update.`,
-    serverUpdatedAt: existingUpdatedAt ? existingUpdatedAt.toISOString() : null,
-    incomingUpdatedAt: incomingUpdatedAt ?? null
+    message,
+    serverUpdatedAt: existing?.updatedAt ? existing.updatedAt.toISOString() : null,
+    incomingUpdatedAt:
+      typeof (mutation.payload as { updatedAt?: unknown })?.updatedAt === "string"
+        ? (mutation.payload as { updatedAt: string }).updatedAt
+        : null,
+    serverRevision: existing?.revision ?? null,
+    baseRevision: mutation.baseRevision ?? null
   });
+}
+
+function shouldApplyRevision(
+  existing: OwnedRecord | null,
+  mutation: QueuedMutation,
+  warnings: SyncWarning[],
+  conflictedEntities: Set<string>
+) {
+  const key = revisionKey(mutation);
+
+  if (conflictedEntities.has(key)) {
+    warnRevisionConflict(
+      existing,
+      mutation,
+      warnings,
+      `Skipped dependent offline change for ${mutation.entityType} because an earlier queued change for this record conflicted.`
+    );
+    return false;
+  }
+
+  if (!existing) {
+    if (mutation.baseRevision === null || mutation.baseRevision === undefined) return true;
+    conflictedEntities.add(key);
+    warnRevisionConflict(
+      null,
+      mutation,
+      warnings,
+      `Skipped offline change for ${mutation.entityType} because the client expected an existing server revision but the record does not exist.`
+    );
+    return false;
+  }
+
+  if (mutation.baseRevision === existing.revision) return true;
+
+  conflictedEntities.add(key);
+  warnRevisionConflict(
+    existing,
+    mutation,
+    warnings,
+    `Skipped offline change for ${mutation.entityType} because the server record revision changed since this client last observed it.`
+  );
   return false;
 }
 
@@ -87,10 +138,10 @@ function requireState(value: unknown, allowed: readonly string[], field = "state
 async function ownedRecord(tx: Tx, model: OwnedModel, id: string, userId: string) {
   const record = await (tx[model] as any).findUnique({
     where: { id },
-    select: { id: true, userId: true, updatedAt: true }
+    select: { id: true, userId: true, updatedAt: true, revision: true }
   });
   if (record && record.userId !== userId) throw new SyncOwnershipError();
-  return record as { id: string; userId: string; updatedAt?: Date | null } | null;
+  return record as OwnedRecord | null;
 }
 
 async function requireOwnedReference(tx: Tx, model: OwnedModel, id: unknown, userId: string, field: string) {
@@ -122,6 +173,7 @@ async function recordMutation(tx: Tx, userId: string, mutation: QueuedMutation) 
 export async function applySyncMutations(userId: string, mutations: QueuedMutation[]) {
   const appliedMutationIds: string[] = [];
   const warnings: SyncWarning[] = [];
+  const conflictedEntities = new Set<string>();
 
   for (const mutation of mutations) {
     await prisma.$transaction(async (tx) => {
@@ -135,7 +187,6 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
 
       const payload = mutation.payload as any;
       const id = requirePayloadId(payload);
-      const updatedAt = typeof payload.updatedAt === "string" ? payload.updatedAt : new Date().toISOString();
 
       switch (mutation.entityType) {
         case "areas": {
@@ -143,10 +194,18 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           const name = typeof payload.name === "string" ? payload.name.trim() : "";
           if (!name) throw new SyncPayloadError("Area name is required.");
           const state = requireState(payload.state, ["active", "archived"]) as "active" | "archived";
-          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
-            const data = { name, state, updatedAt: toDate(updatedAt) ?? new Date() };
-            if (existing) await tx.area.update({ where: { id }, data });
-            else await tx.area.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+          if (shouldApplyRevision(existing, mutation, warnings, conflictedEntities)) {
+            const updatedAt = new Date();
+            if (existing) {
+              await tx.area.update({
+                where: { id },
+                data: { name, state, updatedAt, revision: { increment: 1 } }
+              });
+            } else {
+              await tx.area.create({
+                data: { id, userId, name, state, createdAt: toDate(payload.createdAt) ?? updatedAt, updatedAt, revision: 1 }
+              });
+            }
           }
           break;
         }
@@ -157,16 +216,22 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           const name = typeof payload.name === "string" ? payload.name.trim() : "";
           if (!name) throw new SyncPayloadError("Project name is required.");
           const state = requireState(payload.state, ["active", "archived"]) as "active" | "archived";
-          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
+          if (shouldApplyRevision(existing, mutation, warnings, conflictedEntities)) {
+            const updatedAt = new Date();
             const data = {
               name,
               areaId,
               objective: typeof payload.objective === "string" ? payload.objective : "",
               state,
-              updatedAt: toDate(updatedAt) ?? new Date()
+              updatedAt
             };
-            if (existing) await tx.project.update({ where: { id }, data });
-            else await tx.project.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            if (existing) {
+              await tx.project.update({ where: { id }, data: { ...data, revision: { increment: 1 } } });
+            } else {
+              await tx.project.create({
+                data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? updatedAt, revision: 1 }
+              });
+            }
           }
           break;
         }
@@ -188,7 +253,8 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           const state = requireState(payload.state, ["open", "done"]) as "open" | "done";
           const plannedDateKey = optionalDateKey(payload.plannedDate, "plannedDate");
           const scheduledTime = plannedDateKey ? optionalTimeKey(payload.scheduledTime, "scheduledTime") : null;
-          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
+          if (shouldApplyRevision(existing, mutation, warnings, conflictedEntities)) {
+            const updatedAt = new Date();
             const data = {
               title,
               plannedDate: toDateOnly(plannedDateKey),
@@ -196,10 +262,15 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               projectId,
               areaId,
               state,
-              updatedAt: toDate(updatedAt) ?? new Date()
+              updatedAt
             };
-            if (existing) await tx.task.update({ where: { id }, data });
-            else await tx.task.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            if (existing) {
+              await tx.task.update({ where: { id }, data: { ...data, revision: { increment: 1 } } });
+            } else {
+              await tx.task.create({
+                data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? updatedAt, revision: 1 }
+              });
+            }
           }
           break;
         }
@@ -225,7 +296,8 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           const title = typeof payload.title === "string" ? payload.title.trim() : "";
           if (!title) throw new SyncPayloadError("Date title is required.");
 
-          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
+          if (shouldApplyRevision(existing, mutation, warnings, conflictedEntities)) {
+            const updatedAt = new Date();
             const data = {
               title,
               kind,
@@ -235,10 +307,15 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
               details: typeof payload.details === "string" ? payload.details : "",
               projectId,
               areaId,
-              updatedAt: toDate(updatedAt) ?? new Date()
+              updatedAt
             };
-            if (existing) await tx.contextDate.update({ where: { id }, data });
-            else await tx.contextDate.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            if (existing) {
+              await tx.contextDate.update({ where: { id }, data: { ...data, revision: { increment: 1 } } });
+            } else {
+              await tx.contextDate.create({
+                data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? updatedAt, revision: 1 }
+              });
+            }
           }
           break;
         }
@@ -247,24 +324,33 @@ export async function applySyncMutations(userId: string, mutations: QueuedMutati
           const localDate = requireDateKey(payload.localDate, "localDate");
           const byId = await tx.dailyNote.findUnique({
             where: { id },
-            select: { id: true, userId: true, localDate: true, updatedAt: true }
+            select: { id: true, userId: true, localDate: true, updatedAt: true, revision: true }
           });
           if (byId && byId.userId !== userId) throw new SyncOwnershipError();
           if (byId && byId.localDate !== localDate) throw new SyncPayloadError("Daily Note localDate cannot change.");
 
           const byDate = await tx.dailyNote.findUnique({
             where: { userId_localDate: { userId, localDate } },
-            select: { id: true, userId: true, localDate: true, updatedAt: true }
+            select: { id: true, userId: true, localDate: true, updatedAt: true, revision: true }
           });
-          const existing = byId ?? byDate;
-          if (shouldApplyOrWarn(existing?.updatedAt, updatedAt, mutation, warnings)) {
+          const existing = (byId ?? byDate) as OwnedRecord & { localDate: string } | null;
+          if (shouldApplyRevision(existing, mutation, warnings, conflictedEntities)) {
+            const updatedAt = new Date();
             const data = {
               localDate,
               content: typeof payload.content === "string" ? payload.content : "",
-              updatedAt: toDate(updatedAt) ?? new Date()
+              updatedAt
             };
-            if (existing) await tx.dailyNote.update({ where: { id: existing.id }, data });
-            else await tx.dailyNote.create({ data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? new Date() } });
+            if (existing) {
+              await tx.dailyNote.update({
+                where: { id: existing.id },
+                data: { ...data, revision: { increment: 1 } }
+              });
+            } else {
+              await tx.dailyNote.create({
+                data: { id, userId, ...data, createdAt: toDate(payload.createdAt) ?? updatedAt, revision: 1 }
+              });
+            }
           }
           break;
         }

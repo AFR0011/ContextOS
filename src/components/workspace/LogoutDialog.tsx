@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDialogFocusTrap } from "@/lib/use-dialog-focus-trap";
 import { AlertTriangle, LogOut, ShieldX, Trash2, WifiOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { PublicUser } from "@/lib/auth";
@@ -37,6 +38,7 @@ export function LogoutDialog({ open, user, sync, syncNow, onClose }: LogoutDialo
 
   const busy = working !== null;
   const hasPending = sync.pendingCount > 0;
+  const dialogRef = useDialogFocusTrap({ open, onClose, closeOnEscape: !busy });
 
   async function finishLogout(action: LogoutAction) {
     if (busy) return;
@@ -90,6 +92,8 @@ export function LogoutDialog({ open, user, sync, syncNow, onClose }: LogoutDialo
       if (event.target === event.currentTarget && !busy) onClose();
     }}>
       <section
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="logout-dialog-title"

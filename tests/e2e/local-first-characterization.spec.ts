@@ -194,8 +194,13 @@ test.describe("local-first completion characterization", () => {
       const task = state.workspace?.tasks?.find((item: { title: string }) => item.title === taskTitle);
       const date = state.workspace?.dates?.find((item: { title: string }) => item.title === dateTitle);
       const note = state.workspace?.dailyNotes?.find((item: { localDate: string }) => item.localDate === today);
+      const byEntity = state.outbox.reduce((counts: Record<string, number>, mutation: { entityType: string }) => {
+        counts[mutation.entityType] = (counts[mutation.entityType] ?? 0) + 1;
+        return counts;
+      }, {});
       return {
         pending: state.outbox.length,
+        byEntity,
         hasArea: Boolean(state.workspace?.areas?.some((item: { name: string }) => item.name === areaName)),
         projectState: project?.state ?? null,
         projectObjective: project?.objective ?? null,
@@ -205,6 +210,13 @@ test.describe("local-first completion characterization", () => {
       };
     }).toMatchObject({
       pending: 8,
+      byEntity: {
+        areas: 1,
+        projects: 3,
+        tasks: 2,
+        dates: 1,
+        dailyNotes: 1
+      },
       hasArea: true,
       projectState: "archived",
       projectObjective: objective,

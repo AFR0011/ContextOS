@@ -634,17 +634,17 @@ Status: **implemented; execution blocked by current build/rate-limit boundary**
 The visual evidence command now performs the complete required sequence:
 
 1. `npm run build` — visual capture refuses to proceed on an unbuildable candidate.
-2. standard browser capture:
-   - canonical desktop/mobile/compact-desktop surfaces;
-   - overlay/transient states;
-   - 320x720 hostile-content stress in light/dark;
-   - clean-account first-run/empty states in desktop/mobile light/dark.
-3. production-browser capture:
+2. production-browser capture, before any dev server can mutate `.next`:
    - online-ready;
    - offline;
    - offline with a queued local mutation;
    - reconnecting while sync is deliberately held;
    - healthy state after the outbox drains.
+3. standard browser capture:
+   - canonical desktop/mobile/compact-desktop surfaces;
+   - overlay/transient states;
+   - 320x720 hostile-content stress in light/dark;
+   - clean-account first-run/empty states in desktop/mobile light/dark.
 
 The production offline suite also contained two stale explicit IndexedDB v3 opens; those are now aligned to the current v4 local-state boundary.
 

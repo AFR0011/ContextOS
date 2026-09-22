@@ -492,11 +492,15 @@ Each screenshot capture first requires no horizontal document overflow.
 
 The visual capture suite is gated behind `CAPTURE_C10_VISUAL=1` so ordinary E2E runs do not create screenshot artifacts accidentally.
 
-### Still pending as separate Phase C slices
+### Capture slices implemented
 
-- 320x720 hostile-content visual stress;
-- production-runtime Offline / pending / reconnect screenshots;
-- clean first-run / empty-account screenshots;
+The dedicated runner now includes:
+- 320x720 hostile-content visual stress in light/dark;
+- clean first-run and empty-workspace surfaces in desktop/mobile light/dark;
+- production-runtime online/offline/pending/reconnecting/reconnected states in mobile light/dark.
+
+Still pending:
+- successful execution against the current C10 candidate;
 - actual manual review of every generated image;
 - correction and recapture of any defects found.
 
@@ -622,6 +626,29 @@ The first `tsconfig.build.json` draft still included unit tests under `src/**`. 
 ### Verification boundary
 
 All fixes above are source-complete and structurally guarded by C10 acceptance checks. Their Playwright regressions and screenshot matrix have not yet executed on the current candidate because Vercel remains build-rate limited and this environment cannot install/run the repository.
+
+## C-00.7 — Complete executable visual evidence pipeline
+
+Status: **implemented; execution blocked by current build/rate-limit boundary**
+
+The visual evidence command now performs the complete required sequence:
+
+1. `npm run build` — visual capture refuses to proceed on an unbuildable candidate.
+2. standard browser capture:
+   - canonical desktop/mobile/compact-desktop surfaces;
+   - overlay/transient states;
+   - 320x720 hostile-content stress in light/dark;
+   - clean-account first-run/empty states in desktop/mobile light/dark.
+3. production-browser capture:
+   - online-ready;
+   - offline;
+   - offline with a queued local mutation;
+   - reconnecting while sync is deliberately held;
+   - healthy state after the outbox drains.
+
+The production offline suite also contained two stale explicit IndexedDB v3 opens; those are now aligned to the current v4 local-state boundary.
+
+No screenshot evidence is considered accepted until this pipeline runs successfully and a human reviews the generated images.
 
 ## C-01 — Primary surface rendered inspection
 

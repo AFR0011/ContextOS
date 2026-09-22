@@ -73,10 +73,10 @@ export function AccountDeletionPanel({ user }: { user: PublicUser }) {
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[var(--cos-danger-soft)] text-[var(--cos-danger)]">
             <Trash2 className="h-5 w-5" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 tabIndex={-1} className="text-xl font-semibold text-[var(--cos-text-strong)] outline-none">Delete account permanently</h1>
             <p className="mt-1 text-sm leading-6 text-[var(--cos-text-muted)]">
-              This deletes the server account for <span className="font-medium text-[var(--cos-text)]">{user.email}</span>, its sessions, and all server-owned ContextOS records. The current browser's cached workspace and pending changes are also removed.
+              This deletes the server account for <span className="break-words font-medium text-[var(--cos-text)] [overflow-wrap:anywhere]">{user.email}</span>, its sessions, and all server-owned ContextOS records. The current browser's cached workspace and pending changes are also removed.
             </p>
           </div>
         </div>
@@ -110,7 +110,7 @@ export function AccountDeletionPanel({ user }: { user: PublicUser }) {
         </div>
 
         {error ? (
-          <p data-testid="account-delete-error" role="alert" className="mt-4 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">
+          <p data-testid="account-delete-error" role="alert" className="mt-4 break-words rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)] [overflow-wrap:anywhere]">
             {error}
           </p>
         ) : null}

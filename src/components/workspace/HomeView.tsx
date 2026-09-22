@@ -110,9 +110,10 @@ function dateContext(
   projects: { id: string; name: string }[],
   areas: { id: string; name: string }[]
 ) {
-  return date.parent.type === "project"
-    ? projects.find((project) => project.id === date.parent.projectId)?.name ?? ""
-    : areas.find((area) => area.id === date.parent.areaId)?.name ?? "";
+  const parent = date.parent;
+  return parent.type === "project"
+    ? projects.find((project) => project.id === parent.projectId)?.name ?? ""
+    : areas.find((area) => area.id === parent.areaId)?.name ?? "";
 }
 
 export function HomeView() {

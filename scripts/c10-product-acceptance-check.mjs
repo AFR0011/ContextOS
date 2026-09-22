@@ -147,6 +147,9 @@ if (!workspaceShell.includes("inert={navigationIsHidden ? true : undefined}") ||
 if (!globalCss.includes("--cos-text-subtle: #646c79;")) {
   errors.push("Light-theme subtle text must retain the audited AA contrast token.");
 }
+if (!globalCss.includes("overflow-wrap: anywhere;") || !globalCss.includes("white-space: normal;")) {
+  errors.push("Shared pill labels must retain hostile-content wrapping.");
+}
 if (!accessibilityTest.includes("contrastRatio(tokens.subtle, background)") ||
     !accessibilityTest.includes("toBeGreaterThanOrEqual(4.5)")) {
   errors.push("C10 must retain executable subtle-text contrast coverage.");

@@ -187,7 +187,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
       setOnline(false);
       setError("Offline. Changes are queued until you reconnect.");
       setLastErrorAt(now());
-      return false;
+      return;
     }
 
     setOnline(true);
@@ -243,7 +243,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
       setOnline(false);
       setError("Cannot refresh from server while offline.");
       setLastErrorAt(now());
-      return;
+      return false;
     }
 
     setOnline(true);

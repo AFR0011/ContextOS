@@ -30,6 +30,62 @@ Do not capture:
 - temporary debug state;
 - personally identifying real data.
 
+## Executable capture harness
+
+The repository now includes an explicit browser-capture matrix:
+
+- `tests/e2e/c10-visual-baseline.spec.ts`
+- `scripts/capture-c10-visual.mjs`
+- `npm run capture:c10:visual`
+
+The capture runner is intentionally separate from the normal E2E ladder. The visual spec is skipped unless `CAPTURE_C10_VISUAL=1`, and the npm command sets that flag cross-platform before invoking Playwright.
+
+Current automated capture coverage:
+- 1440x1000 desktop light;
+- 1440x1000 desktop dark;
+- 390x844 mobile light;
+- 390x844 mobile dark;
+- Home;
+- Projects;
+- Project Detail;
+- Areas;
+- Area Detail;
+- Dates;
+- Search with a selected result;
+- LifeOS;
+- Settings;
+- Dates creation panel;
+- command palette;
+- New Task sheet;
+- New Date sheet;
+- long Settings import filename;
+- mobile navigation drawer;
+- logout dialog.
+
+Every capture first asserts that the rendered document has no horizontal page overflow. Screenshots are attached to the Playwright report and written into the test output directory for human review.
+
+Still separate from this standard capture pass:
+- 320x720 hostile-content stress;
+- production-runtime Offline/pending/reconnect state;
+- clean first-run/empty-account screenshot capture.
+
+Those already have behavioral test foundations elsewhere and will be added/reviewed as separate Phase C slices rather than making the baseline runner mutate large amounts of test state.
+
+## Current render-evidence blocker — 2026-09-22
+
+Phase C requires evidence from the current C10 branch, not an old working deployment.
+
+Vercel deployment history shows:
+- C3 main at `4b452711c50baf8a301c79f298fcc9a613432d61` was the last READY production deployment;
+- C4 main at `81670fb7d3c3a8467af57fdbb2f4fdd69de5893e` failed during `npm run build` with a lint/type error;
+- C9 main at `16dffb7ad52dbcb9f2a8fd3ffbf0128c1a896d1f` also failed during `npm run build`;
+- several later preview deployments additionally failed during install;
+- the current C10 head is presently blocked by Vercel build-rate limiting.
+
+Therefore the old C3 deployment cannot be used as C10 visual evidence, and repeated preview pushes must not be treated as a substitute for a successful current build.
+
+The next Phase C runtime step is to run the current branch in an executable environment, resolve any build/type failure that remains, execute `npm run capture:c10:visual`, and manually inspect the resulting images.
+
 ## Baseline set
 
 ### 01 Home

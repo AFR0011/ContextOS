@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
 import type { ContextDate as CanonicalDate, ContextDateKind } from "@/lib/canonical-domain";

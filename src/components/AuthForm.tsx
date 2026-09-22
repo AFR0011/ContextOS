@@ -44,7 +44,7 @@ export default function AuthForm({ mode, serviceStatus, registrationEnabled = tr
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[var(--cos-bg)] px-4 py-10 text-[var(--cos-text)]">
+    <main className="grid min-h-dvh place-items-center bg-[var(--cos-bg)] px-4 py-10 text-[var(--cos-text)]">
       <div className="w-full max-w-md">
         <div className="mb-8 flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-[var(--cos-radius-sm)] bg-[var(--cos-primary)] text-white shadow-sm">

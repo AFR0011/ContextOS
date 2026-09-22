@@ -53,7 +53,7 @@ function HandoffPreview() {
         </div>
 
         {error ? <p role="alert" className="rounded-lg bg-[var(--cos-danger-soft)] p-3 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
-        {!handoff && !error ? <p className="text-sm text-[var(--cos-text-muted)]">Preparing handoff preview...</p> : null}
+        {!handoff && !error ? <p role="status" className="text-sm text-[var(--cos-text-muted)]">Preparing handoff preview...</p> : null}
 
         {handoff ? (
           <>
@@ -139,7 +139,7 @@ export default function HandoffPage() {
     <main className="grid min-h-screen place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
       <section className="cos-surface w-full max-w-lg space-y-3 p-6">
         <h1 className="text-xl font-semibold text-[var(--cos-text-strong)]">Preparing ContextOS handoff</h1>
-        {authState === "checking" ? <p className="text-sm text-[var(--cos-text-muted)]">Checking your sign-in before showing the private proposal...</p> : null}
+        {authState === "checking" ? <p role="status" className="text-sm text-[var(--cos-text-muted)]">Checking your sign-in before showing the private proposal...</p> : null}
         {authState === "error" ? (
           <>
             <p role="alert" className="text-sm text-[var(--cos-danger-text)]">{authError}</p>

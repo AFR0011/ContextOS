@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 
 const packageVersion = (JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as { version: string }).version;
 
@@ -114,6 +114,13 @@ async function expectMinTouchTarget(locator: Locator, min = 40) {
   expect(box, "Expected visible element to have a bounding box").not.toBeNull();
   expect(Math.floor(box!.width)).toBeGreaterThanOrEqual(min);
   expect(Math.floor(box!.height)).toBeGreaterThanOrEqual(min);
+}
+
+async function attachVisualCapture(page: Page, testInfo: TestInfo, name: string) {
+  if (process.env.CAPTURE_C10_VISUAL !== "1") return;
+  const path = testInfo.outputPath(`${name}.png`);
+  await page.screenshot({ path, fullPage: true, animations: "disabled" });
+  await testInfo.attach(name, { path, contentType: "image/png" });
 }
 
 async function warmOfflineShell(page: Page) {
@@ -283,7 +290,7 @@ test("mobile bottom navigation uses the simplified four-tab set", async ({ page 
   await expect(mobileNav.getByRole("button", { name: "Dates", exact: true })).toHaveCount(0);
 });
 
-test("mobile rows survive hostile long labels and task controls keep touch-sized hit areas", async ({ page }) => {
+test("mobile rows survive hostile long labels and task controls keep touch-sized hit areas", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await login(page);
 
@@ -309,6 +316,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await page.getByRole("button", { name: "Create Area", exact: true }).click();
 
   await expect(page.getByText(longArea, { exact: true })).toBeVisible();
+  await attachVisualCapture(page, testInfo, "stress-320-areas-long-area");
   await expectMinTouchTarget(page.getByRole("button", { name: `Archive ${longArea}`, exact: true }));
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
@@ -321,6 +329,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await page.getByRole("button", { name: "Create Project", exact: true }).click();
 
   await expect(page.getByRole("heading", { name: longProject, exact: true })).toBeVisible();
+  await attachVisualCapture(page, testInfo, "stress-320-project-detail-long-project");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
   const longDate = `Date-${"D".repeat(150)}`;
@@ -335,13 +344,15 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await expect(page.getByText(longDate, { exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
-  await page.goto("/search");
+  await page.goto("/search");  await attachVisualCapture(page, testInfo, "stress-320-dates-long-date");
+
   await page.getByPlaceholder("Search workspace...").fill(longProject.slice(0, 20));
   const longProjectResult = page.getByTestId(/search-result-project-/).filter({ hasText: longProject }).first();
   await expect(longProjectResult).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await longProjectResult.click();
   await expect(page.getByTestId("search-selected-record")).toContainText(longProject);
+  await attachVisualCapture(page, testInfo, "stress-320-search-long-selection");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
   await page.goto("/projects");
@@ -353,6 +364,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await page.getByText(longArea, { exact: true }).first().click();
   const areaDetail = page.getByTestId("area-detail");
   await expect(areaDetail).toBeVisible();
+  await attachVisualCapture(page, testInfo, "stress-320-area-detail-long-project");
   const projectRow = areaDetail.locator(".cos-entity-row").filter({ hasText: longProject }).first();
   await expect(projectRow.getByText(longProject, { exact: true })).toBeVisible();
   await expectMinTouchTarget(projectRow.getByRole("button", { name: "Archive", exact: true }));

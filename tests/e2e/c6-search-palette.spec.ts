@@ -132,12 +132,12 @@ test("command palette and create sheet contain keyboard focus and restore it on 
   }
   const listbox = palette.getByRole("listbox", { name: "Command palette results" });
   const activeOption = palette.locator('[role="option"][aria-selected="true"]');
-  const listBox = await listbox.boundingBox();
-  const activeBox = await activeOption.boundingBox();
-  expect(listBox).not.toBeNull();
-  expect(activeBox).not.toBeNull();
-  expect(activeBox!.y).toBeGreaterThanOrEqual(listBox!.y);
-  expect(activeBox!.y + activeBox!.height).toBeLessThanOrEqual(listBox!.y + listBox!.height + 1);
+  await expect.poll(async () => {
+    const listBox = await listbox.boundingBox();
+    const activeBox = await activeOption.boundingBox();
+    if (!listBox || !activeBox) return false;
+    return activeBox.y >= listBox.y && activeBox.y + activeBox.height <= listBox.y + listBox.height + 1;
+  }).toBe(true);
 
   await searchInput.fill("New Task");
   await page.keyboard.press("Enter");

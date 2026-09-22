@@ -27,17 +27,17 @@ run(npm, ["run", "build"]);
 run(npx, [
   "playwright",
   "test",
-  "tests/e2e/c10-visual-baseline.spec.ts",
-  "tests/e2e/c10-visual-stress.spec.ts",
-  "tests/e2e/c10-visual-empty.spec.ts",
+  "-c",
+  "playwright.production.config.ts",
+  "tests/offline-production/c10-visual-offline.spec.ts",
   "--project=chromium"
 ]);
 
 run(npx, [
   "playwright",
   "test",
-  "-c",
-  "playwright.production.config.ts",
-  "tests/offline-production/c10-visual-offline.spec.ts",
+  "tests/e2e/c10-visual-baseline.spec.ts",
+  "tests/e2e/c10-visual-stress.spec.ts",
+  "tests/e2e/c10-visual-empty.spec.ts",
   "--project=chromium"
 ]);

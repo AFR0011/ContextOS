@@ -32,19 +32,21 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
     );
   }
 
-  const activeProjects = data.projects.filter((project) => project.areaId === area.id && project.state === "active");
-  const archivedProjects = data.projects.filter((project) => project.areaId === area.id && project.state === "archived");
-  const directTasks = data.tasks.filter((task) => task.parent.type === "area" && task.parent.areaId === area.id);
+  const currentArea = area;
+
+  const activeProjects = data.projects.filter((project) => project.areaId === currentArea.id && project.state === "active");
+  const archivedProjects = data.projects.filter((project) => project.areaId === currentArea.id && project.state === "archived");
+  const directTasks = data.tasks.filter((task) => task.parent.type === "area" && task.parent.areaId === currentArea.id);
   const openTasks = directTasks.filter((task) => task.state === "open");
   const doneTasks = directTasks.filter((task) => task.state === "done");
   const directDates = data.dates
-    .filter((item) => item.parent.type === "area" && item.parent.areaId === area.id)
+    .filter((item) => item.parent.type === "area" && item.parent.areaId === currentArea.id)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
 
   function createProject() {
     const name = projectName.trim();
-    if (!name || area.state === "archived") return;
-    const id = addProject({ name, areaId: area.id, objective: projectObjective.trim() });
+    if (!name || currentArea.state === "archived") return;
+    const id = addProject({ name, areaId: currentArea.id, objective: projectObjective.trim() });
     setProjectName("");
     setProjectObjective("");
     router.push(`/projects/${id}`);
@@ -52,10 +54,10 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
 
   function createTask() {
     const title = taskTitle.trim();
-    if (!title || area.state === "archived") return;
+    if (!title || currentArea.state === "archived") return;
     addTask({
       title,
-      parent: { type: "area", areaId: area.id },
+      parent: { type: "area", areaId: currentArea.id },
       plannedDate: plannedDate || null,
       scheduledTime: plannedDate ? scheduledTime || null : null
     });
@@ -66,7 +68,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
 
   function createDate() {
     const title = dateTitle.trim();
-    if (!title || !dateValue || area.state === "archived") return;
+    if (!title || !dateValue || currentArea.state === "archived") return;
     addDate({
       title,
       kind: dateKind,
@@ -74,7 +76,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
       startTime: dateStartTime || null,
       endTime: dateKind === "event" ? dateEndTime || null : null,
       details: dateDetails.trim(),
-      parent: { type: "area", areaId: area.id }
+      parent: { type: "area", areaId: currentArea.id }
     });
     setDateTitle("");
     setDateStartTime("");
@@ -90,15 +92,15 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
 
       <PageHeader
         eyebrow="Area"
-        title={area.name}
-        description={area.state === "archived" ? "Archived responsibility domain" : "Active responsibility domain"}
+        title={currentArea.name}
+        description={currentArea.state === "archived" ? "Archived responsibility domain" : "Active responsibility domain"}
         action={
-          area.state === "archived" ? (
-            <button type="button" onClick={() => updateArea(area.id, { state: "active" })} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
+          currentArea.state === "archived" ? (
+            <button type="button" onClick={() => updateArea(currentArea.id, { state: "active" })} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
               <RotateCcw className="h-4 w-4" /> Restore
             </button>
           ) : (
-            <button type="button" onClick={() => updateArea(area.id, { state: "archived" })} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
+            <button type="button" onClick={() => updateArea(currentArea.id, { state: "archived" })} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
               <Archive className="h-4 w-4" /> Archive
             </button>
           )
@@ -122,7 +124,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
           </div>
         ) : <p className="text-sm text-[var(--cos-text-subtle)]">No active Projects in this Area.</p>}
 
-        {area.state === "active" ? (
+        {currentArea.state === "active" ? (
           <div className="cos-surface mt-4 grid gap-2 p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto]">
             <input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="New Project name" aria-label="Project name" className="cos-input px-3 py-2 text-sm" />
             <input value={projectObjective} onChange={(event) => setProjectObjective(event.target.value)} onKeyDown={(event) => event.key === "Enter" && !event.nativeEvent.isComposing && createProject()} placeholder="Objective (optional)" aria-label="Project objective" className="cos-input px-3 py-2 text-sm" />
@@ -154,7 +156,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
             </details>
           ) : null}
 
-          {area.state === "active" ? (
+          {currentArea.state === "active" ? (
             <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 lg:grid-cols-[minmax(0,1fr)_10rem_8rem_auto]">
               <input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && !event.nativeEvent.isComposing && createTask()} placeholder="Add a direct task..." aria-label="Task title" className="cos-input px-3 py-2 text-sm" />
               <input type="date" value={plannedDate} onChange={(event) => { setPlannedDate(event.target.value); if (!event.target.value) setScheduledTime(""); }} aria-label="Planned day" className="cos-input px-3 py-2 text-sm" />
@@ -181,7 +183,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
             {!directDates.length ? <p className="px-3 py-4 text-sm text-[var(--cos-text-subtle)]">No direct Dates in this Area.</p> : null}
           </div>
 
-          {area.state === "active" ? (
+          {currentArea.state === "active" ? (
             <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 md:grid-cols-2 xl:grid-cols-[7rem_minmax(0,1fr)_10rem_8rem_8rem_auto]">
               <select
                 value={dateKind}

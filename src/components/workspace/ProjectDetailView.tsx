@@ -84,7 +84,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   }
 
   const currentArea = data.areas.find((area) => area.id === project.areaId);
-  const areaChoices = data.areas.filter((domain) => area.state === "active" || area.id === project.areaId);
+  const areaChoices = data.areas.filter((area) => area.state === "active" || area.id === project.areaId);
   const projectTasks = data.tasks.filter(
     (task) => task.parent.type === "project" && task.parent.projectId === project.id
   );

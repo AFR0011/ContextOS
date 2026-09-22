@@ -16,6 +16,28 @@ async function login(page: Page) {
   await expect(page.getByTestId("home-view")).toBeVisible();
 }
 
+function parseHexColor(value: string) {
+  const hex = value.trim().replace(/^#/, "");
+  expect(hex).toMatch(/^[0-9a-f]{6}$/i);
+  return [0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16));
+}
+
+function relativeLuminance(value: string) {
+  const [red, green, blue] = parseHexColor(value).map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const a = relativeLuminance(foreground);
+  const b = relativeLuminance(background);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
 test("skip link and local route changes move focus into the new main view", async ({ page }) => {
   await login(page);
 
@@ -41,12 +63,17 @@ test("mobile navigation behaves as a modal keyboard drawer and restores focus", 
   await login(page);
 
   const trigger = page.getByRole("button", { name: "Open navigation", exact: true });
+  const drawerElement = page.locator("#workspace-navigation-drawer");
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(drawerElement).toHaveAttribute("aria-hidden", "true");
+  expect(await drawerElement.evaluate((element) => element.hasAttribute("inert"))).toBe(true);
   await trigger.click();
 
   const drawer = page.getByRole("dialog", { name: "Workspace navigation menu" });
   await expect(drawer).toBeVisible();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(drawerElement).not.toHaveAttribute("aria-hidden", "true");
+  expect(await drawerElement.evaluate((element) => element.hasAttribute("inert"))).toBe(false);
 
   const focusables = drawer.locator(
     'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -62,6 +89,8 @@ test("mobile navigation behaves as a modal keyboard drawer and restores focus", 
   await expect(page.getByRole("dialog", { name: "Workspace navigation menu" })).toHaveCount(0);
   await expect(trigger).toBeFocused();
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(drawerElement).toHaveAttribute("aria-hidden", "true");
+  expect(await drawerElement.evaluate((element) => element.hasAttribute("inert"))).toBe(true);
 });
 
 test("opening logout from the mobile drawer does not return focus to a hidden drawer control", async ({ page }) => {
@@ -185,6 +214,61 @@ test("Daily Note autosave and password validation expose non-visual state", asyn
 
   await confirmation.fill("a-longer-password");
   await expect(confirmation).toHaveAttribute("aria-invalid", "false");
+});
+
+test("inline create disclosures expose state and return focus when cancelled", async ({ page }) => {
+  await login(page);
+
+  await page.goto("/areas");
+  const areaTrigger = page.getByRole("button", { name: "New Area", exact: true });
+  await expect(areaTrigger).toHaveAttribute("aria-expanded", "false");
+  await expect(areaTrigger).toHaveAttribute("aria-controls", "area-create-form");
+  await areaTrigger.click();
+  await expect(areaTrigger).toHaveAttribute("aria-expanded", "true");
+  await page.locator("#area-create-form").getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(areaTrigger).toBeFocused();
+  await expect(areaTrigger).toHaveAttribute("aria-expanded", "false");
+
+  await page.goto("/projects");
+  const projectTrigger = page.getByRole("button", { name: "New Project", exact: true });
+  await expect(projectTrigger).toHaveAttribute("aria-expanded", "false");
+  await expect(projectTrigger).toHaveAttribute("aria-controls", "project-create-form");
+  await projectTrigger.click();
+  await expect(projectTrigger).toHaveAttribute("aria-expanded", "true");
+  await page.locator("#project-create-form").getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(projectTrigger).toBeFocused();
+  await expect(projectTrigger).toHaveAttribute("aria-expanded", "false");
+
+  await page.goto("/dates");
+  const dateTrigger = page.getByRole("button", { name: "Add Date", exact: true });
+  await expect(dateTrigger).toHaveAttribute("aria-expanded", "false");
+  await expect(dateTrigger).toHaveAttribute("aria-controls", "context-date-create");
+  await dateTrigger.click();
+  await expect(dateTrigger).toHaveAttribute("aria-expanded", "true");
+  await page.locator("#context-date-create").getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(dateTrigger).toBeFocused();
+  await expect(dateTrigger).toHaveAttribute("aria-expanded", "false");
+});
+
+test("light-theme subtle text token keeps AA contrast on canonical surfaces", async ({ page }) => {
+  await login(page);
+  await page.evaluate(() => document.documentElement.classList.remove("dark"));
+
+  const tokens = await page.evaluate(() => {
+    const styles = getComputedStyle(document.documentElement);
+    return {
+      subtle: styles.getPropertyValue("--cos-text-subtle"),
+      canvas: styles.getPropertyValue("--cos-bg"),
+      soft: styles.getPropertyValue("--cos-bg-soft"),
+      elevated: styles.getPropertyValue("--cos-bg-elevated"),
+      inset: styles.getPropertyValue("--cos-bg-inset"),
+      primarySoft: styles.getPropertyValue("--cos-primary-soft")
+    };
+  });
+
+  for (const background of [tokens.canvas, tokens.soft, tokens.elevated, tokens.inset, tokens.primarySoft]) {
+    expect(contrastRatio(tokens.subtle, background)).toBeGreaterThanOrEqual(4.5);
+  }
 });
 
 test("dynamic import errors are exposed as alerts", async ({ page }) => {

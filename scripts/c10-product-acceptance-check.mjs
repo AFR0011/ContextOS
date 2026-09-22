@@ -257,6 +257,9 @@ if (!localFirstCharacterization.includes('fetch("/api/reset-demo", { method: "PO
     !localFirstCharacterization.includes('fetch("/api/bootstrap", { cache: "no-store" })')) {
   errors.push("Production local-first characterization must use browser-origin authenticated requests.");
 }
+if (!localFirstCharacterization.includes('getByTestId("project-create-form").getByLabel("Area", { exact: true })')) {
+  errors.push("Local-first Project creation coverage must scope the Area selector to the creation form.");
+}
 if (!areaDetailRoute.includes("WorkspaceRouteHandoff")) {
   errors.push("Area detail must retain a physical App Router handoff route for direct/offline navigation.");
 }

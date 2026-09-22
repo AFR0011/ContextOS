@@ -6,7 +6,7 @@ It combines a Next.js application with PostgreSQL-backed user data, a user-scope
 
 > **Project status:** self-hostable local-first application with an evidence-backed core workflow. The repository is not an operated hosted production SaaS service, a compliance-certified system, or a collaborative distributed-data platform. High-sensitivity/public production deployments still require target-specific operational and security review. The local-first completion program is complete through Stage 10 final acceptance within the documented boundary.
 
-**Current stable release:** `v1.0.0`. Historical Stage 7–10 evidence remains repository provenance while the post-release ContextOS redesign continues to narrow the visible product model.
+**Current stable release:** `v1.0.0`. Historical Stage 7–10 evidence remains repository provenance. The post-release canonical redesign is complete through C9; C10 is the current product-acceptance and baseline-freeze phase.
 
 ## Product
 
@@ -138,6 +138,7 @@ npm run audit:stage9:lifecycle
 npm run audit:stage9:evidence
 npm run audit:stage10:acceptance
 npm run audit:stage10:claims
+npm run audit:c10:product
 npm run audit:release
 npx prisma validate
 npx prisma generate

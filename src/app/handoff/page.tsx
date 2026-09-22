@@ -52,7 +52,7 @@ function HandoffPreview() {
           </div>
         </div>
 
-        {error ? <p role="alert" className="rounded-lg bg-[var(--cos-danger-soft)] p-3 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
+        {error ? <p role="alert" className="break-words rounded-lg bg-[var(--cos-danger-soft)] p-3 text-sm text-[var(--cos-danger-text)] [overflow-wrap:anywhere]">{error}</p> : null}
         {!handoff && !error ? <p role="status" className="text-sm text-[var(--cos-text-muted)]">Preparing handoff preview...</p> : null}
 
         {handoff ? (
@@ -64,11 +64,11 @@ function HandoffPreview() {
             </div>
 
             <div className="rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-4">
-              <p className="text-sm font-semibold text-[var(--cos-text-strong)]">{handoff.title}</p>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--cos-text)]">{handoff.body}</p>
+              <p className="break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{handoff.title}</p>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-[var(--cos-text)] [overflow-wrap:anywhere]">{handoff.body}</p>
             </div>
 
-            {typeof validation === "string" ? <p role="alert" className="text-sm text-[var(--cos-danger-text)]">{validation}</p> : null}
+            {typeof validation === "string" ? <p role="alert" className="break-words text-sm text-[var(--cos-danger-text)] [overflow-wrap:anywhere]">{validation}</p> : null}
 
             <p className="text-sm leading-6 text-[var(--cos-text-muted)]">
               For now, use Home or Cmd/Ctrl+K to create the relevant Task or Date explicitly. No legacy Capture is written from this screen.

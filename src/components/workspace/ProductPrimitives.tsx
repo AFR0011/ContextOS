@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useDialogFocusTrap } from "@/lib/use-dialog-focus-trap";
 import { CalendarDays, Check, ChevronRight, Circle, Clock3, Search, X } from "lucide-react";
 
@@ -116,10 +116,17 @@ export function TaskRow({
       >
         {done ? <Check className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
       </button>
-      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <span className={`block break-words text-sm font-medium text-[var(--cos-text-strong)] [overflow-wrap:anywhere] ${done ? "line-through" : ""}`}>{title}</span>
-        {meta ? <span className="mt-0.5 block break-words text-xs text-[var(--cos-text-subtle)] [overflow-wrap:anywhere]">{meta}</span> : null}
-      </button>
+      {onOpen ? (
+        <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
+          <span className={`block break-words text-sm font-medium text-[var(--cos-text-strong)] [overflow-wrap:anywhere] ${done ? "line-through" : ""}`}>{title}</span>
+          {meta ? <span className="mt-0.5 block break-words text-xs text-[var(--cos-text-subtle)] [overflow-wrap:anywhere]">{meta}</span> : null}
+        </button>
+      ) : (
+        <div className="min-w-0 flex-1">
+          <span className={`block break-words text-sm font-medium text-[var(--cos-text-strong)] [overflow-wrap:anywhere] ${done ? "line-through" : ""}`}>{title}</span>
+          {meta ? <span className="mt-0.5 block break-words text-xs text-[var(--cos-text-subtle)] [overflow-wrap:anywhere]">{meta}</span> : null}
+        </div>
+      )}
     </div>
   );
 }
@@ -304,12 +311,20 @@ export function CommandPalette({
   onClose: () => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
   const dialogRef = useDialogFocusTrap({ open, onClose });
 
   useEffect(() => {
     if (!open) return;
     setActiveIndex(0);
   }, [open, query, items.length]);
+
+  useEffect(() => {
+    if (!open) return;
+    const active = resultsRef.current?.querySelector<HTMLElement>('[role="option"][aria-selected="true"]');
+    active?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex, items.length, open]);
+
 
   useEffect(() => {
     if (!open) return;
@@ -361,7 +376,7 @@ export function CommandPalette({
             className="h-12 min-w-0 flex-1 bg-transparent text-sm text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
           />
         </div>
-        <div className="max-h-[22rem] overflow-y-auto p-2" role="listbox" aria-label="Command palette results">
+        <div ref={resultsRef} className="max-h-[22rem] overflow-y-auto p-2" role="listbox" aria-label="Command palette results">
           {items.length ? items.map((item, index) => (
             <button
               key={item.id}

@@ -95,8 +95,8 @@ function SyncIndicator({
   }
 
   return (
-    <div data-testid="global-sync-indicator" role="status" aria-live="polite" aria-atomic="true" className={`rounded-xl border px-3 py-2.5 text-xs ${tone}`}>
-      <div className="flex items-center gap-2 font-semibold">
+    <div data-testid="global-sync-indicator" className={`rounded-xl border px-3 py-2.5 text-xs ${tone}`}>
+      <div role="status" aria-live="polite" aria-atomic="true" className="flex items-center gap-2 font-semibold">
         <Icon className={`h-3.5 w-3.5 shrink-0 ${sync.syncing ? "animate-spin" : ""}`} />
         <span>{syncStatusLabel(sync)}</span>
         {sync.pendingCount > 0 ? (

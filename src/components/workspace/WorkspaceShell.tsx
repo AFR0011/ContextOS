@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   Boxes,
@@ -173,10 +173,25 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
   const currentPath = localRouter.location.pathname;
   const { loading, sync, syncNow, forceRefreshFromServer } = useWorkspace();
   const { isDark, setTheme } = useContextOsTheme();
+  const mainRef = useRef<HTMLElement | null>(null);
+  const previousPathRef = useRef(currentPath);
   const navigationDialogRef = useDialogFocusTrap({
     open,
     onClose: () => setOpen(false)
   });
+
+  useEffect(() => {
+    if (previousPathRef.current === currentPath) return;
+    previousPathRef.current = currentPath;
+
+    const frame = window.requestAnimationFrame(() => {
+      const main = mainRef.current;
+      const heading = main?.querySelector<HTMLElement>("h1");
+      (heading ?? main)?.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [currentPath]);
 
   if (loading) {
     return (
@@ -209,6 +224,18 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
 
   return (
     <div className="flex min-h-screen bg-[var(--cos-bg)] text-[var(--cos-text)]">
+      <a
+        href="#workspace-main-content"
+        onClick={(event) => {
+          event.preventDefault();
+          const main = mainRef.current;
+          const heading = main?.querySelector<HTMLElement>("h1");
+          (heading ?? main)?.focus();
+        }}
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[110] focus:rounded-lg focus:bg-[var(--cos-bg-elevated)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[var(--cos-text-strong)] focus:shadow-[var(--cos-shadow-md)]"
+      >
+        Skip to main content
+      </a>
       <LogoutDialog open={logoutOpen} user={user} sync={sync} syncNow={syncNow} onClose={() => setLogoutOpen(false)} />
       <WorkspaceCommandPalette />
 
@@ -312,7 +339,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-0">
+      <main id="workspace-main-content" ref={mainRef} tabIndex={-1} className="min-w-0 flex-1 pb-[calc(4.25rem+env(safe-area-inset-bottom))] outline-none lg:pb-0">
         <header className="sticky top-0 z-20 flex h-[60px] items-center gap-3 border-b border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/88 px-4 backdrop-blur-xl lg:hidden">
           <button
             type="button"

@@ -110,7 +110,7 @@ export function AccountDeletionPanel({ user }: { user: PublicUser }) {
         </div>
 
         {error ? (
-          <p data-testid="account-delete-error" className="mt-4 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">
+          <p data-testid="account-delete-error" role="alert" className="mt-4 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">
             {error}
           </p>
         ) : null}
@@ -120,6 +120,7 @@ export function AccountDeletionPanel({ user }: { user: PublicUser }) {
           data-testid="account-delete-submit"
           onClick={() => void deleteAccount()}
           disabled={!ready}
+          aria-busy={busy}
           className="cos-btn mt-5 min-h-11 w-full justify-center bg-[var(--cos-danger)] px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Trash2 className="h-4 w-4" />

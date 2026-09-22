@@ -16,7 +16,7 @@ async function login(page: Page, email = DEMO_EMAIL, password = DEMO_PASSWORD) {
 async function localStateForEmail(page: Page, email: string) {
   return page.evaluate(async ({ databaseName, targetEmail }) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 2);
+      const request = indexedDB.open(databaseName, 3);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -47,7 +47,7 @@ async function localStateForEmail(page: Page, email: string) {
 async function seedPendingOutbox(page: Page, email: string) {
   return page.evaluate(async ({ databaseName, targetEmail }) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 2);
+      const request = indexedDB.open(databaseName, 3);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -65,18 +65,16 @@ async function seedPendingOutbox(page: Page, email: string) {
     }
 
     const createdAt = new Date().toISOString();
+    const noteId = `stage9-pending-note-${Date.now()}`;
     const mutation = {
       mutationId: `stage9-pending-${Date.now()}`,
-      entityType: "captures",
-      entityId: `stage9-pending-capture-${Date.now()}`,
+      entityType: "dailyNotes",
+      entityId: noteId,
       operation: "upsert",
       payload: {
-        id: `stage9-pending-capture-${Date.now()}`,
-        text: "Stage 9 pending logout probe",
-        status: "unprocessed",
-        type: "note",
-        parsedData: null,
-        convertedToId: null,
+        id: noteId,
+        localDate: "2026-09-22",
+        content: "Stage 9 pending logout probe",
         createdAt,
         updatedAt: createdAt
       },
@@ -98,7 +96,7 @@ async function seedPendingOutbox(page: Page, email: string) {
 async function seedOtherLocalUser(page: Page) {
   return page.evaluate(async (databaseName) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 2);
+      const request = indexedDB.open(databaseName, 3);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -106,17 +104,11 @@ async function seedOtherLocalUser(page: Page) {
     const email = `${id}@example.com`;
     const verifiedAt = new Date().toISOString();
     const workspace = {
-      domains: [],
+      areas: [],
       projects: [],
       tasks: [],
-      captures: [],
-      notes: [],
-      deadlines: [],
-      contextDates: [],
-      reviews: [],
+      dates: [],
       dailyNotes: [],
-      dashboardScratchpads: [],
-      dashboardPreferences: [],
       serverSyncedAt: verifiedAt
     };
     await new Promise<void>((resolve, reject) => {

@@ -71,7 +71,11 @@ async function writeWorkspace(tx: Tx, userId: string, workspace: PortableWorkspa
       createdAt: new Date(item.createdAt),
       updatedAt: new Date(item.updatedAt)
     };
-    await tx.area.upsert({ where: { id }, create: { id, ...data }, update: data });
+    await tx.area.upsert({
+      where: { id },
+      create: { id, ...data, revision: 1 },
+      update: { ...data, revision: { increment: 1 } }
+    });
   }
 
   for (const item of workspace.projects) {
@@ -85,7 +89,11 @@ async function writeWorkspace(tx: Tx, userId: string, workspace: PortableWorkspa
       createdAt: new Date(item.createdAt),
       updatedAt: new Date(item.updatedAt)
     };
-    await tx.project.upsert({ where: { id }, create: { id, ...data }, update: data });
+    await tx.project.upsert({
+      where: { id },
+      create: { id, ...data, revision: 1 },
+      update: { ...data, revision: { increment: 1 } }
+    });
   }
 
   for (const item of workspace.tasks) {
@@ -103,7 +111,11 @@ async function writeWorkspace(tx: Tx, userId: string, workspace: PortableWorkspa
       createdAt: new Date(item.createdAt),
       updatedAt: new Date(item.updatedAt)
     };
-    await tx.task.upsert({ where: { id }, create: { id, ...data }, update: data });
+    await tx.task.upsert({
+      where: { id },
+      create: { id, ...data, revision: 1 },
+      update: { ...data, revision: { increment: 1 } }
+    });
   }
 
   for (const item of workspace.dates) {
@@ -123,7 +135,11 @@ async function writeWorkspace(tx: Tx, userId: string, workspace: PortableWorkspa
       createdAt: new Date(item.createdAt),
       updatedAt: new Date(item.updatedAt)
     };
-    await tx.contextDate.upsert({ where: { id }, create: { id, ...data }, update: data });
+    await tx.contextDate.upsert({
+      where: { id },
+      create: { id, ...data, revision: 1 },
+      update: { ...data, revision: { increment: 1 } }
+    });
   }
 
   for (const item of workspace.dailyNotes) {
@@ -138,8 +154,14 @@ async function writeWorkspace(tx: Tx, userId: string, workspace: PortableWorkspa
       createdAt: new Date(item.createdAt),
       updatedAt: new Date(item.updatedAt)
     };
-    if (existing) await tx.dailyNote.update({ where: { id: existing.id }, data });
-    else await tx.dailyNote.create({ data: { id: mappedId, userId, ...data } });
+    if (existing) {
+      await tx.dailyNote.update({
+        where: { id: existing.id },
+        data: { ...data, revision: { increment: 1 } }
+      });
+    } else {
+      await tx.dailyNote.create({ data: { id: mappedId, userId, ...data, revision: 1 } });
+    }
   }
 }
 

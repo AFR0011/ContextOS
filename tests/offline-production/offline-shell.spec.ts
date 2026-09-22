@@ -76,10 +76,7 @@ async function activeProjectId(page: Page) {
     if (!response.ok) throw new Error(`bootstrap failed with ${response.status}`);
     const result = await response.json();
     const projects = result.data?.projects ?? [];
-    const project = projects.find(
-      (item: { status?: string; trashedAt?: string | null; archivedAt?: string | null }) =>
-        item.status === "active" && !item.trashedAt && !item.archivedAt
-    ) ?? projects.find((item: { trashedAt?: string | null }) => !item.trashedAt);
+    const project = projects.find((item: { state?: string }) => item.state === "active") ?? projects[0];
     if (!project?.id) throw new Error("No project is available for the offline dynamic-route check.");
     return project.id as string;
   });
@@ -91,7 +88,7 @@ async function activeAreaId(page: Page) {
     if (!response.ok) throw new Error(`bootstrap failed with ${response.status}`);
     const result = await response.json();
     const areas = result.data?.areas ?? [];
-    const area = areas.find((item: { archived?: boolean }) => !item.archived) ?? areas[0];
+    const area = areas.find((item: { state?: string }) => item.state === "active") ?? areas[0];
     if (!area?.id) throw new Error("No Area is available for the offline dynamic-route check.");
     return area.id as string;
   });
@@ -167,6 +164,96 @@ test("offline Daily Note edit survives hard reload with its queued mutation", as
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByLabel("Daily Notes")).toHaveValue(text);
   await expect.poll(() => offlineDailyNoteState(page, text, today)).toMatchObject({ hasDailyNote: true, pendingDailyNotes: 1 });
+});
+
+test("canonical Area mutation queues offline, survives reload, and drains after reconnect", async ({ page, context }) => {
+  await login(page);
+  await waitForOfflineReady(page);
+
+  const areaName = `Production offline Area ${Date.now()}`;
+  await page.goto("/areas");
+  await context.setOffline(true);
+
+  await page.getByRole("button", { name: "New Area", exact: true }).click();
+  await page.getByPlaceholder("Area name").fill(areaName);
+  await page.getByRole("button", { name: "Create Area", exact: true }).click();
+  await expect(page.getByText(areaName, { exact: true })).toBeVisible();
+
+  await expect.poll(async () => page.evaluate(async (expectedName) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("contextos-offline-v1", 3);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const users = await new Promise<Array<{ id: string; email: string }>>((resolve, reject) => {
+      const tx = db.transaction("users", "readonly");
+      const request = tx.objectStore("users").getAll();
+      request.onsuccess = () => resolve(request.result as Array<{ id: string; email: string }>);
+      request.onerror = () => reject(request.error);
+    });
+    const user = users.find((item) => item.email === "demo@contextos.local") ?? users[0];
+    if (!user) {
+      db.close();
+      return { present: false, pendingAreas: 0 };
+    }
+    const result = await new Promise<{ workspace: any; outbox: any[] }>((resolve, reject) => {
+      const tx = db.transaction(["workspaces", "outboxes"], "readonly");
+      const wr = tx.objectStore("workspaces").get(user.id);
+      const or = tx.objectStore("outboxes").get(user.id);
+      let workspace: any;
+      let outbox: any[] = [];
+      wr.onsuccess = () => { workspace = wr.result; };
+      wr.onerror = () => reject(wr.error);
+      or.onsuccess = () => { outbox = or.result ?? []; };
+      or.onerror = () => reject(or.error);
+      tx.oncomplete = () => resolve({ workspace, outbox });
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+    return {
+      present: Boolean(result.workspace?.areas?.some((area: { name: string }) => area.name === expectedName)),
+      pendingAreas: result.outbox.filter((mutation) => mutation.entityType === "areas").length
+    };
+  }, areaName)).toMatchObject({ present: true, pendingAreas: 1 });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByText(areaName, { exact: true })).toBeVisible();
+
+  await context.setOffline(false);
+  await expect.poll(async () => page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("contextos-offline-v1", 3);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const users = await new Promise<Array<{ id: string; email: string }>>((resolve, reject) => {
+      const tx = db.transaction("users", "readonly");
+      const request = tx.objectStore("users").getAll();
+      request.onsuccess = () => resolve(request.result as Array<{ id: string; email: string }>);
+      request.onerror = () => reject(request.error);
+    });
+    const user = users.find((item) => item.email === "demo@contextos.local") ?? users[0];
+    if (!user) {
+      db.close();
+      return -1;
+    }
+    const count = await new Promise<number>((resolve, reject) => {
+      const tx = db.transaction("outboxes", "readonly");
+      const request = tx.objectStore("outboxes").get(user.id);
+      request.onsuccess = () => resolve((request.result ?? []).length);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    return count;
+  }), { timeout: 20_000 }).toBe(0);
+
+  const serverArea = await page.evaluate(async (expectedName) => {
+    const response = await fetch("/api/bootstrap", { cache: "no-store" });
+    if (!response.ok) throw new Error(`bootstrap failed with ${response.status}`);
+    const result = await response.json();
+    return result.data.areas.find((area: { name: string }) => area.name === expectedName) ?? null;
+  }, areaName);
+  expect(serverArea?.state).toBe("active");
 });
 
 test("core workspace routes and a dynamic project cold-open and hard-refresh offline", async ({ page, context }) => {

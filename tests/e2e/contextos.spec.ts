@@ -290,6 +290,15 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   const daylineToggle = page.getByRole("button", { name: "Complete Review today's open work", exact: true });
   await expectMinTouchTarget(daylineToggle);
 
+  const openNavigation = page.getByRole("button", { name: "Open navigation", exact: true });
+  await expectMinTouchTarget(openNavigation);
+  await openNavigation.click();
+  await expectMinTouchTarget(page.getByRole("button", { name: "Close navigation", exact: true }));
+  await expectMinTouchTarget(page.getByRole("button", { name: /Switch to (dark|light) mode/ }));
+  await expectMinTouchTarget(page.getByRole("button", { name: "Log out", exact: true }));
+  await expectMinTouchTarget(page.getByTestId("global-refresh-from-server"));
+  await page.getByRole("button", { name: "Close navigation", exact: true }).click();
+
   const reducedMotionCss = readFileSync(new URL("../../src/app/globals.css", import.meta.url), "utf8");
   expect(reducedMotionCss).toContain("@media (prefers-reduced-motion: reduce)");
 
@@ -316,6 +325,25 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await page.goto("/projects");
   await expect(page.getByText(longProject, { exact: true }).first()).toBeVisible();
   await expectMinTouchTarget(page.getByRole("button", { name: `Archive ${longProject}`, exact: true }));
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/areas");
+  await page.getByText(longArea, { exact: true }).first().click();
+  const areaDetail = page.getByTestId("area-detail");
+  await expect(areaDetail).toBeVisible();
+  const projectRow = areaDetail.locator(".cos-entity-row").filter({ hasText: longProject }).first();
+  await expect(projectRow.getByText(longProject, { exact: true })).toBeVisible();
+  await expectMinTouchTarget(projectRow.getByRole("button", { name: "Archive", exact: true }));
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/settings");
+  const longFileName = `contextos-${"backup".repeat(45)}.json`;
+  await page.getByTestId("workspace-import-file").setInputFiles({
+    name: longFileName,
+    mimeType: "application/json",
+    buffer: Buffer.from("{}")
+  });
+  await expect(page.getByText(`Selected: ${longFileName}`, { exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 

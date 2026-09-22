@@ -283,6 +283,42 @@ test("mobile bottom navigation uses the simplified four-tab set", async ({ page 
   await expect(mobileNav.getByRole("button", { name: "Dates", exact: true })).toHaveCount(0);
 });
 
+test("mobile rows survive hostile long labels and task controls keep touch-sized hit areas", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await login(page);
+
+  const daylineToggle = page.getByRole("button", { name: "Complete Review today's open work", exact: true });
+  await expectMinTouchTarget(daylineToggle);
+
+  const reducedMotionCss = readFileSync(new URL("../../src/app/globals.css", import.meta.url), "utf8");
+  expect(reducedMotionCss).toContain("@media (prefers-reduced-motion: reduce)");
+
+  await page.goto("/areas");
+  const longArea = `Area-${"X".repeat(140)}`;
+  await page.getByRole("button", { name: "New Area", exact: true }).click();
+  await page.getByPlaceholder("Area name").fill(longArea);
+  await page.getByRole("button", { name: "Create Area", exact: true }).click();
+
+  await expect(page.getByText(longArea, { exact: true })).toBeVisible();
+  await expectMinTouchTarget(page.getByRole("button", { name: `Archive ${longArea}`, exact: true }));
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/projects");
+  await page.getByRole("button", { name: "New Project", exact: true }).click();
+  const longProject = `Project-${"Y".repeat(150)}`;
+  await page.getByPlaceholder("Project name").fill(longProject);
+  await page.getByPlaceholder("What outcome is this project trying to reach?").fill(`Objective ${"Z".repeat(220)}`);
+  await page.getByRole("button", { name: "Create Project", exact: true }).click();
+
+  await expect(page.getByRole("heading", { name: longProject, exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/projects");
+  await expect(page.getByText(longProject, { exact: true }).first()).toBeVisible();
+  await expectMinTouchTarget(page.getByRole("button", { name: `Archive ${longProject}`, exact: true }));
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+});
+
 test("project objective persists after reload", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();

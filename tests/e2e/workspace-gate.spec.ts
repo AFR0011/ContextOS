@@ -29,11 +29,10 @@ async function clearLocalIdentityAndWorkspace(page: Page) {
     });
 
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(["users", "workspaces", "outboxes", "kv"], "readwrite");
+      const tx = db.transaction(["users", "workspaces", "outboxes"], "readwrite");
       tx.objectStore("users").clear();
       tx.objectStore("workspaces").clear();
       tx.objectStore("outboxes").clear();
-      tx.objectStore("kv").clear();
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error ?? new Error("IndexedDB clear was aborted."));

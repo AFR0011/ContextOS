@@ -142,7 +142,7 @@ export default function HandoffPage() {
         {authState === "checking" ? <p role="status" className="text-sm text-[var(--cos-text-muted)]">Checking your sign-in before showing the private proposal...</p> : null}
         {authState === "error" ? (
           <>
-            <p role="alert" className="text-sm text-[var(--cos-danger-text)]">{authError}</p>
+            <p role="alert" className="break-words text-sm text-[var(--cos-danger-text)] [overflow-wrap:anywhere]">{authError}</p>
             <button type="button" onClick={() => window.location.reload()} className="cos-btn cos-btn-primary min-h-10 px-4 py-2 text-sm">Retry</button>
           </>
         ) : null}

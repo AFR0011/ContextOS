@@ -132,6 +132,43 @@ test("command palette exposes combobox ownership and active descendant state", a
   await expect(page.locator("#" + nextId)).toHaveAttribute("aria-selected", "true");
 });
 
+test("command palette stays inside a short mobile viewport and scrolls its results", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 400 });
+  await login(page);
+
+  await page.keyboard.press("Control+K");
+  const palette = page.getByTestId("command-palette");
+  await expect(palette).toBeVisible();
+
+  const metrics = await palette.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const results = element.querySelector<HTMLElement>("#command-palette-results");
+    return {
+      top: rect.top,
+      bottom: rect.bottom,
+      viewportHeight: window.innerHeight,
+      resultScrollHeight: results?.scrollHeight ?? 0,
+      resultClientHeight: results?.clientHeight ?? 0
+    };
+  });
+
+  expect(metrics.top).toBeGreaterThanOrEqual(0);
+  expect(metrics.bottom).toBeLessThanOrEqual(metrics.viewportHeight);
+  expect(metrics.resultScrollHeight).toBeGreaterThan(metrics.resultClientHeight);
+
+  const results = palette.getByRole("listbox", { name: "Command palette results" });
+  const options = results.getByRole("option");
+  await expect(options.last()).toBeAttached();
+  for (let index = 1; index < await options.count(); index += 1) {
+    await page.keyboard.press("ArrowDown");
+  }
+  await expect.poll(async () => {
+    const listBox = await results.boundingBox();
+    const active = await palette.locator('[role="option"][aria-selected="true"]').boundingBox();
+    return Boolean(listBox && active && active.y >= listBox.y && active.y + active.height <= listBox.y + listBox.height + 1);
+  }).toBe(true);
+});
+
 test("canonical quick-entry fields expose accessible names instead of placeholder-only controls", async ({ page }) => {
   await login(page);
 

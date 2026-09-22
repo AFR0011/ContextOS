@@ -158,6 +158,20 @@ export async function writeLocalOutbox(user: LocalVerifiedUser, outbox: QueuedMu
   });
 }
 
+export async function replaceLocalWorkspaceState(
+  user: LocalVerifiedUser,
+  workspace: WorkspaceData,
+  outbox: QueuedMutation[] = []
+) {
+  await withUserDb(user, async (db) => {
+    const tx = db.transaction([WORKSPACE_STORE, OUTBOX_STORE], "readwrite");
+    const done = transactionDone(tx);
+    tx.objectStore(WORKSPACE_STORE).put(workspace, user.id);
+    tx.objectStore(OUTBOX_STORE).put(outbox, user.id);
+    await done;
+  });
+}
+
 function replaceRecord<T extends { id: string }>(items: T[], record: T) {
   const exists = items.some((item) => item.id === record.id);
   return exists ? items.map((item) => (item.id === record.id ? record : item)) : [record, ...items];

@@ -199,6 +199,34 @@ if (!screenshotBaseline.includes("npm run capture:c10:visual") ||
 }
 
 
+const buildTsconfig = fs.readFileSync("tsconfig.build.json", "utf8");
+const nextConfigSource = fs.readFileSync("next.config.ts", "utf8");
+const rootTsconfig = fs.readFileSync("tsconfig.json", "utf8");
+
+if (!nextConfigSource.includes('tsconfigPath: "tsconfig.build.json"')) {
+  errors.push("Next production build must use tsconfig.build.json.");
+}
+for (const required of ['"src/**/*.ts"', '"src/**/*.tsx"', '".next/types/**/*.ts"']) {
+  if (!buildTsconfig.includes(required)) {
+    errors.push(`Production build tsconfig is missing required include ${required}.`);
+  }
+}
+for (const excluded of ['"tests"', '"scripts"', '"docs"', '"audits"', '"prisma"']) {
+  if (!buildTsconfig.includes(excluded)) {
+    errors.push(`Production build tsconfig is missing non-runtime exclusion ${excluded}.`);
+  }
+}
+if (!rootTsconfig.includes('"**/*.ts"') || !rootTsconfig.includes('"**/*.tsx"')) {
+  errors.push("Repository-wide tsconfig must remain broad so npm run typecheck still checks tests and scripts.");
+}
+if (packageJson.scripts?.["typecheck"] !== "tsc --noEmit") {
+  errors.push("Repository-wide typecheck contract changed unexpectedly.");
+}
+if (packageJson.scripts?.["typecheck:build"] !== "tsc --noEmit -p tsconfig.build.json") {
+  errors.push("Production build typecheck command is missing or changed unexpectedly.");
+}
+
+
 if (errors.length) {
   for (const error of errors) console.error(`FAIL ${error}`);
   process.exit(1);

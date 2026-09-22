@@ -126,6 +126,19 @@ test("command palette and create sheet contain keyboard focus and restore it on 
   await page.keyboard.press("Tab");
   await expect(searchInput).toBeFocused();
 
+  const optionCount = await options.count();
+  for (let index = 1; index < Math.min(optionCount, 13); index += 1) {
+    await page.keyboard.press("ArrowDown");
+  }
+  const listbox = palette.getByRole("listbox", { name: "Command palette results" });
+  const activeOption = palette.locator('[role="option"][aria-selected="true"]');
+  const listBox = await listbox.boundingBox();
+  const activeBox = await activeOption.boundingBox();
+  expect(listBox).not.toBeNull();
+  expect(activeBox).not.toBeNull();
+  expect(activeBox!.y).toBeGreaterThanOrEqual(listBox!.y);
+  expect(activeBox!.y + activeBox!.height).toBeLessThanOrEqual(listBox!.y + listBox!.height + 1);
+
   await searchInput.fill("New Task");
   await page.keyboard.press("Enter");
 

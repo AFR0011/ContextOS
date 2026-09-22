@@ -90,7 +90,7 @@ async function activeAreaId(page: Page) {
     const response = await fetch("/api/bootstrap", { cache: "no-store" });
     if (!response.ok) throw new Error(`bootstrap failed with ${response.status}`);
     const result = await response.json();
-    const areas = result.data?.domains ?? [];
+    const areas = result.data?.areas ?? [];
     const area = areas.find((item: { archived?: boolean }) => !item.archived) ?? areas[0];
     if (!area?.id) throw new Error("No Area is available for the offline dynamic-route check.");
     return area.id as string;

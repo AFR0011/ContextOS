@@ -559,45 +559,147 @@ test("global server refresh replaces stale local workspace after external reset"
   await expect(page.getByTestId("pending-count")).toHaveText("0");
 });
 
-test("stale sync mutations return conflict warnings", async ({ page }) => {
+test("revision conflicts reject stale mutation chains regardless of client clock", async ({ page }) => {
   await login(page);
   const bootstrap = await page.request.get("/api/bootstrap");
   expect(bootstrap.ok()).toBeTruthy();
   const workspace = await bootstrap.json();
   const project = workspace.data.projects[0];
-  const mutationId = `stale-${Date.now()}`;
+  expect(project.revision).toBeGreaterThan(0);
 
-  const response = await page.request.post("/api/sync", {
+  const acceptedAt = new Date().toISOString();
+  const acceptedId = `revision-accepted-${Date.now()}`;
+  const accepted = await page.request.post("/api/sync", {
+    data: {
+      mutations: [{
+        mutationId: acceptedId,
+        entityType: "projects",
+        entityId: project.id,
+        operation: "upsert",
+        payload: {
+          ...project,
+          name: "Server revision wins",
+          updatedAt: acceptedAt,
+          revision: project.revision + 1
+        },
+        createdAt: acceptedAt,
+        baseServerSyncedAt: workspace.data.serverSyncedAt,
+        baseRevision: project.revision
+      }]
+    }
+  });
+  expect(accepted.status()).toBe(200);
+  const acceptedBody = await accepted.json();
+  expect(acceptedBody.warnings ?? []).toHaveLength(0);
+
+  const future = new Date(Date.now() + 7 * 86_400_000).toISOString();
+  const staleId = `revision-stale-${Date.now()}`;
+  const dependentId = `revision-dependent-${Date.now()}`;
+  const stale = await page.request.post("/api/sync", {
     data: {
       mutations: [
         {
-          mutationId,
+          mutationId: staleId,
           entityType: "projects",
           entityId: project.id,
           operation: "upsert",
           payload: {
             ...project,
-            latestStatus: "This stale update should not overwrite server state.",
-            updatedAt: "2000-01-01T00:00:00.000Z"
+            name: "Future clock must not win",
+            updatedAt: future,
+            revision: project.revision + 1
           },
-          createdAt: new Date().toISOString()
+          createdAt: future,
+          baseServerSyncedAt: workspace.data.serverSyncedAt,
+          baseRevision: project.revision
+        },
+        {
+          mutationId: dependentId,
+          entityType: "projects",
+          entityId: project.id,
+          operation: "upsert",
+          payload: {
+            ...project,
+            name: "Dependent edit must not leapfrog conflict",
+            updatedAt: future,
+            revision: project.revision + 2
+          },
+          createdAt: future,
+          baseServerSyncedAt: workspace.data.serverSyncedAt,
+          baseRevision: project.revision + 1
         }
       ]
     }
   });
-  expect(response.ok()).toBeTruthy();
-  const result = await response.json();
-  expect(result.appliedMutationIds).toContain(mutationId);
-  expect(result.warnings).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({
-        mutationId,
-        entityType: "projects",
-        entityId: project.id,
-        reason: "stale"
-      })
-    ])
-  );
+  expect(stale.status()).toBe(200);
+  const result = await stale.json();
+  expect(result.appliedMutationIds).toEqual(expect.arrayContaining([staleId, dependentId]));
+  expect(result.warnings).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      mutationId: staleId,
+      reason: "stale",
+      serverRevision: project.revision + 1,
+      baseRevision: project.revision
+    }),
+    expect.objectContaining({
+      mutationId: dependentId,
+      reason: "stale"
+    })
+  ]));
+
+  const after = await page.request.get("/api/bootstrap");
+  const afterWorkspace = await after.json();
+  const afterProject = afterWorkspace.data.projects.find((item: { id: string }) => item.id === project.id);
+  expect(afterProject.name).toBe("Server revision wins");
+  expect(afterProject.revision).toBe(project.revision + 1);
+});
+
+test("sequential queued edits advance server revisions in order", async ({ page }) => {
+  await login(page);
+  const bootstrap = await page.request.get("/api/bootstrap");
+  const workspace = await bootstrap.json();
+  const area = workspace.data.areas[0];
+  const now = new Date().toISOString();
+
+  const firstId = `revision-chain-1-${Date.now()}`;
+  const secondId = `revision-chain-2-${Date.now()}`;
+  const response = await page.request.post("/api/sync", {
+    data: {
+      mutations: [
+        {
+          mutationId: firstId,
+          entityType: "areas",
+          entityId: area.id,
+          operation: "upsert",
+          payload: { ...area, name: "Revision chain first", updatedAt: now, revision: area.revision + 1 },
+          createdAt: now,
+          baseServerSyncedAt: workspace.data.serverSyncedAt,
+          baseRevision: area.revision
+        },
+        {
+          mutationId: secondId,
+          entityType: "areas",
+          entityId: area.id,
+          operation: "upsert",
+          payload: { ...area, name: "Revision chain second", updatedAt: now, revision: area.revision + 2 },
+          createdAt: now,
+          baseServerSyncedAt: workspace.data.serverSyncedAt,
+          baseRevision: area.revision + 1
+        }
+      ]
+    }
+  });
+
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body.warnings ?? []).toHaveLength(0);
+  expect(body.appliedMutationIds).toEqual(expect.arrayContaining([firstId, secondId]));
+
+  const after = await page.request.get("/api/bootstrap");
+  const afterWorkspace = await after.json();
+  const afterArea = afterWorkspace.data.areas.find((item: { id: string }) => item.id === area.id);
+  expect(afterArea.name).toBe("Revision chain second");
+  expect(afterArea.revision).toBe(area.revision + 2);
 });
 
 test("sync rejects oversized payloads and cross-user record ids", async ({ page }) => {

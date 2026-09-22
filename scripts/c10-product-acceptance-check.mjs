@@ -74,6 +74,38 @@ if (!/historical \*\*Stage 10\*\*/i.test(current) || !/C10 remains open/i.test(c
   errors.push("C10 documentation must distinguish current C10 from historical Stage 10 and remain open while pending.");
 }
 
+const syncServer = fs.readFileSync("src/lib/sync-server.ts", "utf8");
+const syncRoute = fs.readFileSync("src/app/api/sync/route.ts", "utf8");
+const restoreBarrier = fs.readFileSync("src/lib/restore-barrier.ts", "utf8");
+const localDb = fs.readFileSync("src/lib/local-db.ts", "utf8");
+const schema = fs.readFileSync("prisma/schema.prisma", "utf8");
+const revisionMigration = fs.readFileSync("prisma/migrations/20260922190000_server_record_revisions/migration.sql", "utf8");
+
+if (!syncRoute.includes("baseServerSyncedAt") || !restoreBarrier.includes("mutation.baseServerSyncedAt")) {
+  errors.push("C10 restore anti-resurrection must use the server snapshot observed by the queued mutation.");
+}
+if (!syncRoute.includes("baseRevision") || !syncServer.includes("shouldApplyRevision")) {
+  errors.push("C10 existing-record conflicts must use server-owned revision preconditions.");
+}
+if (!syncServer.includes("updateMany") || !syncServer.includes("revision: { increment: 1 }") ||
+    !syncServer.includes("revisionConflictAfterFailedCas")) {
+  errors.push("C10 revision updates must remain atomic database compare-and-swap operations.");
+}
+for (const model of ["Area", "Project", "Task", "ContextDate", "DailyNote"]) {
+  const block = schema.match(new RegExp(`model ${model} \\\\{([\\\\s\\\\S]*?)\\\\n\\\\}`, "m"))?.[1] ?? "";
+  if (!/revision\\s+Int\\s+@default\\(1\\)/.test(block)) {
+    errors.push(`${model} is missing the server-owned revision field.`);
+  }
+}
+for (const table of ["Area", "Project", "Task", "ContextDate", "DailyNote"]) {
+  if (!revisionMigration.includes(`ALTER TABLE "${table}" ADD COLUMN "revision"`)) {
+    errors.push(`Revision migration is missing ${table}.`);
+  }
+}
+if (!localDb.includes("const DB_VERSION = 4") || !localDb.includes("oldVersion < 4")) {
+  errors.push("C10 revision protocol requires the IndexedDB v4 clean boundary.");
+}
+
 const workflowTest = fs.readFileSync("tests/e2e/c10-product-workflow.spec.ts", "utf8");
 for (const [label, literal] of [
   ["understand the day", "Review today's open work"],

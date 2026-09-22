@@ -652,6 +652,42 @@ The production offline suite also contained two stale explicit IndexedDB v3 open
 
 No screenshot evidence is considered accepted until this pipeline runs successfully and a human reviews the generated images.
 
+## C-00.8 — Production browser matrix findings
+
+Status: **remediated in source; rerun in progress**
+
+The first current-candidate production browser run passed 21/26 executed tests and exposed five failures.
+
+### C-PROD-01 — stale IndexedDB v3 test helpers
+
+Three WorkspaceGate scenarios explicitly opened IndexedDB version 3 after the approved v4 clean boundary. They failed with `VersionError` before exercising the intended behavior.
+
+The WorkspaceGate helpers now open v4. The same sweep also found and fixed a v3 open in the local-first characterization helper.
+
+These are assurance defects, not product-state defects.
+
+### C-PROD-02 — authenticated production characterization used the wrong request surface
+
+The local-first convergence characterization logged in through the real browser, then called demo reset/bootstrap through Playwright's separate API request surface. In the optimized production runtime this returned 401 while browser-origin authenticated requests remained valid.
+
+The characterization now performs those authenticated operations through same-origin browser `fetch`, matching the actual HttpOnly-session path used by the product.
+
+No authentication/session implementation was weakened.
+
+### C-PROD-03 — Area detail lacked a physical App Router route
+
+The production offline matrix proved a real asymmetry:
+- cold offline `/projects/:id` opened and hard-refreshed successfully;
+- cold offline `/areas/:id` returned the cached shell but never reached Area Detail.
+
+Projects had a physical `src/app/(workspace)/projects/[id]/page.tsx` handoff route; Areas did not.
+
+Added `src/app/(workspace)/areas/[id]/page.tsx` with the same `WorkspaceRouteHandoff` boundary. The local workspace router remains the canonical client renderer, while Next now has an equivalent direct-navigation route for Area detail.
+
+### Evidence boundary
+
+The fixes above are covered by structural C10 guards and are being rerun through the full production matrix. They are not considered passed until the browser rerun confirms them.
+
 ## C-01 — Primary surface rendered inspection
 
 Status: **Pending runnable current candidate**

@@ -176,6 +176,11 @@ const logoutDialog = fs.readFileSync("src/components/workspace/LogoutDialog.tsx"
 const authForm = fs.readFileSync("src/components/AuthForm.tsx", "utf8");
 const workspaceGate = fs.readFileSync("src/components/workspace/WorkspaceGate.tsx", "utf8");
 const handoffPage = fs.readFileSync("src/app/handoff/page.tsx", "utf8");
+const visualStressSpec = fs.readFileSync("tests/e2e/c10-visual-stress.spec.ts", "utf8");
+const visualEmptySpec = fs.readFileSync("tests/e2e/c10-visual-empty.spec.ts", "utf8");
+const visualOfflineSpec = fs.readFileSync("tests/offline-production/c10-visual-offline.spec.ts", "utf8");
+const offlineProductionSpec = fs.readFileSync("tests/offline-production/offline-shell.spec.ts", "utf8");
+const visualCaptureRunner = fs.readFileSync("scripts/capture-c10-visual.mjs", "utf8");
 const visualBaselineSpec = fs.readFileSync("tests/e2e/c10-visual-baseline.spec.ts", "utf8");
 const screenshotBaseline = fs.readFileSync("docs/c10/SCREENSHOT_BASELINE.md", "utf8");
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -211,6 +216,35 @@ if (packageJson.scripts?.["capture:c10:visual"] !== "node scripts/capture-c10-vi
 if (!screenshotBaseline.includes("npm run capture:c10:visual") ||
     !screenshotBaseline.includes("Current render-evidence blocker")) {
   errors.push("C10 screenshot documentation must retain the executable capture command and current render-evidence boundary.");
+}
+if (!visualStressSpec.includes("320x720 hostile content") ||
+    !visualStressSpec.includes('for (const theme of ["light", "dark"] as const)')) {
+  errors.push("C10 visual evidence must retain 320x720 hostile-content coverage in both themes.");
+}
+for (const marker of ["empty-desktop-light", "empty-desktop-dark", "empty-mobile-light", "empty-mobile-dark"]) {
+  if (!visualEmptySpec.includes(marker)) {
+    errors.push(`C10 clean-account visual baseline is missing: ${marker}`);
+  }
+}
+for (const marker of ["01-online-ready", "02-offline", "03-offline-pending", "04-reconnecting", "05-reconnected"]) {
+  if (!visualOfflineSpec.includes(marker)) {
+    errors.push(`C10 production offline visual coverage is missing: ${marker}`);
+  }
+}
+if (visualOfflineSpec.includes('indexedDB.open("contextos-offline-v1", 3)') ||
+    !visualOfflineSpec.includes('indexedDB.open("contextos-offline-v1", 4)')) {
+  errors.push("Production offline visual evidence must use the current IndexedDB v4 contract.");
+}
+if (offlineProductionSpec.includes('indexedDB.open("contextos-offline-v1", 3)') ||
+    !offlineProductionSpec.includes('indexedDB.open("contextos-offline-v1", 4)')) {
+  errors.push("Production offline behavioral coverage must use the current IndexedDB v4 contract.");
+}
+if (!visualCaptureRunner.includes('run(npm, ["run", "build"])') ||
+    !visualCaptureRunner.includes("c10-visual-stress.spec.ts") ||
+    !visualCaptureRunner.includes("c10-visual-empty.spec.ts") ||
+    !visualCaptureRunner.includes("c10-visual-offline.spec.ts") ||
+    !visualCaptureRunner.includes("playwright.production.config.ts")) {
+  errors.push("C10 visual capture runner must build first and execute standard, hostile, empty-account, and production-offline evidence.");
 }
 
 

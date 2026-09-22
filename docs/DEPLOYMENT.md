@@ -72,7 +72,7 @@ printf '%s' "$CONTEXTOS_PASSWORD" | npm run account:create -- user@example.com -
 unset CONTEXTOS_PASSWORD
 ```
 
-The operator create path refuses to overwrite an existing account and creates only the empty production workspace scaffold. It does not create demo Areas, projects, tasks, captures, or resources.
+The operator create path refuses to overwrite an existing account and creates only the empty production workspace scaffold. It does not create demo Areas, Projects, Tasks, Dates, or Daily Notes.
 
 Recover a forgotten password with:
 

@@ -183,6 +183,7 @@ const visualEmptySpec = fs.readFileSync("tests/e2e/c10-visual-empty.spec.ts", "u
 const visualOfflineSpec = fs.readFileSync("tests/offline-production/c10-visual-offline.spec.ts", "utf8");
 const offlineProductionSpec = fs.readFileSync("tests/offline-production/offline-shell.spec.ts", "utf8");
 const visualCaptureRunner = fs.readFileSync("scripts/capture-c10-visual.mjs", "utf8");
+const ciWorkflow = fs.readFileSync(".github/workflows/ci.yml", "utf8");
 const visualBaselineSpec = fs.readFileSync("tests/e2e/c10-visual-baseline.spec.ts", "utf8");
 const screenshotBaseline = fs.readFileSync("docs/c10/SCREENSHOT_BASELINE.md", "utf8");
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -247,6 +248,16 @@ if (!visualCaptureRunner.includes('run(npm, ["run", "build"])') ||
     !visualCaptureRunner.includes("c10-visual-offline.spec.ts") ||
     !visualCaptureRunner.includes("playwright.production.config.ts")) {
   errors.push("C10 visual capture runner must build first and execute standard, hostile, empty-account, and production-offline evidence.");
+}
+if (!visualCaptureRunner.includes("--output=test-results/c10-production") ||
+    !visualCaptureRunner.includes("--output=test-results/c10-standard")) {
+  errors.push("C10 visual capture runner must keep production and standard artifacts in separate output directories.");
+}
+if (!ciWorkflow.includes("Capture C10 visual audit evidence") ||
+    !ciWorkflow.includes("Upload C10 visual audit evidence") ||
+    !ciWorkflow.includes("test-results/c10-production/**/*.png") ||
+    !ciWorkflow.includes("test-results/c10-standard/**/*.png")) {
+  errors.push("C10 CI must capture and upload rendered visual evidence for the audit branch.");
 }
 
 

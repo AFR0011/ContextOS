@@ -16,6 +16,26 @@ async function login(page: Page) {
   await expect(page.getByTestId("home-view")).toBeVisible();
 }
 
+test("skip link and local route changes move focus into the new main view", async ({ page }) => {
+  await login(page);
+
+  const skip = page.getByRole("link", { name: "Skip to main content", exact: true });
+  await skip.focus();
+  await expect(skip).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Home", exact: true })).toBeFocused();
+
+  const projects = page.getByTestId("workspace-primary-nav").getByRole("button", { name: "Projects", exact: true });
+  await projects.click();
+  await expect(page).toHaveURL(/\/projects$/);
+  await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeFocused();
+
+  const search = page.getByTestId("workspace-primary-nav").getByRole("button", { name: "Search", exact: true });
+  await search.click();
+  await expect(page).toHaveURL(/\/search$/);
+  await expect(page.getByRole("heading", { name: "Search", exact: true })).toBeFocused();
+});
+
 test("mobile navigation behaves as a modal keyboard drawer and restores focus", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
@@ -138,7 +158,7 @@ test("filter, disclosure, and Search selection state is exposed semantically", a
   await expect(result).toHaveAttribute("aria-pressed", "false");
   await result.click();
   await expect(result).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("status")).toContainText(/search result/);
+  await expect(page.getByRole("status").filter({ hasText: /search result/ })).toBeVisible();
 });
 
 test("Daily Note autosave and password validation expose non-visual state", async ({ page }) => {

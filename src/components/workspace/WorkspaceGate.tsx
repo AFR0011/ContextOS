@@ -150,7 +150,7 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
 
   if (state.status === "checking") {
     return (
-      <main className="grid min-h-screen place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
+      <main className="grid min-h-dvh place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
         <section data-testid="workspace-gate-checking" role="status" aria-live="polite" aria-atomic="true" aria-busy="true" className="cos-surface flex w-full max-w-md items-center gap-3 p-5">
           <LoaderCircle className="h-5 w-5 animate-spin text-[var(--cos-primary)]" />
           <div>
@@ -164,7 +164,7 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
 
   const offline = typeof navigator !== "undefined" && !navigator.onLine;
   return (
-    <main className="grid min-h-screen place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
+    <main className="grid min-h-dvh place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
       <section data-testid="workspace-gate-blocked" className="cos-surface w-full max-w-lg space-y-4 p-6">
         <div role="status" aria-live="polite" aria-atomic="true" className="flex items-start gap-3">
           {offline ? (

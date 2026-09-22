@@ -230,6 +230,7 @@ test("replace import round-trips the canonical workspace and blocks pre-restore 
 
   const stillChanged = await bootstrap(page.request);
   expect(stillChanged.areas.find((item: any) => item.id === area.id)?.name).not.toBe(area.name);
+  const preRestoreBaseline = stillChanged.serverSyncedAt;
 
   const restore = await page.request.post("/api/portability/import", {
     data: {
@@ -246,6 +247,7 @@ test("replace import round-trips the canonical workspace and blocks pre-restore 
   expect(normalizeWorkspace(workspaceOnly(restored))).toEqual(normalizeWorkspace(bundle.workspace));
   assertRelationships(restored);
 
+  const futureClientTime = new Date(Date.now() + 86_400_000).toISOString();
   const staleMutationId = `pre-restore-stale-${Date.now()}`;
   const stale = await page.request.post("/api/sync", {
     data: {
@@ -257,9 +259,10 @@ test("replace import round-trips the canonical workspace and blocks pre-restore 
         payload: {
           ...area,
           name: "This queued edit must not resurrect",
-          updatedAt: new Date(Date.now() + 86_400_000).toISOString()
+          updatedAt: futureClientTime
         },
-        createdAt: bundle.exportedAt
+        createdAt: futureClientTime,
+        baseServerSyncedAt: preRestoreBaseline
       }]
     }
   });
@@ -272,6 +275,33 @@ test("replace import round-trips the canonical workspace and blocks pre-restore 
 
   const afterStale = await bootstrap(page.request);
   expect(afterStale.areas.find((item: any) => item.id === area.id)?.name).toBe(area.name);
+
+  const missingBaselineMutationId = `pre-restore-missing-baseline-${Date.now()}`;
+  const missingBaseline = await page.request.post("/api/sync", {
+    data: {
+      mutations: [{
+        mutationId: missingBaselineMutationId,
+        entityType: "areas",
+        entityId: area.id,
+        operation: "upsert",
+        payload: {
+          ...area,
+          name: "Missing baseline must fail closed after restore",
+          updatedAt: futureClientTime
+        },
+        createdAt: futureClientTime
+      }]
+    }
+  });
+  expect(missingBaseline.status()).toBe(200);
+  const missingBaselineBody = await missingBaseline.json();
+  expect(missingBaselineBody.appliedMutationIds).toContain(missingBaselineMutationId);
+  expect(missingBaselineBody.warnings).toEqual(expect.arrayContaining([
+    expect.objectContaining({ mutationId: missingBaselineMutationId, reason: "stale" })
+  ]));
+
+  const afterMissingBaseline = await bootstrap(page.request);
+  expect(afterMissingBaseline.areas.find((item: any) => item.id === area.id)?.name).toBe(area.name);
 });
 
 test("replace import into another account remaps foreign ids while preserving canonical relationships", async ({ page }) => {

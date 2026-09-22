@@ -19,7 +19,7 @@ export function PageHeader({
     <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {eyebrow ? <p className="cos-kicker">{eyebrow}</p> : null}
-        <h1 className="cos-page-title mt-1 break-words [overflow-wrap:anywhere]">{title}</h1>
+        <h1 tabIndex={-1} className="cos-page-title mt-1 break-words outline-none [overflow-wrap:anywhere]">{title}</h1>
         {description ? <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--cos-text-muted)]">{description}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}

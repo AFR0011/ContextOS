@@ -1,15 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Archive, FolderKanban, Plus, RotateCcw } from "lucide-react";
 import { EmptyState, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
 import { useWorkspace } from "@/lib/client-store";
-import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
-import type { Domain } from "@/lib/types";
+import type { Area } from "@/lib/types";
 
-function areaName(domains: Domain[], areaId: string) {
-  return domains.find((area) => area.id === areaId)?.name ?? "Unknown area";
+function areaName(areas: Area[], areaId: string) {
+  return areas.find((area) => area.id === areaId)?.name ?? "Unknown area";
 }
 
 function ProjectRow({
@@ -72,44 +71,43 @@ function ProjectRow({
 export function ProjectsView() {
   const router = useRouter();
   const { data, addProject, updateProject } = useWorkspace();
-  const canonical = useMemo(() => adaptLegacyWorkspace(data).workspace, [data]);
   const [showNew, setShowNew] = useState(false);
   const [name, setName] = useState("");
-  const [domainId, setDomainId] = useState("");
+  const [areaId, setAreaId] = useState("");
   const [objective, setObjective] = useState("");
 
-  const activeDomains = data.domains.filter((domain) => !domain.archived);
-  const activeProjects = canonical.projects.filter((project) => project.state === "active");
-  const archivedProjects = canonical.projects.filter((project) => project.state === "archived");
+  const activeAreas = data.areas.filter((area) => area.state === "active");
+  const activeProjects = data.projects.filter((project) => project.state === "active");
+  const archivedProjects = data.projects.filter((project) => project.state === "archived");
 
   function openTaskCount(projectId: string) {
-    return canonical.tasks.filter(
+    return data.tasks.filter(
       (task) => task.state === "open" && task.parent.type === "project" && task.parent.projectId === projectId
     ).length;
   }
 
   function createProject() {
-    const chosenDomain = domainId || activeDomains[0]?.id;
+    const chosenArea = areaId || activeAreas[0]?.id;
     const trimmedName = name.trim();
-    if (!trimmedName || !chosenDomain) return;
+    if (!trimmedName || !chosenArea) return;
     const id = addProject({
       name: trimmedName,
-      domainId: chosenDomain,
-      currentObjective: objective.trim()
+      areaId: chosenArea,
+      objective: objective.trim()
     });
     setName("");
     setObjective("");
-    setDomainId(chosenDomain);
+    setAreaId(chosenArea);
     setShowNew(false);
     router.push(`/projects/${id}`);
   }
 
   function archiveProject(projectId: string) {
-    updateProject(projectId, { status: "archived", archivedAt: new Date().toISOString() });
+    updateProject(projectId, { state: "archived" });
   }
 
   function restoreProject(projectId: string) {
-    updateProject(projectId, { status: "active", archivedAt: null });
+    updateProject(projectId, { state: "active" });
   }
 
   return (
@@ -122,7 +120,7 @@ export function ProjectsView() {
           <button
             type="button"
             onClick={() => setShowNew(true)}
-            disabled={!activeDomains.length}
+            disabled={!activeAreas.length}
             className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50"
           >
             <Plus className="h-4 w-4" /> New Project
@@ -146,11 +144,11 @@ export function ProjectsView() {
             <label className="space-y-1">
               <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Area</span>
               <select
-                value={domainId || activeDomains[0]?.id || ""}
-                onChange={(event) => setDomainId(event.target.value)}
+                value={areaId || activeAreas[0]?.id || ""}
+                onChange={(event) => setAreaId(event.target.value)}
                 className="cos-input w-full px-3 py-2 text-sm"
               >
-                {activeDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
+                {activeAreas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}
               </select>
             </label>
           </div>
@@ -175,7 +173,7 @@ export function ProjectsView() {
         </section>
       ) : null}
 
-      {!activeDomains.length ? (
+      {!activeAreas.length ? (
         <div className="mb-6">
           <EmptyState
             title="No active Areas"
@@ -192,7 +190,7 @@ export function ProjectsView() {
               <ProjectRow
                 key={project.id}
                 name={project.name}
-                area={areaName(data.domains, project.areaId)}
+                area={areaName(data.areas, project.areaId)}
                 objective={project.objective}
                 taskCount={openTaskCount(project.id)}
                 onOpen={() => router.push(`/projects/${project.id}`)}
@@ -212,7 +210,7 @@ export function ProjectsView() {
               <ProjectRow
                 key={project.id}
                 name={project.name}
-                area={areaName(data.domains, project.areaId)}
+                area={areaName(data.areas, project.areaId)}
                 objective={project.objective}
                 taskCount={openTaskCount(project.id)}
                 archived

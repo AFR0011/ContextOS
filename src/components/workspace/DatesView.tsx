@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
 import type { ContextDate as CanonicalDate, ContextDateKind } from "@/lib/canonical-domain";
@@ -138,6 +138,7 @@ export function DatesView() {
   const [endTime, setEndTime] = useState("");
   const [details, setDetails] = useState("");
   const [parent, setParent] = useState("");
+  const addDateTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const projects = canonical.projects;
   const areas = canonical.areas;
@@ -166,6 +167,12 @@ export function DatesView() {
     setEndTime("");
     setDetails("");
     setShowAdd(false);
+    window.requestAnimationFrame(() => addDateTriggerRef.current?.focus());
+  }
+
+  function cancelDateCreation() {
+    setShowAdd(false);
+    window.requestAnimationFrame(() => addDateTriggerRef.current?.focus());
   }
 
   const renderGroup = (items: CanonicalDate[], empty: string) =>
@@ -189,7 +196,18 @@ export function DatesView() {
         eyebrow="Time"
         title="Dates"
         description="Events and external deadlines. Task planning remains separate."
-        action={<button type="button" onClick={() => setShowAdd(true)} className="cos-btn cos-btn-primary px-4 py-2 text-sm"><Plus className="h-4 w-4" /> Add Date</button>}
+        action={
+          <button
+            ref={addDateTriggerRef}
+            type="button"
+            onClick={() => setShowAdd(true)}
+            aria-expanded={showAdd}
+            aria-controls="context-date-create"
+            className="cos-btn cos-btn-primary px-4 py-2 text-sm"
+          >
+            <Plus className="h-4 w-4" /> Add Date
+          </button>
+        }
       />
 
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Date filters">
@@ -201,7 +219,7 @@ export function DatesView() {
       </div>
 
       {showAdd ? (
-        <section className="cos-surface mb-8 p-4" data-testid="context-date-create">
+        <section id="context-date-create" className="cos-surface mb-8 p-4" data-testid="context-date-create">
           <div className="grid gap-3 lg:grid-cols-2">
             <label className="space-y-1 lg:col-span-2">
               <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Title</span>
@@ -243,7 +261,7 @@ export function DatesView() {
           </div>
           <div className="mt-4 flex gap-2">
             <button type="button" onClick={createDate} disabled={!title.trim() || !parent || !date} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50">Add Date</button>
-            <button type="button" onClick={() => setShowAdd(false)} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
+            <button type="button" onClick={cancelDateCreation} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
           </div>
         </section>
       ) : null}

@@ -714,7 +714,11 @@ test("project detail exposes Tasks and honest Linked Knowledge without legacy re
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   await expect(page.getByTestId("project-command-page")).toBeVisible();
-  await expect(page.getByTestId("project-live-tasks")).toBeVisible();
+  const taskList = page.getByTestId("project-live-tasks");
+  await expect(taskList).toBeVisible();
+  const inertTaskTitle = taskList.getByText("Review today's open work", { exact: true });
+  await expect(inertTaskTitle).toBeVisible();
+  await expect.poll(() => inertTaskTitle.evaluate((element) => element.closest("button") === null)).toBe(true);
   await expect(page.getByTestId("project-recovery-notes")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Linked Knowledge", exact: true })).toBeVisible();
   await expect(page.getByText("No linked knowledge", { exact: true })).toBeVisible();

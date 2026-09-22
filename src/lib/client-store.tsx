@@ -9,6 +9,7 @@ import {
   readLocalOutbox,
   readLocalWorkspace,
   rememberLocalUser,
+  replaceLocalWorkspaceState,
   writeLocalOutbox,
   writeLocalWorkspace,
   type LocalVerifiedUser
@@ -135,6 +136,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
   const syncInFlight = useRef(false);
   const localWrite = useRef<Promise<void>>(Promise.resolve());
   const localMutationVersion = useRef(0);
+  const localReconcileInFlight = useRef(false);
 
   useEffect(() => {
     dataRef.current = data;
@@ -150,6 +152,33 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
   const refreshPendingCount = useCallback(async () => {
     const outbox = await readLocalOutbox(user);
     setPendingCount(outbox.length);
+  }, [user]);
+
+  const reconcileDurableLocalState = useCallback(async () => {
+    if (localReconcileInFlight.current) return;
+    localReconcileInFlight.current = true;
+    try {
+      while (true) {
+        const observedVersion = localMutationVersion.current;
+        await localWrite.current;
+        const [workspace, outbox] = await Promise.all([
+          readLocalWorkspace(user),
+          readLocalOutbox(user)
+        ]);
+
+        if (localMutationVersion.current !== observedVersion) continue;
+
+        if (workspace) {
+          const normalized = normalizeWorkspace(workspace);
+          dataRef.current = normalized;
+          setData(normalized);
+        }
+        setPendingCount(outbox.length);
+        break;
+      }
+    } finally {
+      localReconcileInFlight.current = false;
+    }
   }, [user]);
 
   const syncNow = useCallback(async () => {
@@ -285,18 +314,28 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
     setData(normalized);
 
     const write = localWrite.current.then(async () => {
-      const committed = await commitLocalMutationBatch(user, normalized, mutations);
+      const committed = await commitLocalMutationBatch(user, mutations);
       setPendingCount(committed.outbox.length);
     });
     localWrite.current = write.catch(() => undefined);
 
     void write
       .then(() => window.setTimeout(() => void syncNow(), 80))
-      .catch((reason) => {
-        setError(reason instanceof Error ? reason.message : "Could not persist local workspace change.");
+      .catch(async (reason) => {
+        try {
+          await reconcileDurableLocalState();
+        } catch {
+          // Preserve the original local-persistence error; a later reload can
+          // still recover from the last durable IndexedDB state.
+        }
+        setError(
+          reason instanceof Error
+            ? reason.message + " The workspace was reconciled to durable local state; retry the change."
+            : "Could not persist a local workspace change. The workspace was reconciled to durable local state; retry the change."
+        );
         setLastErrorAt(now());
       });
-  }, [syncNow, user]);
+  }, [reconcileDurableLocalState, syncNow, user]);
 
   const mutate = useCallback(<T extends WorkspaceRecord>(collection: CollectionName, record: T) => {
     mutateBatch([{ collection, record }]);
@@ -394,22 +433,23 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
     resetDemoData: async () => {
       const response = await fetch("/api/reset-demo", { method: "POST" });
       const result = await readJsonResponse<{ data?: WorkspaceData; error?: string }>(response);
-      if (response.ok) {
-        if (result?.data) {
-          await saveWorkspace(result.data);
-          setLastSyncedAt(result.data.serverSyncedAt);
-          setLastRefreshAt(now());
-          setError(null);
-          setLastWarning(null);
-          setLastWarningAt(null);
-          setStaleMutationCount(0);
-        }
-      } else {
+      if (!response.ok || !result?.data) {
         setError(responseErrorMessage(response, result, "Could not reset demo data"));
         setLastErrorAt(now());
+        return;
       }
-      await writeLocalOutbox(user, []);
-      await refreshPendingCount();
+
+      const normalized = normalizeWorkspace(result.data);
+      await replaceLocalWorkspaceState(user, normalized, []);
+      dataRef.current = normalized;
+      setData(normalized);
+      setPendingCount(0);
+      setLastSyncedAt(result.data.serverSyncedAt);
+      setLastRefreshAt(now());
+      setError(null);
+      setLastWarning(null);
+      setLastWarningAt(null);
+      setStaleMutationCount(0);
     },
     addArea: (name) => {
       const ts = now();

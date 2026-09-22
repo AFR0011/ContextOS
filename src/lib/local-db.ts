@@ -21,6 +21,7 @@ export interface StoredLocalUser {
 
 export interface LocalMutationCommitResult {
   outbox: QueuedMutation[];
+  workspace: WorkspaceData;
 }
 
 function storedUser(user: LocalVerifiedUser): StoredLocalUser {
@@ -157,9 +158,24 @@ export async function writeLocalOutbox(user: LocalVerifiedUser, outbox: QueuedMu
   });
 }
 
+function replaceRecord<T extends { id: string }>(items: T[], record: T) {
+  const exists = items.some((item) => item.id === record.id);
+  return exists ? items.map((item) => (item.id === record.id ? record : item)) : [record, ...items];
+}
+
+function applyMutationsToWorkspace(workspace: WorkspaceData, mutations: QueuedMutation[]) {
+  return mutations.reduce((current, mutation) => {
+    const records = current[mutation.entityType] as { id: string }[];
+    const payload = mutation.payload as { id: string };
+    return {
+      ...current,
+      [mutation.entityType]: replaceRecord(records, payload)
+    } as WorkspaceData;
+  }, workspace);
+}
+
 export async function commitLocalMutationBatch(
   user: LocalVerifiedUser,
-  workspace: WorkspaceData,
   mutations: QueuedMutation[]
 ): Promise<LocalMutationCommitResult> {
   if (mutations.length === 0) {
@@ -171,19 +187,14 @@ export async function commitLocalMutationBatch(
       const tx = db.transaction([WORKSPACE_STORE, OUTBOX_STORE], "readwrite");
       const workspaces = tx.objectStore(WORKSPACE_STORE);
       const outboxes = tx.objectStore(OUTBOX_STORE);
+      const workspaceRequest = workspaces.get(user.id);
       const outboxRequest = outboxes.get(user.id);
       let committedOutbox: QueuedMutation[] = [];
+      let committedWorkspace: WorkspaceData | null = null;
+      let workspaceReady = false;
+      let outboxReady = false;
 
-      outboxRequest.onsuccess = () => {
-        const existing = (outboxRequest.result as QueuedMutation[] | undefined) ?? [];
-        committedOutbox = [...existing, ...mutations];
-
-        // Workspace and outbox writes are queued inside the same IndexedDB transaction.
-        // Either both become durable or neither does.
-        workspaces.put(workspace, user.id);
-        outboxes.put(committedOutbox, user.id);
-      };
-      outboxRequest.onerror = () => {
+      const abort = () => {
         try {
           tx.abort();
         } catch {
@@ -191,9 +202,47 @@ export async function commitLocalMutationBatch(
         }
       };
 
-      tx.oncomplete = () => resolve({ outbox: committedOutbox });
-      tx.onerror = () => reject(tx.error ?? outboxRequest.error ?? new Error("Could not commit local workspace mutation."));
-      tx.onabort = () => reject(tx.error ?? outboxRequest.error ?? new Error("Local workspace mutation transaction was aborted."));
+      const queueWrites = () => {
+        if (!workspaceReady || !outboxReady || committedWorkspace) return;
+        const durableWorkspace = (workspaceRequest.result as WorkspaceData | undefined) ?? {
+          areas: [],
+          projects: [],
+          tasks: [],
+          dates: [],
+          dailyNotes: [],
+          serverSyncedAt: ""
+        };
+        const existingOutbox = (outboxRequest.result as QueuedMutation[] | undefined) ?? [];
+        committedWorkspace = applyMutationsToWorkspace(durableWorkspace, mutations);
+        committedOutbox = [...existingOutbox, ...mutations];
+
+        // Only this transaction's mutation payloads are applied to the durable
+        // workspace. Uncommitted optimistic UI state can never hitchhike into a
+        // later successful IndexedDB transaction.
+        workspaces.put(committedWorkspace, user.id);
+        outboxes.put(committedOutbox, user.id);
+      };
+
+      workspaceRequest.onsuccess = () => {
+        workspaceReady = true;
+        queueWrites();
+      };
+      workspaceRequest.onerror = abort;
+      outboxRequest.onsuccess = () => {
+        outboxReady = true;
+        queueWrites();
+      };
+      outboxRequest.onerror = abort;
+
+      tx.oncomplete = () => {
+        if (!committedWorkspace) {
+          reject(new Error("Local workspace mutation transaction completed without a workspace commit."));
+          return;
+        }
+        resolve({ outbox: committedOutbox, workspace: committedWorkspace });
+      };
+      tx.onerror = () => reject(tx.error ?? workspaceRequest.error ?? outboxRequest.error ?? new Error("Could not commit local workspace mutation."));
+      tx.onabort = () => reject(tx.error ?? workspaceRequest.error ?? outboxRequest.error ?? new Error("Local workspace mutation transaction was aborted."));
     })
   );
 }

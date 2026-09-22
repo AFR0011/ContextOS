@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type TestInfo } from "@playwright/test";
 
 const demoEmail = "demo@contextos.local";
 const demoPassword = "contextos-demo-v011";
@@ -39,6 +39,13 @@ async function loginDemo(page: Page) {
   expect(reset.ok()).toBeTruthy();
   await page.reload();
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+}
+
+async function attachVisualCapture(page: Page, testInfo: TestInfo, name: string) {
+  if (process.env.CAPTURE_C10_VISUAL !== "1") return;
+  const path = testInfo.outputPath(`${name}.png`);
+  await page.screenshot({ path, fullPage: true, animations: "disabled" });
+  await testInfo.attach(name, { path, contentType: "image/png" });
 }
 
 test("new accounts start with an empty canonical workspace and reach useful work through first Area setup", async ({ page }) => {
@@ -101,12 +108,14 @@ test("demo reset is restricted to the configured demo identity", async ({ page }
   expect(after.dailyNotes).toHaveLength(0);
 });
 
-test("first Area setup is usable on a narrow mobile viewport without horizontal overflow", async ({ page }) => {
+test("first Area setup is usable on a narrow mobile viewport without horizontal overflow", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await registerFreshAccount(page, "batch3-mobile");
 
   const layout = await page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth }));
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.innerWidth);
+
+  await attachVisualCapture(page, testInfo, "first-run-390x844-empty-workspace");
 
   await page.getByLabel("Area name").fill("Personal");
   await page.getByRole("button", { name: "Add Area" }).click();

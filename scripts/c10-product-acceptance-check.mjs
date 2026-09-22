@@ -227,6 +227,15 @@ if (packageJson.scripts?.["typecheck:build"] !== "tsc --noEmit -p tsconfig.build
 }
 
 
+const prismaConfigSource = fs.readFileSync("prisma.config.ts", "utf8");
+if (prismaConfigSource.includes('env("DATABASE_URL")')) {
+  errors.push("Prisma config must not require DATABASE_URL merely to load generation-time configuration.");
+}
+if (!prismaConfigSource.includes('process.env.DATABASE_URL ?? ""')) {
+  errors.push("Prisma config must allow credential-free prisma generate while leaving DB commands dependent on a real URL.");
+}
+
+
 if (errors.length) {
   for (const error of errors) console.error(`FAIL ${error}`);
   process.exit(1);

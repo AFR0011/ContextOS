@@ -98,7 +98,7 @@ export function LogoutDialog({ open, user, sync, syncNow, onClose }: LogoutDialo
         aria-modal="true"
         aria-labelledby="logout-dialog-title"
         data-testid="logout-dialog"
-        className="w-full max-w-lg rounded-xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-5 shadow-xl"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-5 shadow-xl"
       >
         <div className="flex items-start gap-3">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[var(--cos-warning-soft)] text-[var(--cos-warning-text)]">

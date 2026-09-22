@@ -104,7 +104,7 @@ test("server rejects global or multiply-parented ContextDates", async ({ page })
   expect(bootstrap.ok()).toBeTruthy();
   const workspace = await bootstrap.json();
   const project = workspace.data.projects.find((item: { name: string }) => item.name === "ContextOS Demo");
-  const area = workspace.data.domains.find((item: { name: string }) => item.name === "Research");
+  const area = workspace.data.areas.find((item: { name: string }) => item.name === "Research");
   expect(project?.id).toBeTruthy();
   expect(area?.id).toBeTruthy();
 
@@ -125,7 +125,7 @@ test("server rejects global or multiply-parented ContextDates", async ({ page })
     data: {
       mutations: [{
         mutationId: `mut-global-${Date.now()}`,
-        entityType: "contextDates",
+        entityType: "dates",
         entityId: base.id,
         operation: "upsert",
         payload: { ...base, projectId: null, domainId: null },
@@ -139,7 +139,7 @@ test("server rejects global or multiply-parented ContextDates", async ({ page })
     data: {
       mutations: [{
         mutationId: `mut-both-${Date.now()}`,
-        entityType: "contextDates",
+        entityType: "dates",
         entityId: `${base.id}-both`,
         operation: "upsert",
         payload: { ...base, id: `${base.id}-both`, projectId: project.id, domainId: area.id },
@@ -201,8 +201,8 @@ test("offline ContextDate creation survives hard reload with queued local state"
     });
     db.close();
     return {
-      hasDate: Boolean(result.workspace?.contextDates?.some((item: { title: string }) => item.title === expectedTitle)),
-      pending: result.outbox.filter((item) => item.entityType === "contextDates").length
+      hasDate: Boolean(result.workspace?.dates?.some((item: { title: string }) => item.title === expectedTitle)),
+      pending: result.outbox.filter((item) => item.entityType === "dates").length
     };
   }, title);
 

@@ -324,16 +324,19 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
     void write
       .then(() => window.setTimeout(() => void syncNow(), 80))
       .catch(async (reason) => {
+        let reconciled = false;
         try {
           await reconcileDurableLocalState();
+          reconciled = true;
         } catch {
           // Preserve the original local-persistence error; a later reload can
           // still recover from the last durable IndexedDB state.
         }
+        const baseMessage = reason instanceof Error ? reason.message : "Could not persist a local workspace change.";
         setError(
-          reason instanceof Error
-            ? reason.message + " The workspace was reconciled to durable local state; retry the change."
-            : "Could not persist a local workspace change. The workspace was reconciled to durable local state; retry the change."
+          reconciled
+            ? baseMessage + " The workspace was reconciled to durable local state; retry the change."
+            : baseMessage + " Local reconciliation also failed; reload before making further edits."
         );
         setLastErrorAt(now());
       });

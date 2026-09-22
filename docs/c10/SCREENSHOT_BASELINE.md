@@ -39,15 +39,12 @@ The repository now includes an explicit browser-capture matrix:
 - `scripts/capture-c10-visual.mjs`
 - `npm run capture:c10:visual`
 
-The capture runner is intentionally separate from the normal E2E ladder. The visual spec is skipped unless `CAPTURE_C10_VISUAL=1`, and the npm command sets that flag cross-platform before invoking Playwright.
+The capture runner is intentionally separate from the normal E2E ladder. Visual specs are skipped unless `CAPTURE_C10_VISUAL=1`, and the npm command sets that flag cross-platform. The runner now fails fast on `npm run build`, captures standard/hostile/clean-account states through the normal browser config, then starts the production server through `playwright.production.config.ts` for offline/pending/reconnect evidence.
 
 Current automated capture coverage:
-- 1440x1000 desktop light;
-- 1440x1000 desktop dark;
-- 1024x768 compact desktop light;
-- 1024x768 compact desktop dark;
-- 390x844 mobile light;
-- 390x844 mobile dark;
+- 1440x1000 desktop light/dark;
+- 1024x768 compact desktop light/dark;
+- 390x844 mobile light/dark;
 - Home;
 - Projects;
 - Project Detail;
@@ -63,16 +60,12 @@ Current automated capture coverage:
 - New Date sheet;
 - long Settings import filename;
 - mobile navigation drawer;
-- logout dialog.
+- logout dialog;
+- 320x720 hostile long Area/Project/Date/Search/import content in light/dark;
+- clean first-run, empty Home, empty Projects, and empty Dates in desktop/mobile light/dark;
+- production-runtime online-ready, offline, offline-with-pending, reconnecting, and post-sync states in mobile light/dark.
 
 Every capture first asserts that the rendered document has no horizontal page overflow. Screenshots are attached to the Playwright report and written into the test output directory for human review.
-
-Still separate from this standard capture pass:
-- 320x720 hostile-content stress;
-- production-runtime Offline/pending/reconnect state;
-- clean first-run/empty-account screenshot capture.
-
-Those already have behavioral test foundations elsewhere and will be added/reviewed as separate Phase C slices rather than making the baseline runner mutate large amounts of test state.
 
 ## Current render-evidence blocker — 2026-09-22
 

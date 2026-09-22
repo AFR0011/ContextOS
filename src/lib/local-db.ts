@@ -1,7 +1,7 @@
 import type { QueuedMutation, WorkspaceData } from "./types";
 
 const DB_NAME = "contextos-offline-v1";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 const USER_STORE = "users";
 const WORKSPACE_STORE = "workspaces";
@@ -58,13 +58,16 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(WORKSPACE_STORE)) db.createObjectStore(WORKSPACE_STORE);
       if (!db.objectStoreNames.contains(OUTBOX_STORE)) db.createObjectStore(OUTBOX_STORE);
 
-      // C8 is a deliberate clean persistence break. There are no real users yet,
-      // so incompatible v2 workspace/outbox snapshots are discarded and rebuilt
-      // from authenticated canonical bootstrap instead of carrying obsolete shapes.
-      if (oldVersion < 3 && tx) {
+      // C8 introduced the canonical v3 local shape; C10 adds server-owned
+      // per-record revisions in v4. There are still no real users, so workspace
+      // and outbox snapshots from earlier generations are discarded rather than
+      // inventing conflict baselines they never observed. Verified identity survives.
+      if (oldVersion < 4 && tx) {
         tx.objectStore(WORKSPACE_STORE).clear();
         tx.objectStore(OUTBOX_STORE).clear();
-        if (db.objectStoreNames.contains("kv")) db.deleteObjectStore("kv");
+      }
+      if (oldVersion < 3 && db.objectStoreNames.contains("kv")) {
+        db.deleteObjectStore("kv");
       }
     };
     request.onsuccess = () => resolve(request.result);

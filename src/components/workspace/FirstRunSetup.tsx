@@ -56,7 +56,7 @@ export function FirstRunSetup() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-primary-text)]">First run</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">Set up your first Area</h1>
+            <h1 tabIndex={-1} className="mt-1 text-2xl font-bold tracking-tight text-[var(--cos-text-strong)] outline-none">Set up your first Area</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--cos-text-muted)]">
               Areas are stable parts of your work or life that organize Projects and direct Tasks. Start with one you actually use. ContextOS will not invent sample work for you.
             </p>

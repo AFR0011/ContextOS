@@ -530,6 +530,99 @@ This is not `ignoreBuildErrors`; application/runtime TypeScript errors still fai
 
 New Vercel builds cannot currently start because the account reports its build-rate limit. Therefore these fixes are source-complete but not runtime-verified yet.
 
+## C-00.6 — Source-level responsive and hostile-content preflight
+
+Status: **source remediation complete; executable regressions added; rendered verification still pending**
+
+Source inspection was used only to identify deterministic layout risks before browser capture. It does not close Phase C.
+
+### C-PRE-01 — Logout dialog could exceed short mobile viewports
+
+Severity: **Medium**  
+Status: **Fixed on audit branch**
+
+The logout dialog can contain:
+- offline warning;
+- pending-mutation warning;
+- sync failure error;
+- multiple logout/discard/remove choices;
+- account-deletion entry;
+- Cancel.
+
+It previously had no viewport cap or internal scrolling. The dialog now uses a dynamic-viewport maximum height and its own vertical scroll container.
+
+Regression coverage creates pending state plus a forced sync error at 320x568, verifies the dialog remains fully inside the viewport, verifies it becomes internally scrollable, and verifies the final Cancel control remains reachable.
+
+### C-PRE-02 — Command palette could clip on short or landscape viewports
+
+Severity: **Medium**  
+Status: **Fixed on audit branch**
+
+The palette previously combined a responsive top offset with a fixed results ceiling but no exact viewport-bound dialog height.
+
+The palette now:
+- uses dynamic viewport units;
+- becomes a bounded flex column;
+- gives only the results region the remaining scrollable height;
+- accounts for the 12dvh top offset at the `sm` breakpoint.
+
+Regression coverage checks:
+- 320x400 portrait;
+- 700x400 landscape / `sm` breakpoint;
+- active-option scrolling remains inside the visible listbox.
+
+Shared DetailSheet height is also bounded against its responsive outer padding.
+
+### C-PRE-03 — Full-screen shells used static viewport height
+
+Severity: **Low-Medium**  
+Status: **Fixed on audit branch**
+
+Authentication, workspace gate/loading, handoff verification, the workspace shell, and the desktop navigation rail used `100vh`-style utilities.
+
+Those surfaces now use dynamic viewport height so mobile browser chrome does not create false centering, clipped full-screen states, or sidebar height mismatch.
+
+### C-PRE-04 — Several hostile-content strings could dictate layout width
+
+Severity: **Medium**  
+Status: **Fixed on audit branch**
+
+Explicit arbitrary-word wrapping is now applied at user/server-controlled display boundaries including:
+- logout/account email identity;
+- handoff title/body/errors;
+- workspace-gate diagnostics;
+- shell and Settings sync errors/warnings;
+- authentication diagnostics;
+- password/session-management feedback.
+
+This complements the existing long Area/Project/Date/import-filename coverage instead of globally changing ordinary typography.
+
+### C-PRE-05 — Date composer was unusably dense at the 1024px sidebar breakpoint
+
+Severity: **Medium**  
+Status: **Fixed on audit branch**
+
+At 1024px the permanent 15.5rem sidebar becomes active. After page and surface padding, the Project/Area Date composer had roughly 688px of inner width while its five fixed-width controls, action, and gaps consumed about 628px before the flexible Date-title column.
+
+The layout could therefore remain technically free of horizontal overflow while compressing the Date title field to roughly 60px.
+
+Project Detail and Area Detail now:
+- use a two-column Date composer from `md` through `lg`;
+- switch to the dense six-column composer only at `xl`;
+- span Details across two columns below `xl` and all six columns at `xl`.
+
+A dedicated 1024x768 E2E regression requires the Date-title input to retain at least 200px of width in both detail views and still rejects horizontal document overflow.
+
+The screenshot baseline now also includes 1024x768 light and dark compact-desktop variants for all canonical surfaces.
+
+### Build-boundary refinement discovered during preflight
+
+The first `tsconfig.build.json` draft still included unit tests under `src/**`. The branch contains three such files. Production build exclusions now explicitly remove `*.test.*` and `*.spec.*` under `src`, while the root `npm run typecheck` continues to check them.
+
+### Verification boundary
+
+All fixes above are source-complete and structurally guarded by C10 acceptance checks. Their Playwright regressions and screenshot matrix have not yet executed on the current candidate because Vercel remains build-rate limited and this environment cannot install/run the repository.
+
 ## C-01 — Primary surface rendered inspection
 
 Status: **Pending runnable current candidate**

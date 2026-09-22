@@ -87,6 +87,7 @@ export function AreasView() {
             onChange={(event) => setName(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && createArea()}
             placeholder="Area name"
+            aria-label="Area name"
             className="cos-input min-w-0 flex-1 px-3 py-2 text-sm"
           />
           <button type="button" onClick={createArea} disabled={!name.trim()} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50">Create Area</button>

@@ -213,6 +213,53 @@ test("failed requested sync cancels logout and keeping pending changes preserves
   expect(afterLogout.outbox).toEqual(expect.arrayContaining([expect.objectContaining({ mutationId })]));
 });
 
+test("logout dialog stays reachable on a short mobile viewport with pending-error content", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await login(page);
+
+  await page.route("**/api/sync", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "forced short-viewport sync failure" }) });
+      return;
+    }
+    await route.continue();
+  });
+
+  await seedPendingOutbox(page, DEMO_EMAIL);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Open navigation", exact: true }).click();
+  const drawer = page.getByRole("dialog", { name: "Workspace navigation menu" });
+  await drawer.getByRole("button", { name: "Log out", exact: true }).click();
+
+  const dialog = page.getByTestId("logout-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(page.getByTestId("logout-sync")).toBeVisible();
+  await page.getByTestId("logout-sync").click();
+  await expect(page.getByTestId("logout-error")).toBeVisible();
+
+  const metrics = await dialog.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      top: rect.top,
+      bottom: rect.bottom,
+      viewportHeight: window.innerHeight,
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight
+    };
+  });
+  expect(metrics.top).toBeGreaterThanOrEqual(0);
+  expect(metrics.bottom).toBeLessThanOrEqual(metrics.viewportHeight);
+  expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight);
+
+  const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+  await cancel.scrollIntoViewIfNeeded();
+  await expect(cancel).toBeVisible();
+  await cancel.click();
+  await expect(dialog).toHaveCount(0);
+});
+
 test("remove-from-device logout clears only the current user's local lifecycle state", async ({ page }) => {
   await login(page);
 

@@ -6,6 +6,7 @@ const args = [
   "test",
   "tests/e2e/c10-visual-baseline.spec.ts",
   "tests/e2e/c10-visual-stress.spec.ts",
+  "tests/e2e/c10-visual-empty.spec.ts",
   "--project=chromium"
 ];
 

@@ -59,7 +59,7 @@ function ProjectRow({
           type="button"
           onClick={onRestore}
           aria-label={`Restore ${name}`}
-          className="cos-btn cos-btn-ghost min-h-9 shrink-0 px-3 py-2 text-xs"
+          className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs"
         >
           <RotateCcw className="h-3.5 w-3.5" /> Restore
         </button>

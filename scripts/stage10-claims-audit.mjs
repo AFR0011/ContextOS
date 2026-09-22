@@ -44,7 +44,7 @@ requireMatch(
   "must preserve the offline identity boundary"
 );
 requireMatch("contract", /Offline logout is blocked/i, "must preserve true logout's network requirement");
-requireMatch("contract", /canonical persisted workspace is Area \/ Project \/ Task \/ Date \/ DailyNote/i, "must describe the canonical persisted workspace");
+requireMatch("contract", /(?:canonical persisted workspace is|canonical user-data collections:?)[^\n]{0,100}Area \/ Project \/ Task \/ Date \/ DailyNote/i, "must describe the canonical persisted workspace");
 requireMatch("contract", /sync contract accepts canonical entity types only and ordinary client mutations are upsert-only/i, "must preserve the canonical sync boundary");
 requireMatch("contract", /There is no standalone Archive\/Trash page and no canonical per-record tombstone protocol/i, "must not revive the removed tombstone model");
 requireMatch("contract", /does not present irreversible per-record purge/i, "must preserve purge as a non-goal");

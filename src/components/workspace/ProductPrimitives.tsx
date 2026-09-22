@@ -179,13 +179,13 @@ export function Dayline({ items }: { items: DaylineItem[] }) {
                   onClick={item.onToggle}
                   disabled={!item.onToggle}
                   aria-label={item.done ? `Reopen ${item.title}` : `Complete ${item.title}`}
-                  className="grid h-10 w-10 -m-2 place-items-center rounded-full disabled:cursor-default"
+                  className="group grid h-10 w-10 -m-2 place-items-center rounded-full disabled:cursor-default"
                 >
                   <span
                     className={`grid h-5 w-5 place-items-center rounded-full border-2 border-[var(--cos-bg)] transition-colors ${
                       item.done
                         ? "bg-[var(--cos-text-subtle)] text-[var(--cos-bg)]"
-                        : "bg-[var(--cos-bg-elevated)] text-transparent ring-1 ring-[var(--cos-border-strong)] enabled:hover:ring-[var(--cos-primary)]"
+                        : "bg-[var(--cos-bg-elevated)] text-transparent ring-1 ring-[var(--cos-border-strong)] group-hover:ring-[var(--cos-primary)]"
                     }`}
                   >
                     {item.done ? <Check className="h-3 w-3" /> : null}

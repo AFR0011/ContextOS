@@ -111,10 +111,10 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
             {activeProjects.map((project) => (
               <div key={project.id} className="cos-entity-row">
                 <button type="button" onClick={() => router.push(`/projects/${project.id}`)} className="min-w-0 flex-1 text-left">
-                  <span className="block truncate text-sm font-semibold text-[var(--cos-text-strong)]">{project.name}</span>
-                  <span className="mt-1 block line-clamp-2 text-xs text-[var(--cos-text-muted)]">{project.objective || "No objective yet."}</span>
+                  <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{project.name}</span>
+                  <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{project.objective || "No objective yet."}</span>
                 </button>
-                <button type="button" onClick={() => updateProject(project.id, { state: "archived" })} className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs">
+                <button type="button" onClick={() => updateProject(project.id, { state: "archived" })} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
                   <Archive className="h-3.5 w-3.5" /> Archive
                 </button>
               </div>
@@ -213,10 +213,10 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
             {archivedProjects.map((project) => (
               <div key={project.id} className="cos-entity-row opacity-70">
                 <button type="button" onClick={() => router.push(`/projects/${project.id}`)} className="min-w-0 flex-1 text-left">
-                  <span className="block truncate text-sm font-semibold text-[var(--cos-text-strong)]">{project.name}</span>
-                  <span className="mt-1 block line-clamp-2 text-xs text-[var(--cos-text-muted)]">{project.objective || "No objective yet."}</span>
+                  <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{project.name}</span>
+                  <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{project.objective || "No objective yet."}</span>
                 </button>
-                <button type="button" onClick={() => updateProject(project.id, { state: "active" })} className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs">
+                <button type="button" onClick={() => updateProject(project.id, { state: "active" })} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
                   <RotateCcw className="h-3.5 w-3.5" /> Restore
                 </button>
               </div>

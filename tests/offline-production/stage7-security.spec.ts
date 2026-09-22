@@ -136,13 +136,13 @@ test("sync rejects mutation-ledger identity mismatch and malformed timestamps", 
     mutations: [
       {
         mutationId: `audit-mismatch-${Date.now()}`,
-        entityType: "domains",
-        entityId: "dom-a",
+        entityType: "areas",
+        entityId: "area-a",
         operation: "upsert",
         payload: {
-          id: "dom-b",
-          name: "Mismatched domain",
-          archived: false,
+          id: "area-b",
+          name: "Mismatched area",
+          state: "active",
           createdAt: now,
           updatedAt: now
         },
@@ -156,13 +156,13 @@ test("sync rejects mutation-ledger identity mismatch and malformed timestamps", 
     mutations: [
       {
         mutationId: `audit-time-${Date.now()}`,
-        entityType: "domains",
-        entityId: "dom-invalid-time",
+        entityType: "areas",
+        entityId: "area-invalid-time",
         operation: "upsert",
         payload: {
-          id: "dom-invalid-time",
+          id: "area-invalid-time",
           name: "Invalid time",
-          archived: false,
+          state: "active",
           createdAt: now,
           updatedAt: now
         },
@@ -176,13 +176,13 @@ test("sync rejects mutation-ledger identity mismatch and malformed timestamps", 
     mutations: [
       {
         mutationId: `audit-payload-time-${Date.now()}`,
-        entityType: "domains",
-        entityId: "dom-invalid-payload-time",
+        entityType: "areas",
+        entityId: "area-invalid-payload-time",
         operation: "upsert",
         payload: {
-          id: "dom-invalid-payload-time",
+          id: "area-invalid-payload-time",
           name: "Invalid payload time",
-          archived: false,
+          state: "active",
           createdAt: now,
           updatedAt: "not-a-date"
         },
@@ -201,25 +201,20 @@ test("sync payload limits count UTF-8 bytes rather than JavaScript code units", 
   expect(new TextEncoder().encode(multibyteText).byteLength).toBeGreaterThan(20_000);
 
   const response = await browserJsonPost(page, "/api/sync", {
-    mutations: [
-      {
-        mutationId: `audit-utf8-${Date.now()}`,
-        entityType: "captures",
-        entityId: "cap-audit-utf8",
-        operation: "upsert",
-        payload: {
-          id: "cap-audit-utf8",
-          text: multibyteText,
-          status: "unprocessed",
-          type: "note",
-          parsedData: null,
-          convertedToId: null,
-          createdAt: now,
-          updatedAt: now
-        },
-        createdAt: now
-      }
-    ]
+    mutations: [{
+      mutationId: `audit-utf8-${Date.now()}`,
+      entityType: "areas",
+      entityId: "area-audit-utf8",
+      operation: "upsert",
+      payload: {
+        id: "area-audit-utf8",
+        name: multibyteText,
+        state: "active",
+        createdAt: now,
+        updatedAt: now
+      },
+      createdAt: now
+    }]
   });
 
   expect(response.status).toBe(400);

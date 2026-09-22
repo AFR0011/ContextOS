@@ -352,7 +352,7 @@ export function CommandPalette({
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-start justify-center bg-slate-950/35 px-4 pt-[12vh] backdrop-blur-sm"
+      className="fixed inset-0 z-[90] flex items-start justify-center bg-slate-950/35 p-4 backdrop-blur-sm sm:pt-[12vh]"
       role="presentation"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
     >
@@ -363,7 +363,7 @@ export function CommandPalette({
         aria-modal="true"
         aria-label="Command palette"
         data-testid="command-palette"
-        className="w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] shadow-[var(--cos-shadow-lg)]"
+        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] shadow-[var(--cos-shadow-lg)]"
       >
         <div className="flex items-center gap-3 border-b border-[var(--cos-border-soft)] px-4">
           <Search className="h-4 w-4 text-[var(--cos-text-subtle)]" />
@@ -381,7 +381,7 @@ export function CommandPalette({
             className="h-12 min-w-0 flex-1 bg-transparent text-sm text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
           />
         </div>
-        <div id="command-palette-results" ref={resultsRef} className="max-h-[22rem] overflow-y-auto p-2" role="listbox" aria-label="Command palette results">
+        <div id="command-palette-results" ref={resultsRef} className="min-h-0 flex-1 overflow-y-auto p-2 sm:max-h-[22rem]" role="listbox" aria-label="Command palette results">
           {items.length ? items.map((item, index) => (
             <button
               key={item.id}

@@ -1,7 +1,7 @@
 import type { QueuedMutation, WorkspaceData } from "./types";
 
 const DB_NAME = "contextos-offline-v1";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 const LEGACY_STORE = "kv";
 const USER_STORE = "users";
@@ -54,10 +54,20 @@ function openDb(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
+      const tx = request.transaction;
       if (!db.objectStoreNames.contains(LEGACY_STORE)) db.createObjectStore(LEGACY_STORE);
       if (!db.objectStoreNames.contains(USER_STORE)) db.createObjectStore(USER_STORE, { keyPath: "id" });
       if (!db.objectStoreNames.contains(WORKSPACE_STORE)) db.createObjectStore(WORKSPACE_STORE);
       if (!db.objectStoreNames.contains(OUTBOX_STORE)) db.createObjectStore(OUTBOX_STORE);
+
+      // C8 is a deliberate clean persistence break. There are no real users yet,
+      // so incompatible v2 workspace/outbox snapshots are discarded and rebuilt
+      // from authenticated canonical bootstrap instead of carrying obsolete shapes.
+      if (request.oldVersion < 3 && tx) {
+        tx.objectStore(WORKSPACE_STORE).clear();
+        tx.objectStore(OUTBOX_STORE).clear();
+        tx.objectStore(LEGACY_STORE).clear();
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);

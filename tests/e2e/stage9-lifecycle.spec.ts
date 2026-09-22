@@ -161,6 +161,31 @@ test("default logout preserves the verified local workspace", async ({ page }) =
   expect(after.workspace).not.toBeNull();
 });
 
+test("logout dialog contains keyboard focus and restores the trigger", async ({ page }) => {
+  await login(page);
+
+  const trigger = page.getByRole("button", { name: "Log out", exact: true });
+  await trigger.focus();
+  await trigger.click();
+
+  const dialog = page.getByTestId("logout-dialog");
+  await expect(dialog).toBeVisible();
+
+  const first = page.getByTestId("logout-keep-local");
+  const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+
+  await cancel.focus();
+  await page.keyboard.press("Tab");
+  await expect(first).toBeFocused();
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(cancel).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
 test("failed requested sync cancels logout and keeping pending changes preserves the outbox", async ({ page }) => {
   await login(page);
   await page.route("**/api/sync", async (route) => {

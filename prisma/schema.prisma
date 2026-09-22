@@ -41,6 +41,7 @@ model Area {
   state     String   @default("active")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  revision  Int      @default(1)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -57,6 +58,7 @@ model Project {
   state     String   @default("active")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  revision  Int      @default(1)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -77,6 +79,7 @@ model Task {
   state         String    @default("open")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  revision  Int      @default(1)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -100,6 +103,7 @@ model ContextDate {
   areaId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  revision  Int      @default(1)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -116,6 +120,7 @@ model DailyNote {
   content   String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  revision  Int      @default(1)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

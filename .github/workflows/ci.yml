@@ -81,6 +81,9 @@ jobs:
       - name: Audit Stage 10 public claims
         run: npm run audit:stage10:claims
 
+      - name: Validate current C10 product acceptance registry
+        run: npm run audit:c10:product
+
       - name: Audit release closure contract
         run: npm run audit:release
 

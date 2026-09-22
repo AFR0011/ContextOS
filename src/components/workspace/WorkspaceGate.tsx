@@ -172,9 +172,9 @@ export default function WorkspaceGate({ children }: { children: ReactNode }) {
           ) : (
             <AlertTriangle className="mt-0.5 h-6 w-6 text-[var(--cos-warning-text)]" />
           )}
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--cos-text-strong)]">{state.title}</h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--cos-text-muted)]">{state.message}</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="break-words text-xl font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{state.title}</h1>
+            <p className="mt-2 break-words text-sm leading-6 text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{state.message}</p>
           </div>
         </div>
 

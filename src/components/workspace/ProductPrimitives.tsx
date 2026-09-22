@@ -369,17 +369,23 @@ export function CommandPalette({
           <Search className="h-4 w-4 text-[var(--cos-text-subtle)]" />
           <input
             autoFocus
+            role="combobox"
             aria-label="Search or run a command"
+            aria-expanded="true"
+            aria-autocomplete="list"
+            aria-controls="command-palette-results"
+            aria-activedescendant={items[activeIndex] ? `command-palette-option-${items[activeIndex].id}` : undefined}
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder="Search or run a command…"
             className="h-12 min-w-0 flex-1 bg-transparent text-sm text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
           />
         </div>
-        <div ref={resultsRef} className="max-h-[22rem] overflow-y-auto p-2" role="listbox" aria-label="Command palette results">
+        <div id="command-palette-results" ref={resultsRef} className="max-h-[22rem] overflow-y-auto p-2" role="listbox" aria-label="Command palette results">
           {items.length ? items.map((item, index) => (
             <button
               key={item.id}
+              id={`command-palette-option-${item.id}`}
               type="button"
               role="option"
               aria-selected={index === activeIndex}

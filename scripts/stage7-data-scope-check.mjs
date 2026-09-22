@@ -7,17 +7,11 @@ const root = path.resolve(here, "..");
 const source = fs.readFileSync(path.join(root, "src/lib/data.ts"), "utf8");
 
 const models = [
-  "domain",
+  "area",
   "project",
   "task",
-  "capture",
-  "note",
-  "deadline",
   "contextDate",
-  "review",
-  "dailyNote",
-  "dashboardScratchpad",
-  "dashboardPreference"
+  "dailyNote"
 ];
 
 const failures = [];

@@ -1,14 +1,11 @@
 import type { QueuedMutation, WorkspaceData } from "./types";
 
 const DB_NAME = "contextos-offline-v1";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
-const LEGACY_STORE = "kv";
 const USER_STORE = "users";
 const WORKSPACE_STORE = "workspaces";
 const OUTBOX_STORE = "outboxes";
-const LEGACY_WORKSPACE_KEY = "workspace";
-const LEGACY_OUTBOX_KEY = "outbox";
 
 export interface LocalVerifiedUser {
   id: string;
@@ -52,12 +49,22 @@ function transactionDone(tx: IDBTransaction): Promise<void> {
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(LEGACY_STORE)) db.createObjectStore(LEGACY_STORE);
+      const oldVersion = (event as IDBVersionChangeEvent).oldVersion;
+      const tx = request.transaction;
       if (!db.objectStoreNames.contains(USER_STORE)) db.createObjectStore(USER_STORE, { keyPath: "id" });
       if (!db.objectStoreNames.contains(WORKSPACE_STORE)) db.createObjectStore(WORKSPACE_STORE);
       if (!db.objectStoreNames.contains(OUTBOX_STORE)) db.createObjectStore(OUTBOX_STORE);
+
+      // C8 is a deliberate clean persistence break. There are no real users yet,
+      // so incompatible v2 workspace/outbox snapshots are discarded and rebuilt
+      // from authenticated canonical bootstrap instead of carrying obsolete shapes.
+      if (oldVersion < 3 && tx) {
+        tx.objectStore(WORKSPACE_STORE).clear();
+        tx.objectStore(OUTBOX_STORE).clear();
+        if (db.objectStoreNames.contains("kv")) db.deleteObjectStore("kv");
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -65,87 +72,9 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-function migrateLegacyV1ForUser(db: IDBDatabase, user: LocalVerifiedUser): Promise<void> {
-  if (!db.objectStoreNames.contains(LEGACY_STORE)) return Promise.resolve();
-
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction([LEGACY_STORE, WORKSPACE_STORE, OUTBOX_STORE], "readwrite");
-    const legacy = tx.objectStore(LEGACY_STORE);
-    const workspaces = tx.objectStore(WORKSPACE_STORE);
-    const outboxes = tx.objectStore(OUTBOX_STORE);
-
-    let legacyWorkspace: unknown;
-    let legacyOutbox: unknown;
-    let currentWorkspace: unknown;
-    let currentOutbox: unknown;
-    let completedReads = 0;
-    let migrationQueued = false;
-
-    const fail = (error: DOMException | null) => {
-      try {
-        tx.abort();
-      } catch {
-        // The transaction may already have aborted because of the request failure.
-      }
-      reject(error ?? new Error("Could not migrate the legacy ContextOS local database."));
-    };
-
-    const maybeQueueMigration = () => {
-      completedReads += 1;
-      if (completedReads !== 4 || migrationQueued) return;
-      migrationQueued = true;
-
-      // Queue writes synchronously from the final request callback. This keeps the
-      // readwrite transaction active across browsers, including stricter IndexedDB
-      // implementations that may auto-commit after an awaited request callback.
-      if (currentWorkspace === undefined && legacyWorkspace !== undefined) {
-        workspaces.put(legacyWorkspace, user.id);
-      }
-      if (currentOutbox === undefined && legacyOutbox !== undefined) {
-        outboxes.put(legacyOutbox, user.id);
-      }
-      if (legacyWorkspace !== undefined) legacy.delete(LEGACY_WORKSPACE_KEY);
-      if (legacyOutbox !== undefined) legacy.delete(LEGACY_OUTBOX_KEY);
-    };
-
-    const legacyWorkspaceRequest = legacy.get(LEGACY_WORKSPACE_KEY);
-    legacyWorkspaceRequest.onsuccess = () => {
-      legacyWorkspace = legacyWorkspaceRequest.result;
-      maybeQueueMigration();
-    };
-    legacyWorkspaceRequest.onerror = () => fail(legacyWorkspaceRequest.error);
-
-    const legacyOutboxRequest = legacy.get(LEGACY_OUTBOX_KEY);
-    legacyOutboxRequest.onsuccess = () => {
-      legacyOutbox = legacyOutboxRequest.result;
-      maybeQueueMigration();
-    };
-    legacyOutboxRequest.onerror = () => fail(legacyOutboxRequest.error);
-
-    const currentWorkspaceRequest = workspaces.get(user.id);
-    currentWorkspaceRequest.onsuccess = () => {
-      currentWorkspace = currentWorkspaceRequest.result;
-      maybeQueueMigration();
-    };
-    currentWorkspaceRequest.onerror = () => fail(currentWorkspaceRequest.error);
-
-    const currentOutboxRequest = outboxes.get(user.id);
-    currentOutboxRequest.onsuccess = () => {
-      currentOutbox = currentOutboxRequest.result;
-      maybeQueueMigration();
-    };
-    currentOutboxRequest.onerror = () => fail(currentOutboxRequest.error);
-
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error ?? new Error("Could not migrate the legacy ContextOS local database."));
-    tx.onabort = () => reject(tx.error ?? new Error("ContextOS local database migration was aborted."));
-  });
-}
-
 async function withUserDb<T>(user: LocalVerifiedUser, operation: (db: IDBDatabase) => Promise<T>): Promise<T> {
   const db = await openDb();
   try {
-    await migrateLegacyV1ForUser(db, user);
     return await operation(db);
   } finally {
     db.close();
@@ -275,7 +204,6 @@ export const LOCAL_DB_INFO = {
   stores: {
     users: USER_STORE,
     workspaces: WORKSPACE_STORE,
-    outboxes: OUTBOX_STORE,
-    legacy: LEGACY_STORE
+    outboxes: OUTBOX_STORE
   }
 } as const;

@@ -15,10 +15,10 @@ test("fresh first run exposes restore and completes a workspace replacement", as
   await registerFresh(page, "portability-ui-source");
 
   const now = new Date().toISOString();
-  const domain = {
-    id: `dom-portability-ui-${Date.now()}`,
+  const area = {
+    id: `area-portability-ui-${Date.now()}`,
     name: "Restored Personal",
-    archived: false,
+    state: "active",
     createdAt: now,
     updatedAt: now
   };
@@ -26,10 +26,10 @@ test("fresh first run exposes restore and completes a workspace replacement", as
     data: {
       mutations: [{
         mutationId: `mut-portability-ui-${Date.now()}`,
-        entityType: "domains",
-        entityId: domain.id,
+        entityType: "areas",
+        entityId: area.id,
         operation: "upsert",
-        payload: domain,
+        payload: area,
         createdAt: now
       }]
     }
@@ -62,7 +62,7 @@ test("fresh first run exposes restore and completes a workspace replacement", as
 
   const preview = page.getByTestId("workspace-import-preview");
   await expect(preview).toBeVisible();
-  await expect(preview).toContainText("format v1");
+  await expect(preview).toContainText("format v2");
   await expect(preview).toContainText("1 areas");
   await expect(page.getByLabel("Import mode")).toHaveValue("replace");
 

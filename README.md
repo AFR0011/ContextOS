@@ -54,7 +54,7 @@ Historical aliases also remain:
 /deadlines -> /dates
 ```
 
-Underlying legacy Capture, standalone Note, Review, legacy Deadline, tombstone, and other compatibility storage remains intact until the C8 persistence migration is verified. Retiring the UI is not permission to silently destroy old data.
+C8 completes the persistence clean break. Canonical storage is now Area / Project / Task / Date / DailyNote only; retired Capture, standalone Note, Review, legacy Deadline, Dashboard, recovery, nesting, and tombstone storage is removed. IndexedDB v3 preserves verified local identity but discards incompatible pre-C8 workspace/outbox snapshots so they can be rebuilt from authenticated canonical bootstrap.
 
 The historical `/handoff` route can still validate and preview `lifeos-handoff/v1` proposals, but C7 deliberately stops writing new legacy Inbox captures. Until a canonical inter-module action contract exists, the preview does not save the proposal.
 
@@ -67,7 +67,7 @@ The historical `/handoff` route can still validate and preview `lifeos-handoff/v
 - **Atomic local commits:** supported local mutations write workspace state and outbox state in one IndexedDB transaction.
 - **Lifecycle semantics:** ordinary logout retains isolated local state by default; device removal is explicit and user-scoped; multiple eligible local identities require explicit selection.
 - **Deployment:** the repository includes a non-root standalone application image, one-shot migration service, persistent PostgreSQL service, and unexposed operator image.
-- **Legacy migration safety:** old tombstone and compatibility records remain protected against stale resurrection while C8 owns the broad persistence migration.
+- **Canonical persistence:** Prisma, bootstrap, IndexedDB, sync, and export v2 use the same Area / Project / Task / Date / DailyNote shape; obsolete local cache/outbox state is reset at the v3 boundary instead of being half-migrated.
 - **Failure-aware UX:** database, synchronization, offline-shell, pending-work, and conflict states are surfaced instead of silently discarding work.
 
 ## Local-first boundary
@@ -181,7 +181,7 @@ Historical note: Stage 10 closed in August 2026 against a deliberately narrower 
 
 ## Documentation
 
-- `BLUEPRINT.md` — canonical product model and C7/C8 compatibility boundary
+- `BLUEPRINT.md` — canonical product and persistence model
 - `docs/PROJECT_STATE.md` — current implementation state
 - `docs/REPO_MAP.md` — active repository ownership
 - `docs/LOCAL_FIRST_CONTRACT.md` — current offline/sync/lifecycle contract

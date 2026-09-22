@@ -42,7 +42,7 @@ export default function LocalWorkspaceRouter({ fallback }: { fallback?: ReactNod
   const { pathname } = useLocalLocation();
   const { data } = useWorkspace();
 
-  if (data.domains.length === 0 && pathname !== "/settings" && isWorkspaceProductRoute(pathname)) {
+  if (data.areas.length === 0 && pathname !== "/settings" && isWorkspaceProductRoute(pathname)) {
     return <FirstRunSetup />;
   }
 

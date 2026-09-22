@@ -120,16 +120,10 @@ if (payload?.user?.email !== expectedEmail) {
 }
 const data = payload?.data;
 if (!data) throw new Error('Container bootstrap did not return workspace data.');
-for (const key of ['domains', 'projects', 'tasks', 'captures', 'notes', 'deadlines', 'contextDates', 'reviews', 'dailyNotes']) {
+for (const key of ['areas', 'projects', 'tasks', 'dates', 'dailyNotes']) {
   if (!Array.isArray(data[key]) || data[key].length !== 0) {
     throw new Error(`Fresh operator-created workspace should have zero ${key}.`);
   }
-}
-if (!Array.isArray(data.dashboardScratchpads) || data.dashboardScratchpads.length !== 1) {
-  throw new Error('Fresh operator-created workspace should have exactly one dashboard scratchpad scaffold.');
-}
-if (!Array.isArray(data.dashboardPreferences) || data.dashboardPreferences.length !== 1) {
-  throw new Error('Fresh operator-created workspace should have exactly one dashboard preference scaffold.');
 }
 NODE
 
@@ -140,13 +134,13 @@ const now = new Date().toISOString();
 fs.writeFileSync(path, JSON.stringify({
   mutations: [{
     mutationId: `release-rehearsal-${Date.now()}`,
-    entityType: 'domains',
+    entityType: 'areas',
     entityId: id,
     operation: 'upsert',
     payload: {
       id,
       name: 'Release rehearsal area',
-      archived: false,
+      state: 'active',
       createdAt: now,
       updatedAt: now
     },
@@ -213,7 +207,7 @@ const payload = JSON.parse(fs.readFileSync(bootstrapPath, 'utf8'));
 if (payload?.user?.email !== expectedEmail) {
   throw new Error('Operator-created account did not survive app/database restart.');
 }
-if (!payload?.data?.domains?.some((domain) => domain.id === expectedId && domain.name === 'Release rehearsal area')) {
+if (!payload?.data?.areas?.some((area) => area.id === expectedId && area.name === 'Release rehearsal area')) {
   throw new Error('Representative synchronized workspace data did not survive app/database restart.');
 }
 NODE

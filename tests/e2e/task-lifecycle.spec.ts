@@ -48,18 +48,24 @@ async function taskSnapshot(page: Page, title: string) {
   const workspace = await currentLocalWorkspace(page);
   const task = workspace?.tasks?.find((candidate: { title: string }) => candidate.title === title);
   if (!task) return null;
-  const project = workspace.projects?.find((candidate: { id: string }) => candidate.id === task.projectId) ?? null;
-  const domainId = task.domainId ?? project?.domainId ?? null;
-  const domain = workspace.domains?.find((candidate: { id: string }) => candidate.id === domainId) ?? null;
+
+  const project = task.parent?.type === "project"
+    ? workspace.projects?.find((candidate: { id: string }) => candidate.id === task.parent.projectId) ?? null
+    : null;
+  const area = project
+    ? workspace.areas?.find((candidate: { id: string }) => candidate.id === project.areaId) ?? null
+    : task.parent?.type === "area"
+      ? workspace.areas?.find((candidate: { id: string }) => candidate.id === task.parent.areaId) ?? null
+      : null;
+
   return {
     title: task.title,
-    status: task.status,
+    state: task.state,
+    parentType: task.parent?.type ?? null,
     plannedDate: task.plannedDate,
-    dueDate: task.dueDate,
     scheduledTime: task.scheduledTime,
     projectName: project?.name ?? null,
-    areaName: domain?.name ?? null,
-    trashed: Boolean(task.trashedAt)
+    areaName: area?.name ?? null
   };
 }
 
@@ -71,80 +77,63 @@ async function expectMinTouchTarget(locator: Locator, min = 40) {
   expect(box!.height).toBeGreaterThanOrEqual(min);
 }
 
-test("existing task editor remains functional while Home projects the edited task", async ({ page }) => {
+test("project-scoped task creation persists canonical parent and can be completed from Home", async ({ page }) => {
   const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
 
   const plannedDate = localDateKey();
-  const editedTitle = `C3 edited task ${Date.now()}`;
+  const title = `C8 canonical task ${Date.now()}`;
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await page.getByRole("button", { name: "Edit task Review today's open work" }).click();
 
-  const dialog = page.getByTestId("task-edit-dialog");
-  await dialog.getByLabel("Title").fill(editedTitle);
-  await dialog.getByLabel("Status").selectOption("blocked");
-  await dialog.getByLabel("Planned date").fill(plannedDate);
-  await dialog.getByLabel("Due date").fill("2030-03-21");
-  await dialog.getByLabel("Scheduled time").fill("13:45");
-  await dialog.getByLabel("Project").selectOption({ label: "Benchmark Evaluation" });
-  await expect(dialog.getByLabel("Area")).toBeDisabled();
-  await expect(dialog.getByLabel("Area").locator("option:checked")).toHaveText("Research");
-  await dialog.getByRole("button", { name: "Save task" }).click();
+  const tasks = page.getByTestId("project-live-tasks");
+  await tasks.getByPlaceholder("Add a task...").fill(title);
+  await tasks.getByLabel("Planned day").fill(plannedDate);
+  await tasks.getByLabel("Scheduled time").fill("13:45");
+  await tasks.getByRole("button", { name: "Add", exact: true }).click();
 
-  await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({
-    status: "blocked",
+  await expect(tasks).toContainText(title);
+  await expect.poll(() => taskSnapshot(page, title)).toMatchObject({
+    state: "open",
+    parentType: "project",
     plannedDate,
     scheduledTime: "13:45",
-    projectName: "Benchmark Evaluation",
-    areaName: "Research",
-    trashed: false
+    projectName: "ContextOS Demo",
+    areaName: "Engineering"
   });
 
   await page.getByRole("button", { name: "Home", exact: true }).click();
-  await expect(page.getByTestId("home-dayline")).toContainText(editedTitle);
-  await page.getByRole("button", { name: `Complete ${editedTitle}`, exact: true }).click();
+  await expect(page.getByTestId("home-dayline")).toContainText(title);
+  await page.getByRole("button", { name: `Complete ${title}`, exact: true }).click();
 
-  await expect(page.getByText(editedTitle, { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: `Reopen ${editedTitle}`, exact: true })).toBeVisible();
-  await expect.poll(() => taskSnapshot(page, editedTitle)).toMatchObject({ status: "done" });
+  await expect(page.getByRole("button", { name: `Reopen ${title}`, exact: true })).toBeVisible();
+  await expect.poll(() => taskSnapshot(page, title)).toMatchObject({ state: "done" });
 });
 
-test("task editor stays usable on mobile and preserves project-area inheritance", async ({ page }) => {
+test("canonical project task creation stays usable on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
 
   await page.getByRole("button", { name: "Projects", exact: true }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
 
-  const editButton = page.getByRole("button", { name: "Edit task Review today's open work" });
-  await expectMinTouchTarget(editButton);
-  await editButton.click();
+  const tasks = page.getByTestId("project-live-tasks");
+  const title = `Mobile canonical task ${Date.now()}`;
+  await tasks.getByPlaceholder("Add a task...").fill(title);
+  await tasks.getByLabel("Planned day").fill("2030-04-02");
+  await tasks.getByLabel("Scheduled time").fill("16:20");
+  const add = tasks.getByRole("button", { name: "Add", exact: true });
+  await expectMinTouchTarget(add);
+  await add.click();
 
-  const dialog = page.getByTestId("task-edit-dialog");
-  for (const label of ["Title", "Status", "Planned date", "Due date", "Scheduled time", "Project", "Area"]) {
-    await expect(dialog.getByLabel(label, { exact: true })).toBeVisible();
-  }
-
-  await dialog.getByLabel("Status").selectOption("waiting");
-  await dialog.getByLabel("Planned date").fill("2030-04-02");
-  await dialog.getByLabel("Due date").fill("2030-04-05");
-  await dialog.getByLabel("Scheduled time").fill("16:20");
-  await dialog.getByLabel("Project").selectOption({ label: "Benchmark Evaluation" });
-  await expect(dialog.getByLabel("Area")).toBeDisabled();
-  await expect(dialog.getByLabel("Area").locator("option:checked")).toHaveText("Research");
-  await expectMinTouchTarget(dialog.getByRole("button", { name: "Save task" }));
-  await dialog.getByRole("button", { name: "Save task" }).click();
-
-  await expect.poll(() => taskSnapshot(page, "Review today's open work")).toMatchObject({
-    status: "waiting",
+  await expect.poll(() => taskSnapshot(page, title)).toMatchObject({
+    state: "open",
+    parentType: "project",
     plannedDate: "2030-04-02",
-    dueDate: "2030-04-05",
     scheduledTime: "16:20",
-    projectName: "Benchmark Evaluation",
-    areaName: "Research",
-    trashed: false
+    projectName: "ContextOS Demo",
+    areaName: "Engineering"
   });
 
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);

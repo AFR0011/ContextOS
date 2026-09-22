@@ -8,17 +8,11 @@ const schema = fs.readFileSync(path.join(root, "prisma/schema.prisma"), "utf8");
 
 const userOwnedModels = [
   "Session",
-  "Domain",
+  "Area",
   "Project",
   "Task",
-  "Capture",
-  "Note",
-  "Deadline",
   "ContextDate",
-  "Review",
   "DailyNote",
-  "DashboardScratchpad",
-  "DashboardPreference",
   "SyncMutation"
 ];
 

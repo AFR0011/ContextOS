@@ -82,5 +82,5 @@ export interface CanonicalWorkspace {
   tasks: Task[];
   dates: ContextDate[];
   dailyNotes: DailyNote[];
-  insights: Insight[];
+  insights?: Insight[];
 }

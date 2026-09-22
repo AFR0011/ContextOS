@@ -12,10 +12,10 @@ test("replace restore keeps the current session and revokes another signed-in se
   expect(registered.status()).toBe(200);
 
   const now = new Date().toISOString();
-  const domain = {
-    id: `dom-session-${Date.now()}`,
+  const area = {
+    id: `area-session-${Date.now()}`,
     name: "Session safety",
-    archived: false,
+    state: "active",
     createdAt: now,
     updatedAt: now
   };
@@ -23,10 +23,10 @@ test("replace restore keeps the current session and revokes another signed-in se
     data: {
       mutations: [{
         mutationId: `mut-session-${Date.now()}`,
-        entityType: "domains",
-        entityId: domain.id,
+        entityType: "areas",
+        entityId: area.id,
         operation: "upsert",
-        payload: domain,
+        payload: area,
         createdAt: now
       }]
     }

@@ -90,33 +90,25 @@ The synchronization system:
 - validates ownership and payload/reference boundaries;
 - retains pending work until acknowledged;
 - warns/skips stale writes rather than silently overwriting newer state;
-- prevents older offline writes from silently resurrecting newer tombstone state.
+- skips stale canonical writes rather than silently overwriting newer server state.
 
 The implementation does not promise CRDTs, peer-to-peer sync, simultaneous collaborative editing, or a merge-conflict editor.
 
-## C7 Legacy Compatibility Boundary
+## C8 Canonical Persistence Boundary
 
-C7 removes Inbox, Resources, Reviews, and standalone Archive from the visible product. It does **not** physically migrate all associated storage yet.
+C8 removes the retired compatibility storage rather than carrying it forward indefinitely.
 
-Existing legacy Capture, Note, Review, Deadline, Task metadata, Dashboard state, project recovery metadata, and tombstone records may remain in:
+The canonical persisted workspace is Area / Project / Task / Date / DailyNote across PostgreSQL, bootstrap serialization, user-scoped IndexedDB, sync, and portability export v2.
 
-- PostgreSQL;
-- bootstrap serialization;
-- user-scoped IndexedDB snapshots;
-- synchronization compatibility;
-- import/export portability.
+IndexedDB v3 is an intentional clean break: remembered verified identities survive the database upgrade, while incompatible pre-C8 workspace and outbox snapshots are discarded and rebuilt from authenticated server bootstrap. No rolling old-client/outbox protocol is promised because the product had no real users at this migration point.
 
-They must remain user-scoped and migration-safe until C8 verifies the broad persistence migration.
+The sync contract accepts canonical entity types only and ordinary client mutations are upsert-only. Retired Capture/Resource/Review/legacy Deadline/Dashboard/recovery/tombstone fields are not synchronized.
 
-C7 also stops the demo seed and `/handoff` flow from creating new Inbox/Resource/Review product data.
+## Deletion / Lifecycle Boundary
 
-## Recoverable Deletion / Tombstone Boundary
+Canonical Area and Project lifecycle is archival in place. Tasks use Open/Done. Dates have no completion/archive state. There is no standalone Archive/Trash page and no canonical per-record tombstone protocol.
 
-Historical legacy records may still use synchronized `trashedAt`, archived state, or Capture deleted-state semantics. These compatibility records remain protected by stale-write rules so an older client cannot silently resurrect a newer tombstone.
-
-The standalone Archive/Trash page is retired in C7. Canonical Project/Area archival is managed in place, and canonical historical records are discoverable through Search.
-
-ContextOS **does not currently promise irreversible per-record purge**. Physical purge is intentionally withheld until C8 migration/retention/version behavior can be proven safe against stale offline clients. Account deletion remains a separate authenticated lifecycle operation.
+ContextOS does not present irreversible per-record purge as a user-facing workflow. Account deletion remains a separate authenticated lifecycle operation, and remote erasure of data already stored on another offline device is not claimed.
 
 ## Network-Required Operations
 

@@ -2,6 +2,17 @@ import { expect, test, type Page } from "@playwright/test";
 
 const DB_NAME = "contextos-offline-v1";
 
+async function apiLogin(page: Page, email = "demo@contextos.local", password = "contextos-demo-v011") {
+  const response = await page.request.post("/api/auth/login", { data: { email, password } });
+  expect(response.status()).toBe(200);
+  const me = await page.request.get("/api/auth/me");
+  expect(me.status()).toBe(200);
+  const body = await me.json();
+  const user = body.user ?? body;
+  expect(user?.id).toBeTruthy();
+  return user as { id: string; email: string };
+}
+
 async function uiLogin(page: Page, email = "demo@contextos.local", password = "contextos-demo-v011") {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
@@ -21,18 +32,20 @@ async function deleteLocalDb(page: Page) {
   }, DB_NAME);
 }
 
-async function seedLegacyV1(page: Page) {
-  await page.evaluate(async (databaseName) => {
-    const workspace = {
-      domains: [
-        {
-          id: "legacy-domain",
-          name: "Legacy Offline Marker",
-          archived: false,
-          createdAt: "2026-01-01T00:00:00.000Z",
-          updatedAt: "2026-01-01T00:00:00.000Z"
-        }
-      ],
+async function seedV2State(
+  page: Page,
+  user: { id: string; email: string }
+) {
+  await page.evaluate(async ({ databaseName, user }) => {
+    const timestamp = new Date().toISOString();
+    const legacyWorkspace = {
+      domains: [{
+        id: "legacy-domain",
+        name: "Must be discarded",
+        archived: false,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      }],
       projects: [],
       tasks: [],
       captures: [],
@@ -43,21 +56,35 @@ async function seedLegacyV1(page: Page) {
       dailyNotes: [],
       dashboardScratchpads: [],
       dashboardPreferences: [],
-      serverSyncedAt: "legacy-v1"
+      serverSyncedAt: "legacy-v2"
     };
+    const legacyOutbox = [{
+      mutationId: "legacy-v2-mutation",
+      entityType: "captures",
+      entityId: "legacy-capture",
+      operation: "upsert",
+      payload: { id: "legacy-capture", text: "discard me", updatedAt: timestamp },
+      createdAt: timestamp
+    }];
 
     await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 1);
+      const request = indexedDB.open(databaseName, 2);
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
+        if (!db.objectStoreNames.contains("users")) db.createObjectStore("users", { keyPath: "id" });
+        if (!db.objectStoreNames.contains("workspaces")) db.createObjectStore("workspaces");
+        if (!db.objectStoreNames.contains("outboxes")) db.createObjectStore("outboxes");
       };
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const db = request.result;
-        const tx = db.transaction("kv", "readwrite");
-        tx.objectStore("kv").put(workspace, "workspace");
-        tx.objectStore("kv").put([], "outbox");
+        const tx = db.transaction(["kv", "users", "workspaces", "outboxes"], "readwrite");
+        tx.objectStore("users").put({ id: user.id, email: user.email, verifiedAt: timestamp });
+        tx.objectStore("workspaces").put(legacyWorkspace, user.id);
+        tx.objectStore("outboxes").put(legacyOutbox, user.id);
+        tx.objectStore("kv").put(legacyWorkspace, "workspace");
+        tx.objectStore("kv").put(legacyOutbox, "outbox");
         tx.oncomplete = () => {
           db.close();
           resolve();
@@ -66,15 +93,19 @@ async function seedLegacyV1(page: Page) {
           db.close();
           reject(tx.error);
         };
+        tx.onabort = () => {
+          db.close();
+          reject(tx.error ?? new Error("v2 seed transaction aborted"));
+        };
       };
     });
-  }, DB_NAME);
+  }, { databaseName: DB_NAME, user });
 }
 
 async function localDbSnapshot(page: Page) {
   return page.evaluate(async (databaseName) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 2);
+      const request = indexedDB.open(databaseName, 3);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -104,45 +135,35 @@ async function localDbSnapshot(page: Page) {
       workspaceByUser[user.id] = await get("workspaces", user.id);
       outboxByUser[user.id] = (await get<any[]>("outboxes", user.id)) ?? [];
     }
-    const legacyWorkspace = await get("kv", "workspace");
-    const legacyOutbox = await get("kv", "outbox");
     const stores = Array.from(db.objectStoreNames);
     const version = db.version;
     db.close();
 
-    return { version, stores, users, workspaceByUser, outboxByUser, legacyWorkspace, legacyOutbox };
+    return { version, stores, users, workspaceByUser, outboxByUser };
   }, DB_NAME);
 }
 
 async function seedSecondLocalUser(page: Page, userId: string, email: string, marker: string) {
   await page.evaluate(async ({ databaseName, userId: secondUserId, email: secondEmail, marker: secondMarker }) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 2);
+      const request = indexedDB.open(databaseName, 3);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
 
     const timestamp = new Date().toISOString();
     const workspace = {
-      domains: [],
+      areas: [],
       projects: [],
       tasks: [],
-      captures: [],
-      notes: [],
-      deadlines: [],
-      contextDates: [],
-      reviews: [],
-      dailyNotes: [
-        {
-          id: `daily-note-${secondUserId}`,
-          localDate: "2026-01-01",
-          content: secondMarker,
-          createdAt: timestamp,
-          updatedAt: timestamp
-        }
-      ],
-      dashboardScratchpads: [],
-      dashboardPreferences: [],
+      dates: [],
+      dailyNotes: [{
+        id: `daily-note-${secondUserId}`,
+        localDate: "2026-01-01",
+        content: secondMarker,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      }],
       serverSyncedAt: ""
     };
 
@@ -159,33 +180,25 @@ async function seedSecondLocalUser(page: Page, userId: string, email: string, ma
   }, { databaseName: DB_NAME, userId, email, marker });
 }
 
-test("v1 global cache migrates once into the authenticated user's v2 stores", async ({ page }) => {
+test("v3 clean break preserves verified identity but discards incompatible v2 workspace and outbox", async ({ page }) => {
   await page.goto("/login");
   await deleteLocalDb(page);
-  await seedLegacyV1(page);
+  const user = await apiLogin(page);
+  await seedV2State(page, user);
 
-  // Preserve the migrated cache long enough to inspect it. The login request remains
-  // online, but the workspace's subsequent server bootstrap is deliberately unavailable.
   await page.route("**/api/bootstrap", (route) => route.abort());
-  await page.getByLabel("Email").fill("demo@contextos.local");
-  await page.getByLabel("Password").fill("contextos-demo-v011");
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/);
 
   const snapshot = await localDbSnapshot(page);
-  expect(snapshot.version).toBe(2);
-  expect(snapshot.stores).toEqual(expect.arrayContaining(["kv", "users", "workspaces", "outboxes"]));
-  expect(snapshot.users).toHaveLength(1);
-  expect(snapshot.users[0].email).toBe("demo@contextos.local");
-
-  const userId = snapshot.users[0].id;
-  expect(snapshot.workspaceByUser[userId]?.domains?.[0]?.name).toBe("Legacy Offline Marker");
-  expect(snapshot.outboxByUser[userId]).toEqual([]);
-  expect(snapshot.legacyWorkspace).toBeUndefined();
-  expect(snapshot.legacyOutbox).toBeUndefined();
+  expect(snapshot.version).toBe(3);
+  expect(snapshot.stores.sort()).toEqual(["outboxes", "users", "workspaces"]);
+  expect(snapshot.users.some((item) => item.id === user.id && item.email === user.email)).toBe(true);
+  expect(snapshot.workspaceByUser[user.id]).toBeUndefined();
+  expect(snapshot.outboxByUser[user.id]).toEqual([]);
 });
 
-test("local workspace and outbox state are keyed by verified user identity", async ({ page, context }) => {
+test("canonical local workspace and outbox state remain isolated by verified user identity", async ({ page, context }) => {
   await uiLogin(page);
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 

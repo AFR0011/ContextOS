@@ -10,24 +10,27 @@ function check(name, condition, detail) {
 }
 
 const localLifecycle = read("src/lib/local-lifecycle.ts");
+const localDb = read("src/lib/local-db.ts");
 const logoutDialog = read("src/components/workspace/LogoutDialog.tsx");
 const workspaceGate = read("src/components/workspace/WorkspaceGate.tsx");
 const workspaceShell = read("src/components/workspace/WorkspaceShell.tsx");
 const accountPanel = read("src/components/workspace/AccountDeletionPanel.tsx");
 const accountDelete = read("src/app/api/account/delete/route.ts");
 const clientStore = read("src/lib/client-store.tsx");
+const syncRoute = read("src/app/api/sync/route.ts");
 const syncServer = read("src/lib/sync-server.ts");
+const types = read("src/lib/types.ts");
 const schema = read("prisma/schema.prisma");
 
 check(
-  "user-scoped IndexedDB cleanup",
+  "user-scoped device cleanup",
   localLifecycle.includes("delete(userId)") && !localLifecycle.includes(".clear()"),
-  "Lifecycle cleanup must delete user-keyed entries and must not clear whole stores."
+  "Normal remove-from-device must remain user-scoped rather than erasing every local identity."
 );
 check(
   "logout defaults to local retention",
   logoutDialog.includes('data-testid="logout-keep-local"') && logoutDialog.includes("Log out and keep local data"),
-  "The ordinary logout path must visibly preserve local data."
+  "Ordinary logout should preserve the selected user's isolated local workspace by default."
 );
 check(
   "pending logout choices are explicit",
@@ -47,20 +50,20 @@ const logoutDestroyIndex = logoutDialog.indexOf("await destroyServerSession()");
 check(
   "destructive logout cleans local state before revoking session",
   logoutDiscardIndex >= 0 && logoutRemoveIndex >= 0 && logoutDestroyIndex > logoutDiscardIndex && logoutDestroyIndex > logoutRemoveIndex,
-  "Discard/remove-from-device paths must fail before server logout if user-scoped local cleanup cannot be completed."
+  "Discard/remove-from-device paths must fail before server logout if user-scoped local cleanup cannot complete."
 );
 check(
   "multiple local identities require explicit selection",
   workspaceGate.includes('data-testid="local-account-chooser"') &&
-    workspaceGate.includes("ContextOS will not guess which identity to open") &&
-    workspaceGate.includes('setState({ status: "ready", user: candidate, source: "local" })'),
-  "Multiple eligible offline workspaces must be chosen explicitly rather than selected implicitly."
+    workspaceGate.includes("ContextOS will not guess which identity to open"),
+  "Multiple eligible offline workspaces must never be selected implicitly."
 );
 check(
-  "workspace interaction waits for initial local state",
+  "workspace interaction waits for local hydration",
   workspaceShell.includes("if (loading)") && workspaceShell.includes('data-testid="workspace-local-loading"'),
-  "Workspace editing/logout controls must not render before the verified user's initial IndexedDB state is known."
+  "Workspace editing/logout controls must wait until the selected local identity has hydrated."
 );
+
 const mutationIncrementIndex = clientStore.indexOf("localMutationVersion.current += 1");
 const bootVersionIndex = clientStore.indexOf("const bootMutationVersion = localMutationVersion.current");
 const bootReadIndex = clientStore.indexOf("await rememberLocalUser(user)", bootVersionIndex);
@@ -72,22 +75,18 @@ check(
   mutationIncrementIndex >= 0 &&
     bootVersionIndex >= 0 && bootReadIndex > bootVersionIndex && bootGuardIndex > bootReadIndex &&
     refreshVersionIndex >= 0 && refreshGuardIndex > refreshVersionIndex,
-  "Startup bootstrap and explicit refresh must compare a mutation generation captured before their server snapshot can replace local state."
+  "Bootstrap/refresh must retain mutation-generation guards around server snapshots."
 );
+
 check(
   "account deletion is authenticated and same-origin guarded",
   accountDelete.includes("rejectCrossOriginMutation(request)") && accountDelete.includes("getCurrentUser()"),
-  "Account deletion must require both the authenticated session and the existing origin guard."
+  "Account deletion requires both authenticated session and same-origin mutation protection."
 );
 check(
   "account deletion re-verifies the password",
   accountDelete.includes("verifyPassword") && accountDelete.includes('confirmation: z.literal("DELETE")'),
   "A logged-in browser alone is not sufficient authority for destructive account removal."
-);
-check(
-  "account deletion supports preflight verification",
-  accountDelete.includes("verifyOnly") && accountDelete.includes("verified: true"),
-  "The browser must be able to verify credentials before removing its local copy."
 );
 const verifyIndex = accountPanel.indexOf("await requestDeletion(true)");
 const localRemovalIndex = accountPanel.indexOf("await removeLocalUserDeviceData(user.id)");
@@ -95,45 +94,60 @@ const deleteIndex = accountPanel.indexOf("await requestDeletion(false)");
 check(
   "account deletion failure ordering",
   verifyIndex >= 0 && localRemovalIndex > verifyIndex && deleteIndex > localRemovalIndex,
-  "Credentials must be verified before local cleanup, and irreversible server deletion must happen only after local cleanup succeeds."
+  "Credentials are verified before local cleanup and server deletion occurs last."
 );
 check(
   "server account deletion remains one cascade root",
   accountDelete.includes("prisma.user.delete") && schema.includes("onDelete: Cascade"),
-  "User deletion should remain the atomic root for user-owned server persistence."
+  "User deletion remains the atomic root for owned server persistence."
+);
+
+check(
+  "canonical workspace shape only",
+  types.includes('areas: Area[]') &&
+    types.includes('projects: Project[]') &&
+    types.includes('tasks: Task[]') &&
+    types.includes('dates: ContextDate[]') &&
+    types.includes('dailyNotes: DailyNote[]') &&
+    !/captures:|notes: Note\[\]|deadlines:|reviews:|dashboardScratchpads:|dashboardPreferences:/.test(types),
+  "WorkspaceData must expose only Area, Project, Task, Date, and Daily Note persistence."
 );
 check(
-  "client writes do not produce legacy hard-delete mutations",
-  !/operation\s*:\s*["']delete["']/.test(clientStore),
-  "Current clients must express ordinary deletion as synchronized tombstone state, not the legacy delete operation."
+  "canonical sync entities only",
+  syncRoute.includes('z.enum(["areas", "projects", "tasks", "dates", "dailyNotes"])') &&
+    syncRoute.includes('operation: z.literal("upsert")'),
+  "The live sync wire must accept only canonical collection names and upserts."
 );
 check(
-  "capture deletion remains synchronized state",
-  clientStore.includes('status: "deleted"') && clientStore.includes('mutate("captures"'),
-  "Inbox deletion must remain a versioned capture-state upsert rather than a physical delete."
+  "current client never emits delete mutations",
+  !/operation\s*:\s*["']delete["']/.test(clientStore) && !/operation\s*:\s*["']delete["']/.test(types),
+  "C8 has no per-record tombstone/delete protocol in the canonical workspace."
 );
 check(
-  "legacy delete remains compatibility-only",
-  syncServer.includes('if (mutation.operation === "delete")') &&
-    syncServer.includes("await recordMutation(tx, userId, mutation)") &&
-    !/mutation\.operation\s*===\s*["']delete["'][\s\S]{0,500}\.(delete|deleteMany)\(/.test(syncServer),
-  "The legacy delete operation must not silently become physical deletion without an anti-resurrection protocol."
+  "canonical schema has no retired models or tombstone fields",
+  ["Capture", "Note", "Deadline", "Review", "DashboardScratchpad", "DashboardPreference", "Domain"].every(
+    (model) => !schema.includes(`model ${model} {`)
+  ) &&
+    !schema.includes("trashedAt") &&
+    !schema.includes("archivedAt") &&
+    !schema.includes("dueDate") &&
+    !schema.includes("parentProjectId"),
+  "Retired persistence and old lifecycle fields must be physically absent after C8."
 );
 check(
-  "recoverable tombstones remain modeled",
-  ["Project", "Task", "Note", "Deadline"].every((model) => {
-    const start = schema.indexOf(`model ${model} {`);
-    const end = schema.indexOf("\n}", start);
-    return start >= 0 && schema.slice(start, end).includes("trashedAt");
-  }),
-  "Projects, tasks, notes, and dates require recoverable tombstone state."
+  "stale canonical writes still fail safely",
+  syncServer.includes("shouldApplyOrWarn") &&
+    syncServer.includes('reason: "stale"') &&
+    syncServer.includes("server has a newer update"),
+  "Removing tombstones must not remove last-write/stale-write protection for surviving records."
 );
 check(
-  "legacy tombstones remain migration-safe after Archive UI retirement",
-  clientStore.includes("trashedAt") &&
-    syncServer.includes("trashedAt") &&
-    syncServer.includes("shouldApplyOrWarn"),
-  "C7 retires the standalone Archive/Trash UI, but legacy tombstone state and stale-write protection must remain intact until C8 migration."
+  "IndexedDB v3 intentionally resets obsolete workspace and outbox state",
+  localDb.includes("const DB_VERSION = 3") &&
+    localDb.includes("oldVersion < 3") &&
+    localDb.includes("objectStore(WORKSPACE_STORE).clear()") &&
+    localDb.includes("objectStore(OUTBOX_STORE).clear()"),
+  "With no real users, C8 performs an explicit local clean break rather than pretending to migrate obsolete queued shapes."
 );
 
 const failed = checks.filter((item) => !item.ok);

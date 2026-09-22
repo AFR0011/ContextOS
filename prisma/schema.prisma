@@ -14,18 +14,12 @@ model User {
   updatedAt    DateTime @updatedAt
 
   sessions      Session[]
-  domains       Domain[]
+  areas         Area[]
   projects      Project[]
   tasks         Task[]
-  captures      Capture[]
-  notes         Note[]
-  deadlines     Deadline[]
-  contextDates  ContextDate[]
-  reviews       Review[]
+  dates         ContextDate[]
   dailyNotes    DailyNote[]
-  dashboardScratchpads  DashboardScratchpad[]
-  dashboardPreferences  DashboardPreference[]
-  syncMutations         SyncMutation[]
+  syncMutations SyncMutation[]
 }
 
 model Session {
@@ -40,123 +34,57 @@ model Session {
   @@index([userId])
 }
 
-model Domain {
+model Area {
   id        String   @id
   userId    String
   name      String
-  archived  Boolean  @default(false)
+  state     String   @default("active")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([userId, archived])
+  @@index([userId, state])
 }
 
 model Project {
-  id               String    @id
-  userId           String
-  name             String
-  domainId         String
-  parentProjectId  String?
-  status           String    @default("active")
-  currentObjective String    @default("")
-  nextAction       String    @default("")
-  latestStatus     String    @default("")
-  recoveryNotes    String    @default("")
-  openLoops        String[]  @default([])
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  archivedAt       DateTime?
-  trashedAt        DateTime?
+  id        String   @id
+  userId    String
+  name      String
+  areaId    String
+  objective String   @default("")
+  state     String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([userId, parentProjectId])
-  @@index([userId, status])
+  @@index([userId, areaId])
+  @@index([userId, state])
   @@index([userId, updatedAt])
 }
 
 model Task {
-  id          String    @id
-  userId      String
-  title       String
-  plannedDate DateTime?
-  dueDate     DateTime?
-  scheduledTime String?
-  projectId   String?
-  domainId    String?
-  status      String    @default("todo")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  archivedAt  DateTime?
-  trashedAt   DateTime?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([userId, status])
-  @@index([userId, plannedDate])
-  @@index([userId, dueDate])
-}
-
-model Capture {
-  id            String   @id
+  id            String    @id
   userId        String
-  text          String
-  status        String   @default("unprocessed")
-  type          String?
-  parsedData    Json?
-  convertedToId String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  title         String
+  plannedDate   DateTime?
+  scheduledTime String?
+  projectId     String?
+  areaId        String?
+  state         String    @default("open")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([userId, status])
-  @@index([userId, createdAt])
-}
-
-model Note {
-  id         String    @id
-  userId     String
-  title      String
-  content    String    @default("")
-  projectId  String?
-  domainId   String
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  archivedAt DateTime?
-  trashedAt  DateTime?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
+  @@index([userId, state])
+  @@index([userId, plannedDate])
   @@index([userId, projectId])
-}
-
-model Deadline {
-  id         String    @id
-  userId     String
-  title      String
-  date       DateTime
-  time       String?
-  location   String    @default("")
-  projectId  String?
-  taskIds    String[]  @default([])
-  notes      String    @default("")
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  archivedAt DateTime?
-  trashedAt  DateTime?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([userId, date])
+  @@index([userId, areaId])
 }
 
 model ContextDate {
@@ -169,7 +97,7 @@ model ContextDate {
   endTime   String?
   details   String   @default("")
   projectId String?
-  domainId  String?
+  areaId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -178,23 +106,7 @@ model ContextDate {
   @@index([userId])
   @@index([userId, date])
   @@index([userId, projectId])
-  @@index([userId, domainId])
-}
-
-model Review {
-  id        String   @id
-  userId    String
-  type      String
-  date      DateTime
-  responses Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([userId, type])
-  @@index([userId, date])
+  @@index([userId, areaId])
 }
 
 model DailyNote {
@@ -208,35 +120,6 @@ model DailyNote {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, localDate])
-  @@index([userId])
-}
-
-model DashboardScratchpad {
-  id        String   @id
-  userId    String   @unique
-  content   String   @default("")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model DashboardPreference {
-  id                String   @id
-  userId            String   @unique
-  sectionOrder      String[] @default([])
-  collapsedSections String[] @default([])
-  reviewPromptDismissals String[] @default([])
-  dateWindowDays    Int      @default(14)
-  showCompleted     Boolean  @default(false)
-  taskSortMode      String   @default("recent")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@index([userId])
 }
 

@@ -91,7 +91,7 @@ test("direct workspace URLs resolve through the canonical local router", async (
   const bootstrap = await page.request.get("/api/bootstrap");
   expect(bootstrap.ok()).toBeTruthy();
   const workspace = await bootstrap.json();
-  const project = workspace.data.projects.find((item: { trashedAt?: string | null }) => !item.trashedAt);
+  const project = workspace.data.projects.find((item: { state?: string }) => item.state === "active") ?? workspace.data.projects[0];
   expect(project?.id).toBeTruthy();
 
   await page.goto(`/projects/${encodeURIComponent(project.id)}`);

@@ -6,13 +6,13 @@ import { useWorkspace } from "@/lib/client-store";
 import { useLocalRouter } from "@/lib/local-router";
 
 function AreaCreator({ compact = false }: { compact?: boolean }) {
-  const { addDomain } = useWorkspace();
+  const { addArea } = useWorkspace();
   const [name, setName] = useState("");
 
   function createArea() {
     const areaName = name.trim();
     if (!areaName) return;
-    addDomain(areaName);
+    addArea(areaName);
     setName("");
   }
 

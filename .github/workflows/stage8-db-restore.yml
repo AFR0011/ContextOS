@@ -141,12 +141,8 @@ jobs:
 
           const data = bootstrap?.data;
           if (!data) throw new Error('Bootstrap response did not contain workspace data.');
-          if (!Array.isArray(data.domains) || data.domains.length < 1) throw new Error('Restored bootstrap has no domains.');
+          if (!Array.isArray(data.areas) || data.areas.length < 1) throw new Error('Restored bootstrap has no areas.');
           if (!Array.isArray(data.projects) || data.projects.length < 1) throw new Error('Restored bootstrap has no projects.');
           if (!Array.isArray(data.tasks) || data.tasks.length < 1) throw new Error('Restored bootstrap has no tasks.');
-          if (!Array.isArray(data.dashboardScratchpads) || data.dashboardScratchpads.length < 1) {
-            throw new Error('Restored bootstrap has no dashboard scratchpad.');
-          }
-
           console.log('STAGE8_RESTORED_BOOTSTRAP=PASS');
           NODE

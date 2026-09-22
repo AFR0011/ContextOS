@@ -102,78 +102,6 @@ async function currentLocalState(page: Page) {
   });
 }
 
-async function offlineCacheState(page: Page, text: string) {
-  const { workspace, outbox } = await currentLocalState(page);
-  return {
-    hasCapture: Boolean(workspace?.captures?.some((capture: { text: string }) => capture.text === text)),
-    hasScratchpad: Boolean(workspace?.dashboardScratchpads?.some((scratchpad: { content: string }) => scratchpad.content === text)),
-    pendingCount: outbox.length
-  };
-}
-
-async function workspaceProjectRecoveryIncludes(page: Page, projectName: string, text: string) {
-  const { workspace } = await currentLocalState(page);
-  return Boolean(
-    workspace?.projects?.some(
-      (project: { name: string; recoveryNotes: string }) => project.name === projectName && project.recoveryNotes.includes(text)
-    )
-  );
-}
-
-async function dashboardScratchpadContent(page: Page) {
-  const { workspace } = await currentLocalState(page);
-  return workspace?.dashboardScratchpads?.[0]?.content ?? "";
-}
-
-async function injectLegacyDashboardPreferences(page: Page) {
-  await page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("contextos-offline-v1");
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-
-    const users = await new Promise<{ id: string; email: string }[]>((resolve, reject) => {
-      const tx = db.transaction("users", "readonly");
-      const request = tx.objectStore("users").getAll();
-      request.onsuccess = () => resolve(request.result as { id: string; email: string }[]);
-      request.onerror = () => reject(request.error);
-    });
-    const user = users.find((candidate) => candidate.email === "demo@contextos.local") ?? users[0];
-    if (!user) {
-      db.close();
-      throw new Error("No locally verified user is available for the test workspace.");
-    }
-
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction("workspaces", "readwrite");
-      const store = tx.objectStore("workspaces");
-      const get = store.get(user.id);
-      get.onerror = () => reject(get.error);
-      get.onsuccess = () => {
-        const current = get.result;
-        if (!current) {
-          tx.abort();
-          reject(new Error("Current user's local workspace was not found."));
-          return;
-        }
-        current.dashboardPreferences = [
-          {
-            ...current.dashboardPreferences[0],
-            sectionOrder: ["allTasks", "projects", "notepad", "dates", "tasks"],
-            collapsedSections: []
-          }
-        ];
-        store.put(current, user.id);
-      };
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error ?? new Error("Local workspace update transaction aborted."));
-    });
-    db.close();
-  });
-}
-
 async function taskTitleOrder(container: Locator) {
   return container.locator('[aria-label^="Task title "]').evaluateAll((fields) =>
     fields.map((field) => field.getAttribute("aria-label")?.replace(/^Task title /, "") ?? "")
@@ -217,72 +145,6 @@ test("date utilities keep date-only values on the local calendar day", async () 
   }
 });
 
-test("dashboard preferences ignore legacy section order and hidden allTasks", async () => {
-  const { normalizeDashboardPreference } = await import("../../src/lib/dashboard-preferences");
-  const preference = normalizeDashboardPreference({
-    sectionOrder: ["notepad", "allTasks", "projects"],
-    collapsedSections: ["projects", "legacy", "allTasks", "projects"],
-    dateWindowDays: 7,
-    reviewPromptDismissals: ["daily-startup:2026-06-09"],
-    showCompleted: true,
-    taskSortMode: "oldest"
-  });
-
-  expect(preference.sectionOrder).toEqual(["tasks", "dates", "projects", "notepad"]);
-  expect(preference.collapsedSections).toEqual(["projects"]);
-  expect(preference.dateWindowDays).toBe(7);
-  expect(preference.reviewPromptDismissals).toEqual(["daily-startup:2026-06-09"]);
-  expect(preference.showCompleted).toBe(true);
-  expect(preference.taskSortMode).toBe("oldest");
-  expect(normalizeDashboardPreference({ taskSortMode: "manual" as any }).taskSortMode).toBe("recent");
-});
-
-test("command page parser handles explicit task and date commands", async () => {
-  const { parseCommandPageLine } = await import("../../src/lib/command-page-commands");
-
-  expect(parseCommandPageLine("/task Send update today at:09:30 due:2026-07-05", "2026-07-01")).toMatchObject({
-    type: "task",
-    title: "Send update",
-    plannedDate: "2026-07-01",
-    dueDate: "2026-07-05",
-    scheduledTime: "09:30"
-  });
-  expect(parseCommandPageLine("/task Call advisor at:14:00", "2026-07-01")).toMatchObject({
-    type: "task",
-    plannedDate: "2026-07-01",
-    scheduledTime: "14:00"
-  });
-  expect(parseCommandPageLine("/task Send update [2026-07-10] (930)", "2026-07-01")).toMatchObject({
-    type: "task",
-    title: "Send update",
-    plannedDate: "2026-07-10",
-    scheduledTime: "09:30"
-  });
-  expect(parseCommandPageLine("/date Exam tomorrow at:10:00", "2026-07-01")).toMatchObject({
-    type: "date",
-    title: "Exam",
-    date: "2026-07-02",
-    time: "10:00"
-  });
-  expect(parseCommandPageLine("/date Exam [20260710] (14)", "2026-07-01")).toMatchObject({
-    type: "date",
-    title: "Exam",
-    date: "2026-07-10",
-    time: "14:00"
-  });
-  expect(parseCommandPageLine("/deadline Review [7/10] (1430)", "2026-07-01")).toMatchObject({
-    type: "date",
-    title: "Review",
-    date: "2026-07-10",
-    time: "14:30"
-  });
-  expect(parseCommandPageLine("/date Missing date", "2026-07-01")).toMatchObject({
-    type: "error",
-    message: expect.stringContaining("Dates need")
-  });
-  expect(parseCommandPageLine("- [ ] local checkbox", "2026-07-01")).toEqual({ type: "none" });
-});
-
 test("deployment headers, metadata, and service worker cache routes are configured", async ({ page }) => {
   const response = await page.request.get("/login");
   const headers = response.headers();
@@ -302,7 +164,7 @@ test("deployment headers, metadata, and service worker cache routes are configur
 
   const swResponse = await page.request.get("/sw.js");
   const serviceWorker = await swResponse.text();
-  expect(serviceWorker).toContain('const SHELL_VERSION = "v8"');
+  expect(serviceWorker).toContain('const SHELL_VERSION = "v9"');
   expect(serviceWorker).toContain('const SHELL_MANIFEST_KEY = "/__contextos_shell_manifest__"');
   expect(serviceWorker).toContain('"/dates"');
   expect(serviceWorker).toContain('"/deadlines"');
@@ -597,7 +459,7 @@ test("global server refresh replaces stale local workspace after external reset"
   await expect.poll(async () => {
     const response = await page.request.get("/api/bootstrap");
     const workspace = await response.json();
-    return workspace.data.domains.some((domain: { name: string }) => domain.name === staleDomain);
+    return workspace.data.areas.some((area: { name: string }) => area.name === staleDomain);
   }).toBe(true);
   await expect(page.getByTestId("pending-count")).toHaveText("0");
 
@@ -660,27 +522,23 @@ test("sync rejects oversized payloads and cross-user record ids", async ({ page 
   const project = workspace.data.projects[0];
   const now = new Date().toISOString();
 
+  const oversizedAreaId = `oversized-area-${Date.now()}`;
   const oversized = await page.request.post("/api/sync", {
     data: {
-      mutations: [
-        {
-          mutationId: `oversized-${Date.now()}`,
-          entityType: "captures",
-          entityId: `oversized-capture-${Date.now()}`,
-          operation: "upsert",
-          payload: {
-            id: `oversized-capture-${Date.now()}`,
-            text: "x".repeat(21_000),
-            status: "unprocessed",
-            type: null,
-            parsedData: null,
-            convertedToId: null,
-            createdAt: now,
-            updatedAt: now
-          },
-          createdAt: now
-        }
-      ]
+      mutations: [{
+        mutationId: `oversized-${Date.now()}`,
+        entityType: "areas",
+        entityId: oversizedAreaId,
+        operation: "upsert",
+        payload: {
+          id: oversizedAreaId,
+          name: "x".repeat(21_000),
+          state: "active",
+          createdAt: now,
+          updatedAt: now
+        },
+        createdAt: now
+      }]
     }
   });
   expect(oversized.status()).toBe(400);
@@ -722,83 +580,47 @@ test("sync rejects oversized payloads and cross-user record ids", async ({ page 
   expect(afterWorkspace.data.projects.find((item: { id: string }) => item.id === project.id)?.name).toBe(project.name);
 });
 
-test("legacy task, project-note, and priority mutations drain compatibly", async ({ page }) => {
+test("sync rejects retired entity types and physical delete operations", async ({ page }) => {
   await login(page);
+  const now = new Date().toISOString();
+
+  const retiredEntity = await page.request.post("/api/sync", {
+    data: {
+      mutations: [{
+        mutationId: `retired-capture-${Date.now()}`,
+        entityType: "captures",
+        entityId: `retired-capture-${Date.now()}`,
+        operation: "upsert",
+        payload: {
+          id: `retired-capture-${Date.now()}`,
+          text: "This retired entity must not enter canonical storage.",
+          createdAt: now,
+          updatedAt: now
+        },
+        createdAt: now
+      }]
+    }
+  });
+  expect(retiredEntity.status()).toBe(400);
+
   const bootstrap = await page.request.get("/api/bootstrap");
   expect(bootstrap.ok()).toBeTruthy();
-  const workspace = await bootstrap.json();
-  const project = workspace.data.projects[0];
-  const now = new Date().toISOString();
-  const suffix = Date.now();
-  const taskId = `legacy-task-${suffix}`;
-  const noteId = `legacy-note-${suffix}`;
-  const priorityId = `legacy-priority-${suffix}`;
-  const mutations = [
-    {
-      mutationId: `legacy-task-mutation-${suffix}`,
-      entityType: "tasks",
-      entityId: taskId,
-      operation: "upsert",
-      payload: {
-        id: taskId,
-        title: `Legacy scheduled task ${suffix}`,
-        plannedDate: null,
-        dueDate: null,
-        startTime: "08:15",
-        endTime: "09:45",
-        projectId: project.id,
-        domainId: project.domainId,
-        status: "todo",
-        createdAt: now,
-        updatedAt: now,
-        archivedAt: null,
-        trashedAt: null
-      },
-      createdAt: now
-    },
-    {
-      mutationId: `legacy-note-mutation-${suffix}`,
-      entityType: "notes",
-      entityId: noteId,
-      operation: "upsert",
-      payload: {
-        id: noteId,
-        title: "Offline project handoff",
-        content: "Preserve this queued context exactly once.",
-        projectId: project.id,
-        domainId: project.domainId,
-        createdAt: now,
-        updatedAt: now,
-        archivedAt: null,
-        trashedAt: null
-      },
-      createdAt: now
-    },
-    {
-      mutationId: `legacy-priority-mutation-${suffix}`,
-      entityType: "priorities",
-      entityId: priorityId,
-      operation: "upsert",
-      payload: { id: priorityId, scope: "daily", date: now, text: "Old priority", createdAt: now, updatedAt: now },
-      createdAt: now
+  const area = (await bootstrap.json()).data.areas[0];
+  expect(area?.id).toBeTruthy();
+
+  const physicalDelete = await page.request.post("/api/sync", {
+    data: {
+      mutations: [{
+        mutationId: `retired-delete-${Date.now()}`,
+        entityType: "areas",
+        entityId: area.id,
+        operation: "delete",
+        payload: area,
+        createdAt: now
+      }]
     }
-  ];
-
-  const first = await page.request.post("/api/sync", { data: { mutations } });
-  expect(first.ok()).toBeTruthy();
-  const firstResult = await first.json();
-  expect(firstResult.appliedMutationIds).toEqual(expect.arrayContaining(mutations.map((mutation) => mutation.mutationId)));
-  expect(firstResult.data.tasks.find((task: { id: string }) => task.id === taskId)?.scheduledTime).toBe("08:15");
-  expect(firstResult.data.notes.some((note: { id: string }) => note.id === noteId)).toBe(false);
-  const mergedProject = firstResult.data.projects.find((item: { id: string }) => item.id === project.id);
-  expect(mergedProject.recoveryNotes).toContain("## Imported project notes");
-  expect(mergedProject.recoveryNotes).toContain("Offline project handoff");
-
-  const second = await page.request.post("/api/sync", { data: { mutations } });
-  expect(second.ok()).toBeTruthy();
-  const secondResult = await second.json();
-  const secondProject = secondResult.data.projects.find((item: { id: string }) => item.id === project.id);
-  expect(secondProject.recoveryNotes.match(new RegExp(`<!-- imported-project-note:${noteId} -->`, "g"))).toHaveLength(1);
+  });
+  expect(physicalDelete.status()).toBe(400);
 });
 
 test("project detail exposes Tasks and honest Linked Knowledge without legacy recovery UI", async ({ page }) => {

@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Archive, Plus, RotateCcw } from "lucide-react";
 import { EmptyState, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
 import { useWorkspace } from "@/lib/client-store";
-import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
 
 function AreaRow({
@@ -48,17 +47,16 @@ function AreaRow({
 
 export function AreasView() {
   const router = useRouter();
-  const { data, loading, addDomain, updateDomain } = useWorkspace();
-  const canonical = useMemo(() => adaptLegacyWorkspace(data).workspace, [data]);
+  const { data, loading, addArea, updateArea } = useWorkspace();
   const [showNew, setShowNew] = useState(false);
   const [name, setName] = useState("");
 
-  const activeAreas = canonical.areas.filter((area) => area.state === "active");
-  const archivedAreas = canonical.areas.filter((area) => area.state === "archived");
+  const activeAreas = data.areas.filter((area) => area.state === "active");
+  const archivedAreas = data.areas.filter((area) => area.state === "archived");
 
   function counts(areaId: string) {
-    const projectCount = canonical.projects.filter((project) => project.areaId === areaId && project.state === "active").length;
-    const taskCount = canonical.tasks.filter(
+    const projectCount = data.projects.filter((project) => project.areaId === areaId && project.state === "active").length;
+    const taskCount = data.tasks.filter(
       (task) => task.state === "open" && task.parent.type === "area" && task.parent.areaId === areaId
     ).length;
     return { projectCount, taskCount };
@@ -67,7 +65,7 @@ export function AreasView() {
   function createArea() {
     const trimmed = name.trim();
     if (!trimmed) return;
-    addDomain(trimmed);
+    addArea(trimmed);
     setName("");
     setShowNew(false);
   }
@@ -112,7 +110,7 @@ export function AreasView() {
                       projectCount={projectCount}
                       taskCount={taskCount}
                       onOpen={() => router.push(`/areas/${area.id}`)}
-                      onArchive={() => updateDomain(area.id, { archived: true })}
+                      onArchive={() => updateArea(area.id, { state: "archived" })}
                     />
                   );
                 })}
@@ -135,7 +133,7 @@ export function AreasView() {
                       taskCount={taskCount}
                       archived
                       onOpen={() => router.push(`/areas/${area.id}`)}
-                      onRestore={() => updateDomain(area.id, { archived: false })}
+                      onRestore={() => updateArea(area.id, { state: "active" })}
                     />
                   );
                 })}

@@ -1,8 +1,7 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const demoEmail = "demo@contextos.local";
 const demoPassword = "contextos-demo-v011";
-const viewKey = "contextos-dashboard-command-page-view";
 
 async function resetDemo(page: Page) {
   const response = await page.request.post("/api/reset-demo");
@@ -18,20 +17,6 @@ async function loginDemo(page: Page) {
   await resetDemo(page);
   await page.reload();
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
-}
-
-async function logout(request: APIRequestContext) {
-  const response = await request.post("/api/auth/logout");
-  expect(response.status()).toBe(200);
-}
-
-async function preferenceId(request: APIRequestContext) {
-  const response = await request.get("/api/bootstrap");
-  expect(response.status()).toBe(200);
-  const body = await response.json() as { data: { dashboardPreferences: Array<{ id: string }> } };
-  const id = body.data.dashboardPreferences[0]?.id;
-  expect(id).toBeTruthy();
-  return id!;
 }
 
 test("Search indexes canonical operational context and deep-targets the selected record", async ({ page }) => {

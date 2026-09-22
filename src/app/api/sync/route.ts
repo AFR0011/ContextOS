@@ -20,9 +20,9 @@ const timestampSchema = z.string().min(1).max(80).refine((value) => !Number.isNa
 
 const mutationSchema = z.object({
   mutationId: z.string().min(1).max(160),
-  entityType: z.enum(["domains", "projects", "tasks", "captures", "notes", "deadlines", "contextDates", "reviews", "dailyNotes", "priorities", "dashboardScratchpads", "dashboardPreferences"]),
+  entityType: z.enum(["areas", "projects", "tasks", "dates", "dailyNotes"]),
   entityId: z.string().min(1).max(160),
-  operation: z.enum(["upsert", "delete"]),
+  operation: z.literal("upsert"),
   payload: z.record(z.string().max(80), z.unknown()).nullable(),
   createdAt: timestampSchema
 }).superRefine((mutation, ctx) => {
@@ -35,7 +35,7 @@ const mutationSchema = z.object({
     });
   }
 
-  if (mutation.operation === "upsert") {
+  {
     const payloadId = mutation.payload?.id;
     if (typeof payloadId !== "string" || payloadId !== mutation.entityId) {
       ctx.addIssue({

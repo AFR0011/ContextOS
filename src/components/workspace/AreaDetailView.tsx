@@ -1,18 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
 import { useWorkspace } from "@/lib/client-store";
-import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import { localDateKey } from "@/lib/dates";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
 
 export function AreaDetailView({ areaId }: { areaId: string }) {
   const router = useRouter();
-  const { data, addProject, addTask, addContextDate, updateDomain, updateProject, updateTask } = useWorkspace();
-  const canonical = useMemo(() => adaptLegacyWorkspace(data).workspace, [data]);
-  const area = canonical.areas.find((item) => item.id === areaId);
+  const { data, addProject, addTask, addDate, updateArea, updateProject, updateTask } = useWorkspace();
+  const area = data.areas.find((item) => item.id === areaId);
   const [projectName, setProjectName] = useState("");
   const [projectObjective, setProjectObjective] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
@@ -34,19 +32,19 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
     );
   }
 
-  const activeProjects = canonical.projects.filter((project) => project.areaId === area.id && project.state === "active");
-  const archivedProjects = canonical.projects.filter((project) => project.areaId === area.id && project.state === "archived");
-  const directTasks = canonical.tasks.filter((task) => task.parent.type === "area" && task.parent.areaId === area.id);
+  const activeProjects = data.projects.filter((project) => project.areaId === area.id && project.state === "active");
+  const archivedProjects = data.projects.filter((project) => project.areaId === area.id && project.state === "archived");
+  const directTasks = data.tasks.filter((task) => task.parent.type === "area" && task.parent.areaId === area.id);
   const openTasks = directTasks.filter((task) => task.state === "open");
   const doneTasks = directTasks.filter((task) => task.state === "done");
-  const directDates = canonical.dates
+  const directDates = data.dates
     .filter((item) => item.parent.type === "area" && item.parent.areaId === area.id)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
 
   function createProject() {
     const name = projectName.trim();
     if (!name || area.state === "archived") return;
-    const id = addProject({ name, domainId: area.id, currentObjective: projectObjective.trim() });
+    const id = addProject({ name, areaId: area.id, objective: projectObjective.trim() });
     setProjectName("");
     setProjectObjective("");
     router.push(`/projects/${id}`);
@@ -57,8 +55,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
     if (!title || area.state === "archived") return;
     addTask({
       title,
-      projectId: null,
-      domainId: area.id,
+      parent: { type: "area", areaId: area.id },
       plannedDate: plannedDate || null,
       scheduledTime: plannedDate ? scheduledTime || null : null
     });
@@ -70,15 +67,14 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
   function createDate() {
     const title = dateTitle.trim();
     if (!title || !dateValue || area.state === "archived") return;
-    addContextDate({
+    addDate({
       title,
       kind: dateKind,
       date: dateValue,
       startTime: dateStartTime || null,
       endTime: dateKind === "event" ? dateEndTime || null : null,
       details: dateDetails.trim(),
-      projectId: null,
-      domainId: area.id
+      parent: { type: "area", areaId: area.id }
     });
     setDateTitle("");
     setDateStartTime("");
@@ -98,11 +94,11 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
         description={area.state === "archived" ? "Archived responsibility domain" : "Active responsibility domain"}
         action={
           area.state === "archived" ? (
-            <button type="button" onClick={() => updateDomain(area.id, { archived: false })} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
+            <button type="button" onClick={() => updateArea(area.id, { state: "active" })} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
               <RotateCcw className="h-4 w-4" /> Restore
             </button>
           ) : (
-            <button type="button" onClick={() => updateDomain(area.id, { archived: true })} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
+            <button type="button" onClick={() => updateArea(area.id, { state: "archived" })} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
               <Archive className="h-4 w-4" /> Archive
             </button>
           )
@@ -118,7 +114,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
                   <span className="block truncate text-sm font-semibold text-[var(--cos-text-strong)]">{project.name}</span>
                   <span className="mt-1 block line-clamp-2 text-xs text-[var(--cos-text-muted)]">{project.objective || "No objective yet."}</span>
                 </button>
-                <button type="button" onClick={() => updateProject(project.id, { status: "archived", archivedAt: new Date().toISOString() })} className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs">
+                <button type="button" onClick={() => updateProject(project.id, { state: "archived" })} className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs">
                   <Archive className="h-3.5 w-3.5" /> Archive
                 </button>
               </div>
@@ -144,7 +140,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
               key={task.id}
               title={task.title}
               meta={[task.plannedDate ? `Planned ${task.plannedDate}` : "", task.scheduledTime ?? ""].filter(Boolean).join(" · ") || "Unscheduled"}
-              onToggle={() => updateTask(task.id, { status: "done" })}
+              onToggle={() => updateTask(task.id, { state: "done" })}
             />
           ))}
           {!openTasks.length ? <p className="px-3 py-4 text-sm text-[var(--cos-text-subtle)]">No direct open tasks.</p> : null}
@@ -153,7 +149,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
             <details className="mt-3 border-t border-[var(--cos-border-soft)] pt-3">
               <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-[var(--cos-text-muted)]">Completed ({doneTasks.length})</summary>
               {doneTasks.map((task) => (
-                <TaskRow key={task.id} title={task.title} done meta="Completed" onToggle={() => updateTask(task.id, { status: "todo" })} />
+                <TaskRow key={task.id} title={task.title} done meta="Completed" onToggle={() => updateTask(task.id, { state: "open" })} />
               ))}
             </details>
           ) : null}
@@ -220,7 +216,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
                   <span className="block truncate text-sm font-semibold text-[var(--cos-text-strong)]">{project.name}</span>
                   <span className="mt-1 block line-clamp-2 text-xs text-[var(--cos-text-muted)]">{project.objective || "No objective yet."}</span>
                 </button>
-                <button type="button" onClick={() => updateProject(project.id, { status: "active", archivedAt: null })} className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs">
+                <button type="button" onClick={() => updateProject(project.id, { state: "active" })} className="cos-btn cos-btn-ghost min-h-9 px-3 py-2 text-xs">
                   <RotateCcw className="h-3.5 w-3.5" /> Restore
                 </button>
               </div>

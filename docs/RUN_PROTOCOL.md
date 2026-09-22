@@ -65,7 +65,6 @@ The production matrix owns:
 - a **functional local Search query** returning cached canonical data;
 - verified application-shell completeness;
 - durable local supported mutations/outbox state;
-- legacy tombstone hard-reload/anti-resurrection behavior during the C7–C8 compatibility period;
 - production response-security boundaries; and
 - proof that `/api/*` traffic is network-only and absent from shell caches.
 
@@ -93,7 +92,7 @@ The development suite owns broader interaction, local atomicity, synchronization
   - `/today -> /dashboard`
   - `/this-week -> /dashboard`
   - `/deadlines -> /dates`
-- Confirm `/handoff` can preview a valid handoff but does **not** create a legacy Inbox Capture.
+- Confirm `/handoff` can preview a valid handoff without persisting a retired Inbox record.
 
 ## Offline Verification
 
@@ -114,9 +113,9 @@ A first-time browser without a verified local workspace remains blocked. Multipl
 
 Accepted mutation IDs remain user-scoped and idempotent. Stale updates are surfaced rather than silently replacing newer state. Startup/bootstrap and explicit refresh refuse to replace a newer local mutation with an older in-flight snapshot.
 
-**Stage 9 formalized ordinary user deletion as synchronized recoverable state.** C7 retires the standalone Archive/Trash UI but does not discard the underlying compatibility tombstones. Legacy Projects, Tasks, Notes, Deadlines, and Capture deleted states remain protected against stale resurrection until C8 migration.
+Historical Stage 9 verified recoverable tombstone behavior for the pre-C8 model. C8 intentionally removes that per-record tombstone protocol from the canonical workspace.
 
-The legacy wire `operation: "delete"` remains compatibility-only. Irreversible per-record purge remains unsupported without an explicit anti-resurrection protocol.
+Current sync accepts canonical entity types and upsert operations only. Area/Project archival and Task Open/Done are ordinary canonical state transitions; Dates have no deletion lifecycle state. Stale canonical writes remain warning/skipped rather than silently overwriting newer server state.
 
 ## Authentication / Lifecycle
 

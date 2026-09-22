@@ -23,17 +23,16 @@ async function warmOfflineShell(page: Page) {
 async function clearLocalIdentityAndWorkspace(page: Page) {
   await page.evaluate(async (databaseName) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 2);
+      const request = indexedDB.open(databaseName, 3);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
 
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(["users", "workspaces", "outboxes", "kv"], "readwrite");
+      const tx = db.transaction(["users", "workspaces", "outboxes"], "readwrite");
       tx.objectStore("users").clear();
       tx.objectStore("workspaces").clear();
       tx.objectStore("outboxes").clear();
-      tx.objectStore("kv").clear();
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error ?? new Error("IndexedDB clear was aborted."));
@@ -45,7 +44,7 @@ async function clearLocalIdentityAndWorkspace(page: Page) {
 async function seedSecondLocalWorkspace(page: Page) {
   return page.evaluate(async (databaseName) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(databaseName, 2);
+      const request = indexedDB.open(databaseName, 3);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -54,17 +53,11 @@ async function seedSecondLocalWorkspace(page: Page) {
     const email = `${id}@example.com`;
     const timestamp = new Date().toISOString();
     const workspace = {
-      domains: [],
+      areas: [],
       projects: [],
       tasks: [],
-      captures: [],
-      notes: [],
-      deadlines: [],
-      contextDates: [],
-      reviews: [],
+      dates: [],
       dailyNotes: [],
-      dashboardScratchpads: [],
-      dashboardPreferences: [],
       serverSyncedAt: ""
     };
 

@@ -170,7 +170,7 @@ There are no:
 - progress percentages;
 - extra project workflow states.
 
-Legacy persistence fields may remain until C8 migration, but definitive UI and Search do not expose them.
+C8 persistence stores only canonical Project fields; retired nesting/recovery/workflow fields are removed rather than hidden.
 
 ## 6. Task
 
@@ -192,7 +192,7 @@ There is no canonical:
 - blocked/waiting/dropped state;
 - priority subsystem.
 
-Legacy surviving non-done Task states map to Open during the compatibility period. Legacy `dropped` also maps to Open.
+The C8 one-way database migration maps every surviving non-done legacy Task state, including `dropped`, to Open before dropping the old status field.
 
 ## 7. ContextDate
 
@@ -326,19 +326,19 @@ Replacement:
 - contextual creation;
 - Cmd/Ctrl+K New Task / New Date.
 
-Existing Capture rows remain preserved during C7 for C8 migration, but no new demo/handoff Inbox captures are created.
+C8 removes legacy Capture storage. No canonical Inbox record exists and demo/handoff flows do not create one.
 
 ### Resources
 
 Retired in C7.
 
-Durable knowledge belongs to future Canon/Knowledge Base. Existing standalone Note rows remain preserved until C8 migration.
+Durable knowledge belongs to future Canon/Knowledge Base. C8 removes the old standalone Note/Resource persistence model.
 
 ### Reviews
 
 Retired in C7.
 
-Reflection/history belongs primarily to Ledger. Existing Review rows remain preserved until C8 migration.
+Reflection/history belongs primarily to Ledger. C8 removes the old Review persistence model.
 
 ### Archive / Trash page
 
@@ -346,7 +346,7 @@ Retired in C7.
 
 - Area/Project archival is visible in-place.
 - canonical historical state is discoverable through Search.
-- legacy tombstone state remains preserved behind the compatibility boundary until C8 so old offline state cannot be silently lost or resurrected.
+- C8 removes the old per-record tombstone fields; incompatible pre-C8 local workspace/outbox state is reset at the IndexedDB v3 boundary rather than rolled forward.
 
 There is no standalone Archive page in the definitive product.
 
@@ -392,29 +392,36 @@ Local-first rules include:
 - explicit local identity selection when multiple verified workspaces exist;
 - true logout/account deletion remain network-bound where server state must change.
 
-## 15. Persistence compatibility boundary
+## 15. Canonical persistence boundary
 
-C7 is a **surface retirement**, not the broad persistence migration.
+C8 completes the persistence clean break.
 
-Until C8, storage/sync/import/export may still contain:
+The persisted workspace has five canonical collections:
 
-- legacy Capture rows;
-- standalone Note rows;
-- Review rows;
-- legacy Deadline rows;
-- old Task fields/statuses;
-- Dashboard Scratchpad/Preference rows;
-- project recovery metadata;
-- nested-project fields.
+- Areas;
+- Projects;
+- Tasks;
+- Dates (ContextDate records);
+- Daily Notes.
 
-Rules during this compatibility period:
+The same shape is used by PostgreSQL/Prisma, authenticated bootstrap, WorkspaceData, IndexedDB, sync, and portability export v2.
 
-1. definitive UI must not revive retired concepts;
-2. Search must not index them;
-3. demo reset must not seed new retired Capture/Resource/Review data;
-4. old rows must remain scoped, exportable, and migration-safe;
-5. tombstone/stale-write protection remains intact;
-6. C8 owns destructive schema/storage migration after migration behavior is verified.
+Retired persistence is removed rather than left behind as hidden compatibility state. This includes:
+
+- Capture;
+- standalone Note/Resource;
+- Review;
+- legacy Deadline;
+- Dashboard Scratchpad/Preference;
+- Project nesting/recovery/workflow metadata;
+- legacy Task due/status/archive fields;
+- per-record tombstone fields.
+
+Migration rules are one-way and deterministic. Invalid/orphaned legacy rows are discarded according to the locked clean-break rules; surviving records are normalized into the canonical model.
+
+IndexedDB v3 preserves remembered verified-user identity but clears incompatible pre-C8 workspace/outbox snapshots. The next authenticated bootstrap rebuilds canonical local state. Old clients and queued legacy mutation shapes are not supported through a rolling protocol.
+
+Sync accepts only canonical entity types and upsert operations. Export format v2 uses canonical names.
 
 ## 16. Ownership across LifeOS
 
@@ -438,4 +445,4 @@ ContextOS remains:
 - free of fake AI/module data;
 - optimized for a small, understandable operational model rather than maximal configurability.
 
-Historical Stage 7-10 evidence remains repository provenance. Current product semantics are defined by this blueprint and the active implementation, while C8 will complete the persistence migration behind the already-retired legacy surfaces.
+Historical Stage 7-10 evidence remains repository provenance. Current product semantics are defined by this blueprint and the active implementation; C8 completes the canonical persistence migration behind the already-retired legacy surfaces.

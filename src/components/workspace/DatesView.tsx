@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
-import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import type { ContextDate as CanonicalDate, ContextDateKind } from "@/lib/canonical-domain";
 import { useWorkspace } from "@/lib/client-store";
 import { localDateKey } from "@/lib/dates";
@@ -34,16 +33,7 @@ function DateEditor({
   date: CanonicalDate;
   projects: { id: string; name: string; state: "active" | "archived" }[];
   areas: { id: string; name: string; state: "active" | "archived" }[];
-  onUpdate: (updates: {
-    title?: string;
-    kind?: ContextDateKind;
-    date?: string;
-    startTime?: string | null;
-    endTime?: string | null;
-    details?: string;
-    projectId?: string | null;
-    domainId?: string | null;
-  }) => void;
+  onUpdate: (updates: Partial<CanonicalDate>) => void;
 }) {
   return (
     <details className="cos-surface group">
@@ -88,9 +78,11 @@ function DateEditor({
             value={parentValue(date)}
             onChange={(event) => {
               const [type, id] = event.target.value.split(":");
-              onUpdate(type === "project"
-                ? { projectId: id, domainId: null }
-                : { projectId: null, domainId: id });
+              onUpdate({
+                parent: type === "project"
+                  ? { type: "project", projectId: id }
+                  : { type: "area", areaId: id }
+              });
             }}
             className="cos-input w-full px-3 py-2 text-sm"
           >
@@ -134,8 +126,8 @@ function DateEditor({
 
 export function DatesView() {
   const router = useRouter();
-  const { data, addContextDate, updateContextDate } = useWorkspace();
-  const canonical = useMemo(() => adaptLegacyWorkspace(data).workspace, [data]);
+  const { data, addDate, updateDate } = useWorkspace();
+  const canonical = data;
   const today = localDateKey();
   const [filter, setFilter] = useState<Filter>("all");
   const [showAdd, setShowAdd] = useState(false);
@@ -160,15 +152,14 @@ export function DatesView() {
     const trimmed = title.trim();
     if (!trimmed || !parent || !date) return;
     const [type, id] = parent.split(":");
-    addContextDate({
+    addDate({
       title: trimmed,
       kind,
       date,
       startTime: startTime || null,
       endTime: kind === "event" ? endTime || null : null,
       details: details.trim(),
-      projectId: type === "project" ? id : null,
-      domainId: type === "area" ? id : null
+      parent: type === "project" ? { type: "project", projectId: id } : { type: "area", areaId: id }
     });
     setTitle("");
     setStartTime("");
@@ -186,7 +177,7 @@ export function DatesView() {
             date={item}
             projects={projects}
             areas={areas}
-            onUpdate={(updates) => updateContextDate(item.id, updates)}
+            onUpdate={(updates) => updateDate(item.id, updates)}
           />
         ))}
       </div>

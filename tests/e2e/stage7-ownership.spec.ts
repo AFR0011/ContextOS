@@ -13,17 +13,15 @@ async function logout(request: APIRequestContext) {
   expect(response.status()).toBe(200);
 }
 
-test("Stage 7 rejects cross-user relationship references and leaves no partial record", async ({ page }) => {
+test("Stage 7 rejects cross-user canonical parent references and leaves no partial records", async ({ page }) => {
   await login(page.request, demoEmail);
   const demoBootstrap = await page.request.get("/api/bootstrap");
   expect(demoBootstrap.status()).toBe(200);
   const demoWorkspace = (await demoBootstrap.json()).data;
-  const foreignProject = demoWorkspace.projects.find((project: { status?: string }) => project.status === "active") ?? demoWorkspace.projects[0];
-  const foreignDomain = demoWorkspace.domains[0];
-  const foreignTask = demoWorkspace.tasks[0];
+  const foreignProject = demoWorkspace.projects.find((project: { state?: string }) => project.state === "active") ?? demoWorkspace.projects[0];
+  const foreignArea = demoWorkspace.areas.find((area: { state?: string }) => area.state === "active") ?? demoWorkspace.areas[0];
   expect(foreignProject?.id).toBeTruthy();
-  expect(foreignDomain?.id).toBeTruthy();
-  expect(foreignTask?.id).toBeTruthy();
+  expect(foreignArea?.id).toBeTruthy();
 
   await logout(page.request);
   const nonce = Date.now();
@@ -35,74 +33,89 @@ test("Stage 7 rejects cross-user relationship references and leaves no partial r
   expect(registered.status()).toBe(200);
 
   const now = new Date().toISOString();
-  const taskId = `stage7-foreign-task-${Date.now()}`;
-  const foreignTaskReference = await page.request.post("/api/sync", {
-    data: {
-      mutations: [
-        {
-          mutationId: `stage7-foreign-task-mut-${Date.now()}`,
-          entityType: "tasks",
-          entityId: taskId,
-          operation: "upsert",
-          payload: {
-            id: taskId,
-            title: "Must not attach to another user's project",
-            plannedDate: null,
-            dueDate: null,
-            scheduledTime: null,
-            projectId: foreignProject.id,
-            domainId: foreignDomain.id,
-            status: "todo",
-            createdAt: now,
-            updatedAt: now,
-            archivedAt: null,
-            trashedAt: null
-          },
-          createdAt: now
-        }
-      ]
-    }
-  });
-  expect(foreignTaskReference.status()).toBe(403);
 
-  const deadlineId = `stage7-foreign-deadline-${Date.now()}`;
-  const foreignTaskIdsReference = await page.request.post("/api/sync", {
+  const projectId = `stage7-foreign-project-${Date.now()}`;
+  const foreignAreaProject = await page.request.post("/api/sync", {
     data: {
-      mutations: [
-        {
-          mutationId: `stage7-foreign-deadline-mut-${Date.now()}`,
-          entityType: "deadlines",
-          entityId: deadlineId,
-          operation: "upsert",
-          payload: {
-            id: deadlineId,
-            title: "Must not reference another user's task",
-            date: "2026-08-13",
-            time: null,
-            location: "",
-            projectId: null,
-            taskIds: [foreignTask.id],
-            notes: "",
-            createdAt: now,
-            updatedAt: now,
-            archivedAt: null,
-            trashedAt: null
-          },
-          createdAt: now
-        }
-      ]
+      mutations: [{
+        mutationId: `stage7-foreign-project-mut-${Date.now()}`,
+        entityType: "projects",
+        entityId: projectId,
+        operation: "upsert",
+        payload: {
+          id: projectId,
+          name: "Must not attach to another user's Area",
+          areaId: foreignArea.id,
+          objective: "",
+          state: "active",
+          createdAt: now,
+          updatedAt: now
+        },
+        createdAt: now
+      }]
     }
   });
-  expect(foreignTaskIdsReference.status()).toBe(403);
+  expect(foreignAreaProject.status()).toBe(403);
+
+  const taskId = `stage7-foreign-task-${Date.now()}`;
+  const foreignProjectTask = await page.request.post("/api/sync", {
+    data: {
+      mutations: [{
+        mutationId: `stage7-foreign-task-mut-${Date.now()}`,
+        entityType: "tasks",
+        entityId: taskId,
+        operation: "upsert",
+        payload: {
+          id: taskId,
+          title: "Must not attach to another user's Project",
+          parent: { type: "project", projectId: foreignProject.id },
+          plannedDate: null,
+          scheduledTime: null,
+          state: "open",
+          createdAt: now,
+          updatedAt: now
+        },
+        createdAt: now
+      }]
+    }
+  });
+  expect(foreignProjectTask.status()).toBe(403);
+
+  const dateId = `stage7-foreign-date-${Date.now()}`;
+  const foreignAreaDate = await page.request.post("/api/sync", {
+    data: {
+      mutations: [{
+        mutationId: `stage7-foreign-date-mut-${Date.now()}`,
+        entityType: "dates",
+        entityId: dateId,
+        operation: "upsert",
+        payload: {
+          id: dateId,
+          title: "Must not attach to another user's Area",
+          kind: "event",
+          parent: { type: "area", areaId: foreignArea.id },
+          date: "2026-09-22",
+          startTime: "10:00",
+          endTime: "11:00",
+          details: "",
+          createdAt: now,
+          updatedAt: now
+        },
+        createdAt: now
+      }]
+    }
+  });
+  expect(foreignAreaDate.status()).toBe(403);
 
   const ownBootstrap = await page.request.get("/api/bootstrap");
   expect(ownBootstrap.status()).toBe(200);
   const ownWorkspace = (await ownBootstrap.json()).data;
+  expect(ownWorkspace.projects.some((project: { id: string }) => project.id === projectId)).toBe(false);
   expect(ownWorkspace.tasks.some((task: { id: string }) => task.id === taskId)).toBe(false);
-  expect(ownWorkspace.deadlines.some((deadline: { id: string }) => deadline.id === deadlineId)).toBe(false);
+  expect(ownWorkspace.dates.some((date: { id: string }) => date.id === dateId)).toBe(false);
 });
 
-test("Stage 7 accepted mutation replay is idempotent per user", async ({ page }) => {
+test("Stage 7 accepted canonical mutation replay is idempotent per user", async ({ page }) => {
   const nonce = Date.now();
   const email = `stage7-replay-${nonce}@example.test`;
   const registered = await page.request.post("/api/auth/register", {
@@ -112,28 +125,23 @@ test("Stage 7 accepted mutation replay is idempotent per user", async ({ page })
   expect(registered.status()).toBe(200);
 
   const now = new Date().toISOString();
-  const captureId = `stage7-replay-capture-${Date.now()}`;
+  const areaId = `stage7-replay-area-${Date.now()}`;
   const mutationId = `stage7-replay-mut-${Date.now()}`;
   const body = {
-    mutations: [
-      {
-        mutationId,
-        entityType: "captures",
-        entityId: captureId,
-        operation: "upsert",
-        payload: {
-          id: captureId,
-          text: "Replay exactly once",
-          status: "unprocessed",
-          type: "note",
-          parsedData: null,
-          convertedToId: null,
-          createdAt: now,
-          updatedAt: now
-        },
-        createdAt: now
-      }
-    ]
+    mutations: [{
+      mutationId,
+      entityType: "areas",
+      entityId: areaId,
+      operation: "upsert",
+      payload: {
+        id: areaId,
+        name: "Replay exactly once",
+        state: "active",
+        createdAt: now,
+        updatedAt: now
+      },
+      createdAt: now
+    }]
   };
 
   const first = await page.request.post("/api/sync", { data: body });
@@ -149,5 +157,5 @@ test("Stage 7 accepted mutation replay is idempotent per user", async ({ page })
   const bootstrap = await page.request.get("/api/bootstrap");
   expect(bootstrap.status()).toBe(200);
   const workspace = (await bootstrap.json()).data;
-  expect(workspace.captures.filter((capture: { id: string }) => capture.id === captureId)).toHaveLength(1);
+  expect(workspace.areas.filter((area: { id: string }) => area.id === areaId)).toHaveLength(1);
 });

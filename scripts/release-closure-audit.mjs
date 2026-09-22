@@ -61,7 +61,7 @@ requireLiteral("README.md", `v${packageJson.version}`, "README does not identify
 requireText("README.md", /self-hostable local-first application/i, "current product maturity boundary is missing");
 requireText("README.md", /not an operated hosted production SaaS/i, "hosted-SaaS non-claim is missing");
 requireText("docs/PROJECT_STATE.md", /Known Boundaries/, "known-boundaries section is missing");
-requireText("docs/LOCAL_FIRST_CONTRACT.md", /does not currently promise irreversible per-record purge/i, "irreversible-purge boundary is missing");
+requireText("docs/LOCAL_FIRST_CONTRACT.md", /does not present irreversible per-record purge/i, "irreversible-purge boundary is missing");
 requireText("SECURITY.md", /self-service password reset/i, "password-recovery boundary is missing");
 
 const security = read("SECURITY.md");

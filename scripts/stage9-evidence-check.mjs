@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 const registryPath = "audits/stage9-evidence.json";
 const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+const retirements = JSON.parse(fs.readFileSync("audits/historical-artifact-retirements.json", "utf8")).retirements ?? {};
 const allowedStatuses = new Set(registry.statusValues ?? []);
 const entries = Array.isArray(registry.evidence) ? registry.evidence : [];
 const errors = [];
@@ -33,7 +34,20 @@ for (const entry of entries) {
       continue;
     }
     if (!fs.existsSync(artifact)) {
-      errors.push(`${entry.id}: missing artifact ${artifact}`);
+      const retirement = retirements[artifact];
+      if (!retirement) {
+        errors.push(`${entry.id}: missing historical artifact ${artifact} without an explicit retirement record.`);
+        continue;
+      }
+      if (!Array.isArray(retirement.replacements) || retirement.replacements.length === 0) {
+        errors.push(`${entry.id}: retired artifact ${artifact} has no current replacement evidence.`);
+        continue;
+      }
+      for (const replacement of retirement.replacements) {
+        if (!fs.existsSync(replacement)) {
+          errors.push(`${entry.id}: retired artifact ${artifact} points to missing replacement ${replacement}.`);
+        }
+      }
     }
   }
 }
@@ -56,4 +70,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`Stage 9 evidence registry passed: ${entries.length} unique items, all artifact paths resolve.`);
+console.log(`Stage 9 historical evidence registry passed: ${entries.length} unique items; active paths resolve and intentional removals are retirement-mapped.`);

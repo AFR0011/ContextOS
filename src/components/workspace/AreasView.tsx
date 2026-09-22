@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Archive, Plus, RotateCcw } from "lucide-react";
 import { EmptyState, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
 import { useWorkspace } from "@/lib/client-store";
@@ -50,6 +50,7 @@ export function AreasView() {
   const { data, loading, addArea, updateArea } = useWorkspace();
   const [showNew, setShowNew] = useState(false);
   const [name, setName] = useState("");
+  const newAreaTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const activeAreas = data.areas.filter((area) => area.state === "active");
   const archivedAreas = data.areas.filter((area) => area.state === "archived");
@@ -68,6 +69,12 @@ export function AreasView() {
     addArea(trimmed);
     setName("");
     setShowNew(false);
+    window.requestAnimationFrame(() => newAreaTriggerRef.current?.focus());
+  }
+
+  function cancelAreaCreation() {
+    setShowNew(false);
+    window.requestAnimationFrame(() => newAreaTriggerRef.current?.focus());
   }
 
   return (
@@ -76,11 +83,22 @@ export function AreasView() {
         eyebrow="Work"
         title="Areas"
         description="Long-lived domains of responsibility. Areas organize Projects and direct Tasks; they are not analytics dashboards."
-        action={<button type="button" onClick={() => setShowNew(true)} className="cos-btn cos-btn-primary px-4 py-2 text-sm"><Plus className="h-4 w-4" /> New Area</button>}
+        action={
+          <button
+            ref={newAreaTriggerRef}
+            type="button"
+            onClick={() => setShowNew(true)}
+            aria-expanded={showNew}
+            aria-controls="area-create-form"
+            className="cos-btn cos-btn-primary px-4 py-2 text-sm"
+          >
+            <Plus className="h-4 w-4" /> New Area
+          </button>
+        }
       />
 
       {showNew ? (
-        <section className="cos-surface mb-6 flex flex-col gap-2 p-4 sm:flex-row">
+        <section id="area-create-form" className="cos-surface mb-6 flex flex-col gap-2 p-4 sm:flex-row">
           <input
             autoFocus
             value={name}
@@ -91,7 +109,7 @@ export function AreasView() {
             className="cos-input min-w-0 flex-1 px-3 py-2 text-sm"
           />
           <button type="button" onClick={createArea} disabled={!name.trim()} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50">Create Area</button>
-          <button type="button" onClick={() => setShowNew(false)} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
+          <button type="button" onClick={cancelAreaCreation} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
         </section>
       ) : null}
 

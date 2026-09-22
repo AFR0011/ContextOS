@@ -169,6 +169,7 @@ function NavButton({
 export default function WorkspaceShell({ user, children }: { user: PublicUser; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [desktopNavigationVisible, setDesktopNavigationVisible] = useState(false);
   const localRouter = useLocalRouter();
   const currentPath = localRouter.location.pathname;
   const { loading, sync, syncNow, forceRefreshFromServer } = useWorkspace();
@@ -179,6 +180,16 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
     open,
     onClose: () => setOpen(false)
   });
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const updateDesktopNavigation = () => setDesktopNavigationVisible(media.matches);
+    updateDesktopNavigation();
+    media.addEventListener("change", updateDesktopNavigation);
+    return () => media.removeEventListener("change", updateDesktopNavigation);
+  }, []);
+
+  const navigationIsHidden = !open && !desktopNavigationVisible;
 
   useEffect(() => {
     if (previousPathRef.current === currentPath) return;
@@ -253,6 +264,8 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
         role={open ? "dialog" : undefined}
         aria-modal={open ? true : undefined}
         aria-label={open ? "Workspace navigation menu" : undefined}
+        aria-hidden={navigationIsHidden ? true : undefined}
+        inert={navigationIsHidden ? true : undefined}
         tabIndex={open ? -1 : undefined}
         className={`fixed inset-y-0 left-0 z-40 flex w-[15.5rem] flex-col border-r border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/96 shadow-[var(--cos-shadow-md)] backdrop-blur-xl transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:shadow-none ${
           open ? "translate-x-0" : "-translate-x-full"

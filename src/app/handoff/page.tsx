@@ -45,7 +45,7 @@ function HandoffPreview() {
         <div className="flex items-start gap-3">
           <ShieldCheck className="mt-0.5 h-6 w-6 text-[var(--cos-primary)]" />
           <div>
-            <h1 className="text-xl font-semibold text-[var(--cos-text-strong)]">Review LifeOS handoff</h1>
+            <h1 tabIndex={-1} className="text-xl font-semibold text-[var(--cos-text-strong)] outline-none">Review LifeOS handoff</h1>
             <p className="mt-1 text-sm leading-6 text-[var(--cos-text-muted)]">
               ContextOS no longer creates Inbox captures. This compatibility preview does not save the proposal while the canonical LifeOS action contract is being defined.
             </p>
@@ -138,7 +138,7 @@ export default function HandoffPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">
       <section className="cos-surface w-full max-w-lg space-y-3 p-6">
-        <h1 className="text-xl font-semibold text-[var(--cos-text-strong)]">Preparing ContextOS handoff</h1>
+        <h1 tabIndex={-1} className="text-xl font-semibold text-[var(--cos-text-strong)] outline-none">Preparing ContextOS handoff</h1>
         {authState === "checking" ? <p role="status" className="text-sm text-[var(--cos-text-muted)]">Checking your sign-in before showing the private proposal...</p> : null}
         {authState === "error" ? (
           <>

@@ -163,6 +163,42 @@ if (!firstRunTest.includes('getByRole("heading", { name: "Home", exact: true })'
 }
 
 
+const visualBaselineSpec = fs.readFileSync("tests/e2e/c10-visual-baseline.spec.ts", "utf8");
+const screenshotBaseline = fs.readFileSync("docs/c10/SCREENSHOT_BASELINE.md", "utf8");
+const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+for (const marker of [
+  "desktop-light",
+  "desktop-dark",
+  "mobile-light",
+  "mobile-dark",
+  "01-home",
+  "03-project-detail",
+  "05-area-detail",
+  "07-search-selected",
+  "08-command-palette",
+  "08-new-task-sheet",
+  "08-new-date-sheet",
+  "10-settings",
+  "11-mobile-drawer",
+  "13-logout-dialog"
+]) {
+  if (!visualBaselineSpec.includes(marker)) {
+    errors.push(`C10 visual baseline capture matrix is missing: ${marker}`);
+  }
+}
+if (!visualBaselineSpec.includes("document.documentElement.scrollWidth <= document.documentElement.clientWidth")) {
+  errors.push("C10 visual capture must reject horizontal page overflow before screenshots.");
+}
+if (packageJson.scripts?.["capture:c10:visual"] !== "node scripts/capture-c10-visual.mjs") {
+  errors.push("C10 visual capture command is missing or changed unexpectedly.");
+}
+if (!screenshotBaseline.includes("npm run capture:c10:visual") ||
+    !screenshotBaseline.includes("Current render-evidence blocker")) {
+  errors.push("C10 screenshot documentation must retain the executable capture command and current render-evidence boundary.");
+}
+
+
 if (errors.length) {
   for (const error of errors) console.error(`FAIL ${error}`);
   process.exit(1);

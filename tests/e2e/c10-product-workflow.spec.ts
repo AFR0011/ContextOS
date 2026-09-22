@@ -46,8 +46,9 @@ test("definitive ContextOS workflow moves from daily execution to context, histo
   );
 
   const tasks = page.getByTestId("project-live-tasks");
-  await expect(tasks.getByRole("button", { name: "Show completed (1)", exact: true })).toBeVisible();
-  await tasks.getByRole("button", { name: "Show completed (1)", exact: true }).click();
+  const showCompleted = page.getByRole("button", { name: "Show completed (1)", exact: true });
+  await expect(showCompleted).toBeVisible();
+  await showCompleted.click();
   await expect(tasks.getByText(taskTitle, { exact: true })).toBeVisible();
 
   // See upcoming temporal context.

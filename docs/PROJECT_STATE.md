@@ -111,7 +111,7 @@ Current persisted workspace collections are:
 
 Removed persistence concepts include Capture, standalone Note/Resource, Review, legacy Deadline, DashboardScratchpad / DashboardPreference, project recovery/nesting metadata, legacy Task status/due/archive fields, and per-record tombstone fields.
 
-The sync wire accepts canonical entity types only and ordinary mutations are upsert-only. Export format v2 uses canonical names. IndexedDB v4 preserves verified local identity while clearing incompatible pre-C8 workspace/outbox snapshots so authenticated bootstrap can rebuild canonical state.
+The sync wire accepts canonical entity types only and ordinary mutations are upsert-only. Existing-record conflicts are decided by server-owned record revisions using atomic compare-and-swap; replace restore also checks the queued mutation's last observed server snapshot. Export format v2 uses canonical names and intentionally excludes revision metadata. IndexedDB v4 preserves verified local identity while clearing revisionless v3 workspace/outbox snapshots so authenticated bootstrap can rebuild trustworthy revision-aware state.
 
 ## Local-First Architecture
 
@@ -166,7 +166,7 @@ Current assurance reflects the canonical C8–C9 product while preserving older 
 - no production SLA/on-call guarantee;
 - no remote erasure of another offline device;
 - no irreversible per-record purge without an anti-resurrection protocol;
-- no rolling pre-C8 local workspace/outbox upgrade is promised; incompatible old local state is reset at IndexedDB v4.
+- no rolling revisionless-v3 local workspace/outbox upgrade is promised; incompatible cached state is reset at IndexedDB v4 while verified identity survives.
 
 Historical note: Stage 10 closed in August 2026 against the earlier **portfolio-stage** local-first boundary. That wording is historical provenance, not the current product maturity label. Current C10 (September 2026) is a separate post-redesign acceptance program anchored to the accepted C9 baseline.
 

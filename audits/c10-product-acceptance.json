@@ -107,6 +107,15 @@
       ]
     },
     {
+      "id": "AUDIT-001",
+      "title": "Full post-C9 product audit completes functional accessibility visual and product-gap phases with prioritized remediation",
+      "status": "pending",
+      "artifacts": [
+        "docs/c10/FULL_PRODUCT_AUDIT.md",
+        "docs/c10/SCREENSHOT_BASELINE.md"
+      ]
+    },
+    {
       "id": "CLOSE-001",
       "title": "C10 baseline is frozen only after the current acceptance ladder and documentation refresh are complete",
       "status": "pending",

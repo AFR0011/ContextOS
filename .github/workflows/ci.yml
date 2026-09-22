@@ -123,6 +123,21 @@ jobs:
       - name: Run Playwright e2e
         run: npm run test:e2e -- --workers=1
 
+      - name: Capture C10 visual audit evidence
+        if: github.ref == 'refs/heads/c10-product-acceptance'
+        run: npm run capture:c10:visual
+
+      - name: Upload C10 visual audit evidence
+        if: always() && github.ref == 'refs/heads/c10-product-acceptance'
+        uses: actions/upload-artifact@v4
+        with:
+          name: c10-visual-audit-${{ github.sha }}
+          path: |
+            test-results/c10-production/**/*.png
+            test-results/c10-standard/**/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Run database-outage smoke
         shell: bash
         run: |

@@ -39,7 +39,7 @@ for (const entry of entries) {
   }
 }
 
-for (const required of ["HISTORY-001", "WORKFLOW-001", "OFFLINE-001", "ACCESS-001", "CLAIMS-001", "CI-001", "CLOSE-001"]) {
+for (const required of ["HISTORY-001", "WORKFLOW-001", "OFFLINE-001", "ACCESS-001", "CLAIMS-001", "CI-001", "VISUAL-001", "CLOSE-001"]) {
   if (!seen.has(required)) errors.push(`Missing required C10 control ${required}.`);
 }
 

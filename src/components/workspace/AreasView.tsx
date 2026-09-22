@@ -26,18 +26,18 @@ function AreaRow({
   return (
     <div className={`cos-entity-row ${archived ? "opacity-70" : ""}`}>
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <span className="block truncate text-sm font-semibold text-[var(--cos-text-strong)]">{name}</span>
+        <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{name}</span>
         <span className="mt-1 block text-xs text-[var(--cos-text-subtle)]">
           {projectCount} active project{projectCount === 1 ? "" : "s"} · {taskCount} direct open task{taskCount === 1 ? "" : "s"}
         </span>
       </button>
       {onArchive ? (
-        <button type="button" onClick={onArchive} aria-label={`Archive ${name}`} className="cos-btn cos-btn-ghost min-h-9 shrink-0 px-3 py-2 text-xs">
+        <button type="button" onClick={onArchive} aria-label={`Archive ${name}`} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
           <Archive className="h-3.5 w-3.5" /> Archive
         </button>
       ) : null}
       {onRestore ? (
-        <button type="button" onClick={onRestore} aria-label={`Restore ${name}`} className="cos-btn cos-btn-ghost min-h-9 shrink-0 px-3 py-2 text-xs">
+        <button type="button" onClick={onRestore} aria-label={`Restore ${name}`} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
           <RotateCcw className="h-3.5 w-3.5" /> Restore
         </button>
       ) : null}

@@ -283,6 +283,92 @@ test("mobile bottom navigation uses the simplified four-tab set", async ({ page 
   await expect(mobileNav.getByRole("button", { name: "Dates", exact: true })).toHaveCount(0);
 });
 
+test("mobile rows survive hostile long labels and task controls keep touch-sized hit areas", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await login(page);
+
+  const daylineToggle = page.getByRole("button", { name: "Complete Review today's open work", exact: true });
+  await expectMinTouchTarget(daylineToggle);
+
+  const openNavigation = page.getByRole("button", { name: "Open navigation", exact: true });
+  await expectMinTouchTarget(openNavigation);
+  await openNavigation.click();
+  await expectMinTouchTarget(page.getByRole("button", { name: "Close navigation", exact: true }));
+  await expectMinTouchTarget(page.getByRole("button", { name: /Switch to (dark|light) mode/ }));
+  await expectMinTouchTarget(page.getByRole("button", { name: "Log out", exact: true }));
+  await expectMinTouchTarget(page.getByTestId("global-refresh-from-server"));
+  await page.getByRole("button", { name: "Close navigation", exact: true }).click();
+
+  const reducedMotionCss = readFileSync(new URL("../../src/app/globals.css", import.meta.url), "utf8");
+  expect(reducedMotionCss).toContain("@media (prefers-reduced-motion: reduce)");
+
+  await page.goto("/areas");
+  const longArea = `Area-${"X".repeat(140)}`;
+  await page.getByRole("button", { name: "New Area", exact: true }).click();
+  await page.getByPlaceholder("Area name").fill(longArea);
+  await page.getByRole("button", { name: "Create Area", exact: true }).click();
+
+  await expect(page.getByText(longArea, { exact: true })).toBeVisible();
+  await expectMinTouchTarget(page.getByRole("button", { name: `Archive ${longArea}`, exact: true }));
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/projects");
+  await page.getByRole("button", { name: "New Project", exact: true }).click();
+  const longProject = `Project-${"Y".repeat(150)}`;
+  await page.getByPlaceholder("Project name").fill(longProject);
+  await page.getByLabel("Area").selectOption({ label: longArea });
+  await page.getByPlaceholder("What outcome is this project trying to reach?").fill(`Objective ${"Z".repeat(220)}`);
+  await page.getByRole("button", { name: "Create Project", exact: true }).click();
+
+  await expect(page.getByRole("heading", { name: longProject, exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  const longDate = `Date-${"D".repeat(150)}`;
+  const projectDates = page.getByTestId("project-dates");
+  await projectDates.getByLabel("Date kind").selectOption("event");
+  await projectDates.getByPlaceholder("Add a Date...").fill(longDate);
+  await projectDates.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(projectDates.getByText(longDate, { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/dates");
+  await expect(page.getByText(longDate, { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/search");
+  await page.getByPlaceholder("Search workspace...").fill(longProject.slice(0, 20));
+  const longProjectResult = page.getByTestId(/search-result-project-/).filter({ hasText: longProject }).first();
+  await expect(longProjectResult).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await longProjectResult.click();
+  await expect(page.getByTestId("search-selected-record")).toContainText(longProject);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/projects");
+  await expect(page.getByText(longProject, { exact: true }).first()).toBeVisible();
+  await expectMinTouchTarget(page.getByRole("button", { name: `Archive ${longProject}`, exact: true }));
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/areas");
+  await page.getByText(longArea, { exact: true }).first().click();
+  const areaDetail = page.getByTestId("area-detail");
+  await expect(areaDetail).toBeVisible();
+  const projectRow = areaDetail.locator(".cos-entity-row").filter({ hasText: longProject }).first();
+  await expect(projectRow.getByText(longProject, { exact: true })).toBeVisible();
+  await expectMinTouchTarget(projectRow.getByRole("button", { name: "Archive", exact: true }));
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/settings");
+  const longFileName = `contextos-${"backup".repeat(45)}.json`;
+  await page.getByTestId("workspace-import-file").setInputFiles({
+    name: longFileName,
+    mimeType: "application/json",
+    buffer: Buffer.from("{}")
+  });
+  await expect(page.getByText(`Selected: ${longFileName}`, { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+});
+
 test("project objective persists after reload", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Projects" }).click();
@@ -628,7 +714,11 @@ test("project detail exposes Tasks and honest Linked Knowledge without legacy re
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   await expect(page.getByTestId("project-command-page")).toBeVisible();
-  await expect(page.getByTestId("project-live-tasks")).toBeVisible();
+  const taskList = page.getByTestId("project-live-tasks");
+  await expect(taskList).toBeVisible();
+  const inertTaskTitle = taskList.getByText("Review today's open work", { exact: true });
+  await expect(inertTaskTitle).toBeVisible();
+  await expect.poll(() => inertTaskTitle.evaluate((element) => element.closest("button") === null)).toBe(true);
   await expect(page.getByTestId("project-recovery-notes")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Linked Knowledge", exact: true })).toBeVisible();
   await expect(page.getByText("No linked knowledge", { exact: true })).toBeVisible();

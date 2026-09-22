@@ -219,19 +219,23 @@ export function HomeView() {
                         type="button"
                         onClick={() => updateTask(task.id, { state: task.state === "open" ? "done" : "open" })}
                         aria-label={task.state === "done" ? `Reopen ${task.title}` : `Complete ${task.title}`}
-                        className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px] ${
-                          task.state === "done"
-                            ? "border-[var(--cos-text-subtle)] bg-[var(--cos-text-subtle)] text-[var(--cos-bg)]"
-                            : "border-[var(--cos-border-strong)] bg-[var(--cos-bg-elevated)] hover:border-[var(--cos-primary)]"
-                        }`}
+                        className="grid h-10 w-10 -m-2 shrink-0 place-items-center rounded-full"
                       >
-                        {task.state === "done" ? "✓" : ""}
+                        <span
+                          className={`grid h-5 w-5 place-items-center rounded-full border text-[11px] ${
+                            task.state === "done"
+                              ? "border-[var(--cos-text-subtle)] bg-[var(--cos-text-subtle)] text-[var(--cos-bg)]"
+                              : "border-[var(--cos-border-strong)] bg-[var(--cos-bg-elevated)] hover:border-[var(--cos-primary)]"
+                          }`}
+                        >
+                          {task.state === "done" ? "✓" : ""}
+                        </span>
                       </button>
                       <div className="min-w-0 flex-1">
-                        <p className={`truncate text-sm font-medium text-[var(--cos-text-strong)] ${task.state === "done" ? "line-through" : ""}`}>
+                        <p className={`break-words text-sm font-medium text-[var(--cos-text-strong)] [overflow-wrap:anywhere] ${task.state === "done" ? "line-through" : ""}`}>
                           {task.title}
                         </p>
-                        <p className="mt-0.5 truncate text-xs text-[var(--cos-text-subtle)]">
+                        <p className="mt-0.5 break-words text-xs text-[var(--cos-text-subtle)] [overflow-wrap:anywhere]">
                           {taskContext(task, canonical.projects, canonical.areas)}
                         </p>
                       </div>

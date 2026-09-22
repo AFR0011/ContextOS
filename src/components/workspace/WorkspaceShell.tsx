@@ -120,7 +120,7 @@ function SyncIndicator({
           disabled={!canRefreshFromServer}
           aria-label="Refresh workspace from server"
           title={refreshTitle}
-          className="mt-2 flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-current/15 px-2 py-1.5 text-xs font-semibold hover:bg-[var(--cos-bg-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-current/15 px-2 py-1.5 text-xs font-semibold hover:bg-[var(--cos-bg-soft)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Download className={`h-3.5 w-3.5 ${sync.refreshing ? "animate-pulse" : ""}`} />
           <span>{sync.refreshing ? "Refreshing" : "Refresh"}</span>
@@ -218,7 +218,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </div>
           <button
             type="button"
-            className="cos-btn-ghost ml-auto grid h-9 w-9 place-items-center rounded-lg text-[var(--cos-text-muted)]"
+            className="cos-btn-ghost ml-auto grid h-10 w-10 place-items-center rounded-lg text-[var(--cos-text-muted)]"
             onClick={() => setTheme(isDark ? "light" : "dark")}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
@@ -227,7 +227,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </button>
           <button
             type="button"
-            className="cos-btn-ghost grid h-9 w-9 place-items-center rounded-lg text-[var(--cos-text-muted)] lg:hidden"
+            className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-lg text-[var(--cos-text-muted)] lg:hidden"
             onClick={() => setOpen(false)}
             aria-label="Close navigation"
           >
@@ -279,7 +279,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             <button
               type="button"
               onClick={() => setLogoutOpen(true)}
-              className="cos-btn-ghost grid h-9 w-9 place-items-center rounded-lg text-[var(--cos-text-muted)]"
+              className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-lg text-[var(--cos-text-muted)]"
               title="Log out"
               aria-label="Log out"
             >

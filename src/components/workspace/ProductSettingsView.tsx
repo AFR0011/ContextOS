@@ -302,7 +302,7 @@ export function ProductSettingsView() {
                   </label>
                 </div>
                 {!canExport ? <p data-testid="workspace-export-blocked" className="mt-2 text-sm text-[var(--cos-warning-text)]">{exportTitle}. Export is enabled after this device is online and fully synced.</p> : null}
-                {importFileName ? <p className="mt-3 text-sm font-medium text-[var(--cos-text)]">Selected: {importFileName}</p> : null}
+                {importFileName ? <p className="mt-3 break-words text-sm font-medium text-[var(--cos-text)] [overflow-wrap:anywhere]">Selected: {importFileName}</p> : null}
 
                 {importBundle ? (
                   <div className="mt-4 rounded-lg border border-[var(--cos-border-soft)] p-4">

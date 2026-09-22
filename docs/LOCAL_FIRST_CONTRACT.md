@@ -100,7 +100,7 @@ C8 removes the retired compatibility storage rather than carrying it forward ind
 
 The canonical persisted workspace is Area / Project / Task / Date / DailyNote across PostgreSQL, bootstrap serialization, user-scoped IndexedDB, sync, and portability export v2.
 
-IndexedDB v3 is an intentional clean break: remembered verified identities survive the database upgrade, while incompatible pre-C8 workspace and outbox snapshots are discarded and rebuilt from authenticated server bootstrap. No rolling old-client/outbox protocol is promised because the product had no real users at this migration point.
+IndexedDB v4 is an intentional clean break: remembered verified identities survive the database upgrade, while incompatible pre-C8 workspace and outbox snapshots are discarded and rebuilt from authenticated server bootstrap. No rolling old-client/outbox protocol is promised because the product had no real users at this migration point.
 
 The sync contract accepts canonical entity types only and ordinary client mutations are upsert-only. Retired Capture/Resource/Review/legacy Deadline/Dashboard/recovery/tombstone fields are not synchronized.
 

@@ -19,7 +19,8 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       name: area.name,
       state: area.state as Area["state"],
       createdAt: area.createdAt.toISOString(),
-      updatedAt: area.updatedAt.toISOString()
+      updatedAt: area.updatedAt.toISOString(),
+      revision: area.revision
     })),
     projects: projects.map((project): Project => ({
       id: project.id,
@@ -28,7 +29,8 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       objective: project.objective,
       state: project.state as Project["state"],
       createdAt: project.createdAt.toISOString(),
-      updatedAt: project.updatedAt.toISOString()
+      updatedAt: project.updatedAt.toISOString(),
+      revision: project.revision
     })),
     tasks: tasks.flatMap((task): Task[] => {
       const parent = task.projectId
@@ -45,7 +47,8 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
         scheduledTime: task.scheduledTime,
         state: task.state as Task["state"],
         createdAt: task.createdAt.toISOString(),
-        updatedAt: task.updatedAt.toISOString()
+        updatedAt: task.updatedAt.toISOString(),
+        revision: task.revision
       }];
     }),
     dates: dates.flatMap((date): ContextDate[] => {
@@ -65,7 +68,8 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
         endTime: date.endTime,
         details: date.details,
         createdAt: date.createdAt.toISOString(),
-        updatedAt: date.updatedAt.toISOString()
+        updatedAt: date.updatedAt.toISOString(),
+        revision: date.revision
       }];
     }),
     dailyNotes: dailyNotes.map((note): DailyNote => ({
@@ -73,7 +77,8 @@ export async function getWorkspaceData(userId: string): Promise<WorkspaceData> {
       localDate: note.localDate,
       content: note.content,
       createdAt: note.createdAt.toISOString(),
-      updatedAt: note.updatedAt.toISOString()
+      updatedAt: note.updatedAt.toISOString(),
+      revision: note.revision
     })),
     serverSyncedAt: new Date().toISOString()
   };

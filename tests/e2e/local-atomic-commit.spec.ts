@@ -108,3 +108,57 @@ test("offline Daily Note commit persists workspace state and its outbox mutation
     };
   }).toEqual({ content: marker, hasMutation: true, outboxGrowth: 1 });
 });
+
+test("a failed optimistic mutation cannot hitchhike into a later successful local commit", async ({ page, context }) => {
+  await loginAndOpenHome(page);
+  await context.setOffline(true);
+
+  const today = localDateKey();
+  const failedMarker = `atomic-failed-${Date.now()}`;
+  const areaName = `Atomic survivor ${Date.now()}`;
+
+  await page.evaluate((expectedMarker) => {
+    const originalPut = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function (value: unknown, key?: IDBValidKey) {
+      if (
+        this.name === "outboxes" &&
+        Array.isArray(value) &&
+        value.some((mutation) => mutation?.payload?.content === expectedMarker)
+      ) {
+        throw new DOMException("Injected local outbox write failure", "AbortError");
+      }
+      return key === undefined ? originalPut.call(this, value) : originalPut.call(this, value, key);
+    };
+  }, failedMarker);
+
+  await page.getByLabel("Daily Notes").fill(failedMarker);
+
+  await expect.poll(async () => {
+    const state = await currentLocalState(page);
+    return {
+      durableNote: state.workspace?.dailyNotes?.find((item: { localDate: string }) => item.localDate === today)?.content ?? null,
+      failedMutationQueued: state.outbox.some((mutation) => mutation.payload?.content === failedMarker)
+    };
+  }).toEqual({ durableNote: null, failedMutationQueued: false });
+
+  await page.getByRole("button", { name: "Areas", exact: true }).click();
+  await page.getByRole("button", { name: "New Area", exact: true }).click();
+  await page.getByPlaceholder("Area name").fill(areaName);
+  await page.getByRole("button", { name: "Create Area", exact: true }).click();
+
+  await expect.poll(async () => {
+    const state = await currentLocalState(page);
+    return {
+      areaPersisted: state.workspace?.areas?.some((area: { name: string }) => area.name === areaName) ?? false,
+      failedNotePersisted: state.workspace?.dailyNotes?.some((note: { content: string }) => note.content === failedMarker) ?? false,
+      areaMutationQueued: state.outbox.some((mutation) => mutation.entityType === "areas" && mutation.payload?.name === areaName),
+      failedMutationQueued: state.outbox.some((mutation) => mutation.payload?.content === failedMarker)
+    };
+  }).toEqual({
+    areaPersisted: true,
+    failedNotePersisted: false,
+    areaMutationQueued: true,
+    failedMutationQueued: false
+  });
+});
+

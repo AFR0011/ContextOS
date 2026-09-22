@@ -74,6 +74,23 @@ if (!/historical \*\*Stage 10\*\*/i.test(current) || !/C10 remains open/i.test(c
   errors.push("C10 documentation must distinguish current C10 from historical Stage 10 and remain open while pending.");
 }
 
+const workflowTest = fs.readFileSync("tests/e2e/c10-product-workflow.spec.ts", "utf8");
+for (const [label, literal] of [
+  ["understand the day", "Review today's open work"],
+  ["execute", "Complete ${taskTitle}"],
+  ["note", 'getByLabel("Daily Notes")'],
+  ["open context", 'getByTestId("home-contexts")'],
+  ["resume project", "Keep daily execution, temporal context, and project recovery coherent."],
+  ["see upcoming", "ContextOS verification pass"],
+  ["find history", 'toContainText("Done")'],
+  ["LifeOS boundary", 'getByTestId("lifeos-hub")']
+]) {
+  if (!workflowTest.includes(literal)) {
+    errors.push(`Definitive workflow acceptance is missing the ${label} stage marker: ${literal}`);
+  }
+}
+
+
 if (errors.length) {
   for (const error of errors) console.error(`FAIL ${error}`);
   process.exit(1);

@@ -316,6 +316,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await page.getByRole("button", { name: "New Project", exact: true }).click();
   const longProject = `Project-${"Y".repeat(150)}`;
   await page.getByPlaceholder("Project name").fill(longProject);
+  await page.getByLabel("Area").selectOption({ label: longArea });
   await page.getByPlaceholder("What outcome is this project trying to reach?").fill(`Objective ${"Z".repeat(220)}`);
   await page.getByRole("button", { name: "Create Project", exact: true }).click();
 

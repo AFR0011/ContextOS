@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ArrowRight, Search } from "lucide-react";
-import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import { buildCanonicalSearchResults, searchCanonicalResults, type CanonicalSearchResult } from "@/lib/canonical-search";
 import { useWorkspace } from "@/lib/client-store";
 import { localDateKey } from "@/lib/dates";
@@ -28,7 +27,7 @@ export function ProductSearchView() {
   const [query, setQuery] = useState(initialQuery);
   const selected = params.get("selected") ?? "";
   const today = localDateKey();
-  const canonical = useMemo(() => adaptLegacyWorkspace(data).workspace, [data]);
+  const canonical = data;
   const allResults = useMemo(() => buildCanonicalSearchResults(canonical, today), [canonical, today]);
   const results = useMemo(() => searchCanonicalResults(allResults, query), [allResults, query]);
   const selectedResult = allResults.find((result) => result.key === selected) ?? null;

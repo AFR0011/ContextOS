@@ -107,6 +107,50 @@ test("Cmd Ctrl K supports keyboard navigation and direct Task creation", async (
   await expect(page.getByTestId("search-selected-record").getByRole("button", { name: "Open project" })).toBeVisible();
 });
 
+test("command palette and create sheet contain keyboard focus and restore it on close", async ({ page }) => {
+  await login(page);
+
+  const homeButton = page.getByTestId("workspace-primary-nav").getByRole("button", { name: "Home", exact: true });
+  await homeButton.focus();
+
+  await page.keyboard.press("Control+K");
+  const palette = page.getByTestId("command-palette");
+  const searchInput = palette.getByLabel("Search or run a command");
+  await expect(searchInput).toBeFocused();
+
+  const options = palette.getByRole("option");
+  await expect(options.first()).toBeVisible();
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(options.last()).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(searchInput).toBeFocused();
+
+  await searchInput.fill("New Task");
+  await page.keyboard.press("Enter");
+
+  const dialog = page.getByRole("dialog", { name: "New Task" });
+  await expect(dialog).toBeVisible();
+  const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+  const close = dialog.getByRole("button", { name: "Close", exact: true });
+
+  await cancel.focus();
+  await page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(cancel).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(homeButton).toBeFocused();
+
+  await page.keyboard.press("Control+K");
+  await expect(searchInput).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(palette).toHaveCount(0);
+  await expect(homeButton).toBeFocused();
+});
+
 test("Cmd Ctrl K creates canonical Dates with mandatory context", async ({ page }) => {
   await login(page);
 

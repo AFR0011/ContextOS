@@ -14,7 +14,6 @@ import {
   Settings
 } from "lucide-react";
 import { CommandPalette, DetailSheet, type CommandPaletteItem } from "@/components/workspace/ProductPrimitives";
-import { adaptLegacyWorkspace } from "@/lib/canonical-adapters";
 import { buildCanonicalSearchResults, searchCanonicalResults, type CanonicalSearchKind } from "@/lib/canonical-search";
 import { useWorkspace } from "@/lib/client-store";
 import { localDateKey } from "@/lib/dates";
@@ -32,8 +31,8 @@ function resultIcon(kind: CanonicalSearchKind) {
 
 export function WorkspaceCommandPalette() {
   const router = useLocalRouter();
-  const { data, addTask, addContextDate } = useWorkspace();
-  const canonical = useMemo(() => adaptLegacyWorkspace(data).workspace, [data]);
+  const { data, addTask, addDate } = useWorkspace();
+  const canonical = data;
   const today = localDateKey();
   const searchIndex = useMemo(() => buildCanonicalSearchResults(canonical, today), [canonical, today]);
 
@@ -132,8 +131,7 @@ export function WorkspaceCommandPalette() {
     const [type, id] = taskParent.split(":");
     addTask({
       title,
-      projectId: type === "project" ? id : null,
-      domainId: type === "area" ? id : null,
+      parent: type === "project" ? { type: "project", projectId: id } : { type: "area", areaId: id },
       plannedDate: plannedDate || null,
       scheduledTime: plannedDate ? scheduledTime || null : null
     });
@@ -155,15 +153,14 @@ export function WorkspaceCommandPalette() {
     const title = dateTitle.trim();
     if (!title || !dateParent || !dateValue) return;
     const [type, id] = dateParent.split(":");
-    addContextDate({
+    addDate({
       title,
       kind: dateKind,
       date: dateValue,
       startTime: dateStartTime || null,
       endTime: dateKind === "event" ? dateEndTime || null : null,
       details: dateDetails.trim(),
-      projectId: type === "project" ? id : null,
-      domainId: type === "area" ? id : null
+      parent: type === "project" ? { type: "project", projectId: id } : { type: "area", areaId: id }
     });
     resetDate();
     setCreateMode(null);

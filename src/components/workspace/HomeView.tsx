@@ -90,7 +90,7 @@ function DailyNoteEditor({
         placeholder="Write what you need to hold onto today…"
         className="min-h-[19rem] w-full resize-none bg-transparent px-4 py-4 text-[15px] leading-7 text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
       />
-      <div className="flex min-h-8 items-center justify-end px-4 pb-2 text-[11px] text-[var(--cos-text-subtle)]">
+      <div role="status" aria-live="polite" aria-atomic="true" className="flex min-h-8 items-center justify-end px-4 pb-2 text-[11px] text-[var(--cos-text-subtle)]">
         {saveState === "dirty" ? "Saving…" : saveState === "saved" ? "Saved" : "Local-first"}
       </div>
     </div>

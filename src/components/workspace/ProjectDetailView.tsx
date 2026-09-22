@@ -34,7 +34,7 @@ function EditableText({
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => {
-        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") commit();
+        if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && !event.nativeEvent.isComposing) commit();
         if (event.key === "Escape") setDraft(value);
       }}
       rows={4}
@@ -47,7 +47,7 @@ function EditableText({
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => {
-        if (event.key === "Enter") {
+        if (event.key === "Enter" && !event.nativeEvent.isComposing) {
           commit();
           event.currentTarget.blur();
         }
@@ -230,7 +230,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
               <input
                 value={taskTitle}
                 onChange={(event) => setTaskTitle(event.target.value)}
-                onKeyDown={(event) => event.key === "Enter" && addProjectTask()}
+                onKeyDown={(event) => event.key === "Enter" && !event.nativeEvent.isComposing && addProjectTask()}
                 placeholder="Add a task..."
                 aria-label="Task title"
                 className="cos-input px-3 py-2 text-sm"

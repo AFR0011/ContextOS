@@ -322,6 +322,27 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await expect(page.getByRole("heading", { name: longProject, exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
+  const longDate = `Date-${"D".repeat(150)}`;
+  const projectDates = page.getByTestId("project-dates");
+  await projectDates.getByLabel("Date kind").selectOption("event");
+  await projectDates.getByPlaceholder("Add a Date...").fill(longDate);
+  await projectDates.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(projectDates.getByText(longDate, { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/dates");
+  await expect(page.getByText(longDate, { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.goto("/search");
+  await page.getByPlaceholder("Search workspace...").fill(longProject.slice(0, 20));
+  const longProjectResult = page.getByTestId(/search-result-project-/).filter({ hasText: longProject }).first();
+  await expect(longProjectResult).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await longProjectResult.click();
+  await expect(page.getByTestId("search-selected-record")).toContainText(longProject);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
   await page.goto("/projects");
   await expect(page.getByText(longProject, { exact: true }).first()).toBeVisible();
   await expectMinTouchTarget(page.getByRole("button", { name: `Archive ${longProject}`, exact: true }));

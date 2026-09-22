@@ -32,8 +32,9 @@ Open
 2. Add one explicit end-to-end workflow acceptance test.
 3. Refresh active documentation and terminology.
 4. Establish screenshot/baseline documentation for the definitive UI.
-5. Run the complete current verification ladder.
-6. Record exact verification evidence and freeze the baseline.
+5. Capture and review the canonical screenshot baseline defined in `docs/c10/SCREENSHOT_BASELINE.md`.
+6. Run the complete current verification ladder.
+7. Record exact verification evidence and freeze the baseline.
 
 ## Historical assurance rule
 
@@ -52,5 +53,6 @@ C10 closes only after:
 - current production/offline and development interaction matrices pass;
 - the active CI ladder references no removed legacy tests;
 - active docs match the canonical product;
+- the real-browser screenshot baseline has been captured and manually reviewed;
 - the final baseline evidence records the exact verified commit/run;
 - no unsupported maturity/security/recovery claim is introduced.

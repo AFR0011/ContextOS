@@ -63,131 +63,159 @@ function sortedNames(records: { name: string }[]) {
 }
 
 function assertRelationships(workspace: any) {
-  const domains = new Set(workspace.domains.map((item: any) => item.id));
+  const areas = new Set(workspace.areas.map((item: any) => item.id));
   const projects = new Set(workspace.projects.map((item: any) => item.id));
-  const tasks = new Set(workspace.tasks.map((item: any) => item.id));
-  const targets = new Set([
-    ...workspace.projects.map((item: any) => item.id),
-    ...workspace.tasks.map((item: any) => item.id),
-    ...workspace.notes.map((item: any) => item.id),
-    ...workspace.deadlines.map((item: any) => item.id)
-  ]);
 
   for (const project of workspace.projects) {
-    expect(domains.has(project.domainId)).toBe(true);
-    if (project.parentProjectId) expect(projects.has(project.parentProjectId)).toBe(true);
+    expect(areas.has(project.areaId)).toBe(true);
   }
+
   for (const task of workspace.tasks) {
-    if (task.domainId) expect(domains.has(task.domainId)).toBe(true);
-    if (task.projectId) expect(projects.has(task.projectId)).toBe(true);
+    if (task.parent.type === "project") expect(projects.has(task.parent.projectId)).toBe(true);
+    else expect(areas.has(task.parent.areaId)).toBe(true);
   }
-  for (const note of workspace.notes) {
-    expect(domains.has(note.domainId)).toBe(true);
-    if (note.projectId) expect(projects.has(note.projectId)).toBe(true);
+
+  for (const date of workspace.dates) {
+    if (date.parent.type === "project") expect(projects.has(date.parent.projectId)).toBe(true);
+    else expect(areas.has(date.parent.areaId)).toBe(true);
   }
-  for (const date of workspace.deadlines) {
-    if (date.projectId) expect(projects.has(date.projectId)).toBe(true);
-    for (const taskId of date.taskIds) expect(tasks.has(taskId)).toBe(true);
-  }
-  for (const date of workspace.contextDates ?? []) {
-    expect(Boolean(date.projectId) !== Boolean(date.domainId)).toBe(true);
-    if (date.projectId) expect(projects.has(date.projectId)).toBe(true);
-    if (date.domainId) expect(domains.has(date.domainId)).toBe(true);
-  }
-  for (const capture of workspace.captures) {
-    if (capture.convertedToId) expect(targets.has(capture.convertedToId)).toBe(true);
+
+  const noteDates = new Set<string>();
+  for (const note of workspace.dailyNotes) {
+    expect(noteDates.has(note.localDate)).toBe(false);
+    noteDates.add(note.localDate);
   }
 }
 
-test("portability schema rejects unsupported versions, dangling references, and hierarchy cycles", () => {
+test("portability v2 schema rejects unsupported versions and invalid canonical references", () => {
   const now = new Date().toISOString();
   const base: any = {
     format: "contextos-workspace",
-    version: 1,
+    version: 2,
     exportedAt: now,
     workspace: {
-      domains: [{ id: "dom-a", name: "A", archived: false, createdAt: now, updatedAt: now }],
+      areas: [{ id: "area-a", name: "A", state: "active", createdAt: now, updatedAt: now }],
       projects: [{
-        id: "proj-a", name: "A", domainId: "dom-a", parentProjectId: null, status: "active",
-        currentObjective: "", nextAction: "", latestStatus: "", recoveryNotes: "", openLoops: [],
-        createdAt: now, updatedAt: now, archivedAt: null, trashedAt: null
+        id: "proj-a",
+        name: "A",
+        areaId: "area-a",
+        objective: "",
+        state: "active",
+        createdAt: now,
+        updatedAt: now
       }],
-      tasks: [], captures: [], notes: [], deadlines: [], reviews: [], dailyNotes: [], dashboardScratchpads: [], dashboardPreferences: []
+      tasks: [{
+        id: "task-a",
+        title: "Do A",
+        parent: { type: "project", projectId: "proj-a" },
+        plannedDate: null,
+        scheduledTime: null,
+        state: "open",
+        createdAt: now,
+        updatedAt: now
+      }],
+      dates: [{
+        id: "date-a",
+        title: "A",
+        kind: "deadline",
+        parent: { type: "project", projectId: "proj-a" },
+        date: "2026-09-20",
+        startTime: null,
+        endTime: null,
+        details: "",
+        createdAt: now,
+        updatedAt: now
+      }],
+      dailyNotes: [{
+        id: "note-a",
+        localDate: "2026-09-20",
+        content: "A",
+        createdAt: now,
+        updatedAt: now
+      }]
     }
   };
 
   expect(workspaceExportBundleSchema.safeParse(base).success).toBe(true);
-  expect(workspaceExportBundleSchema.safeParse({ ...base, version: 2 }).success).toBe(false);
-  expect(workspaceExportBundleSchema.safeParse({
-    ...base,
-    workspace: { ...base.workspace, projects: [{ ...base.workspace.projects[0], domainId: "missing" }] }
-  }).success).toBe(false);
+  expect(workspaceExportBundleSchema.safeParse({ ...base, version: 1 }).success).toBe(false);
+
   expect(workspaceExportBundleSchema.safeParse({
     ...base,
     workspace: {
       ...base.workspace,
-      projects: [
-        { ...base.workspace.projects[0], parentProjectId: "proj-b" },
-        { ...base.workspace.projects[0], id: "proj-b", name: "B", parentProjectId: "proj-a" }
-      ]
+      projects: [{ ...base.workspace.projects[0], areaId: "missing-area" }]
     }
   }).success).toBe(false);
 
-  const contextDate = {
-    id: "date-a",
-    title: "A",
-    kind: "deadline",
-    date: "2026-09-20",
-    startTime: null,
-    endTime: null,
-    details: "",
-    projectId: "proj-a",
-    domainId: null,
-    createdAt: now,
-    updatedAt: now
-  };
   expect(workspaceExportBundleSchema.safeParse({
     ...base,
-    workspace: { ...base.workspace, contextDates: [contextDate] }
-  }).success).toBe(true);
-  expect(workspaceExportBundleSchema.safeParse({
-    ...base,
-    workspace: { ...base.workspace, contextDates: [{ ...contextDate, projectId: null }] }
+    workspace: {
+      ...base.workspace,
+      tasks: [{
+        ...base.workspace.tasks[0],
+        parent: { type: "project", projectId: "missing-project" }
+      }]
+    }
   }).success).toBe(false);
+
   expect(workspaceExportBundleSchema.safeParse({
     ...base,
-    workspace: { ...base.workspace, contextDates: [{ ...contextDate, domainId: "dom-a" }] }
+    workspace: {
+      ...base.workspace,
+      tasks: [{
+        ...base.workspace.tasks[0],
+        plannedDate: null,
+        scheduledTime: "09:30"
+      }]
+    }
   }).success).toBe(false);
+
   expect(workspaceExportBundleSchema.safeParse({
     ...base,
-    workspace: { ...base.workspace, contextDates: [{ ...contextDate, startTime: "25:99" }] }
+    workspace: {
+      ...base.workspace,
+      dates: [{
+        ...base.workspace.dates[0],
+        endTime: "18:00"
+      }]
+    }
   }).success).toBe(false);
+
   expect(workspaceExportBundleSchema.safeParse({
     ...base,
-    workspace: { ...base.workspace, contextDates: [{ ...contextDate, endTime: "18:00" }] }
+    workspace: {
+      ...base.workspace,
+      dailyNotes: [
+        base.workspace.dailyNotes[0],
+        { ...base.workspace.dailyNotes[0], id: "note-b" }
+      ]
+    }
   }).success).toBe(false);
 });
 
-test("replace import round-trips the complete workspace and blocks pre-restore queued mutations", async ({ page }) => {
+test("replace import round-trips the canonical workspace and blocks pre-restore queued mutations", async ({ page }) => {
   await login(page.request);
   await resetDemo(page.request);
   const bundle = await exportBundle(page.request);
+
+  expect(bundle.version).toBe(2);
+  expect(bundle.workspace.areas.length).toBeGreaterThan(0);
 
   const markdown = await page.request.get("/api/portability/export?format=markdown");
   expect(markdown.status()).toBe(200);
   expect(markdown.headers()["content-type"]).toContain("text/markdown");
   expect(await markdown.text()).toContain("# ContextOS workspace export");
 
-  const domain = bundle.workspace.domains[0];
+  const area = bundle.workspace.areas[0];
   const changedAt = new Date().toISOString();
   const changed = await page.request.post("/api/sync", {
     data: {
       mutations: [{
         mutationId: `portability-change-${Date.now()}`,
-        entityType: "domains",
-        entityId: domain.id,
+        entityType: "areas",
+        entityId: area.id,
         operation: "upsert",
-        payload: { ...domain, name: `Changed after export ${Date.now()}`, updatedAt: changedAt },
+        payload: { ...area, name: `Changed after export ${Date.now()}`, updatedAt: changedAt },
         createdAt: changedAt
       }]
     }
@@ -198,10 +226,10 @@ test("replace import round-trips the complete workspace and blocks pre-restore q
     data: { action: "preview", mode: "replace", bundle }
   });
   expect(preview.status()).toBe(200);
-  await expect(preview.json()).resolves.toMatchObject({ version: 1, mode: "replace" });
+  await expect(preview.json()).resolves.toMatchObject({ version: 2, mode: "replace" });
 
   const stillChanged = await bootstrap(page.request);
-  expect(stillChanged.domains.find((item: any) => item.id === domain.id)?.name).not.toBe(domain.name);
+  expect(stillChanged.areas.find((item: any) => item.id === area.id)?.name).not.toBe(area.name);
 
   const restore = await page.request.post("/api/portability/import", {
     data: {
@@ -223,12 +251,12 @@ test("replace import round-trips the complete workspace and blocks pre-restore q
     data: {
       mutations: [{
         mutationId: staleMutationId,
-        entityType: "domains",
-        entityId: domain.id,
+        entityType: "areas",
+        entityId: area.id,
         operation: "upsert",
         payload: {
-          ...domain,
-          name: "This stale queued edit must not resurrect",
+          ...area,
+          name: "This queued edit must not resurrect",
           updatedAt: new Date(Date.now() + 86_400_000).toISOString()
         },
         createdAt: bundle.exportedAt
@@ -238,17 +266,19 @@ test("replace import round-trips the complete workspace and blocks pre-restore q
   expect(stale.status()).toBe(200);
   const staleBody = await stale.json();
   expect(staleBody.appliedMutationIds).toContain(staleMutationId);
-  expect(staleBody.warnings).toEqual(expect.arrayContaining([expect.objectContaining({ mutationId: staleMutationId, reason: "stale" })]));
+  expect(staleBody.warnings).toEqual(expect.arrayContaining([
+    expect.objectContaining({ mutationId: staleMutationId, reason: "stale" })
+  ]));
 
   const afterStale = await bootstrap(page.request);
-  expect(afterStale.domains.find((item: any) => item.id === domain.id)?.name).toBe(domain.name);
+  expect(afterStale.areas.find((item: any) => item.id === area.id)?.name).toBe(area.name);
 });
 
-test("replace import into another account remaps foreign ids while preserving relationships", async ({ page }) => {
+test("replace import into another account remaps foreign ids while preserving canonical relationships", async ({ page }) => {
   await login(page.request);
   await resetDemo(page.request);
   const bundle = await exportBundle(page.request);
-  const sourceDomainIds = new Set(bundle.workspace.domains.map((item) => item.id));
+  const sourceAreaIds = new Set(bundle.workspace.areas.map((item) => item.id));
   const sourceProjectIds = new Set(bundle.workspace.projects.map((item) => item.id));
 
   await logout(page.request);
@@ -266,22 +296,21 @@ test("replace import into another account remaps foreign ids while preserving re
   expect(restore.status()).toBe(200);
 
   const restored = await bootstrap(page.request);
-  expect(restored.domains).toHaveLength(bundle.workspace.domains.length);
+  expect(restored.areas).toHaveLength(bundle.workspace.areas.length);
   expect(restored.projects).toHaveLength(bundle.workspace.projects.length);
   expect(restored.tasks).toHaveLength(bundle.workspace.tasks.length);
-  expect(restored.notes).toHaveLength(bundle.workspace.notes.length);
-  expect(restored.deadlines).toHaveLength(bundle.workspace.deadlines.length);
-  expect(restored.reviews).toHaveLength(bundle.workspace.reviews.length);
-  expect(restored.domains.some((item: any) => sourceDomainIds.has(item.id))).toBe(false);
+  expect(restored.dates).toHaveLength(bundle.workspace.dates.length);
+  expect(restored.dailyNotes).toHaveLength(bundle.workspace.dailyNotes.length);
+  expect(restored.areas.some((item: any) => sourceAreaIds.has(item.id))).toBe(false);
   expect(restored.projects.some((item: any) => sourceProjectIds.has(item.id))).toBe(false);
   assertRelationships(restored);
 
   const exportedAgain = await exportBundle(page.request);
-  expect(sortedNames(exportedAgain.workspace.domains)).toEqual(sortedNames(bundle.workspace.domains));
+  expect(sortedNames(exportedAgain.workspace.areas)).toEqual(sortedNames(bundle.workspace.areas));
   expect(sortedNames(exportedAgain.workspace.projects)).toEqual(sortedNames(bundle.workspace.projects));
 });
 
-test("invalid imports are rejected before mutation", async ({ page }) => {
+test("invalid canonical imports are rejected before mutation", async ({ page }) => {
   await login(page.request);
   await resetDemo(page.request);
   const bundle: any = await exportBundle(page.request);
@@ -289,7 +318,7 @@ test("invalid imports are rejected before mutation", async ({ page }) => {
   await registerFresh(page.request, "portability-invalid");
   const before = workspaceOnly(await bootstrap(page.request));
 
-  bundle.workspace.projects[0].domainId = "missing-area";
+  bundle.workspace.projects[0].areaId = "missing-area";
   const restore = await page.request.post("/api/portability/import", {
     data: {
       action: "restore",
@@ -306,7 +335,7 @@ test("invalid imports are rejected before mutation", async ({ page }) => {
   expect(after).toEqual(before);
 });
 
-test("merge keeps existing records while adding an imported workspace", async ({ page }) => {
+test("merge keeps existing canonical records while adding an imported workspace", async ({ page }) => {
   await login(page.request);
   await resetDemo(page.request);
   const bundle = await exportBundle(page.request);
@@ -314,10 +343,10 @@ test("merge keeps existing records while adding an imported workspace", async ({
   await registerFresh(page.request, "portability-merge");
 
   const now = new Date().toISOString();
-  const ownDomain = {
-    id: `dom-own-${Date.now()}`,
+  const ownArea = {
+    id: `area-own-${Date.now()}`,
     name: "Existing personal Area",
-    archived: false,
+    state: "active",
     createdAt: now,
     updatedAt: now
   };
@@ -325,10 +354,10 @@ test("merge keeps existing records while adding an imported workspace", async ({
     data: {
       mutations: [{
         mutationId: `mut-own-${Date.now()}`,
-        entityType: "domains",
-        entityId: ownDomain.id,
+        entityType: "areas",
+        entityId: ownArea.id,
         operation: "upsert",
-        payload: ownDomain,
+        payload: ownArea,
         createdAt: now
       }]
     }
@@ -339,7 +368,7 @@ test("merge keeps existing records while adding an imported workspace", async ({
     data: { action: "preview", mode: "merge", bundle }
   });
   expect(preview.status()).toBe(200);
-  await expect(preview.json()).resolves.toMatchObject({ mode: "merge" });
+  await expect(preview.json()).resolves.toMatchObject({ version: 2, mode: "merge" });
 
   const restore = await page.request.post("/api/portability/import", {
     data: {
@@ -353,10 +382,10 @@ test("merge keeps existing records while adding an imported workspace", async ({
   expect(restore.status()).toBe(200);
 
   const merged = await bootstrap(page.request);
-  expect(merged.domains.some((item: any) => item.id === ownDomain.id && item.name === ownDomain.name)).toBe(true);
-  expect(merged.domains).toHaveLength(bundle.workspace.domains.length + 1);
-  for (const imported of bundle.workspace.domains) {
-    expect(merged.domains.some((item: any) => item.name === imported.name)).toBe(true);
+  expect(merged.areas.some((item: any) => item.id === ownArea.id && item.name === ownArea.name)).toBe(true);
+  expect(merged.areas).toHaveLength(bundle.workspace.areas.length + 1);
+  for (const imported of bundle.workspace.areas) {
+    expect(merged.areas.some((item: any) => item.name === imported.name)).toBe(true);
   }
   assertRelationships(merged);
 });

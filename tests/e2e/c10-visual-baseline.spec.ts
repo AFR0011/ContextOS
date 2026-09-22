@@ -161,7 +161,7 @@ async function captureTransientStates(page: Page, testInfo: TestInfo, variant: V
 
   await openLogout(page, variant.mobile);
   await capture(page, testInfo, `${variant.name}-13-logout-dialog`, false);
-});
+}
 
 test.describe("C10 visual baseline capture", () => {
   test.skip(

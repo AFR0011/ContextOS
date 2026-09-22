@@ -39,7 +39,7 @@ test("machine claims guard enforces self-hostable maturity and keeps broad claim
   const audit = read("scripts/stage10-claims-audit.mjs");
 
   expect(audit).toContain("must state the current self-hostable application boundary");
-  expect(audit).toContain("must distinguish self-hostable software from an operated SaaS service");
+  expect(audit).toContain("must distinguish software from an operated service");
   expect(audit).toContain("/production[- ]ready/i");
   expect(audit).toContain("/fully offline/i");
   expect(audit).toContain("/zero data loss/i");

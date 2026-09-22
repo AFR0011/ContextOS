@@ -455,14 +455,11 @@ Status: **Complete**
 The current product cannot truthfully use the old hosted preview as C10 visual evidence.
 
 Vercel history shows:
-- C3 main at `4b452711c50b4937193c07e7df957c55f155297a` is not the relevant baseline and must not be reused for C10 screenshots;
-- the last READY production deployment is C3 main at `4b452711c50baf8a301c79f298fcc9a613432d61`;
+- the last READY production deployment is C3 main at `4b452711c50baf8a301c79f298fcc9a613432d61`, which is too old to serve as C10 visual evidence;
 - C4 main at `81670fb7d3c3a8467af57fdbb2f4fdd69de5893e` failed during `npm run build` with a lint/type error;
 - C9 main at `16dffb7ad52dbcb9f2a8fd3ffbf0128c1a896d1f` also failed during `npm run build`;
 - later previews include install-stage failures;
 - the latest C10 status is additionally blocked by Vercel build-rate limiting.
-
-The first bullet above intentionally distinguishes the older C3 implementation checkpoint in project history from the exact last READY Vercel commit in the deployment history. Only the exact deployment commit may be used as hosted evidence.
 
 ### Capture harness added
 

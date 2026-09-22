@@ -258,18 +258,18 @@ export function ProductSettingsView() {
                   </button>
                 </div>
                 {!sync.online ? (
-                  <p className="mt-3 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
+                  <p role="status" className="mt-3 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
                     Offline. Edits are saved locally and will sync when the connection returns.
                   </p>
                 ) : null}
                 {sync.error ? (
-                  <p data-testid="sync-error" className="mt-3 flex items-start gap-2 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">
+                  <p data-testid="sync-error" role="alert" className="mt-3 flex items-start gap-2 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{sync.error}{sync.lastErrorAt ? ` Last error: ${formatSyncTimestamp(sync.lastErrorAt)}.` : ""}</span>
                   </p>
                 ) : null}
                 {sync.lastWarning ? (
-                  <p data-testid="sync-warning" className="mt-3 flex items-start gap-2 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
+                  <p data-testid="sync-warning" role="status" className="mt-3 flex items-start gap-2 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{sync.lastWarning}{sync.lastWarningAt ? ` Last warning: ${formatSyncTimestamp(sync.lastWarningAt)}.` : ""}</span>
                   </p>
@@ -365,8 +365,8 @@ export function ProductSettingsView() {
                   </div>
                 ) : null}
 
-                {importError ? <p data-testid="workspace-import-error" className="mt-3 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{importError}</p> : null}
-                {importSuccess ? <p data-testid="workspace-import-success" className="mt-3 rounded-lg border border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] px-3 py-2 text-sm text-[var(--cos-success-text)]">{importSuccess}</p> : null}
+                {importError ? <p data-testid="workspace-import-error" role="alert" className="mt-3 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{importError}</p> : null}
+                {importSuccess ? <p data-testid="workspace-import-success" role="status" className="mt-3 rounded-lg border border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] px-3 py-2 text-sm text-[var(--cos-success-text)]">{importSuccess}</p> : null}
               </div>
             </div>
           </div>

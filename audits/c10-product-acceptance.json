@@ -111,6 +111,8 @@
       "status": "pending",
       "artifacts": [
         "docs/c10/SCREENSHOT_BASELINE.md",
+        "tests/e2e/c10-visual-baseline.spec.ts",
+        "scripts/capture-c10-visual.mjs",
         "tests/e2e/contextos.spec.ts",
         "tests/e2e/c6-search-palette.spec.ts",
         "tests/e2e/stage9-lifecycle.spec.ts"

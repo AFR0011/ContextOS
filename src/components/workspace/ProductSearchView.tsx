@@ -109,7 +109,7 @@ export function ProductSearchView() {
   return (
     <div className="cos-page" data-testid="product-search-view">
       <div className="mb-5">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--cos-text-strong)]">Search</h1>
+        <h1 tabIndex={-1} className="text-2xl font-bold tracking-tight text-[var(--cos-text-strong)] outline-none">Search</h1>
         <p className="mt-1 max-w-2xl text-sm text-[var(--cos-text-muted)]">
           Find Projects, Areas, Tasks, Dates, and Daily Notes across current and historical ContextOS state.
         </p>

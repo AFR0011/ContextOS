@@ -153,4 +153,4 @@ Retired compatibility aliases can be part of shell routing only as migrations to
 
 Claims follow automated evidence. The optimized production runtime owns service-worker, cold-open, hard-refresh, offline alias migration, local mutation durability, Search, and API/cache-separation claims. Development E2E owns broader interactions, identity isolation, local atomicity, synchronization, route compatibility, accessibility, and fixture regression.
 
-Stage 9/10 historical verification documents remain unmodified provenance for what was tested at those stages; current C7 tests intentionally replace assertions about retired UI with assertions about redirects and the underlying data/synchronization guarantees.
+Stage 9/10 historical verification documents remain unmodified provenance for what was tested at those stages. Current C8-C10 assurance validates the canonical persistence/sync model, retired-route redirects, C9 responsive/offline behavior, and the definitive C10 workflow without reviving the old tombstone UI contract.

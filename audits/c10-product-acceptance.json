@@ -1,0 +1,104 @@
+{
+  "program": "C10",
+  "title": "Definitive product acceptance and baseline freeze",
+  "baseline": {
+    "c9MergeCommit": "16dffb7ad52dbcb9f2a8fd3ffbf0128c1a896d1f",
+    "packageVersion": "1.0.0"
+  },
+  "statusValues": [
+    "pending",
+    "passed",
+    "documented-boundary"
+  ],
+  "evidence": [
+    {
+      "id": "HISTORY-001",
+      "title": "Historical Stage 9/10 evidence is preserved without treating retired pre-C8 artifacts as active behavior",
+      "status": "passed",
+      "artifacts": [
+        "docs/stage9/STAGE9_VERIFICATION.md",
+        "docs/stage10/STAGE10_ACCEPTANCE.md",
+        "audits/stage9-evidence.json",
+        "audits/stage10-acceptance.json",
+        "audits/historical-artifact-retirements.json"
+      ]
+    },
+    {
+      "id": "WORKFLOW-001",
+      "title": "Definitive workflow Open -> understand day -> execute -> note -> open context -> resume project -> see upcoming -> find history -> enter LifeOS is exercised end-to-end",
+      "status": "pending",
+      "artifacts": [
+        "BLUEPRINT.md",
+        "tests/e2e/contextos.spec.ts",
+        "tests/e2e/c6-search-palette.spec.ts"
+      ]
+    },
+    {
+      "id": "OFFLINE-001",
+      "title": "Canonical local-first create/edit/state-change/reload/reconnect/server-convergence behavior remains accepted",
+      "status": "pending",
+      "artifacts": [
+        "tests/e2e/local-first-characterization.spec.ts",
+        "tests/offline-production/offline-shell.spec.ts",
+        "docs/LOCAL_FIRST_CONTRACT.md"
+      ]
+    },
+    {
+      "id": "ACCESS-001",
+      "title": "Responsive, touch, keyboard, reduced-motion, and light/dark acceptance remains aligned with C9",
+      "status": "pending",
+      "artifacts": [
+        "tests/e2e/contextos.spec.ts",
+        "tests/e2e/c6-search-palette.spec.ts",
+        "tests/e2e/stage9-lifecycle.spec.ts",
+        "src/lib/use-dialog-focus-trap.ts"
+      ]
+    },
+    {
+      "id": "CLAIMS-001",
+      "title": "Active public documentation describes the canonical C8-C9 product and scopes historical assurance correctly",
+      "status": "pending",
+      "artifacts": [
+        "README.md",
+        "DESIGN.md",
+        "BLUEPRINT.md",
+        "docs/PROJECT_STATE.md",
+        "docs/LOCAL_FIRST_CONTRACT.md",
+        "docs/RUN_PROTOCOL.md",
+        "docs/DEPLOYMENT.md",
+        "SECURITY.md"
+      ]
+    },
+    {
+      "id": "CI-001",
+      "title": "Active CI and verification commands reference only current canonical tests while retaining historical provenance audits",
+      "status": "pending",
+      "artifacts": [
+        ".github/workflows/ci.yml",
+        "package.json",
+        "scripts/stage9-evidence-check.mjs",
+        "scripts/stage10-acceptance-check.mjs",
+        "scripts/stage10-claims-audit.mjs"
+      ]
+    },
+    {
+      "id": "BOUNDARY-001",
+      "title": "Unsupported collaboration, provider-native DR, remote offline-device erasure, and irreversible per-record purge remain explicit non-claims",
+      "status": "documented-boundary",
+      "artifacts": [
+        "README.md",
+        "docs/LOCAL_FIRST_CONTRACT.md",
+        "SECURITY.md"
+      ]
+    },
+    {
+      "id": "CLOSE-001",
+      "title": "C10 baseline is frozen only after the current acceptance ladder and documentation refresh are complete",
+      "status": "pending",
+      "artifacts": [
+        "docs/c10/C10_ACCEPTANCE.md",
+        ".github/workflows/ci.yml"
+      ]
+    }
+  ]
+}

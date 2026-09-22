@@ -207,9 +207,10 @@ export function workspaceExportToMarkdown(bundle: WorkspaceExportBundle) {
 
   lines.push("## Tasks", "");
   for (const item of w.tasks) {
-    const parent = item.parent.type === "project"
-      ? w.projects.find((project) => project.id === item.parent.projectId)?.name ?? item.parent.projectId
-      : w.areas.find((area) => area.id === item.parent.areaId)?.name ?? item.parent.areaId;
+    const parentRef = item.parent;
+    const parent = parentRef.type === "project"
+      ? w.projects.find((project) => project.id === parentRef.projectId)?.name ?? parentRef.projectId
+      : w.areas.find((area) => area.id === parentRef.areaId)?.name ?? parentRef.areaId;
     lines.push(
       `- [${item.state === "done" ? "x" : " "}] ${item.title} | ${parent}${item.plannedDate ? ` | planned ${item.plannedDate}` : ""}${item.scheduledTime ? ` | ${item.scheduledTime}` : ""}`
     );
@@ -217,9 +218,10 @@ export function workspaceExportToMarkdown(bundle: WorkspaceExportBundle) {
 
   lines.push("", "## Dates", "");
   for (const item of w.dates) {
-    const parent = item.parent.type === "project"
-      ? w.projects.find((project) => project.id === item.parent.projectId)?.name ?? item.parent.projectId
-      : w.areas.find((area) => area.id === item.parent.areaId)?.name ?? item.parent.areaId;
+    const parentRef = item.parent;
+    const parent = parentRef.type === "project"
+      ? w.projects.find((project) => project.id === parentRef.projectId)?.name ?? parentRef.projectId
+      : w.areas.find((area) => area.id === parentRef.areaId)?.name ?? parentRef.areaId;
     lines.push(`- ${item.date}${item.startTime ? ` ${item.startTime}` : ""} — [${item.kind}] ${item.title} | ${parent}`);
     if (item.details) lines.push(`  ${item.details}`);
   }

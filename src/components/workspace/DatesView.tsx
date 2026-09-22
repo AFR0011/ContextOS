@@ -192,9 +192,9 @@ export function DatesView() {
         action={<button type="button" onClick={() => setShowAdd(true)} className="cos-btn cos-btn-primary px-4 py-2 text-sm"><Plus className="h-4 w-4" /> Add Date</button>}
       />
 
-      <div className="mb-6 flex flex-wrap gap-2" aria-label="Date filters">
+      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Date filters">
         {(["all", "event", "deadline"] as const).map((value) => (
-          <button key={value} type="button" onClick={() => setFilter(value)} className={`cos-btn px-3 py-1.5 text-xs ${filter === value ? "cos-btn-primary" : "cos-btn-secondary"}`}>
+          <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)} className={`cos-btn px-3 py-1.5 text-xs ${filter === value ? "cos-btn-primary" : "cos-btn-secondary"}`}>
             {value === "all" ? "All" : value === "event" ? "Events" : "Deadlines"}
           </button>
         ))}

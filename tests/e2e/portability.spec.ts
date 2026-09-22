@@ -207,6 +207,10 @@ test("replace import round-trips the canonical workspace and blocks pre-restore 
   expect(await markdown.text()).toContain("# ContextOS workspace export");
 
   const area = bundle.workspace.areas[0];
+  const beforeChange = await bootstrap(page.request);
+  const serverArea = beforeChange.areas.find((item: any) => item.id === area.id);
+  expect(serverArea?.revision).toBeGreaterThan(0);
+
   const changedAt = new Date().toISOString();
   const changed = await page.request.post("/api/sync", {
     data: {
@@ -216,7 +220,9 @@ test("replace import round-trips the canonical workspace and blocks pre-restore 
         entityId: area.id,
         operation: "upsert",
         payload: { ...area, name: `Changed after export ${Date.now()}`, updatedAt: changedAt },
-        createdAt: changedAt
+        createdAt: changedAt,
+        baseServerSyncedAt: beforeChange.serverSyncedAt,
+        baseRevision: serverArea.revision
       }]
     }
   });

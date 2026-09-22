@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ArrowRight, Boxes, Plus, Upload } from "lucide-react";
+import { Boxes, Plus, Upload } from "lucide-react";
 import { useWorkspace } from "@/lib/client-store";
 import { useLocalRouter } from "@/lib/local-router";
 
@@ -90,24 +90,3 @@ export function AreasSetupView({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-export function AreaRequiredView({ target }: { target: "projects" | "resources" }) {
-  const router = useLocalRouter();
-  const label = target === "projects" ? "Projects" : "Resources";
-
-  return (
-    <div data-testid="area-required" className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      <section className="cos-surface p-5">
-        <div className="flex items-start gap-3">
-          <Boxes className="mt-0.5 h-5 w-5 shrink-0 text-[var(--cos-primary)]" />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-semibold text-[var(--cos-text-strong)]">Create an active Area first</h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--cos-text-muted)]">{label} require an active Area before new records can be created.</p>
-            <button type="button" onClick={() => router.push("/areas")} className="cos-btn cos-btn-primary mt-4 min-h-10 px-4 py-2 text-sm">
-              Manage Areas <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}

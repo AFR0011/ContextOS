@@ -55,12 +55,12 @@ async function localDailyNote(page: Page, localDate: string) {
 test("Home projects only planned-today tasks and derives today context", async ({ page }) => {
   await login(page);
 
-  await expect(page.getByTestId("home-dayline")).toContainText("Process inbox captures");
-  await expect(page.getByTestId("home-dayline")).toContainText("Write one clean latest-status note");
+  await expect(page.getByTestId("home-dayline")).toContainText("Review today's open work");
+  await expect(page.getByTestId("home-dayline")).toContainText("Refine Home and navigation copy");
   await expect(page.getByTestId("home-dayline")).not.toContainText("Review release milestones and identify risk points");
 
   await expect(page.getByTestId("home-contexts")).toContainText("ContextOS Demo");
-  await expect(page.getByTestId("home-contexts")).toContainText("Dashboard 2.0 Foundation");
+  await expect(page.getByTestId("home-contexts")).toContainText("Home & Navigation");
   await expect(page.getByTestId("home-contexts")).toContainText("Engineering");
 
   await expect(page.getByRole("heading", { name: "Insights", exact: true })).toHaveCount(0);
@@ -71,7 +71,7 @@ test("Home projects only planned-today tasks and derives today context", async (
 
 test("Home task completion stays in place", async ({ page }) => {
   await login(page);
-  const title = "Process inbox captures";
+  const title = "Review today's open work";
 
   await page.getByRole("button", { name: `Complete ${title}`, exact: true }).click();
   await expect(page.getByText(title, { exact: true })).toBeVisible();

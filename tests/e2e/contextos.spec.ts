@@ -393,8 +393,8 @@ test("seeded demo account can log in and render Home", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Insights", exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Upcoming", exact: true })).toBeVisible();
   await expect(page.getByTestId("home-upcoming")).toContainText("ContextOS verification pass");
-  await expect(page.getByTestId("home-dayline")).toContainText("Process inbox captures");
-  await expect(page.getByTestId("home-dayline")).toContainText("Write one clean latest-status note");
+  await expect(page.getByTestId("home-dayline")).toContainText("Review today's open work");
+  await expect(page.getByTestId("home-dayline")).toContainText("Refine Home and navigation copy");
   await expect(page.getByTestId("home-dayline")).not.toContainText("Validate benchmark regression");
 });
 
@@ -419,122 +419,6 @@ test("mobile bottom navigation uses the simplified four-tab set", async ({ page 
   }
   await expect(mobileNav.getByRole("button", { name: "Inbox", exact: true })).toHaveCount(0);
   await expect(mobileNav.getByRole("button", { name: "Dates", exact: true })).toHaveCount(0);
-});
-
-test("quick capture appears in inbox and can convert to a task", async ({ page }) => {
-  await login(page);
-  const text = `offline-ready capture ${Date.now()}`;
-  await page.goto("/inbox");
-  await page.getByPlaceholder(/Quick capture/i).fill(`/task ${text}`);
-  await page.getByPlaceholder(/Quick capture/i).press("Enter");
-  await expect(page.getByText(`/task ${text}`)).toBeVisible();
-  const captureCard = page.getByTestId("capture-card").filter({ hasText: `/task ${text}` });
-  await captureCard.getByRole("button", { name: "Convert to task" }).click();
-  await expect(captureCard).toHaveCount(0);
-  await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page.getByPlaceholder("Search workspace...").fill(text);
-  await expect(page.getByText(text).first()).toBeVisible();
-});
-
-test("inbox review converts slash task captures with parsed date and time", async ({ page }) => {
-  await login(page);
-  const { localDateKey } = await import("../../src/lib/dates");
-  const today = localDateKey();
-  const title = `Review task ${Date.now()}`;
-  await page.goto("/inbox");
-  await page.getByPlaceholder(/Quick capture/i).fill(`/task ${title} [${today}] (10:45)`);
-  await page.getByPlaceholder(/Quick capture/i).press("Enter");
-
-  const captureCard = page.getByTestId("capture-card").filter({ hasText: title });
-  await captureCard.getByRole("button", { name: "Review", exact: true }).click();
-  await expect(page.getByTestId("inbox-review-panel")).toBeVisible();
-  await expect(page.getByTestId("triage-title-input")).toHaveValue(title);
-  await expect(page.locator('input[type="date"]').first()).toHaveValue(today);
-  await expect(page.locator('input[type="time"]').first()).toHaveValue("10:45");
-  await page.getByRole("button", { name: "Create task" }).click();
-
-  await page.goto("/dashboard");
-  await expect(page.getByTestId("home-dayline")).toContainText(title);
-  await expect(page.getByTestId("home-dayline")).toContainText("10:45");
-});
-
-test("inbox review creates a date with parsed date and time", async ({ page }) => {
-  await login(page);
-  const title = `Review date ${Date.now()}`;
-  await page.goto("/inbox");
-  await page.getByPlaceholder(/Quick capture/i).fill(`/date ${title} [2026-07-20] (16:30)`);
-  await page.getByPlaceholder(/Quick capture/i).press("Enter");
-
-  const captureCard = page.getByTestId("capture-card").filter({ hasText: title });
-  await captureCard.getByRole("button", { name: "Review", exact: true }).click();
-  await expect(page.getByTestId("triage-title-input")).toHaveValue(title);
-  await expect(page.getByTestId("triage-date-input")).toHaveValue("2026-07-20");
-  await expect(page.getByTestId("triage-time-input")).toHaveValue("16:30");
-  await page.getByRole("button", { name: "Create Date" }).click();
-
-  await expect.poll(async () => {
-    const response = await page.request.get("/api/bootstrap");
-    const workspace = await response.json();
-    const deadline = workspace.data.deadlines.find((item: { title: string }) => item.title === title);
-    return deadline ? { date: deadline.date, time: deadline.time } : null;
-  }).toEqual({ date: "2026-07-20", time: "16:30" });
-
-  await page.goto("/dates");
-  await expect(page.getByText(title, { exact: true })).toHaveCount(0);
-});
-
-test("inbox review attaches capture context to a project", async ({ page }) => {
-  await login(page);
-  const text = `Attach inbox context ${Date.now()}`;
-  await page.goto("/inbox");
-  await page.getByPlaceholder(/Quick capture/i).fill(text);
-  await page.getByPlaceholder(/Quick capture/i).press("Enter");
-
-  const captureCard = page.getByTestId("capture-card").filter({ hasText: text });
-  await captureCard.getByRole("button", { name: "Review", exact: true }).click();
-  await page.getByRole("button", { name: "Attach to project" }).click();
-  await page.getByTestId("triage-attach-project-select").selectOption({ label: "ContextOS Demo" });
-  await page.getByRole("button", { name: "Attach", exact: true }).click();
-  await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", text)).toBe(true);
-
-  await page.goto("/projects");
-  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await expect(page.getByTestId("project-command-page")).toBeVisible();
-  await expect(page.getByTestId("project-recovery-notes")).toHaveCount(0);
-  await expect.poll(() => workspaceProjectRecoveryIncludes(page, "ContextOS Demo", text)).toBe(true);
-});
-
-test("review archive and delete remove captures from the unprocessed queue", async ({ page }) => {
-  await login(page);
-  const archiveText = `Archive capture ${Date.now()}`;
-  const deleteText = `Delete capture ${Date.now()}`;
-  await page.goto("/inbox");
-  await page.getByPlaceholder(/Quick capture/i).fill(archiveText);
-  await page.getByPlaceholder(/Quick capture/i).press("Enter");
-  await page.getByPlaceholder(/Quick capture/i).fill(deleteText);
-  await page.getByPlaceholder(/Quick capture/i).press("Enter");
-
-  await page.getByTestId("capture-card").filter({ hasText: archiveText }).getByRole("button", { name: "Review", exact: true }).click();
-  await page.getByTestId("inbox-review-panel").getByRole("button", { name: "Archive" }).click();
-  await page.getByRole("button", { name: "Done" }).click();
-  await expect(page.getByTestId("capture-card").filter({ hasText: archiveText })).toHaveCount(0);
-
-  await page.getByTestId("capture-card").filter({ hasText: deleteText }).getByRole("button", { name: "Review", exact: true }).click();
-  await page.getByTestId("inbox-review-panel").getByRole("button", { name: "Delete" }).click();
-  await page.getByRole("button", { name: "Done" }).click();
-  await expect(page.getByTestId("capture-card").filter({ hasText: deleteText })).toHaveCount(0);
-});
-
-test("mobile inbox actions remain reachable with touch-sized targets", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await login(page);
-  await page.goto("/inbox");
-  const card = page.getByTestId("capture-card").filter({ hasText: "/task Clean up deployment checklist" });
-  await expectMinTouchTarget(card.getByRole("button", { name: "Review", exact: true }));
-  await expectMinTouchTarget(card.getByRole("button", { name: "Convert to task" }));
-  await expectMinTouchTarget(card.getByRole("button", { name: "Convert to date" }));
-  await expectMinTouchTarget(card.getByRole("button", { name: "Archive" }));
-  await expectMinTouchTarget(card.getByRole("button", { name: "Delete" }));
 });
 
 test("project objective persists after reload", async ({ page }) => {
@@ -593,7 +477,7 @@ test("today redirects to Home and completed today tasks stay in place", async ({
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 
-  const taskTitle = "Process inbox captures";
+  const taskTitle = "Review today's open work";
   await expect(page.getByText(taskTitle, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: `Complete ${taskTitle}`, exact: true }).click();
   await expect(page.getByText(taskTitle, { exact: true })).toBeVisible();
@@ -605,21 +489,26 @@ test("today redirects to Home and completed today tasks stay in place", async ({
   await expect(page.getByRole("button", { name: `Reopen ${taskTitle}`, exact: true })).toBeVisible();
 });
 
-test("search results open surfaces where task and standalone note records are visible", async ({ page }) => {
+test("search results expose exact canonical Task and Date detail", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: "Search", exact: true }).click();
 
   const taskTitle = "Validate benchmark regression";
   await page.getByPlaceholder("Search workspace...").fill(taskTitle);
-  await page.getByRole("button", { name: new RegExp(`Task ${taskTitle}`) }).click();
-  await expect(page).toHaveURL(/\/projects\//);
-  await expect(page.getByLabel(`Task title ${taskTitle}`)).toBeVisible();
+  const taskResult = page.getByTestId(/search-result-task-/).filter({ hasText: taskTitle }).first();
+  await expect(taskResult).toBeVisible();
+  await taskResult.click();
+  await expect(page).toHaveURL(/\/search\?.*selected=task%3A/);
+  await expect(page.getByTestId("search-selected-record")).toContainText(taskTitle);
+  await expect(page.getByTestId("search-selected-record").getByRole("button", { name: "Open project" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page.getByPlaceholder("Search workspace...").fill("Practice Schedule");
-  await page.getByRole("button", { name: /Note Practice Schedule/ }).click();
-  await expect(page).toHaveURL(/\/resources$/);
-  await expect(page.getByText("Practice Schedule")).toBeVisible();
+  await page.getByPlaceholder("Search workspace...").fill("Research review session");
+  const dateResult = page.getByTestId(/search-result-date-/).filter({ hasText: "Research review session" }).first();
+  await expect(dateResult).toBeVisible();
+  await dateResult.click();
+  await expect(page).toHaveURL(/\/search\?.*selected=date%3A/);
+  await expect(page.getByTestId("search-selected-record")).toContainText("Research review session");
+  await expect(page.getByTestId("search-selected-record")).toContainText("Event");
 });
 
 test("Area detail exposes canonical Projects, direct Tasks, and direct Dates", async ({ page }) => {
@@ -656,31 +545,6 @@ test("Area detail exposes canonical Projects, direct Tasks, and direct Dates", a
 
   await page.reload();
   await expect(page.getByTestId("area-dates").getByText(areaDate, { exact: true })).toBeVisible();
-});
-
-test("legacy Resources remain accessible until retirement", async ({ page }) => {
-  await login(page);
-  await page.goto("/resources");
-  await expect(page.getByRole("heading", { name: "Resources" })).toBeVisible();
-  await expect(page.getByText("Practice Schedule")).toBeVisible();
-  await expect(page.getByTestId("practice-schedule-table")).toContainText("Status");
-  await expect(page.getByTestId("practice-schedule-table")).toContainText("Refine");
-
-  const title = `Vocabulary resource ${Date.now()}`;
-  await page.getByPlaceholder("Resource title...").fill(title);
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  await expectInputValue(page, "input", title);
-  const resourceEditor = page.locator('[data-testid^="note-editor-"]').first();
-  await fillMarkdownEditor(resourceEditor, [`## ${title}`, "- [ ] Practice retrieval"]);
-  await expect(markdownLine(resourceEditor, 0)).toHaveValue(title);
-  await expect(markdownLine(resourceEditor, 1)).toHaveValue("Practice retrieval");
-  await expect(resourceEditor.locator('input[type="checkbox"]').first()).not.toBeChecked();
-  await resourceEditor.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText("Saved").first()).toBeVisible();
-
-  await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page.getByPlaceholder("Search workspace...").fill(title);
-  await expect(page.getByText(title).first()).toBeVisible();
 });
 
 test("workspace dark mode toggles and persists", async ({ page }) => {

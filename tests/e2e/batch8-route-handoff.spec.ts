@@ -7,17 +7,23 @@ const demoPassword = "contextos-demo-v011";
 
 const interceptedPageFiles = [
   "src/app/(workspace)/dashboard/page.tsx",
-  "src/app/(workspace)/inbox/page.tsx",
   "src/app/(workspace)/projects/page.tsx",
   "src/app/(workspace)/projects/[id]/page.tsx",
   "src/app/(workspace)/dates/page.tsx",
   "src/app/(workspace)/areas/page.tsx",
-  "src/app/(workspace)/resources/page.tsx",
   "src/app/(workspace)/lifeos/page.tsx",
   "src/app/(workspace)/search/page.tsx",
-  "src/app/(workspace)/archive/page.tsx",
-  "src/app/(workspace)/reviews/page.tsx",
   "src/app/(workspace)/settings/page.tsx"
+] as const;
+
+const compatibilityRedirects = [
+  ["src/app/(workspace)/inbox/page.tsx", "/dashboard"],
+  ["src/app/(workspace)/resources/page.tsx", "/lifeos"],
+  ["src/app/(workspace)/reviews/page.tsx", "/lifeos"],
+  ["src/app/(workspace)/archive/page.tsx", "/search"],
+  ["src/app/(workspace)/today/page.tsx", "/dashboard"],
+  ["src/app/(workspace)/this-week/page.tsx", "/dashboard"],
+  ["src/app/(workspace)/deadlines/page.tsx", "/dates"]
 ] as const;
 
 async function resetDemo(page: Page) {
@@ -36,15 +42,21 @@ async function loginDemo(page: Page) {
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 }
 
-test("intercepted Next workspace pages are inert handoff entrypoints", () => {
+test("canonical Next workspace pages remain inert local-router entrypoints", () => {
   for (const file of interceptedPageFiles) {
     const source = readFileSync(resolve(process.cwd(), file), "utf8");
-    expect(source, file).toContain('WorkspaceRouteHandoff');
-    expect(source, file).not.toContain('@/components/workspace/Views');
-    expect(source, file).not.toContain('LifecycleView');
-    expect(source, file).not.toContain('ProductInboxView');
-    expect(source, file).not.toContain('ProductSearchView');
-    expect(source, file).not.toContain('ProductSettingsView');
+    expect(source, file).toContain("WorkspaceRouteHandoff");
+    expect(source, file).not.toContain("LifecycleView");
+    expect(source, file).not.toContain("ProductInboxView");
+  }
+});
+
+test("retired and historical aliases have explicit canonical redirects", () => {
+  for (const [file, target] of compatibilityRedirects) {
+    const source = readFileSync(resolve(process.cwd(), file), "utf8");
+    expect(source, file).toContain('import { redirect } from "next/navigation"');
+    expect(source, file).toContain(`redirect("${target}")`);
+    expect(source, file).not.toContain("WorkspaceRouteHandoff");
   }
 });
 
@@ -53,21 +65,27 @@ test("direct workspace URLs resolve through the canonical local router", async (
 
   const routes = [
     ["/dashboard", "Today"],
-    ["/inbox", "Inbox"],
     ["/projects", "Projects"],
     ["/dates", "Dates"],
     ["/areas", "Areas"],
-    ["/resources", "Resources"],
     ["/lifeos", "Module hub"],
     ["/search", "Search"],
-    ["/archive", "Archive"],
-    ["/reviews", "Reviews"],
     ["/settings", "Settings"]
   ] as const;
 
   for (const [path, heading] of routes) {
     await page.goto(path);
     await expect(page.getByRole("heading", { name: heading, exact: true }).first(), path).toBeVisible();
+  }
+
+  for (const [path, target] of [
+    ["/inbox", "/dashboard"],
+    ["/resources", "/lifeos"],
+    ["/reviews", "/lifeos"],
+    ["/archive", "/search"]
+  ] as const) {
+    await page.goto(path);
+    await expect(page).toHaveURL(new RegExp(`${target.replace("/", "\\/")}$`));
   }
 
   const bootstrap = await page.request.get("/api/bootstrap");

@@ -3,7 +3,8 @@ import {
   CheckCircle2,
   Circle,
   FolderKanban,
-  Inbox,
+  Boxes,
+  NotebookPen,
   LayoutDashboard,
   Search,
   Wifi,
@@ -11,9 +12,10 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, active: true, badge: undefined },
-  { label: "Inbox", icon: Inbox, active: false, badge: "6" },
+  { label: "Home", icon: LayoutDashboard, active: true, badge: undefined },
+  { label: "Projects", icon: FolderKanban, active: false, badge: undefined },
   { label: "Search", icon: Search, active: false, badge: undefined },
+  { label: "LifeOS", icon: Boxes, active: false, badge: undefined },
 ] as const;
 
 const projects = ["Portfolio launch", "Research manuscript", "ContextOS"] as const;
@@ -103,10 +105,10 @@ export function ContextOSProductPreview() {
         <div className="bg-[var(--cos-bg)] p-4 sm:p-5 lg:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--cos-primary-text)]">Command center</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--cos-primary-text)]">Today</p>
               <h3 className="mt-1 text-xl font-bold tracking-tight text-[var(--cos-text-strong)] sm:text-2xl">Pick up where you left off.</h3>
               <p className="mt-1 max-w-xl text-[11px] leading-5 text-[var(--cos-text-muted)] sm:text-xs">
-                Capture loose context, surface what matters now, and keep project state close to the work.
+                See today's work, keep working memory nearby, and carry project context across interruptions.
               </p>
             </div>
             <div className="flex items-center gap-1.5 rounded-full border border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--cos-success-text)]">
@@ -118,11 +120,11 @@ export function ContextOSProductPreview() {
           <div className="mt-5 rounded-2xl border border-[var(--cos-primary-border)] bg-[var(--cos-bg-elevated)] p-3 shadow-[var(--cos-shadow-sm)] sm:p-4">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--cos-text-subtle)]">
               <Zap className="h-3 w-3 text-[var(--cos-primary)]" />
-              Capture
+              Daily Notes
             </div>
             <div className="mt-3 flex items-center gap-3 rounded-xl border border-[var(--cos-border)] bg-[var(--cos-bg-soft)] px-3 py-3 text-xs text-[var(--cos-text-muted)]">
-              <span className="flex-1">Add a task, note, date, or loose thought…</span>
-              <span className="rounded-md border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] px-2 py-1 font-mono text-[9px]">⌘ K</span>
+              <span className="flex-1">Working notes for today…</span>
+              <span className="rounded-md border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] px-2 py-1 font-mono text-[9px]">⌘ K quick create</span>
             </div>
           </div>
 
@@ -157,10 +159,10 @@ export function ContextOSProductPreview() {
             <div className="grid gap-4">
               <section className="rounded-2xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] p-4 shadow-[var(--cos-shadow-sm)]">
                 <div className="flex items-center gap-2">
-                  <Inbox className="h-4 w-4 text-[var(--cos-primary)]" />
+                  <NotebookPen className="h-4 w-4 text-[var(--cos-primary)]" />
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Inbox</p>
-                    <p className="text-sm font-bold text-[var(--cos-text-strong)]">6 items to triage</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Daily Notes</p>
+                    <p className="text-sm font-bold text-[var(--cos-text-strong)]">Saved for today</p>
                   </div>
                 </div>
               </section>
@@ -179,7 +181,7 @@ export function ContextOSProductPreview() {
                 <div className="flex items-center gap-2">
                   <FolderKanban className="h-4 w-4 text-[var(--cos-project)]" />
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Projects</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">In context today</p>
                     <p className="text-sm font-bold text-[var(--cos-text-strong)]">3 active contexts</p>
                   </div>
                 </div>

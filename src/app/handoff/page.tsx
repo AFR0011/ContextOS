@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Inbox, ShieldCheck } from "lucide-react";
-import { WorkspaceProvider, useWorkspace } from "@/lib/client-store";
+import { ArrowLeft, Home, ShieldCheck } from "lucide-react";
 import { handoffFromFragment, validateLifeOsHandoff, type LifeOsHandoffV1 } from "@/lib/lifeos-handoff";
 import type { LocalVerifiedUser } from "@/lib/local-db";
 
@@ -11,20 +10,14 @@ const PENDING_HANDOFF_KEY = "contextos:pending-handoff";
 
 function HandoffPreview() {
   const router = useRouter();
-  const { addHandoffCapture, loading } = useWorkspace();
   const [handoff, setHandoff] = useState<LifeOsHandoffV1 | null>(null);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fragment = window.location.hash || window.sessionStorage.getItem(PENDING_HANDOFF_KEY) || "";
     try {
       if (!fragment) throw new Error("No handoff payload was provided.");
-      const parsed = handoffFromFragment(fragment, "contextos");
-      setHandoff(parsed);
-      setTitle(parsed.title);
-      setBody(parsed.body);
+      setHandoff(handoffFromFragment(fragment, "contextos"));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not read this handoff.");
     } finally {
@@ -36,33 +29,32 @@ function HandoffPreview() {
   const validation = useMemo(() => {
     if (!handoff) return null;
     try {
-      return validateLifeOsHandoff({ ...handoff, title, body }, "contextos");
+      return validateLifeOsHandoff(handoff, "contextos");
     } catch (reason) {
       return reason instanceof Error ? reason.message : "This handoff is invalid.";
     }
-  }, [body, handoff, title]);
-
-  function approve() {
-    if (!handoff || typeof validation === "string") return;
-    addHandoffCapture({ ...handoff, title: title.trim(), body: body.trim() });
-    router.replace("/inbox?filter=suggestions");
-  }
+  }, [handoff]);
 
   return (
     <main className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
-      <button type="button" onClick={() => router.replace("/inbox")} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-sm">
-        <ArrowLeft className="h-4 w-4" /> Inbox
+      <button type="button" onClick={() => router.replace("/dashboard")} className="cos-btn cos-btn-ghost min-h-10 px-3 py-2 text-sm">
+        <ArrowLeft className="h-4 w-4" /> Home
       </button>
-      <section className="cos-surface space-y-5 p-5 sm:p-6">
+
+      <section className="cos-surface space-y-5 p-5 sm:p-6" data-testid="handoff-compatibility-preview">
         <div className="flex items-start gap-3">
           <ShieldCheck className="mt-0.5 h-6 w-6 text-[var(--cos-primary)]" />
           <div>
-            <h1 className="text-xl font-semibold text-[var(--cos-text-strong)]">Review suggested capture</h1>
-            <p className="mt-1 text-sm text-[var(--cos-text-muted)]">Approval adds an unprocessed Inbox capture. It will not create a task or modify a project.</p>
+            <h1 className="text-xl font-semibold text-[var(--cos-text-strong)]">Review LifeOS handoff</h1>
+            <p className="mt-1 text-sm leading-6 text-[var(--cos-text-muted)]">
+              ContextOS no longer creates Inbox captures. This compatibility preview does not save the proposal while the canonical LifeOS action contract is being defined.
+            </p>
           </div>
         </div>
+
         {error ? <p role="alert" className="rounded-lg bg-[var(--cos-danger-soft)] p-3 text-sm text-[var(--cos-danger-text)]">{error}</p> : null}
         {!handoff && !error ? <p className="text-sm text-[var(--cos-text-muted)]">Preparing handoff preview...</p> : null}
+
         {handoff ? (
           <>
             <div className="flex flex-wrap gap-2 text-xs">
@@ -70,20 +62,25 @@ function HandoffPreview() {
               <span className="cos-pill cos-pill-muted">{handoff.kind}</span>
               {handoff.area ? <span className="cos-pill cos-pill-muted">{handoff.area}</span> : null}
             </div>
-            <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Title</span>
-              <input value={title} maxLength={160} onChange={(event) => setTitle(event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-[var(--cos-text-muted)]">Body</span>
-              <textarea value={body} rows={10} onChange={(event) => setBody(event.target.value)} className="cos-input w-full px-3 py-2 text-sm" />
-            </label>
+
+            <div className="rounded-lg border border-[var(--cos-border-soft)] bg-[var(--cos-bg-soft)] p-4">
+              <p className="text-sm font-semibold text-[var(--cos-text-strong)]">{handoff.title}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--cos-text)]">{handoff.body}</p>
+            </div>
+
             {typeof validation === "string" ? <p role="alert" className="text-sm text-[var(--cos-danger-text)]">{validation}</p> : null}
+
+            <p className="text-sm leading-6 text-[var(--cos-text-muted)]">
+              For now, use Home or Cmd/Ctrl+K to create the relevant Task or Date explicitly. No legacy Capture is written from this screen.
+            </p>
+
             <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={approve} disabled={loading || typeof validation === "string"} className="cos-btn cos-btn-primary min-h-10 px-4 py-2 text-sm disabled:opacity-50">
-                <Inbox className="h-4 w-4" /> {loading ? "Loading workspace..." : "Approve to Inbox"}
+              <button type="button" onClick={() => router.replace("/dashboard")} className="cos-btn cos-btn-primary min-h-10 px-4 py-2 text-sm">
+                <Home className="h-4 w-4" /> Open Home
               </button>
-              <button type="button" onClick={() => router.replace("/inbox")} className="cos-btn cos-btn-secondary min-h-10 px-4 py-2 text-sm">Dismiss</button>
+              <button type="button" onClick={() => router.replace("/lifeos")} className="cos-btn cos-btn-secondary min-h-10 px-4 py-2 text-sm">
+                Open LifeOS
+              </button>
             </div>
           </>
         ) : null}
@@ -119,7 +116,13 @@ export default function HandoffPage() {
         setAuthState("ready");
       })
       .catch((reason) => {
-        setAuthError(reason instanceof DOMException && reason.name === "AbortError" ? "Sign-in verification timed out. Please retry." : reason instanceof Error ? reason.message : "Could not verify sign-in.");
+        setAuthError(
+          reason instanceof DOMException && reason.name === "AbortError"
+            ? "Sign-in verification timed out. Please retry."
+            : reason instanceof Error
+              ? reason.message
+              : "Could not verify sign-in."
+        );
         setAuthState("error");
       })
       .finally(() => window.clearTimeout(timeout));
@@ -130,9 +133,7 @@ export default function HandoffPage() {
     };
   }, [router]);
 
-  if (authState === "ready" && user) {
-    return <WorkspaceProvider user={user}><HandoffPreview /></WorkspaceProvider>;
-  }
+  if (authState === "ready" && user) return <HandoffPreview />;
 
   return (
     <main className="grid min-h-screen place-items-center bg-[var(--cos-bg)] p-4 text-[var(--cos-text)]">

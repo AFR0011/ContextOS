@@ -5,7 +5,6 @@ import {
   Database,
   FolderKanban,
   GitMerge,
-  Inbox,
   RotateCcw,
   Search,
   ShieldCheck,
@@ -22,16 +21,16 @@ export const metadata: Metadata = {
 
 const capabilities = [
   {
-    icon: Inbox,
-    eyebrow: "Capture",
-    title: "Get loose context out of your head.",
-    body: "Inbox capture, a command surface, notes, dates, and tasks give unfinished thoughts somewhere useful to land before they disappear.",
+    icon: Zap,
+    eyebrow: "Today",
+    title: "Keep today's working context close.",
+    body: "Daily Notes hold unstructured working memory while Tasks, Events, and Deadlines stay explicit and connected to the Area or Project they belong to.",
   },
   {
     icon: FolderKanban,
     eyebrow: "Organize",
     title: "Keep work attached to its context.",
-    body: "Projects, nested subcontexts, Areas, Resources, Dates, and Reviews keep execution connected to the decisions and material around it.",
+    body: "Flat Areas, Projects, Tasks, and ContextDates keep operational state understandable without turning ContextOS into another everything-database.",
   },
   {
     icon: WifiOff,
@@ -42,8 +41,8 @@ const capabilities = [
   {
     icon: RotateCcw,
     eyebrow: "Recover",
-    title: "Failure states are visible and recoverable.",
-    body: "Pending work, synchronization state, conflicts, recoverable deletion, and device-local lifecycle controls are surfaced instead of silently discarding work.",
+    title: "Return to the exact context you need.",
+    body: "Canonical Search keeps current and historical Projects, Areas, Tasks, Dates, and Daily Notes discoverable without reviving retired product surfaces.",
   },
 ] as const;
 
@@ -51,7 +50,7 @@ const principles = [
   "User-scoped local state",
   "Offline mutation queue",
   "Idempotent synchronization",
-  "Recoverable deletion",
+  "Canonical history search",
 ] as const;
 
 export default function HomePage() {
@@ -108,7 +107,7 @@ export default function HomePage() {
               Keep the context. Resume the work.
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-[var(--cos-text-muted)] sm:text-xl">
-              ContextOS gives interrupted work a durable shape: capture what matters, connect it to projects and decisions, then return without reconstructing the whole situation from memory.
+              ContextOS gives interrupted work a durable shape: see what matters today, keep working memory nearby, connect execution to Areas and Projects, then return without reconstructing the whole situation from memory.
             </p>
 
             <div className="mt-9 flex flex-wrap gap-3">
@@ -155,7 +154,7 @@ export default function HomePage() {
               The useful part is not remembering everything. It is recovering enough to continue.
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--cos-text-muted)]">
-              ContextOS treats context as working infrastructure: something you capture, organize, carry across temporary failures, and deliberately recover when attention moves elsewhere.
+              ContextOS treats context as working infrastructure: something you organize, carry across temporary failures, and deliberately recover when attention moves elsewhere.
             </p>
           </div>
 

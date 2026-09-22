@@ -1,87 +1,87 @@
 # ContextOS
 
-ContextOS is a self-hostable local-first workspace for capturing loose context, turning it into executable work, and recovering project state after interruptions.
+ContextOS is a self-hostable local-first application for operational context: deciding what to do today, keeping active Projects recoverable, and maintaining enough temporal/contextual state to resume work without rebuilding it from memory.
 
-It combines a Next.js application with PostgreSQL-backed user data, a user-scoped IndexedDB workspace, an offline mutation outbox, and a verified application-shell cache so the documented core workspace can continue through temporary network failures after a successful sign-in on the device and synchronize when connectivity returns.
+It combines a Next.js application with PostgreSQL-backed user data, a user-scoped IndexedDB workspace, an offline mutation outbox, and a verified application-shell cache. After a successful authenticated bootstrap on a device, the documented core workspace can continue through ordinary connectivity failures and synchronize supported mutations when connectivity returns.
 
 > **Project status:** self-hostable local-first application with an evidence-backed core workflow. The repository is not an operated hosted production SaaS service, a compliance-certified system, or a collaborative distributed-data platform. High-sensitivity/public production deployments still require target-specific operational and security review. The local-first completion program is complete through Stage 10 final acceptance within the documented boundary.
 
-**Current stable release:** `v1.0.0`. Batch 18 closed the first public release without broadening the accepted product boundary. See `CHANGELOG.md` and `docs/releases/V1_RELEASE_ACCEPTANCE.md`.
+**Current stable release:** `v1.0.0`. Historical Stage 7–10 evidence remains repository provenance while the post-release ContextOS redesign continues to narrow the visible product model.
 
 ## Product
 
-ContextOS is built around a simple loop: capture what is loose, turn it into work, preserve enough context to resume, and keep that state available through ordinary connectivity failures.
+The definitive hierarchy is:
 
-The current product surface includes:
+```text
+Area -> Project -> Task
+```
 
-- Dashboard command page and scratchpad;
-- Inbox capture and triage;
-- Projects and nested subcontexts;
-- Tasks and important Dates;
-- Areas and Markdown-backed Resources;
-- Search over locally available workspace data;
-- Archive and review flows;
-- offline-safe supported edits with visible pending-sync state;
-- explicit local-account selection when multiple verified workspaces exist offline;
-- recoverable trash/restore behavior; and
-- authenticated handoff previews that require user approval before creating Inbox suggestions.
+- Every Project belongs to exactly one Area.
+- Projects are flat; there are no nested Projects in the definitive UI.
+- A Task belongs to a Project or directly to an Area.
+- A ContextDate is an Event or Deadline and belongs to exactly one Project or Area.
+- Daily Notes provide one unstructured note per local calendar day.
+- Search covers canonical Projects, Areas, Tasks, Dates, and Daily Notes, including historical canonical records.
+- Cmd/Ctrl+K provides canonical Search/navigation plus direct New Task and New Date flows.
+- LifeOS is a shallow entry point for Ravel, SocialOS, Ledger, and Canon without duplicating their internals.
 
-New registrations start with an empty workspace scaffold. First-run setup asks the user to create an Area or restore an existing ContextOS export; fictional demo records are reserved for deliberate local/disposable-preview seed and reset paths.
+The current primary surfaces are:
+
+- **Home** — Today Dayline, Daily Notes, Insights when genuinely available, In Context Today, and Upcoming;
+- **Projects** — Active/Archived flat Projects and Project Detail;
+- **Areas** — Active/Archived Areas, with direct Projects, Tasks, and Dates;
+- **Dates** — Today/Upcoming/Past Events and Deadlines;
+- **Search** — canonical operational/history search;
+- **LifeOS** — module entry points and real provider-backed summaries only;
+- **Settings** — Account, Appearance, Offline & Sync, Data, Security, and Advanced.
+
+### Retired first-class surfaces
+
+C7 retires Inbox, Resources, Reviews, and the standalone Archive page. Their compatibility URLs remain explicit migrations for old bookmarks:
+
+```text
+/inbox     -> /dashboard
+/resources -> /lifeos
+/reviews   -> /lifeos
+/archive   -> /search
+```
+
+Historical aliases also remain:
+
+```text
+/today     -> /dashboard
+/this-week -> /dashboard
+/deadlines -> /dates
+```
+
+Underlying legacy Capture, standalone Note, Review, legacy Deadline, tombstone, and other compatibility storage remains intact until the C8 persistence migration is verified. Retiring the UI is not permission to silently destroy old data.
+
+The historical `/handoff` route can still validate and preview `lifeos-handoff/v1` proposals, but C7 deliberately stops writing new legacy Inbox captures. Until a canonical inter-module action contract exists, the preview does not save the proposal.
 
 ## Engineering highlights
 
 - **User-scoped persistence:** PostgreSQL + Prisma with authenticated, user-owned records and relationship ownership checks.
-- **Local-first core workflow:** user-scoped IndexedDB caches core workspace state and queues supported mutations locally.
-- **Verified offline shell:** a versioned service-worker shell is reported as ready only after its manifest and required static assets are present; API traffic remains network-only.
-- **Idempotent synchronization:** queued mutations replay through `/api/sync` with per-user mutation IDs, ownership validation, stale-update handling, UTF-8 byte limits, timestamp validation, and record-ID consistency checks.
-- **Lifecycle semantics:** ordinary logout retains isolated local state by default, current-device removal is explicit and user-scoped, multiple local identities require explicit offline selection, and permanent account deletion is password-confirmed and online.
-- **Operator account recovery:** production can keep public registration closed while a trusted server operator creates empty-workspace users or resets a forgotten password without exposing a public reset endpoint; operator resets revoke all server sessions and preserve workspace data.
-- **Production container distribution:** a non-root standalone application image, one-shot migration service, persistent PostgreSQL service, and unexposed operator image provide a repository-owned Docker Compose self-hosting path without automatic demo seeding.
-- **Recoverable deletion:** Projects, Tasks, standalone Notes, and Dates synchronize recoverable tombstones; stale older writes cannot silently resurrect a newer tombstone.
+- **Local-first core workflow:** IndexedDB caches each verified user's workspace and stores a durable mutation outbox.
+- **Verified offline shell:** a versioned service-worker shell reports ready only after its manifest and required static assets are available.
+- **Idempotent synchronization:** queued mutations replay through `/api/sync` with user-scoped mutation IDs, bounds, ownership validation, stale-update handling, and conflict warnings.
+- **Atomic local commits:** supported local mutations write workspace state and outbox state in one IndexedDB transaction.
+- **Lifecycle semantics:** ordinary logout retains isolated local state by default; device removal is explicit and user-scoped; multiple eligible local identities require explicit selection.
+- **Deployment:** the repository includes a non-root standalone application image, one-shot migration service, persistent PostgreSQL service, and unexposed operator image.
+- **Legacy migration safety:** old tombstone and compatibility records remain protected against stale resurrection while C8 owns the broad persistence migration.
 - **Failure-aware UX:** database, synchronization, offline-shell, pending-work, and conflict states are surfaced instead of silently discarding work.
-- **Repository assurance:** Stage 7 provides security/repository controls, Stage 8 records deployment/recovery/operational evidence, Stage 9 adds lifecycle/destructive-data evidence, and Stage 10 closes final local-first acceptance and public-claims verification without broadening those claims beyond the tested boundary.
 
-## Architecture
+## Local-first boundary
 
-```text
-Browser
-  ├─ Next.js App Router UI
-  ├─ user-scoped IndexedDB workspace cache
-  ├─ offline mutation outbox
-  └─ verified versioned application shell
-          │
-          ▼
-      Next.js API
-          ├─ authentication / authorization
-          ├─ same-origin browser mutation boundary
-          ├─ idempotent sync replay
-          ├─ ownership + payload validation
-          └─ health / structured failure handling
-          │
-          ▼
-   PostgreSQL + Prisma
-```
+Offline workspace access is available only after a successful authenticated bootstrap on that device. Canonical cached surfaces include Home, Projects and Project Detail, Dates, Areas and Area Detail, LifeOS, Search, and Settings. Retired aliases may resolve offline to their canonical destinations; they do not restore retired UI.
 
-PostgreSQL is canonical after successful synchronization. Local-first behavior is intentionally focused on durable workspace mutations and cached application navigation rather than collaborative conflict-resolution UI or arbitrary offline server functionality.
-
-## Tech stack
-
-- Next.js 16 / React 19 / TypeScript
-- PostgreSQL / Prisma 7
-- IndexedDB for user-scoped client state and queued mutations
-- service worker + Cache Storage for the verified application shell
-- Playwright for browser verification
-- Docker Compose for local PostgreSQL and the production-style self-host stack
-- GitHub Actions CI
+PostgreSQL remains canonical after successful synchronization. ContextOS does not claim collaborative CRDT semantics, arbitrary offline server functionality, offline first-time authentication, or true offline logout/account deletion.
 
 ## Quick start
 
-### Local development prerequisites
+Requirements:
 
 - Node.js 22+
 - Docker with Docker Compose
-
-### Run locally
 
 ```bash
 npm install
@@ -94,36 +94,15 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-The default seed creates a disposable demo workspace. Its projects, tasks, areas, and resources are fictional sample data and are not personal, employment, academic, or client records. Demo credentials are defined in `.env.example` for local/disposable-preview verification; the login form does not pre-populate them.
-
-### Production-style container self-host
-
-The container path requires Docker Compose on the host but does not require a host Node/npm runtime.
-
-```bash
-cp .env.production.example .env.production
-# Replace every placeholder, especially APP_URL, AUTH_SECRET, and POSTGRES_PASSWORD.
-docker compose --env-file .env.production -f compose.production.yml up -d --build app
-```
-
-The stack waits for PostgreSQL health, applies committed migrations through a one-shot non-root migration container, and only then starts the non-root standalone application. It never runs `db:seed` during normal startup.
-
-With production registration closed, create the first real empty-workspace account through the unexposed operator profile:
-
-```bash
-docker compose --env-file .env.production -f compose.production.yml --profile operator run --rm operator \
-  npm run account:create -- user@example.com --generate-password
-```
-
-See `docs/CONTAINER_DEPLOYMENT.md` for first deployment, updates, password-stdin handling, recovery, persistent-volume behavior, and the deployment security boundary.
+The demo seed contains neutral canonical Areas, Projects, Tasks, and ContextDates. It no longer creates demo Inbox Captures, standalone Resources, or Reviews. Production startup never seeds demo data.
 
 ## Configuration
 
 Required for a real deployment:
 
 - `DATABASE_URL`
-- `AUTH_SECRET` with a fresh high-entropy value; production authentication refuses a missing/too-short secret.
-- `NEXT_PUBLIC_APP_URL` or `APP_URL` for the canonical public origin.
+- `AUTH_SECRET` with a fresh high-entropy value
+- `NEXT_PUBLIC_APP_URL` or `APP_URL` for the canonical public origin
 
 Optional deployment/demo controls include:
 
@@ -135,13 +114,18 @@ Optional deployment/demo controls include:
 - `ALLOW_PUBLIC_REGISTRATION`
 - `ALLOW_DEMO_RESET`
 
-An optional ContextOS-to-SocialOS bridge also recognizes `CONTEXTOS_SSO_SECRET` and `SOCIALOS_APP_URL`. That bridge is fail-closed without a signing secret of at least 32 characters and is not claimed as a general production SSO platform.
+Optional browser-visible LifeOS module entry points:
 
-Generate fresh secrets for every deployed environment. Do not reuse example/demo values outside local or disposable preview environments.
+- `NEXT_PUBLIC_LIFEOS_RAVEL_URL`
+- `NEXT_PUBLIC_LIFEOS_SOCIALOS_URL`
+- `NEXT_PUBLIC_LIFEOS_LEDGER_URL`
+- `NEXT_PUBLIC_LIFEOS_CANON_URL`
+
+An optional ContextOS-to-SocialOS bridge also recognizes `CONTEXTOS_SSO_SECRET` and `SOCIALOS_APP_URL`. Browser module destinations are deliberately separate from SSO configuration.
 
 ## Verification
 
-The repository deliberately separates production-runtime offline/security verification from development-server interaction tests. The optimized runtime owns service-worker and offline hard-reload claims; the development server does not impersonate an installed PWA.
+The repository separates optimized production/offline verification from development-server interaction tests.
 
 ```bash
 npm audit --audit-level=low
@@ -154,6 +138,7 @@ npm run audit:stage9:lifecycle
 npm run audit:stage9:evidence
 npm run audit:stage10:acceptance
 npm run audit:stage10:claims
+npm run audit:release
 npx prisma validate
 npx prisma generate
 npm run db:deploy
@@ -166,36 +151,20 @@ npx playwright test --config=playwright.production.config.ts --workers=1
 npm run test:e2e -- --workers=1
 ```
 
-The GitHub Actions workflow runs the required ladder against disposable PostgreSQL 16. The container-distribution gate additionally builds the exact production app/operator/migration images against a fresh isolated PostgreSQL volume, checks non-root/runtime separation, verifies closed registration, provisions a real first account through the operator container, authenticates through the containerized app, and proves that account starts with the empty production scaffold rather than demo data. The production Playwright matrix owns cold offline reopen/hard-refresh, core route and dynamic-project reconstruction, functional offline Search/history acceptance, application-shell completeness, production security boundaries, offline mutation durability, tombstone hard reload, and API/cache separation. The development suite covers the broader interactive product, local atomicity, synchronization behavior, user-scoped IndexedDB, routing, lifecycle/destructive-data behavior, compatibility, accessibility, and fixture regression surface. The operator-account test separately verifies empty-workspace provisioning, password recovery, all-session revocation, duplicate-create refusal, and workspace preservation.
+Stage 10's verified acceptance candidate is commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, GitHub Actions run `31800346837`. Those historical results remain evidence for the boundary tested at that time; post-release product changes must keep the active docs and regression suite aligned with current behavior.
 
-Stage 10's verified acceptance candidate is commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, GitHub Actions run `31800346837`, which passed the complete accumulated ladder. Machine-readable assurance state is preserved in `audits/stage7-controls.json`, `audits/stage8-evidence.json`, `audits/stage9-evidence.json`, and `audits/stage10-acceptance.json`.
+## Deployment and recovery boundaries
 
-Current `main` continues to run that complete ladder on accepted product batches. Batch 10's merged commit `2b0c03c629fd0025ee185a91bc3c7da85e9215ae` passed post-merge CI run `34760727752` after the remaining live workspace views were extracted and the former legacy view monolith was removed.
+The repository supplies self-hostable software and engineering evidence, not an operated service. A real production deployment still needs target-specific review of TLS/reverse proxy configuration, provider/WAF abuse controls, monitoring/on-call ownership, migration compatibility, backups, and rollback.
 
-## Deployment and recovery notes
-
-- The production-style Compose path is defined in `compose.production.yml`; configuration starts from `.env.production.example` and detailed procedures live in `docs/CONTAINER_DEPLOYMENT.md`.
-- The long-running public application container is non-root and does not contain the account-operator scripts or Prisma migration tree; those remain in the separate unexposed operator/migration image.
-- `npm run db:seed` resets the configured demo workspace and should never run automatically against production data.
-- `/api/reset-demo` is disabled in production unless `ALLOW_DEMO_RESET=true` is deliberately enabled.
-- Public registration is closed by default in production unless explicitly enabled.
-- With registration closed, a trusted operator can create a real empty-workspace account with `npm run account:create -- user@example.com --generate-password` or `--password-stdin`; container deployments run the same command through the operator service.
-- Forgotten passwords can be recovered from a trusted operator shell with `npm run account:reset-password -- user@example.com --generate-password` or `--password-stdin`; the reset revokes all server sessions and preserves workspace rows.
-- Passwords are never accepted as operator CLI arguments. See `docs/OPERATOR_ACCOUNTS.md` for the trust and password-handling boundary.
-- Browser-originated state-changing API requests must match the application origin.
-- All `/api/*` responses receive an explicit no-store policy and service-worker caching excludes API traffic.
-- `GET /api/health` reports minimal application/database availability with `Cache-Control: no-store`.
-- Stage 8 demonstrated a real HTTPS Vercel preview on an isolated Neon branch, a same-origin service-worker upgrade, PostgreSQL-native `pg_dump`/`pg_restore` recovery into a fresh non-production database, and application rollback for the exact Stage 7→8 release pair whose migration state was unchanged.
-- Those rehearsals are engineering evidence, not a claim of provider-native PITR, production disaster-recovery SLA, or arbitrary migration reversibility.
-
-See `docs/CONTAINER_DEPLOYMENT.md`, `docs/DEPLOYMENT.md`, `docs/OPERATOR_ACCOUNTS.md`, `docs/RUN_PROTOCOL.md`, `docs/LOCAL_FIRST_CONTRACT.md`, and the stage verification reports for the deeper operational and assurance workflow.
+Stage 8 recorded PostgreSQL-native `pg_dump`/`pg_restore` recovery on isolated non-production infrastructure. This does not constitute provider-native backup/PITR rehearsal or a production RTO/RPO guarantee.
 
 ## Scope and limitations
 
 Current boundaries include:
 
 - no collaborative merge interface or CRDT semantics;
-- no email verification or self-service password-reset flow; bounded self-hosted recovery is available only to a trusted database operator;
+- no email verification or self-service password-reset flow;
 - no supported general OAuth/SSO product surface;
 - no distributed provider/WAF rate limiting in this repository;
 - no calendar-provider integration or task recurrence;
@@ -208,27 +177,19 @@ Current boundaries include:
 - no irreversible user-facing per-record purge without a proven anti-resurrection protocol; and
 - no offline first-time authentication, true logout, or permanent account deletion.
 
-Historical note: Stage 10 closed in August 2026 against a deliberately narrower **portfolio-stage** local-first acceptance boundary. That phrase records the scope of the historical acceptance exercise; current product positioning is self-hostable application software. The security, deployment, collaboration, recovery, and lifecycle limitations above remain unchanged.
+Historical note: Stage 10 closed in August 2026 against a deliberately narrower **portfolio-stage** local-first acceptance boundary. That phrase records the scope of the historical acceptance exercise; current product positioning is self-hostable application software.
 
-## Repository documentation
+## Documentation
 
-- `CHANGELOG.md` — stable release history and known boundaries
-- `BLUEPRINT.md` — product specification and design intent
-- `docs/releases/V1_RELEASE_ACCEPTANCE.md` — Batch 18 release evidence
-- `docs/PROJECT_STATE.md` — current implementation state and known boundaries
-- `docs/REPO_MAP.md` — code/data-flow map
-- `docs/LOCAL_FIRST_CONTRACT.md` — canonical offline, synchronization, lifecycle, and deletion contract
-- `docs/RUN_PROTOCOL.md` — setup and verification ladder
-- `docs/CONTAINER_DEPLOYMENT.md` — production-style Docker Compose self-hosting and operator workflow
-- `docs/DEPLOYMENT.md` — deployment guidance and operational boundaries
-- `docs/OPERATOR_ACCOUNTS.md` — closed-registration account creation and trusted-shell password recovery
-- `docs/stage7-audit-plan.md` — Stage 7 assurance scope and closure rules
-- `docs/stage8/STAGE8_VERIFICATION.md` — Stage 8 deployment/recovery/operations evidence
-- `docs/stage9/STAGE9_VERIFICATION.md` — Stage 9 lifecycle/destructive-data evidence
-- `docs/stage10/STAGE10_ACCEPTANCE.md` — historical Stage 10 final acceptance record
-- `audits/stage10-acceptance.json` — machine-readable Stage 10 acceptance registry
-- `SECURITY.md` — vulnerability reporting, security assumptions, and non-claims
-- `CONTRIBUTING.md` — contribution and verification expectations
+- `BLUEPRINT.md` — canonical product model and C7/C8 compatibility boundary
+- `docs/PROJECT_STATE.md` — current implementation state
+- `docs/REPO_MAP.md` — active repository ownership
+- `docs/LOCAL_FIRST_CONTRACT.md` — current offline/sync/lifecycle contract
+- `docs/RUN_PROTOCOL.md` — verification procedure
+- `docs/DEPLOYMENT.md` — deployment and operational boundaries
+- `docs/CONTAINER_DEPLOYMENT.md` — production-style Docker Compose procedure
+- `SECURITY.md` — security assumptions and vulnerability reporting
+- `docs/stage8/`, `docs/stage9/`, `docs/stage10/` — historical assurance provenance
 
 ## License
 

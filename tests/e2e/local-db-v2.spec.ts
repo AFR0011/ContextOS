@@ -127,23 +127,20 @@ async function seedSecondLocalUser(page: Page, userId: string, email: string, ma
       domains: [],
       projects: [],
       tasks: [],
-      captures: [
-        {
-          id: `capture-${secondUserId}`,
-          text: secondMarker,
-          status: "unprocessed",
-          type: null,
-          parsedData: null,
-          convertedToId: null,
-          createdAt: timestamp,
-          updatedAt: timestamp
-        }
-      ],
+      captures: [],
       notes: [],
       deadlines: [],
       contextDates: [],
       reviews: [],
-      dailyNotes: [],
+      dailyNotes: [
+        {
+          id: `daily-note-${secondUserId}`,
+          localDate: "2026-01-01",
+          content: secondMarker,
+          createdAt: timestamp,
+          updatedAt: timestamp
+        }
+      ],
       dashboardScratchpads: [],
       dashboardPreferences: [],
       serverSyncedAt: ""
@@ -190,30 +187,25 @@ test("v1 global cache migrates once into the authenticated user's v2 stores", as
 
 test("local workspace and outbox state are keyed by verified user identity", async ({ page, context }) => {
   await uiLogin(page);
-  await page.goto("/inbox");
-  await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
 
   const firstUserSnapshot = await localDbSnapshot(page);
   const demoUser = firstUserSnapshot.users.find((user) => user.email === "demo@contextos.local");
   expect(demoUser).toBeTruthy();
 
-  // Keep this Stage 2 assertion on an already-loaded surface. Offline navigation and
-  // identity switching are later-stage concerns and are intentionally not exercised here.
   await context.setOffline(true);
   const demoOnly = `demo-only-${Date.now()}`;
-  await page.getByPlaceholder(/Quick capture/i).fill(demoOnly);
-  await page.getByPlaceholder(/Quick capture/i).press("Enter");
-  await expect(page.getByText(demoOnly)).toBeVisible();
+  await page.getByLabel("Daily Notes").fill(demoOnly);
 
   await expect
     .poll(async () => {
       const snapshot = await localDbSnapshot(page);
-      const captureStored = Boolean(
-        snapshot.workspaceByUser[demoUser!.id]?.captures?.some((capture: { text: string }) => capture.text === demoOnly)
+      const noteStored = Boolean(
+        snapshot.workspaceByUser[demoUser!.id]?.dailyNotes?.some((note: { content: string }) => note.content === demoOnly)
       );
-      return { captureStored, pendingCount: snapshot.outboxByUser[demoUser!.id]?.length ?? 0 };
+      return { noteStored, pendingCount: snapshot.outboxByUser[demoUser!.id]?.length ?? 0 };
     })
-    .toMatchObject({ captureStored: true, pendingCount: 1 });
+    .toMatchObject({ noteStored: true, pendingCount: 1 });
 
   const secondUserId = `local-user-${Date.now()}`;
   const secondEmail = `${secondUserId}@example.com`;
@@ -221,10 +213,10 @@ test("local workspace and outbox state are keyed by verified user identity", asy
   await seedSecondLocalUser(page, secondUserId, secondEmail, secondOnly);
 
   const isolatedSnapshot = await localDbSnapshot(page);
-  expect(isolatedSnapshot.workspaceByUser[demoUser!.id]?.captures?.some((capture: { text: string }) => capture.text === demoOnly)).toBe(true);
-  expect(isolatedSnapshot.workspaceByUser[demoUser!.id]?.captures?.some((capture: { text: string }) => capture.text === secondOnly)).toBe(false);
-  expect(isolatedSnapshot.workspaceByUser[secondUserId]?.captures?.some((capture: { text: string }) => capture.text === secondOnly)).toBe(true);
-  expect(isolatedSnapshot.workspaceByUser[secondUserId]?.captures?.some((capture: { text: string }) => capture.text === demoOnly)).toBe(false);
+  expect(isolatedSnapshot.workspaceByUser[demoUser!.id]?.dailyNotes?.some((note: { content: string }) => note.content === demoOnly)).toBe(true);
+  expect(isolatedSnapshot.workspaceByUser[demoUser!.id]?.dailyNotes?.some((note: { content: string }) => note.content === secondOnly)).toBe(false);
+  expect(isolatedSnapshot.workspaceByUser[secondUserId]?.dailyNotes?.some((note: { content: string }) => note.content === secondOnly)).toBe(true);
+  expect(isolatedSnapshot.workspaceByUser[secondUserId]?.dailyNotes?.some((note: { content: string }) => note.content === demoOnly)).toBe(false);
   expect(isolatedSnapshot.outboxByUser[demoUser!.id]?.length).toBeGreaterThan(0);
   expect(isolatedSnapshot.outboxByUser[secondUserId]).toEqual([]);
 });

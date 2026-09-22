@@ -15,7 +15,6 @@ test("facade owns all live workspace views through focused modules", () => {
   expect(facade).toContain('export { DatesView } from "@/components/workspace/DatesView"');
   expect(facade).toContain('export { ProjectDetailView } from "@/components/workspace/ProjectDetailView"');
   expect(facade).toContain('export { ProjectsView } from "@/components/workspace/ProjectsView"');
-  expect(facade).toContain('export { ReviewsView } from "@/components/workspace/ReviewsView"');
   expect(facade).not.toContain("LegacyWorkspaceViews");
 });
 
@@ -24,9 +23,18 @@ test("each live workspace module defines its production view directly", () => {
   expect(read("DatesView.tsx")).toContain("export function DatesView()");
   expect(read("ProjectDetailView.tsx")).toContain("export function ProjectDetailView(");
   expect(read("ProjectsView.tsx")).toContain("export function ProjectsView()");
-  expect(read("ReviewsView.tsx")).toContain("export function ReviewsView()");
 });
 
-test("legacy workspace view monolith is physically removed", () => {
-  expect(existsSync(resolve(workspaceRoot, "LegacyWorkspaceViews.tsx"))).toBe(false);
+test("retired workspace view implementations are physically removed", () => {
+  for (const file of [
+    "LegacyWorkspaceViews.tsx",
+    "ProductInboxView.tsx",
+    "ResourcesLifecycleView.tsx",
+    "ReviewsView.tsx",
+    "ArchiveLifecycleView.tsx",
+    "Batch2LifecycleViews.tsx",
+    "Dashboard2.tsx"
+  ]) {
+    expect(existsSync(resolve(workspaceRoot, file)), file).toBe(false);
+  }
 });

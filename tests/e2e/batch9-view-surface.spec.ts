@@ -2,8 +2,8 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 
-const liveViews = ["AreasView", "DatesView", "ProjectDetailView", "ProjectsView", "ReviewsView"] as const;
-const retiredViews = ["DashboardView", "InboxView", "TodayView", "ThisWeekView", "ResourcesView", "SearchView", "ArchiveView", "SettingsView"] as const;
+const liveViews = ["AreasView", "DatesView", "ProjectDetailView", "ProjectsView"] as const;
+const retiredViews = ["DashboardView", "InboxView", "TodayView", "ThisWeekView", "ResourcesView", "SearchView", "ArchiveView", "ReviewsView", "SettingsView"] as const;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {

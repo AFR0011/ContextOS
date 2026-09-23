@@ -98,21 +98,25 @@ export function TaskRow({
   done,
   meta,
   onToggle,
-  onOpen
+  onOpen,
+  toggleDisabledReason
 }: {
   title: string;
   done?: boolean;
   meta?: ReactNode;
   onToggle?: () => void;
   onOpen?: () => void;
+  toggleDisabledReason?: string | null;
 }) {
   return (
     <div className={`cos-entity-row ${done ? "opacity-55" : ""}`}>
       <button
         type="button"
         onClick={onToggle}
+        disabled={Boolean(toggleDisabledReason)}
+        title={toggleDisabledReason ?? undefined}
         aria-label={done ? `Reopen ${title}` : `Complete ${title}`}
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[var(--cos-text-subtle)] hover:bg-[var(--cos-primary-soft)] hover:text-[var(--cos-primary)]"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[var(--cos-text-subtle)] hover:bg-[var(--cos-primary-soft)] hover:text-[var(--cos-primary)] disabled:cursor-not-allowed disabled:opacity-45"
       >
         {done ? <Check className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
       </button>
@@ -171,6 +175,7 @@ export interface DaylineItem {
   meta?: string;
   onToggle?: () => void;
   onOpen?: () => void;
+  toggleDisabledReason?: string | null;
 }
 
 export function Dayline({ items }: { items: DaylineItem[] }) {
@@ -186,9 +191,10 @@ export function Dayline({ items }: { items: DaylineItem[] }) {
                 <button
                   type="button"
                   onClick={item.onToggle}
-                  disabled={!item.onToggle}
+                  disabled={!item.onToggle || Boolean(item.toggleDisabledReason)}
+                  title={item.toggleDisabledReason ?? undefined}
                   aria-label={item.done ? `Reopen ${item.title}` : `Complete ${item.title}`}
-                  className="group grid h-10 w-10 -m-2 place-items-center rounded-full disabled:cursor-default"
+                  className="group grid h-10 w-10 -m-2 place-items-center rounded-full disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   <span
                     className={`grid h-5 w-5 place-items-center rounded-full border-2 border-[var(--cos-bg)] transition-colors ${

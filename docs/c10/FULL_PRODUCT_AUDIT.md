@@ -704,6 +704,27 @@ The intermediate commits provide direct isolation evidence:
 
 The final candidate includes all four remediations and structural guards. It is not considered passed until the full production browser rerun confirms the complete set.
 
+## C-00.9 — READY preview visual-equivalence check
+
+Status: **verified for source equivalence; browser capture still blocked**
+
+Vercel produced a READY preview for commit `4cecf13bb1112cb5b4e89bb92f4db8fe0e132da8`.
+
+Comparing that commit with the current audit head shows only:
+- C10 audit documentation changes;
+- C10 structural-check changes;
+- production/local-first test-harness changes;
+- a five-line physical `/areas/[id]` App Router handoff page.
+
+No rendered component or stylesheet differs between the READY preview and the current head. Therefore that preview is representative of the current visual component tree for C-01/C-02 inspection, while it is **not** sufficient evidence for final current-head build/runtime acceptance.
+
+A temporary Vercel share URL was successfully created for the READY preview. The local Chromium runtime nevertheless cannot navigate to it because this sandbox blocks outbound browser traffic with `ERR_BLOCKED_BY_ADMINISTRATOR`.
+
+So:
+- visual source equivalence is established;
+- actual rendered screenshot review remains pending;
+- final current-head deployment/runtime verification also remains pending.
+
 ## C-01 — Primary surface rendered inspection
 
 Status: **Pending runnable current candidate**

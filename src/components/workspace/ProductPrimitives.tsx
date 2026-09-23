@@ -170,6 +170,7 @@ export interface DaylineItem {
   done?: boolean;
   meta?: string;
   onToggle?: () => void;
+  onOpen?: () => void;
 }
 
 export function Dayline({ items }: { items: DaylineItem[] }) {
@@ -203,10 +204,17 @@ export function Dayline({ items }: { items: DaylineItem[] }) {
                 <span className="h-2.5 w-2.5 rounded-full border-2 border-[var(--cos-bg)] bg-[var(--cos-primary)]" />
               )}
             </div>
-            <div className="min-w-0">
-              <p className={`break-words text-sm font-medium text-[var(--cos-text-strong)] [overflow-wrap:anywhere] ${item.done ? "line-through" : ""}`}>{item.title}</p>
-              {item.meta ? <p className="mt-0.5 break-words text-xs text-[var(--cos-text-subtle)] [overflow-wrap:anywhere]">{item.meta}</p> : null}
-            </div>
+            {item.onOpen ? (
+              <button type="button" onClick={item.onOpen} className="min-w-0 text-left">
+                <span className={`block break-words text-sm font-medium text-[var(--cos-text-strong)] [overflow-wrap:anywhere] ${item.done ? "line-through" : ""}`}>{item.title}</span>
+                {item.meta ? <span className="mt-0.5 block break-words text-xs text-[var(--cos-text-subtle)] [overflow-wrap:anywhere]">{item.meta}</span> : null}
+              </button>
+            ) : (
+              <div className="min-w-0">
+                <p className={`break-words text-sm font-medium text-[var(--cos-text-strong)] [overflow-wrap:anywhere] ${item.done ? "line-through" : ""}`}>{item.title}</p>
+                {item.meta ? <p className="mt-0.5 break-words text-xs text-[var(--cos-text-subtle)] [overflow-wrap:anywhere]">{item.meta}</p> : null}
+              </div>
+            )}
           </div>
         ))}
       </div>

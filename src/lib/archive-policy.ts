@@ -25,3 +25,15 @@ export function areaArchiveBlockReason(workspace: CanonicalWorkspace, areaId: st
     ? `Resolve or move ${count} direct open Task${count === 1 ? "" : "s"} before archiving this Area.`
     : null;
 }
+
+export function taskParentIsArchived(workspace: CanonicalWorkspace, task: Task) {
+  return task.parent.type === "project"
+    ? workspace.projects.find((project) => project.id === task.parent.projectId)?.state === "archived"
+    : workspace.areas.find((area) => area.id === task.parent.areaId)?.state === "archived";
+}
+
+export function taskReopenBlockReason(workspace: CanonicalWorkspace, task: Task) {
+  return task.state === "done" && taskParentIsArchived(workspace, task)
+    ? "Move this Task to an active context or restore its parent before reopening it."
+    : null;
+}

@@ -305,6 +305,13 @@ if (!productionPlaywrightConfig.includes("tests/e2e/workspace-gate.spec.ts") ||
     !productionPlaywrightConfig.includes("tests/e2e/local-first-characterization.spec.ts")) {
   errors.push("Production Playwright config must own WorkspaceGate and local-first characterization coverage.");
 }
+if (!productionPlaywrightConfig.includes('channel: "chromium"') ||
+    !fs.readFileSync("playwright.config.ts", "utf8").includes('channel: "chromium"')) {
+  errors.push("C10 Playwright configs must use the regular Chromium channel rather than the separate headless-shell binary.");
+}
+if (!ciWorkflow.includes("playwright install --with-deps --no-shell chromium")) {
+  errors.push("CI must install the regular Chromium build without the unused headless shell.");
+}
 if (ciWorkflow.includes("tests/e2e/workspace-gate.spec.ts tests/e2e/local-db-v4.spec.ts")) {
   errors.push("CI must not pretend the default-config lifecycle command runs the workspace-gate spec that it ignores.");
 }

@@ -67,9 +67,11 @@ export function ProductSearchView() {
         let context = "";
         const parent = task.parent;
         if (parent.type === "project") {
-          context = canonical.projects.find((item) => item.id === parent.projectId)?.name ?? "";
+          const project = canonical.projects.find((item) => item.id === parent.projectId);
+          context = project ? `${project.name}${project.state === "archived" ? " (archived)" : ""}` : "";
         } else {
-          context = canonical.areas.find((item) => item.id === parent.areaId)?.name ?? "";
+          const area = canonical.areas.find((item) => item.id === parent.areaId);
+          context = area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : "";
         }
         return [
           detailRow("State", task.state === "done" ? "Done" : "Open"),
@@ -84,9 +86,11 @@ export function ProductSearchView() {
         let context = "";
         const parent = date.parent;
         if (parent.type === "project") {
-          context = canonical.projects.find((item) => item.id === parent.projectId)?.name ?? "";
+          const project = canonical.projects.find((item) => item.id === parent.projectId);
+          context = project ? `${project.name}${project.state === "archived" ? " (archived)" : ""}` : "";
         } else {
-          context = canonical.areas.find((item) => item.id === parent.areaId)?.name ?? "";
+          const area = canonical.areas.find((item) => item.id === parent.areaId);
+          context = area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : "";
         }
         return [
           detailRow("Kind", date.kind === "event" ? "Event" : "Deadline"),

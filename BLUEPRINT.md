@@ -134,12 +134,13 @@ state: Active | Archived
 
 Area Detail shows:
 
+- editable Area name
 - Active Projects
 - Direct Tasks
 - Direct Dates
 - Archived Projects
 
-Archiving an Area does not archive its Projects. Project lifecycle remains independent.
+Archiving an Area does not archive its Projects. Project lifecycle remains independent. Area archive is blocked while direct Open Tasks remain.
 
 ## 5. Project
 
@@ -156,9 +157,11 @@ state: Active | Archived
 Project Detail shows:
 
 - Project metadata / objective
-- Tasks
+- Tasks with shared post-creation editing
 - Dates
 - Linked Knowledge
+
+Project archive is blocked while Open Tasks remain.
 
 Linked Knowledge is an honest integration boundary with Canon. ContextOS must not invent durable knowledge content when Canon is not connected.
 
@@ -195,6 +198,15 @@ There is no canonical:
 - priority subsystem.
 
 The C8 one-way database migration maps every surviving non-done legacy Task state, including `dropped`, to Open before dropping the old status field.
+
+
+Post-creation editing:
+- title;
+- Project/Area parent;
+- plannedDate;
+- scheduledTime.
+
+Open/Done remains the only Task lifecycle state. Clearing plannedDate clears scheduledTime. Done Tasks under archived parents cannot be reopened until moved to an active context or the parent is restored.
 
 ## 7. ContextDate
 

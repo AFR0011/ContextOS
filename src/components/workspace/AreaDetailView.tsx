@@ -146,6 +146,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
               title={task.title}
               meta={[task.plannedDate ? `Planned ${task.plannedDate}` : "", task.scheduledTime ?? ""].filter(Boolean).join(" · ") || "Unscheduled"}
               onToggle={() => updateTask(task.id, { state: "done" })}
+              onOpen={() => setEditingTaskId(task.id)}
             />
           ))}
           {!openTasks.length ? <p className="px-3 py-4 text-sm text-[var(--cos-text-subtle)]">No direct open tasks.</p> : null}

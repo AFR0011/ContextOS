@@ -6,7 +6,7 @@ Branch: `c10-product-acceptance`
 
 ## Status
 
-**Open.** C10 is the post-redesign acceptance and baseline-freeze program for the canonical C8-C9 product.
+**Open.** C10 is the definitive post-redesign acceptance and baseline-freeze program for the current candidate built on the C8-C9 product. The candidate now also includes the remediations approved during the C10 A-E full-product audit.
 
 This is distinct from the historical **Stage 10** program completed in August 2026. Historical Stage 9/10 evidence remains immutable provenance for the product boundary verified at that time. C10 does not rewrite those historical claims after the later C7/C8 clean break removed Inbox/Resources/Reviews/Archive and tombstone-era persistence.
 
@@ -28,13 +28,23 @@ Open
 
 ## Current work
 
-1. Realign the active assurance ladder with canonical C8-C9 semantics.
+Completed in source:
+1. Realign the active assurance ladder with canonical persistence and lifecycle semantics.
 2. Add one explicit end-to-end workflow acceptance test.
 3. Refresh active documentation and terminology.
-4. Establish screenshot/baseline documentation for the definitive UI.
-5. Capture and review the canonical screenshot baseline defined in `docs/c10/SCREENSHOT_BASELINE.md`.
-6. Run the complete current verification ladder.
-7. Record exact verification evidence and freeze the baseline.
+4. Establish an executable screenshot/baseline contract for the definitive UI.
+5. Complete the sequential full-product audit:
+   - Phase A — functional behavior and data integrity;
+   - Phase B — interaction / keyboard / accessibility;
+   - Phase C — responsive / layout / visual risk;
+   - Phase D — product / feature gaps and workflow critique;
+   - Phase E — consolidation / remediation.
+6. Apply approved Phase D product changes: shared Task editing, Area rename, archive/open-work invariants, and the explicit no-per-record-delete boundary.
+
+Still required for closure:
+7. Run the complete current verification ladder on the final candidate.
+8. Capture and manually review the canonical real-browser screenshot baseline defined in `docs/c10/SCREENSHOT_BASELINE.md`.
+9. Record exact verified commit/run evidence and freeze the baseline.
 
 ## Historical assurance rule
 
@@ -50,9 +60,10 @@ C10 remains open while any `pending` entry exists in `audits/c10-product-accepta
 
 C10 closes only after:
 - the canonical workflow acceptance passes;
-- current production/offline and development interaction matrices pass;
-- the active CI ladder references no removed legacy tests;
-- active docs match the canonical product;
+- current production/offline, unit, lifecycle, accessibility, responsive, and development interaction matrices pass;
+- all A-E audit remediations required for the accepted product are present;
+- the active CI ladder references no removed legacy tests and executes the repository unit suite;
+- active docs match the current C10 candidate rather than a retired historical model;
 - the real-browser screenshot baseline has been captured and manually reviewed;
 - the final baseline evidence records the exact verified commit/run;
 - no unsupported maturity/security/recovery claim is introduced.

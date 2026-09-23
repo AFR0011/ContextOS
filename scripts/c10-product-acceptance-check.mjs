@@ -193,6 +193,13 @@ const localFirstCharacterization = fs.readFileSync("tests/e2e/local-first-charac
 const areaDetailRoute = fs.readFileSync("src/app/(workspace)/areas/[id]/page.tsx", "utf8");
 const visualCaptureRunner = fs.readFileSync("scripts/capture-c10-visual.mjs", "utf8");
 const ciWorkflow = fs.readFileSync(".github/workflows/ci.yml", "utf8");
+const readme = fs.readFileSync("README.md", "utf8");
+const securityDoc = fs.readFileSync("SECURITY.md", "utf8");
+const repoMap = fs.readFileSync("docs/REPO_MAP.md", "utf8");
+const deploymentDoc = fs.readFileSync("docs/DEPLOYMENT.md", "utf8");
+const localFirstContract = fs.readFileSync("docs/LOCAL_FIRST_CONTRACT.md", "utf8");
+const projectState = fs.readFileSync("docs/PROJECT_STATE.md", "utf8");
+const changelog = fs.readFileSync("CHANGELOG.md", "utf8");
 const visualBaselineSpec = fs.readFileSync("tests/e2e/c10-visual-baseline.spec.ts", "utf8");
 const screenshotBaseline = fs.readFileSync("docs/c10/SCREENSHOT_BASELINE.md", "utf8");
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -288,6 +295,9 @@ if (!ciWorkflow.includes("Capture C10 visual audit evidence") ||
     !ciWorkflow.includes("test-results/c10-standard/**/*.png")) {
   errors.push("C10 CI must capture and upload rendered visual evidence for the audit branch.");
 }
+if (!ciWorkflow.includes("Run unit tests") || !ciWorkflow.includes("npm run test:unit")) {
+  errors.push("CI must execute repository unit tests, including archive-policy semantics.");
+}
 
 
 for (const marker of [
@@ -346,6 +356,34 @@ for (const [label, source] of [
   if (!source.includes("dvh")) {
     errors.push(`Phase C dynamic viewport contract is missing from ${label}.`);
   }
+}
+
+for (const [label, source] of [
+  ["README", readme],
+  ["SECURITY", securityDoc],
+  ["REPO_MAP", repoMap]
+]) {
+  if (/IndexedDB v3 (?:preserves|is a clean persistence break|clears incompatible)/i.test(source)) {
+    errors.push(`${label} must describe the current IndexedDB v4 revision boundary, not v3 as the live boundary.`);
+  }
+  if (!source.includes("IndexedDB v4")) {
+    errors.push(`${label} must retain the current IndexedDB v4 boundary.`);
+  }
+}
+if (!/historical Stage 9 verified[\s\S]{0,240}pre-C8 recoverable-tombstone model/i.test(deploymentDoc)) {
+  errors.push("Deployment documentation must scope Stage 9 tombstone evidence as historical pre-C8 provenance.");
+}
+if (!localFirstContract.includes("a Project cannot archive while it owns Open Tasks") ||
+    !localFirstContract.includes("an Area cannot archive while it owns direct Open Tasks")) {
+  errors.push("Local-first contract must retain the approved Project/Area archive invariants.");
+}
+if (!projectState.includes("Tasks remain editable after creation") ||
+    !projectState.includes("Areas cannot archive while direct Open Tasks remain")) {
+  errors.push("Project state must describe current Task editing and archive semantics.");
+}
+if (!changelog.includes("## [Unreleased] — C10 candidate") ||
+    !changelog.includes("Tasks now support shared post-creation editing")) {
+  errors.push("Changelog must distinguish the current C10 candidate from the published v1.0.0 history.");
 }
 
 const buildTsconfig = fs.readFileSync("tsconfig.build.json", "utf8");

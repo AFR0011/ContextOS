@@ -133,7 +133,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
           <label className="block space-y-1">
             <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Name</span>
             <input
-              key={currentArea.id}
+              key={`${currentArea.id}:${currentArea.updatedAt}`}
               defaultValue={currentArea.name}
               onBlur={(event) => {
                 const name = event.currentTarget.value.trim();

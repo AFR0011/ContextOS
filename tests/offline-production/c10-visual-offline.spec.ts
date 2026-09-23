@@ -47,7 +47,7 @@ async function capture(page: Page, testInfo: TestInfo, name: string) {
 }
 
 async function pendingOutboxCount(page: Page) {
-  return page.evaluate(async () => {
+  return page.evaluate(async (demoEmail) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open("contextos-offline-v1", 4);
       request.onsuccess = () => resolve(request.result);
@@ -60,7 +60,7 @@ async function pendingOutboxCount(page: Page) {
       request.onsuccess = () => resolve(request.result as Array<{ id: string; email: string }>);
       request.onerror = () => reject(request.error);
     });
-    const user = users.find((item) => item.email === DEMO_EMAIL) ?? users[0];
+    const user = users.find((item) => item.email === demoEmail) ?? users[0];
     if (!user) {
       db.close();
       return -1;
@@ -74,7 +74,7 @@ async function pendingOutboxCount(page: Page) {
     });
     db.close();
     return count;
-  });
+  }, DEMO_EMAIL);
 }
 
 async function setOffline(context: BrowserContext, offline: boolean) {

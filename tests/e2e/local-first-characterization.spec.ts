@@ -175,7 +175,7 @@ test.describe("local-first completion characterization", () => {
     const dates = page.getByTestId("project-dates");
     await dates.getByLabel("Date kind").selectOption("event");
     await dates.getByPlaceholder("Add a Date...").fill(dateTitle);
-    await dates.getByLabel("Date").fill(today);
+    await dates.getByLabel("Date", { exact: true }).fill(today);
     await dates.getByLabel("Date start time").fill("14:00");
     await dates.getByLabel("Date end time").fill("14:45");
     await dates.getByPlaceholder("Details (optional)").fill("Created offline and replayed in dependency order.");

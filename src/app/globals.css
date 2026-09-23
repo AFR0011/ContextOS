@@ -316,6 +316,8 @@ button:disabled {
 }
 
 .cos-input {
+  min-width: 0;
+  max-width: 100%;
   min-height: 2.5rem;
   border: 1px solid var(--cos-border);
   border-radius: var(--cos-radius-md);

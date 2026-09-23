@@ -6,6 +6,7 @@ import { DateRow, Dayline, EmptyState, EntityRow, InsightCard, PageHeader, Secti
 import { TaskEditSheet } from "@/components/workspace/TaskEditSheet";
 import { getContextsForToday, getTodayEvents, getTodayTasks, getUpcomingDates } from "@/lib/canonical-selectors";
 import { useWorkspace } from "@/lib/client-store";
+import { taskReopenBlockReason } from "@/lib/archive-policy";
 import { dateKeyToLocalDate, localDateKey } from "@/lib/dates";
 import { noOpInsightProvider } from "@/lib/insights";
 import { useLocalRouter } from "@/lib/local-router";
@@ -98,23 +99,32 @@ function DailyNoteEditor({
   );
 }
 
-function taskContext(task: CanonicalTask, projects: { id: string; name: string }[], areas: { id: string; name: string }[]) {
+function taskContext(
+  task: CanonicalTask,
+  projects: { id: string; name: string; state: "active" | "archived" }[],
+  areas: { id: string; name: string; state: "active" | "archived" }[]
+) {
   const parent = task.parent;
   if (parent.type === "project") {
-    return projects.find((project) => project.id === parent.projectId)?.name ?? "";
+    const project = projects.find((item) => item.id === parent.projectId);
+    return project ? `${project.name}${project.state === "archived" ? " (archived)" : ""}` : "";
   }
-  return areas.find((area) => area.id === parent.areaId)?.name ?? "";
+  const area = areas.find((item) => item.id === parent.areaId);
+  return area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : "";
 }
 
 function dateContext(
   date: { parent: { type: "project"; projectId: string } | { type: "area"; areaId: string } },
-  projects: { id: string; name: string }[],
-  areas: { id: string; name: string }[]
+  projects: { id: string; name: string; state: "active" | "archived" }[],
+  areas: { id: string; name: string; state: "active" | "archived" }[]
 ) {
   const parent = date.parent;
-  return parent.type === "project"
-    ? projects.find((project) => project.id === parent.projectId)?.name ?? ""
-    : areas.find((area) => area.id === parent.areaId)?.name ?? "";
+  if (parent.type === "project") {
+    const project = projects.find((item) => item.id === parent.projectId);
+    return project ? `${project.name}${project.state === "archived" ? " (archived)" : ""}` : "";
+  }
+  const area = areas.find((item) => item.id === parent.areaId);
+  return area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : "";
 }
 
 export function HomeView() {
@@ -175,8 +185,11 @@ export function HomeView() {
       title: task.title,
       done: task.state === "done",
       meta: taskContext(task, canonical.projects, canonical.areas),
-      onToggle: () => updateTask(task.id, { state: task.state === "open" ? "done" : "open" }),
-      onOpen: () => setEditingTaskId(task.id)
+      onToggle: taskReopenBlockReason(canonical, task)
+        ? undefined
+        : () => updateTask(task.id, { state: task.state === "open" ? "done" : "open" }),
+      onOpen: () => setEditingTaskId(task.id),
+      toggleDisabledReason: taskReopenBlockReason(canonical, task)
     })),
     ...todayEvents.map((event) => ({
       id: event.id,
@@ -222,9 +235,14 @@ export function HomeView() {
                     >
                       <button
                         type="button"
-                        onClick={() => updateTask(task.id, { state: task.state === "open" ? "done" : "open" })}
+                        onClick={() => {
+                          if (taskReopenBlockReason(canonical, task)) return;
+                          updateTask(task.id, { state: task.state === "open" ? "done" : "open" });
+                        }}
+                        disabled={Boolean(taskReopenBlockReason(canonical, task))}
+                        title={taskReopenBlockReason(canonical, task) ?? undefined}
                         aria-label={task.state === "done" ? `Reopen ${task.title}` : `Complete ${task.title}`}
-                        className="grid h-10 w-10 -m-2 shrink-0 place-items-center rounded-full"
+                        className="grid h-10 w-10 -m-2 shrink-0 place-items-center rounded-full disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         <span
                           className={`grid h-5 w-5 place-items-center rounded-full border text-[11px] ${
@@ -298,7 +316,10 @@ export function HomeView() {
                         <EntityRow
                           key={project.id}
                           title={project.name}
-                          meta={canonical.areas.find((area) => area.id === project.areaId)?.name ?? "Project"}
+                          meta={[
+                            canonical.areas.find((area) => area.id === project.areaId)?.name ?? "Project",
+                            project.state === "archived" ? "Archived Project" : ""
+                          ].filter(Boolean).join(" · ")}
                           onOpen={() => router.push(`/projects/${encodeURIComponent(project.id)}`)}
                         />
                       ))}
@@ -312,7 +333,7 @@ export function HomeView() {
                         <EntityRow
                           key={area.id}
                           title={area.name}
-                          meta="Area"
+                          meta={area.state === "archived" ? "Archived Area" : "Area"}
                           onOpen={() => router.push("/areas")}
                         />
                       ))}

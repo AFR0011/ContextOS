@@ -120,7 +120,7 @@ interface StoreApi {
     details?: string;
   }) => string;
   updateDate: (id: string, updates: Partial<ContextDate>) => void;
-  updateDailyNote: (localDate: string, content: string) => void;
+  updateDailyNote: (localDate: string, content: string) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreApi | null>(null);
@@ -295,7 +295,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
   }, [saveWorkspace, user]);
 
   const mutateBatch = useCallback((changes: LocalRecordChange[]) => {
-    if (!changes.length) return;
+    if (!changes.length) return Promise.resolve();
     localMutationVersion.current += 1;
 
     const committedAt = now();
@@ -356,10 +356,12 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
         );
         setLastErrorAt(now());
       });
+
+    return write.then(() => undefined);
   }, [reconcileDurableLocalState, syncNow, user]);
 
   const mutate = useCallback(<T extends WorkspaceRecord>(collection: CollectionName, record: T) => {
-    mutateBatch([{ collection, record }]);
+    return mutateBatch([{ collection, record }]);
   }, [mutateBatch]);
 
   useEffect(() => {
@@ -573,7 +575,7 @@ export function WorkspaceProvider({ children, user }: { children: ReactNode; use
             updatedAt: ts,
             revision: 0
           };
-      mutate("dailyNotes", note);
+      return mutate("dailyNotes", note);
     }
   }), [
     data,

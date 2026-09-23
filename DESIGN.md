@@ -115,11 +115,11 @@ List surfaces:
 
 Project Detail:
 - editable Name, Area, Objective;
-- open Tasks;
-- optional completed Task history;
+- open Tasks with shared post-creation Task editing;
+- optional completed Task history, also editable without changing Done state;
 - Dates;
 - Linked Knowledge integration boundary;
-- Archive/Restore.
+- Archive/Restore, with Archive blocked while Open Project Tasks remain.
 
 There are no nested Projects or project recovery dashboards.
 
@@ -133,12 +133,13 @@ List surfaces:
 - Archive/Restore is local to the Area lifecycle.
 
 Area Detail:
+- editable Area name;
 - Active Projects;
-- Direct Tasks;
+- Direct Tasks with shared post-creation Task editing;
 - Direct Dates;
 - Archived Projects.
 
-Archiving an Area does not archive its Projects.
+Archiving an Area does not archive its Projects. Area archive is blocked only by direct Open Tasks; child Project lifecycle remains independent.
 
 ### Dates
 
@@ -501,6 +502,13 @@ Project:
 Task:
 - Open;
 - Done.
+
+Task lifecycle rules:
+- title, Project/Area context, planned day, and scheduled time remain editable after creation;
+- clearing planned day clears scheduled time;
+- a Project cannot archive while it owns Open Tasks;
+- an Area cannot archive while it owns direct Open Tasks;
+- a Done Task whose actual parent is archived cannot be reopened until moved to an active context or the parent is restored.
 
 Date:
 - Event;

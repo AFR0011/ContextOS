@@ -5,8 +5,7 @@ import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
 import { TaskEditSheet } from "@/components/workspace/TaskEditSheet";
 import { useWorkspace } from "@/lib/client-store";
-import { taskReopenBlockReason } from "@/lib/archive-policy";
-import { areaArchiveBlockReason, projectArchiveBlockReason } from "@/lib/archive-policy";
+import { areaArchiveBlockReason, projectArchiveBlockReason, taskReopenBlockReason } from "@/lib/archive-policy";
 import { localDateKey } from "@/lib/dates";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
 

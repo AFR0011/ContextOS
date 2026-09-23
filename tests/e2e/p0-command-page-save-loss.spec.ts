@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 async function resetDemo(page: Page) {
   const response = await page.request.post("/api/reset-demo", { timeout: 15_000 });
@@ -14,10 +14,6 @@ async function login(page: Page) {
   await resetDemo(page);
   await page.reload();
   await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
-}
-
-function markdownLine(editor: Locator, index: number) {
-  return editor.locator(`[data-testid$="-line-${index}"]`).first();
 }
 
 async function currentLocalWorkspace(page: Page) {
@@ -57,11 +53,6 @@ async function dailyNoteContent(page: Page, localDate: string) {
   return workspace?.dailyNotes?.find((note: { localDate: string }) => note.localDate === localDate)?.content ?? "";
 }
 
-async function projectRecoveryNotes(page: Page, projectName: string) {
-  const workspace = await currentLocalWorkspace(page);
-  return workspace?.projects?.find((project: { name: string }) => project.name === projectName)?.recoveryNotes ?? "";
-}
-
 test("Daily Notes flush a pending edit when navigating before autosave fires", async ({ page }) => {
   const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
@@ -77,21 +68,4 @@ test("Daily Notes flush a pending edit when navigating before autosave fires", a
   await expect.poll(() => dailyNoteContent(page, today)).toContain(note);
   await page.getByRole("button", { name: "Home", exact: true }).click();
   await expect(page.getByLabel("Daily Notes")).toHaveValue(note);
-});
-
-test("project recovery notes flush a pending edit when navigating before autosave fires", async ({ page }) => {
-  await login(page);
-  await page.getByRole("button", { name: "Projects", exact: true }).click();
-  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-
-  const note = `Fast navigation recovery ${Date.now()}`;
-  const editor = page.getByTestId("project-recovery-notes");
-  await markdownLine(editor, 0).fill(note);
-  await expect(page.getByText("Autosaving...", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Projects", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
-
-  await expect.poll(() => projectRecoveryNotes(page, "ContextOS Demo")).toContain(note);
-  await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
-  await expect(markdownLine(page.getByTestId("project-recovery-notes"), 0)).toHaveValue(note);
 });

@@ -86,4 +86,9 @@ test("Area archive ignores child Project work but blocks direct open Tasks", asy
 
   await page.goto("/dashboard");
   await expect(page.getByTestId("home-contexts")).toContainText("Engineering (archived)");
+
+  await page.goto("/search");
+  await page.getByRole("textbox", { name: "Search workspace", exact: true }).fill("ContextOS Demo");
+  await page.getByTestId(/search-result-project-/).filter({ hasText: "ContextOS Demo" }).first().click();
+  await expect(page.getByTestId("search-selected-record")).toContainText("Engineering (archived)");
 });

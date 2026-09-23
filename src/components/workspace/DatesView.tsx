@@ -16,13 +16,16 @@ function parentValue(date: CanonicalDate) {
 
 function contextLabel(
   date: CanonicalDate,
-  projects: { id: string; name: string }[],
-  areas: { id: string; name: string }[]
+  projects: { id: string; name: string; state: "active" | "archived" }[],
+  areas: { id: string; name: string; state: "active" | "archived" }[]
 ) {
   const parent = date.parent;
-  return parent.type === "project"
-    ? projects.find((project) => project.id === parent.projectId)?.name ?? "Project"
-    : areas.find((area) => area.id === parent.areaId)?.name ?? "Area";
+  if (parent.type === "project") {
+    const project = projects.find((item) => item.id === parent.projectId);
+    return project ? `${project.name}${project.state === "archived" ? " (archived)" : ""}` : "Project";
+  }
+  const area = areas.find((item) => item.id === parent.areaId);
+  return area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : "Area";
 }
 
 function DateEditor({

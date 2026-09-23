@@ -704,26 +704,36 @@ The intermediate commits provide direct isolation evidence:
 
 The final candidate includes all four remediations and structural guards. It is not considered passed until the full production browser rerun confirms the complete set.
 
-## C-00.9 — READY preview visual-equivalence check
+## C-00.9 — READY preview evidence boundary
 
-Status: **verified for source equivalence; browser capture still blocked**
+Status: **partial runtime evidence only; no current-head visual equivalence claim**
 
-Vercel produced a READY preview for commit `4cecf13bb1112cb5b4e89bb92f4db8fe0e132da8`.
+Vercel produced READY previews during the audit, including:
+- `4cecf13bb1112cb5b4e89bb92f4db8fe0e132da8` during Phase C;
+- `dc8fa7499811f2dabd4b7206ba8a70211a3e3897` after clean-account visual-harness work;
+- `ebb2d994d225b5fa26221378e265144716c0ea28` during Phase D.
 
-Comparing that commit with the current audit head shows only:
-- C10 audit documentation changes;
-- C10 structural-check changes;
-- production/local-first test-harness changes;
-- a five-line physical `/areas/[id]` App Router handoff page.
+The `ebb2d994...` preview is meaningful partial runtime evidence because it already contains:
+- the shared Task editor;
+- Area rename;
+- the archive-policy domain layer;
+- the Project-list archive blocker.
 
-No rendered component or stylesheet differs between the READY preview and the current head. Therefore that preview is representative of the current visual component tree for C-01/C-02 inspection, while it is **not** sufficient evidence for final current-head build/runtime acceptance.
+However, later Phase D/E commits changed rendered behavior and presentation, including:
+- Area/Project detail archive blockers;
+- archived-context labels across Home/Dates/Search/Project metadata;
+- Task reopen guards under archived parents;
+- Area archive-blocked presentation;
+- documentation/acceptance consolidation that must be verified against the final candidate.
 
-A temporary Vercel share URL was successfully created for the READY preview. The local Chromium runtime nevertheless cannot navigate to it because this sandbox blocks outbound browser traffic with `ERR_BLOCKED_BY_ADMINISTRATOR`.
+Therefore no READY preview currently available is visually equivalent to the final audit head.
+
+The current branch head is again blocked by Vercel build-rate limiting, and GitHub Actions is unavailable for this account. The local connector browser also cannot navigate the preview because outbound browser access is blocked.
 
 So:
-- visual source equivalence is established;
-- actual rendered screenshot review remains pending;
-- final current-head deployment/runtime verification also remains pending.
+- partial runtime evidence exists for an intermediate Phase D candidate;
+- final current-head build/runtime verification remains pending;
+- actual current-head screenshot capture and human visual review remain pending.
 
 ## C-01 — Primary surface rendered inspection
 
@@ -936,3 +946,151 @@ Still pending:
 
 Therefore Phase D is **implemented but not runtime-accepted**.
 
+
+---
+
+# Phase E — Cross-category consolidation, prioritization, and release decision
+
+Status: **source consolidation complete; runtime/visual closure pending**
+
+Phase E reconciles the complete A-D audit against the final candidate rather than introducing another product feature batch.
+
+## E-01 — Active documentation still described obsolete IndexedDB v3 as the live boundary
+
+Severity: **Medium assurance defect**  
+Status: **Fixed**
+
+Confirmed stale active claims existed in:
+- README;
+- SECURITY;
+- REPO_MAP.
+
+They described IndexedDB v3 as the current clean persistence boundary even though Phase A introduced the revision-aware IndexedDB v4 boundary.
+
+Fix:
+- active documentation now consistently describes v4 as the live boundary;
+- historical v3 references remain only where they describe the actual earlier migration/provenance;
+- the C10 structural audit now rejects reintroduction of live-v3 wording in active docs.
+
+## E-02 — Current Phase D product semantics were missing from canonical specs
+
+Severity: **Medium documentation/product-contract defect**  
+Status: **Fixed**
+
+Canonical active documents now explicitly include:
+- shared post-creation Task editing;
+- Area rename;
+- Project archive blocked by Open Project Tasks;
+- Area archive blocked only by direct Open Tasks;
+- independent child-Project lifecycle under archived Areas;
+- archived-parent Task reopen boundary;
+- continued upsert-only/no-per-record-delete boundary.
+
+Updated:
+- README;
+- DESIGN;
+- BLUEPRINT;
+- PROJECT_STATE;
+- LOCAL_FIRST_CONTRACT;
+- RUN_PROTOCOL;
+- REPO_MAP;
+- SECURITY.
+
+## E-03 — Published changelog history could be mistaken for current product behavior
+
+Severity: **Medium documentation ambiguity**  
+Status: **Fixed without rewriting history**
+
+The published `1.0.0` entry correctly records the September 14 release, including now-retired Subcontexts/Resources/Inbox/Archive/tombstone behavior.
+
+Rather than rewriting that historical release:
+- an `Unreleased — C10 candidate` section now records the current simplified product and C10 changes;
+- published `1.0.0` history remains intact.
+
+## E-04 — Repository unit tests existed but CI never executed them
+
+Severity: **High assurance gap**  
+Status: **Fixed**
+
+`npm run test:unit` already covered library-level invariants, including the new archive-policy semantics, but CI did not run it.
+
+CI now includes an explicit **Run unit tests** step before typecheck/build.
+
+The C10 structural audit now requires that step, so unit coverage cannot silently become decorative.
+
+## E-05 — CI contained a misleading duplicate WorkspaceGate reference
+
+Severity: **Low-Medium assurance-path defect**  
+Status: **Fixed**
+
+The development lifecycle command explicitly named `workspace-gate.spec.ts`, but the default Playwright config ignores that file. The test is intentionally owned by the production Playwright configuration.
+
+Fix:
+- removed the misleading default-config duplicate reference;
+- retained the real production-config execution path;
+- added a structural guard proving production config owns WorkspaceGate and local-first characterization coverage.
+
+## E-06 — Historical IndexedDB retirement provenance mixed C8 v3 and C10 v4
+
+Severity: **Low provenance defect**  
+Status: **Fixed**
+
+The retirement map incorrectly labelled the old v2 test removal as a “C8 v4” boundary while its reason described v3.
+
+Correct history is now explicit:
+- C8 retired v2 through the v3 identity-preserving workspace/outbox reset;
+- C10 later superseded active replacement coverage with v4 revision-aware tests.
+
+## E-07 — Phase C preview-equivalence claim became false after Phase D UI changes
+
+Severity: **High evidence-integrity defect**  
+Status: **Fixed**
+
+Phase C had correctly established visual equivalence between an earlier READY preview and the then-current source head. Phase D later changed rendered components, making that statement stale.
+
+The audit now records:
+- `ebb2d994...` as useful partial runtime evidence for an intermediate Phase D candidate;
+- no available READY preview as equivalent to the final current head;
+- final screenshot/runtime evidence as still pending.
+
+## E-08 — C10 acceptance language still described an untouched C8-C9 candidate
+
+Severity: **Medium acceptance-contract defect**  
+Status: **Fixed**
+
+C10 acceptance now identifies the candidate as:
+- built on C8-C9;
+- modified by approved A-E audit remediations;
+- still open until final current-head verification and human visual review.
+
+## E-09 — Evidence registry and file/path integrity
+
+Status: **Verified at source level**
+
+Confirmed:
+- every artifact referenced by the current C10 registry exists;
+- every package-script file target exists;
+- no obsolete `local-db-v3` file remains;
+- the only active v3 database open is deliberate fixture construction inside `local-db-v4.spec.ts` to prove the v4 clean-break migration;
+- historical retirement replacements resolve to live current files.
+
+## Final release decision
+
+**Do not freeze or merge the C10 baseline yet.**
+
+Source-level A-E audit work is consolidated. No additional product decision is currently blocking closure.
+
+Remaining blockers are evidence execution, not known product-design ambiguity:
+1. run the complete final-candidate CI ladder, including unit, typecheck/build, production/offline, lifecycle, accessibility/responsive, and development E2E;
+2. run the new Task-editing / Area-editing / archive-policy regressions;
+3. execute `npm run capture:c10:visual` on the final candidate;
+4. manually inspect the resulting screenshots;
+5. record the exact verified commit/run and only then mark pending C10 registry controls passed/freeze the baseline.
+
+Current environment boundary:
+- newest useful READY preview: `ebb2d994d225b5fa26221378e265144716c0ea28`, partial Phase D evidence only;
+- final branch head: current-head Vercel status is build-rate-limit failure;
+- GitHub Actions unavailable for the account;
+- connector browser outbound navigation blocked.
+
+Therefore Phase E is **source-complete but C10 remains open**.

@@ -271,11 +271,11 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-[68px] items-center gap-3 border-b border-[var(--cos-border-soft)] px-4">
+        <div className="flex h-[68px] items-center gap-2 border-b border-[var(--cos-border-soft)] px-4">
           <div className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary)]">
             <Zap className="h-4 w-4" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold tracking-[-0.01em] text-[var(--cos-text-strong)]">ContextOS</p>
             <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--cos-text-subtle)]">Execution</p>
           </div>

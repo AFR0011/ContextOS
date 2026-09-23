@@ -10,8 +10,17 @@ async function loginDemo(page: Page) {
   await page.getByLabel("Password").fill(DEMO_PASSWORD);
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  const reset = await page.request.post("/api/reset-demo");
-  expect(reset.status()).toBe(200);
+  const reset = await page.evaluate(async () => {
+    const response = await fetch("/api/reset-demo", {
+      method: "POST",
+      cache: "no-store"
+    });
+    return {
+      status: response.status,
+      body: await response.text()
+    };
+  });
+  expect(reset.status, reset.body).toBe(200);
   await page.reload();
   await expect(page.getByTestId("home-view")).toBeVisible();
 }

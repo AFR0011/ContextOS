@@ -122,6 +122,11 @@ async function captureTransientStates(page: Page, testInfo: TestInfo, variant: V
   await capture(page, testInfo, `${variant.name}-06-dates-add-open`);
 
   await page.goto("/dashboard");
+  await page.getByText("Review today's open work", { exact: true }).click();
+  await expect(page.getByTestId("task-edit-sheet")).toBeVisible();
+  await capture(page, testInfo, `${variant.name}-08-task-edit-sheet`, false);
+  await page.getByRole("dialog", { name: "Edit Task", exact: true }).getByRole("button", { name: "Cancel", exact: true }).click();
+
   await page.keyboard.press("Control+K");
   const palette = page.getByTestId("command-palette");
   await expect(palette).toBeVisible();

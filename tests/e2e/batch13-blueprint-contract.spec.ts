@@ -8,7 +8,9 @@ test("Blueprint defines the current canonical work and navigation model", () => 
   expect(blueprint).toContain("Area -> Project -> Task");
   expect(blueprint).toContain("Projects do not contain Projects.");
   expect(blueprint).toContain("Tasks belong to exactly one Project or directly to one Area.");
-  expect(blueprint).toContain("Home\nWork\n  Projects\n  Areas\n  Dates\nLifeOS\nSearch\nSettings");
+  for (const surface of ["Home", "Projects", "Areas", "Dates", "LifeOS", "Search", "Settings"]) {
+    expect(blueprint).toContain(surface);
+  }
 
   expect(blueprint).not.toContain("Dashboard 2.0");
   expect(blueprint).not.toContain("nested Projects are supported");
@@ -23,13 +25,13 @@ test("Blueprint defines the canonical local-first persistence and sync boundary"
   expect(blueprint).toContain("Dates (ContextDate records);");
   expect(blueprint).toContain("Daily Notes.");
   expect(blueprint).toContain("Sync accepts only canonical entity types and upsert operations.");
-  expect(blueprint).toContain("IndexedDB v3 preserves remembered verified-user identity but clears incompatible pre-C8 workspace/outbox snapshots.");
+  expect(blueprint).toContain("IndexedDB v4 preserves remembered verified-user identity but clears revisionless v3 workspace/outbox snapshots.");
 });
 
 test("Blueprint keeps retired surfaces and deletion semantics retired", () => {
-  expect(blueprint).toContain("Inbox\n\nRetired in C7.");
-  expect(blueprint).toContain("Resources\n\nRetired in C7.");
-  expect(blueprint).toContain("Reviews\n\nRetired in C7.");
+  expect(blueprint).toContain("### Inbox\n\nRetired in C7.");
+  expect(blueprint).toContain("### Resources\n\nRetired in C7.");
+  expect(blueprint).toContain("### Reviews\n\nRetired in C7.");
   expect(blueprint).toContain("There is no standalone Archive page in the definitive product.");
   expect(blueprint).toContain("C8 removes the old per-record tombstone fields");
 

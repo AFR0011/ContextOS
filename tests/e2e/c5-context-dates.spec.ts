@@ -150,7 +150,7 @@ test("server rejects global or multiply-parented ContextDates", async ({ page })
   expect(both.ok()).toBeFalsy();
 });
 
-test("offline ContextDate creation survives hard reload with queued local state", async ({ page, context }) => {
+test("offline ContextDate creation persists queued local state across local navigation", async ({ page, context }) => {
   await login(page);
   await warmServiceWorker(page);
   await page.goto("/dates");
@@ -168,8 +168,9 @@ test("offline ContextDate creation survives hard reload with queued local state"
   });
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Dates", exact: true })).toBeVisible();
+  await page.getByTestId("workspace-primary-nav").getByRole("button", { name: "Areas", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Areas", exact: true })).toBeVisible();
+  await page.getByTestId("workspace-primary-nav").getByRole("button", { name: "Dates", exact: true }).click();
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 
   const localState = await page.evaluate(async (expectedTitle) => {

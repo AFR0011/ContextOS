@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Boxes,
   CalendarDays,
@@ -38,6 +38,7 @@ export function WorkspaceCommandPalette() {
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const paletteOpenerRef = useRef<HTMLElement | null>(null);
   const [createMode, setCreateMode] = useState<CreateMode>(null);
 
   const [taskTitle, setTaskTitle] = useState("");
@@ -61,7 +62,14 @@ export function WorkspaceCommandPalette() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setCreateMode(null);
-        setOpen((value) => !value);
+        setOpen((value) => {
+          if (!value) {
+            paletteOpenerRef.current = document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null;
+          }
+          return !value;
+        });
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -81,6 +89,13 @@ export function WorkspaceCommandPalette() {
   function startCreate(mode: Exclude<CreateMode, null>) {
     setOpen(false);
     setCreateMode(mode);
+  }
+
+  function restorePaletteOpenerFocus() {
+    const opener = paletteOpenerRef.current;
+    window.requestAnimationFrame(() => {
+      if (opener?.isConnected) opener.focus();
+    });
   }
 
   const navigationCommands = useMemo<CommandPaletteItem[]>(() => [
@@ -125,6 +140,12 @@ export function WorkspaceCommandPalette() {
     setScheduledTime("");
   }
 
+  function closeTaskCreate() {
+    resetTask();
+    setCreateMode(null);
+    restorePaletteOpenerFocus();
+  }
+
   function createTask() {
     const title = taskTitle.trim();
     if (!title || !taskParent) return;
@@ -135,8 +156,7 @@ export function WorkspaceCommandPalette() {
       plannedDate: plannedDate || null,
       scheduledTime: plannedDate ? scheduledTime || null : null
     });
-    resetTask();
-    setCreateMode(null);
+    closeTaskCreate();
   }
 
   function resetDate() {
@@ -147,6 +167,12 @@ export function WorkspaceCommandPalette() {
     setDateStartTime("");
     setDateEndTime("");
     setDateDetails("");
+  }
+
+  function closeDateCreate() {
+    resetDate();
+    setCreateMode(null);
+    restorePaletteOpenerFocus();
   }
 
   function createDate() {
@@ -162,8 +188,7 @@ export function WorkspaceCommandPalette() {
       details: dateDetails.trim(),
       parent: type === "project" ? { type: "project", projectId: id } : { type: "area", areaId: id }
     });
-    resetDate();
-    setCreateMode(null);
+    closeDateCreate();
   }
 
   return (
@@ -180,13 +205,10 @@ export function WorkspaceCommandPalette() {
         open={createMode === "task"}
         title="New Task"
         description="Create an Open Task in a Project or Area."
-        onClose={() => {
-          resetTask();
-          setCreateMode(null);
-        }}
+        onClose={closeTaskCreate}
         footer={
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => { resetTask(); setCreateMode(null); }} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
+            <button type="button" onClick={closeTaskCreate} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
             <button type="button" onClick={createTask} disabled={!taskTitle.trim() || !taskParent} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50">Create Task</button>
           </div>
         }
@@ -221,13 +243,10 @@ export function WorkspaceCommandPalette() {
         open={createMode === "date"}
         title="New Date"
         description="Create an Event or external Deadline in a Project or Area."
-        onClose={() => {
-          resetDate();
-          setCreateMode(null);
-        }}
+        onClose={closeDateCreate}
         footer={
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => { resetDate(); setCreateMode(null); }} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
+            <button type="button" onClick={closeDateCreate} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
             <button type="button" onClick={createDate} disabled={!dateTitle.trim() || !dateParent || !dateValue} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50">Create Date</button>
           </div>
         }

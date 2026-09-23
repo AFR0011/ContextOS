@@ -184,6 +184,7 @@ test.describe("local-first completion characterization", () => {
 
     await page.getByRole("button", { name: "Home", exact: true }).click();
     await page.getByLabel("Daily Notes").fill(dailyNoteText);
+    await expect(page.getByTestId("home-daily-note").getByRole("status")).toContainText("Saved");
     await expect(page.getByText(taskTitle, { exact: true })).toBeVisible();
     await page.getByRole("button", { name: `Complete ${taskTitle}`, exact: true }).click();
     await expect(page.getByRole("button", { name: `Reopen ${taskTitle}`, exact: true })).toBeVisible();

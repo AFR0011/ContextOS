@@ -748,43 +748,171 @@ Required evidence:
 
 # Phase D — Product / feature gaps and workflow critique
 
-Status: **source audit complete enough for product decisions; no product behavior changed yet**
+Status: **approved product decisions implemented in source; runtime and visual verification pending**
 
-Phase D evaluates missing or contradictory user workflows. Unlike Phases A-C, these findings are not auto-fixed when the correct behavior is a product decision.
+Phase D audited missing and contradictory user workflows, then implemented the approved set: **1A / 2A / 3B / 4A**.
 
-## D-01 — Tasks cannot be edited after creation
+## D-01 — Shared Task editor
 
 Severity: **High product gap**  
-Status: **Decision required before implementation**
+Status: **Fixed on audit branch**
 
-Current Task capabilities:
-- create in Project, Area, or command palette;
-- optionally assign planned day and scheduled time at creation;
-- toggle Open / Done;
-- reopen completed Tasks.
+Tasks can now be edited after creation without introducing a Task-detail route.
 
-Missing after creation:
+The shared `TaskEditSheet` is reachable from:
+- Home timed Tasks;
+- Home Anytime Tasks;
+- Project open Tasks;
+- Project completed Tasks;
+- Area direct open Tasks;
+- Area direct completed Tasks.
+
+It edits:
+- title;
+- Project/Area context;
+- planned day;
+- scheduled time.
+
+Clearing the planned day also clears/disables scheduled time. The editor does not duplicate Open/Done state; checkmark interaction remains the only Task-state control.
+
+Context choices include active Projects/Areas plus the Task's current parent when that parent is archived, so historical Tasks can still be moved out of an archived context.
+
+Regression coverage verifies:
 - rename;
-- change/clear planned day;
-- change/clear scheduled time;
-- move between Project and Area contexts.
+- reschedule;
+- clear plan/time;
+- move Project -> Area -> Project;
+- completed Task editing without changing Done state.
 
-The store already supports all of these through `updateTask(id, Partial<Task>)`, including clearing scheduled time when the planned day is removed.
+The visual baseline now captures the Task editor in every standard viewport/theme variant.
 
-The shared `TaskRow` primitive already supports an unused `onOpen` action, so a compact shared Task editor can be added without inventing a Task-detail route.
-
-This gap is operationally important because a mistyped or rescheduled Task currently cannot be corrected except by changing Done/Open state.
-
-## D-02 — Areas cannot be renamed
+## D-02 — Area rename
 
 Severity: **Medium product gap**  
-Status: **Decision required before implementation**
+Status: **Fixed on audit branch**
 
-Projects already support editing:
-- name;
-- Area;
-- objective;
-- lifecycle state.
+Area Detail now exposes the canonical Area name as an editable field.
+
+Behavior:
+- Enter commits;
+- blur commits;
+- Escape restores the canonical value;
+- an empty value is rejected and restored.
+
+No list-view editor was added. Area Detail remains the single canonical editing surface.
+
+Regression coverage verifies rename propagation back to the Areas list while preserving lifecycle state.
+
+## D-03 — Archive/open-work semantics
+
+Severity: **Medium-High semantic gap**  
+Status: **Fixed on audit branch using approved Option B**
+
+The canonical rule is now:
+
+### Projects
+
+A Project cannot be archived while it has any Open Task directly parented to that Project.
+
+The rule is enforced in:
+- Projects list;
+- Project Detail;
+- Project rows nested in Area Detail.
+
+The UI:
+- disables Archive;
+- exposes a visible explanation;
+- guards the mutation handler as a second boundary.
+
+### Areas
+
+An Area cannot be archived while it has direct Open Tasks.
+
+Child Project Tasks do **not** block Area archive. Project lifecycle remains independent, so an Area may be archived while active Projects remain inside it.
+
+The rule is enforced in:
+- Areas list;
+- Area Detail.
+
+### Archived Task reopen boundary
+
+A completed Task whose actual parent Project/Area is archived cannot be reopened in place.
+
+It may still be:
+- inspected;
+- edited;
+- moved to an active context;
+- left Done.
+
+The user must move it to an active context or restore its parent before reopening it.
+
+Legacy/imported Open Tasks inside an archived parent may still be completed or moved, giving the user a path out of invalid state without silently rewriting Task state.
+
+### Archived-context visibility
+
+Archived parent state is now explicit rather than visually masquerading as active context across:
+- Home Dayline/Anytime Task metadata;
+- Home Upcoming Dates;
+- Home In Context Today;
+- Dates rows/editors;
+- Search result subtitles/details;
+- Project list/detail Area metadata when the Project's Area is archived.
+
+An active Project inside an archived Area remains active; only its Area metadata is labelled archived.
+
+### Demo fixture correction
+
+The demo seed previously contained an archived `Release Planning` Project with an Open Task. That contradicted the approved policy. The historical release Task is now seeded as Done.
+
+Regression coverage includes:
+- Project archive blocked until Open Tasks are resolved;
+- completed Task reopen blocked after Project archive;
+- future Date context remains visible and labelled archived;
+- Search/Date/Home archived-context labelling;
+- Area archive blocked by direct Open Tasks;
+- Area archive allowed while active child Projects remain;
+- archived Area labelling on those still-active Projects;
+- unit tests proving Area policy ignores child-Project Tasks.
+
+## D-04 — Per-record Task/Date deletion
+
+Severity: **Low-Medium product gap**  
+Status: **Explicitly out of C10 by approved Option A**
+
+No per-record Task or Date delete button was added.
+
+Reason:
+- canonical sync is currently upsert-only;
+- correct deletion requires tombstone/anti-resurrection protocol semantics;
+- adding a button without reopening that data contract would create a misleading or unsafe local-first claim.
+
+Task editing removes the main correction/rescheduling pain without silently expanding C10's synchronization model.
+
+This remains a future protocol decision, not an unfinished C10 UI task.
+
+## D-05 — Search remains inspection/navigation
+
+Status: **Verified boundary**
+
+Search does not edit records in place.
+
+That remains coherent because canonical editing surfaces now exist for:
+- Tasks via the shared Task editor;
+- Dates via Dates;
+- Projects via Project Detail;
+- Areas via Area Detail.
+
+## D-06 — Canon / Insights / other LifeOS modules remain honest disconnected boundaries
+
+Status: **Verified boundary**
+
+- Linked Knowledge remains intentionally empty until Canon integration exists.
+- Insights remain absent when no provider exists.
+- LifeOS module cards expose configured destinations without inventing module summaries.
+
+## D-07 — Date editing already satisfies C10
+
+Status: **Verified**
 
 Dates already support editing:
 - title;
@@ -794,106 +922,17 @@ Dates already support editing:
 - start/end time;
 - details.
 
-Areas support create/archive/restore but expose no rename UI, even though `updateArea(id, { name })` already exists end-to-end.
+No additional Date editor was added.
 
-The natural location is Area Detail, keeping the Areas list itself lightweight.
+## Verification boundary
 
-## D-03 — Archived containers can still appear as ordinary active execution context
+Source implementation and regression coverage are complete for the approved Phase D decisions.
 
-Severity: **Medium-High semantic gap**  
-Status: **Decision required**
+Still pending:
+- repository-wide typecheck/build on the current head;
+- browser execution of the new Task/Area/archive E2E specs;
+- refreshed visual capture including the Task editor and new archive-warning states;
+- final human review of those rendered states.
 
-Current lifecycle semantics intentionally keep Area and Project lifecycle independent:
-- archiving an Area does not archive its Projects;
-- active Projects may remain under an archived Area.
-
-However canonical Home selectors do not consider parent lifecycle state:
-- `getTodayTasks()` returns planned Tasks regardless of whether their Project/Area is archived;
-- `getTodayEvents()` and `getUpcomingDates()` likewise do not suppress archived-parent Dates;
-- `getContextsForToday()` returns archived Projects/Areas when referenced by today's work;
-- Home context labels show only the parent name, not its archived state.
-
-Project archive behavior has the same child-work ambiguity: an archived Project may retain Open Tasks, and those planned Tasks can still appear on Home as normal execution work even though Projects describes archived Projects as “Finished or inactive.”
-
-This is not safe to auto-fix because several coherent semantics are possible.
-
-### Lifecycle options to decide
-
-**Option A — Container archive only**
-- keep child Tasks/Dates active;
-- explicitly label archived parent context anywhere it appears on Home/Search;
-- preserve the current independent-lifecycle model.
-
-**Option B — Block archive while Open Tasks remain**
-- require the user to complete or move Open Tasks before archiving a Project;
-- for Areas, require direct Open Tasks to be resolved, while Projects retain independent lifecycle;
-- Dates remain historical/contextual records;
-- avoids silently converting Task state.
-
-**Option C — Cascade archive**
-- would require adding another Task lifecycle state or falsely marking work Done;
-- conflicts with the deliberately simplified Open/Done Task model;
-- not recommended without reopening the canonical state model.
-
-## D-04 — Mistaken Tasks and Dates cannot be removed
-
-Severity: **Low-Medium product gap**  
-Status: **Documented for decision; broader protocol cost**
-
-Canonical sync is currently upsert-only. There is no per-record delete mutation for Tasks or Dates.
-
-Practical effect:
-- a mistaken Task can currently only be marked Done;
-- a mistaken Date can be edited into another valid Date but not removed.
-
-Adding record deletion is materially larger than a UI button because it changes the local-first/sync protocol and anti-resurrection semantics. Given the C10 simplification goals, this should not be bundled casually with the Task editor.
-
-## D-05 — Search is intentionally inspection/navigation, not an editor
-
-Status: **Verified boundary, not currently a gap**
-
-Search exposes full Task/Date details and contextual navigation. It does not edit records in place.
-
-That remains coherent if editing is available from canonical operational surfaces:
-- Tasks through a shared editor from Home/Project/Area;
-- Dates through Dates;
-- Projects through Project Detail;
-- Areas through Area Detail.
-
-No separate Search editor is necessary unless later usage shows excessive navigation friction.
-
-## D-06 — Canon / Insights / other LifeOS modules remain honest disconnected boundaries
-
-Status: **Verified boundary, not a missing C10 feature**
-
-- Linked Knowledge is intentionally empty until Canon integration exists.
-- Insights remain absent when no provider exists.
-- LifeOS module cards expose configured destinations without inventing module summaries.
-
-These should not be “filled in” during the product-gap audit merely to make the interface look more complete.
-
-## D-07 — Date editing is already complete enough for C10
-
-Status: **Verified; prior suspected gap closed**
-
-The Dates screen already provides per-record editing for title, kind, parent context, date, times, and details. Project/Area Date rows intentionally route to Dates for editing.
-
-No additional Date editor is required for C10 unless deletion is separately approved.
-
-## Phase D decisions pending
-
-The first implementation batch should not begin until the following are decided:
-
-1. Task editor interaction:
-   - shared compact DetailSheet opened from Task rows; or
-   - inline editing in each parent surface.
-2. Area rename:
-   - editable name field in Area Detail; or
-   - defer.
-3. Archive/open-work semantics:
-   - Option A container-only with explicit archived labels; or
-   - Option B block archive while unresolved Open Tasks remain.
-4. Per-record deletion:
-   - keep out of C10; or
-   - deliberately reopen the sync/data model for Task/Date deletion.
+Therefore Phase D is **implemented but not runtime-accepted**.
 

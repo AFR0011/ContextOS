@@ -69,7 +69,7 @@
     },
     {
       "id": "CLAIMS-001",
-      "title": "Active public documentation describes the canonical C8-C9 product and scopes historical assurance correctly",
+      "title": "Active public documentation describes the current C10 candidate and scopes historical assurance correctly",
       "status": "passed",
       "artifacts": [
         "README.md",
@@ -80,19 +80,25 @@
         "docs/RUN_PROTOCOL.md",
         "docs/DEPLOYMENT.md",
         "SECURITY.md",
-        "docs/c10/SCREENSHOT_BASELINE.md"
+        "docs/c10/SCREENSHOT_BASELINE.md",
+        "CHANGELOG.md",
+        "docs/c10/C10_ACCEPTANCE.md",
+        "scripts/c10-product-acceptance-check.mjs"
       ]
     },
     {
       "id": "CI-001",
-      "title": "Active CI and verification commands reference only current canonical tests while retaining historical provenance audits",
+      "title": "Active CI and verification commands reference current canonical tests, execute unit coverage, and retain historical provenance audits",
       "status": "passed",
       "artifacts": [
         ".github/workflows/ci.yml",
         "package.json",
         "scripts/stage9-evidence-check.mjs",
         "scripts/stage10-acceptance-check.mjs",
-        "scripts/stage10-claims-audit.mjs"
+        "scripts/stage10-claims-audit.mjs",
+        "scripts/c10-product-acceptance-check.mjs",
+        "playwright.production.config.ts",
+        "src/lib/archive-policy.test.ts"
       ]
     },
     {
@@ -123,12 +129,14 @@
         "tests/offline-production/offline-shell.spec.ts",
         "src/components/workspace/TaskEditSheet.tsx",
         "tests/e2e/c10-task-editing.spec.ts",
-        "tests/e2e/c10-archive-policy.spec.ts"
+        "tests/e2e/c10-archive-policy.spec.ts",
+        "tests/e2e/c10-area-editing.spec.ts",
+        "src/components/workspace/AreaDetailView.tsx"
       ]
     },
     {
       "id": "AUDIT-001",
-      "title": "Full post-C9 product audit completes functional accessibility visual and product-gap phases with prioritized remediation",
+      "title": "Full post-C9 product audit completes A-E functional, accessibility, visual, product-gap, and consolidation phases with prioritized remediation",
       "status": "pending",
       "artifacts": [
         "docs/c10/FULL_PRODUCT_AUDIT.md",
@@ -138,7 +146,19 @@
         "tests/e2e/c10-archive-policy.spec.ts",
         "src/lib/archive-policy.test.ts",
         "src/components/workspace/TaskEditSheet.tsx",
-        "src/lib/archive-policy.ts"
+        "src/lib/archive-policy.ts",
+        "README.md",
+        "DESIGN.md",
+        "BLUEPRINT.md",
+        "CHANGELOG.md",
+        "SECURITY.md",
+        "docs/PROJECT_STATE.md",
+        "docs/REPO_MAP.md",
+        "docs/LOCAL_FIRST_CONTRACT.md",
+        "docs/RUN_PROTOCOL.md",
+        ".github/workflows/ci.yml",
+        "scripts/c10-product-acceptance-check.mjs",
+        "audits/historical-artifact-retirements.json"
       ]
     },
     {
@@ -147,7 +167,10 @@
       "status": "pending",
       "artifacts": [
         "docs/c10/C10_ACCEPTANCE.md",
-        ".github/workflows/ci.yml"
+        ".github/workflows/ci.yml",
+        "docs/c10/FULL_PRODUCT_AUDIT.md",
+        "docs/c10/SCREENSHOT_BASELINE.md",
+        "audits/c10-product-acceptance.json"
       ]
     }
   ]

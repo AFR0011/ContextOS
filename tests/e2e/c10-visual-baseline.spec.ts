@@ -22,8 +22,23 @@ const variants: Variant[] = [
 ];
 
 async function resetDemo(page: Page) {
-  const response = await page.request.post("/api/reset-demo");
-  expect(response.status()).toBe(200);
+  const result = await page.evaluate(async () => {
+    const response = await fetch("/api/reset-demo", { method: "POST", cache: "no-store" });
+    return { status: response.status, body: await response.text() };
+  });
+  expect(result.status, result.body).toBe(200);
+}
+
+async function revokeOtherSessions(page: Page) {
+  const result = await page.evaluate(async () => {
+    const response = await fetch("/api/account/sessions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "revoke-others" })
+    });
+    return { status: response.status, body: await response.text() };
+  });
+  expect(result.status, result.body).toBe(200);
 }
 
 async function loginDemo(page: Page) {
@@ -33,6 +48,7 @@ async function loginDemo(page: Page) {
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await resetDemo(page);
+  await revokeOtherSessions(page);
   await page.reload();
   await expect(page.getByTestId("home-view")).toBeVisible();
 }
@@ -46,7 +62,35 @@ async function applyTheme(page: Page, theme: Theme) {
   await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(theme === "dark");
 }
 
+async function waitForRenderedRoute(page: Page) {
+  const pathname = new URL(page.url()).pathname;
+
+  await expect(page.getByTestId("workspace-gate-checking")).toHaveCount(0);
+  await expect(page.getByTestId("workspace-local-loading")).toHaveCount(0);
+
+  if (pathname === "/dashboard") {
+    await expect(page.getByTestId("home-view")).toBeVisible();
+  } else if (pathname === "/projects") {
+    await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
+  } else if (pathname.startsWith("/projects/")) {
+    await expect(page.getByTestId("project-command-page")).toBeVisible();
+  } else if (pathname === "/areas") {
+    await expect(page.getByRole("heading", { name: "Areas", exact: true })).toBeVisible();
+  } else if (pathname.startsWith("/areas/")) {
+    await expect(page.getByTestId("area-detail")).toBeVisible();
+  } else if (pathname === "/dates") {
+    await expect(page.getByRole("heading", { name: "Dates", exact: true })).toBeVisible();
+  } else if (pathname === "/search") {
+    await expect(page.getByRole("heading", { name: "Search", exact: true })).toBeVisible();
+  } else if (pathname === "/lifeos") {
+    await expect(page.getByRole("heading", { name: "Module hub", exact: true })).toBeVisible();
+  } else if (pathname === "/settings") {
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+  }
+}
+
 async function capture(page: Page, testInfo: TestInfo, name: string, fullPage = true) {
+  await waitForRenderedRoute(page);
   await expect.poll(() =>
     page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)
   ).toBe(true);

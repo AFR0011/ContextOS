@@ -29,9 +29,9 @@ test("Blueprint defines the canonical local-first persistence and sync boundary"
 });
 
 test("Blueprint keeps retired surfaces and deletion semantics retired", () => {
-  expect(blueprint).toContain("### Inbox\n\nRetired in C7.");
-  expect(blueprint).toContain("### Resources\n\nRetired in C7.");
-  expect(blueprint).toContain("### Reviews\n\nRetired in C7.");
+  expect(blueprint).toMatch(/### Inbox\s+Retired in C7\./);
+  expect(blueprint).toMatch(/### Resources\s+Retired in C7\./);
+  expect(blueprint).toMatch(/### Reviews\s+Retired in C7\./);
   expect(blueprint).toContain("There is no standalone Archive page in the definitive product.");
   expect(blueprint).toContain("C8 removes the old per-record tombstone fields");
 

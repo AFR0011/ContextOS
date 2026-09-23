@@ -34,6 +34,9 @@ Area -> Project -> Task
 - Project states: Active / Archived.
 - Area states: Active / Archived.
 - Task states: Open / Done.
+- Tasks remain editable after creation for title, Project/Area context, planned day, and scheduled time.
+- Projects cannot archive while Open child Tasks remain.
+- Areas cannot archive while direct Open Tasks remain; child Project lifecycle stays independent.
 - ContextDates are Event / Deadline and belong to exactly one Project or Area.
 - Dates have no completion/archive lifecycle.
 
@@ -151,7 +154,8 @@ Current assurance reflects the canonical C8–C9 product while preserving older 
 - stale-write assurance protects canonical last-write behavior without relying on retired tombstone fields;
 - production offline checks cover canonical routes plus compatibility aliases;
 - C9 adds hostile-long-content, touch, keyboard-focus, and full canonical offline mutation/reconnect convergence coverage;
-- C10 adds a separate current acceptance registry rather than rewriting the historical Stage 10 record.
+- C10 adds a separate current acceptance registry rather than rewriting the historical Stage 10 record;
+- C10 Phase D adds shared Task editing, Area rename, and explicit archive/open-work invariants without reopening the upsert-only per-record deletion protocol.
 
 ## Known Boundaries
 

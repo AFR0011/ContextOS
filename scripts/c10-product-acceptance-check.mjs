@@ -177,6 +177,8 @@ const areaEditingTest = fs.readFileSync("tests/e2e/c10-area-editing.spec.ts", "u
 const archivePolicyE2e = fs.readFileSync("tests/e2e/c10-archive-policy.spec.ts", "utf8");
 const archivePolicyUnit = fs.readFileSync("src/lib/archive-policy.test.ts", "utf8");
 const taskEditSheet = fs.readFileSync("src/components/workspace/TaskEditSheet.tsx", "utf8");
+const productSearchView = fs.readFileSync("src/components/workspace/ProductSearchView.tsx", "utf8");
+const fullProductAudit = fs.readFileSync("docs/c10/FULL_PRODUCT_AUDIT.md", "utf8");
 const starterSource = fs.readFileSync("src/lib/starter.ts", "utf8");
 const responsiveLayoutTest = fs.readFileSync("tests/e2e/c10-responsive-layout.spec.ts", "utf8");
 const productPrimitives = fs.readFileSync("src/components/workspace/ProductPrimitives.tsx", "utf8");
@@ -334,6 +336,11 @@ for (const marker of [
     errors.push(`C10 archive-policy E2E coverage is missing: ${marker}`);
   }
 }
+if (!archivePolicyE2e.includes("Engineering (archived)") ||
+    !archivePolicyE2e.includes('getByTestId("search-selected-record")') ||
+    !productSearchView.includes('area.state === "archived" ? " (archived)" : ""')) {
+  errors.push("Archived Area context must remain explicit in Search Project detail and its regression coverage.");
+}
 if (!archivePolicyUnit.includes("Area archive blocker counts only direct open Tasks, not child Project work") ||
     !archivePolicyUnit.includes("completed Tasks under archived parents cannot be reopened until moved or restored")) {
   errors.push("Archive-policy unit coverage must preserve the approved Project/Area lifecycle semantics.");
@@ -381,6 +388,9 @@ for (const [label, source] of [
 if (!/historical Stage 9 verified[\s\S]{0,240}pre-C8 recoverable-tombstone model/i.test(deploymentDoc)) {
   errors.push("Deployment documentation must scope Stage 9 tombstone evidence as historical pre-C8 provenance.");
 }
+if (!/C10 acceptance program remains open/i.test(deploymentDoc)) {
+  errors.push("Deployment documentation must distinguish historical Stage 10 acceptance from the open C10 candidate.");
+}
 if (!localFirstContract.includes("a Project cannot archive while it owns Open Tasks") ||
     !localFirstContract.includes("an Area cannot archive while it owns direct Open Tasks")) {
   errors.push("Local-first contract must retain the approved Project/Area archive invariants.");
@@ -392,6 +402,17 @@ if (!projectState.includes("Tasks remain editable after creation") ||
 if (!changelog.includes("## [Unreleased] — C10 candidate") ||
     !changelog.includes("Tasks now support shared post-creation editing")) {
   errors.push("Changelog must distinguish the current C10 candidate from the published v1.0.0 history.");
+}
+if (!fullProductAudit.includes("# Phase E — Cross-category consolidation, prioritization, and release decision") ||
+    !fullProductAudit.includes("source consolidation complete; runtime/visual closure pending")) {
+  errors.push("Full product audit must retain the Phase E consolidation and honest runtime boundary.");
+}
+if (fullProductAudit.includes("READY preview visual-equivalence check") ||
+    fullProductAudit.includes("visually equivalent to current head")) {
+  errors.push("Full product audit must not retain the obsolete pre-Phase-D preview-equivalence claim.");
+}
+if (!screenshotBaseline.includes("no available READY preview is visually equivalent to the final branch head")) {
+  errors.push("Screenshot baseline must retain the final-candidate visual evidence boundary.");
 }
 
 const buildTsconfig = fs.readFileSync("tsconfig.build.json", "utf8");

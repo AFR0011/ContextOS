@@ -1,8 +1,8 @@
 # ContextOS C10 Screenshot Baseline
 
-Date: 2026-09-22  
+Date: 2026-09-23  
 Program: C10 definitive product acceptance  
-Status: capture specification complete; image capture pending a runnable browser against the C10 branch.
+Status: capture specification complete; final-candidate image capture pending a runnable browser against the C10 branch.
 
 ## Purpose
 
@@ -75,31 +75,44 @@ CI artifact handling:
 - artifact upload still runs when the visual-capture step itself fails, preserving any images created before the failure;
 - GitHub Actions is currently unavailable for this account, so this configuration has not yet produced a current-head artifact run.
 
-## Current render-evidence blocker — 2026-09-22
+## Current render-evidence blocker — 2026-09-23
 
-Phase C requires evidence from the current C10 branch, not an old working deployment.
+Phase C/E requires evidence from the final C10 candidate, not merely the newest working preview.
 
-Vercel deployment history shows:
-- C3 main at `4b452711c50baf8a301c79f298fcc9a613432d61` was the last READY production deployment;
-- C4 main at `81670fb7d3c3a8467af57fdbb2f4fdd69de5893e` failed during `npm run build` with a lint/type error;
-- C9 main at `16dffb7ad52dbcb9f2a8fd3ffbf0128c1a896d1f` also failed during `npm run build`;
-- several later preview deployments additionally failed during install;
-- the current C10 head is presently blocked by Vercel build-rate limiting.
+Vercel history now includes:
+- READY preview `4cecf13bb1112cb5b4e89bb92f4db8fe0e132da8` from Phase C;
+- READY preview `dc8fa7499811f2dabd4b7206ba8a70211a3e3897` after clean-account visual-harness work;
+- READY preview `ebb2d994d225b5fa26221378e265144716c0ea28` during Phase D;
+- later deployments returning build-rate-limit failure again.
 
-Therefore the old C3 deployment cannot be used as C10 visual evidence, and repeated preview pushes must not be treated as a substitute for a successful current build.
+The `ebb2d994...` preview already includes meaningful Phase D runtime surface changes, including the shared Task editor, Area rename, archive-policy domain layer, and Project-list archive blocker.
 
-The next Phase C runtime step is to run the current branch in an executable environment, resolve any build/type failure that remains, execute `npm run capture:c10:visual`, and manually inspect the resulting images.
+It is **not** the final visual baseline. Later commits changed rendered behavior/presentation, including Area/Project detail archive blockers, archived-context labels, Task reopen guards under archived parents, and the Area archive-blocked state.
 
-Source preflight has already identified and corrected several render risks before image capture:
-- short-viewport logout content could extend beyond the visible screen;
-- command-palette height did not account for its responsive top offset;
-- full-screen auth/workspace/handoff shells used static viewport height rather than dynamic viewport height;
-- user/server-controlled diagnostic, identity, and handoff strings had several unbounded-wrap paths;
-- Project Detail and Area Detail used a six-column Date composer at the 1024px sidebar breakpoint, compressing the Date title field to an impractically narrow width.
+Therefore:
+- no available READY preview is visually equivalent to the final branch head;
+- the current-head Vercel check is blocked by build-rate limiting;
+- GitHub Actions is unavailable for this account;
+- the connector browser cannot navigate external preview URLs because outbound browser access is blocked.
 
-Those fixes remain subject to real-browser confirmation. The 1024px breakpoint is now part of the permanent capture matrix rather than a one-off check.
+The next visual-acceptance step remains:
+1. run the final branch in an executable environment;
+2. run `npm run capture:c10:visual`;
+3. manually inspect the resulting screenshots;
+4. record the exact verified commit/run before freezing the baseline.
 
-Clean-account capture now reuses one fresh account across all desktop/mobile and light/dark empty-state variants rather than registering four accounts. Because automated account deletion is intentionally not embedded into the capture harness, one disposable `c10-visual-clean-*` account remains after a complete capture run and may be removed later by the normal account-lifecycle/operator path.
+Source preflight has already corrected multiple render risks:
+- short-viewport logout content;
+- command-palette responsive height;
+- static-vh auth/workspace/handoff shells;
+- unbounded diagnostic/identity/handoff strings;
+- Project/Area Date-composer width at the 1024px sidebar breakpoint;
+- missing Task-editor visual coverage;
+- archive-blocked Area state not represented in the baseline.
+
+Those fixes remain subject to final real-browser confirmation.
+
+Clean-account capture reuses one fresh account across desktop/mobile and light/dark empty-state variants rather than registering four accounts. Because automated account deletion is intentionally not embedded into the capture harness, one disposable `c10-visual-clean-*` account remains after a complete capture run and may be removed later through the normal account-lifecycle/operator path.
 
 ## Baseline set
 

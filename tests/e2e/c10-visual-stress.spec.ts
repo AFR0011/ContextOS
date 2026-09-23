@@ -47,7 +47,7 @@ async function createHostileWorkspace(page: Page) {
   await page.goto("/projects");
   await page.getByRole("button", { name: "New Project", exact: true }).click();
   await page.getByPlaceholder("Project name").fill(longProject);
-  await page.getByLabel("Area").selectOption({ label: longArea });
+  await page.getByTestId("project-create-form").getByRole("combobox").selectOption({ label: longArea });
   await page.getByPlaceholder("What outcome is this project trying to reach?").fill(`Objective ${"Z".repeat(220)}`);
   await page.getByRole("button", { name: "Create Project", exact: true }).click();
 

@@ -116,6 +116,58 @@ async function expectMinTouchTarget(locator: Locator, min = 40) {
   expect(Math.floor(box!.height)).toBeGreaterThanOrEqual(min);
 }
 
+async function expectNoHorizontalOverflow(page: Page, checkpoint: string) {
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+
+  const diagnostics = await page.evaluate(() => {
+    const root = document.documentElement;
+    const viewportWidth = root.clientWidth;
+    const offenders = Array.from(document.querySelectorAll<HTMLElement>("body *"))
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return {
+          tag: element.tagName.toLowerCase(),
+          id: element.id || null,
+          testId: element.getAttribute("data-testid"),
+          ariaLabel: element.getAttribute("aria-label"),
+          className: typeof element.className === "string" ? element.className : "",
+          text: (element.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 120),
+          left: Math.round(rect.left * 100) / 100,
+          right: Math.round(rect.right * 100) / 100,
+          width: Math.round(rect.width * 100) / 100,
+          display: style.display,
+          visibility: style.visibility
+        };
+      })
+      .filter((item) =>
+        item.display !== "none" &&
+        item.visibility !== "hidden" &&
+        item.width > 0 &&
+        (item.left < -1 || item.right > viewportWidth + 1)
+      )
+      .sort((a, b) => Math.max(b.right - viewportWidth, -b.left) - Math.max(a.right - viewportWidth, -a.left))
+      .slice(0, 12);
+
+    return {
+      documentScrollWidth: root.scrollWidth,
+      documentClientWidth: root.clientWidth,
+      windowInnerWidth: window.innerWidth,
+      bodyScrollWidth: document.body.scrollWidth,
+      bodyClientWidth: document.body.clientWidth,
+      devicePixelRatio: window.devicePixelRatio,
+      offenders
+    };
+  });
+
+  expect(
+    diagnostics.documentScrollWidth,
+    `Horizontal overflow at "${checkpoint}".\n${JSON.stringify(diagnostics, null, 2)}`
+  ).toBeLessThanOrEqual(diagnostics.documentClientWidth);
+}
+
 async function warmOfflineShell(page: Page) {
   const readiness = page.getByTestId("offline-shell-readiness");
   await expect(readiness).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
@@ -310,7 +362,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
 
   await expect(page.getByText(longArea, { exact: true })).toBeVisible();
   await expectMinTouchTarget(page.getByRole("button", { name: `Archive ${longArea}`, exact: true }));
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page, "Areas list after hostile Area creation");
 
   await page.goto("/projects");
   await page.getByRole("button", { name: "New Project", exact: true }).click();
@@ -321,7 +373,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await page.getByRole("button", { name: "Create Project", exact: true }).click();
 
   await expect(page.getByRole("heading", { name: longProject, exact: true })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page, "Project detail after hostile Project creation");
 
   const longDate = `Date-${"D".repeat(150)}`;
   const projectDates = page.getByTestId("project-dates");
@@ -329,25 +381,25 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await projectDates.getByPlaceholder("Add a Date...").fill(longDate);
   await projectDates.getByRole("button", { name: "Add", exact: true }).click();
   await expect(projectDates.getByText(longDate, { exact: true })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page, "Project detail after hostile Date creation");
 
   await page.goto("/dates");
   await expect(page.getByText(longDate, { exact: true })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page, "Dates list with hostile Date");
 
   await page.goto("/search");
   await page.getByPlaceholder("Search workspace...").fill(longProject.slice(0, 20));
   const longProjectResult = page.getByTestId(/search-result-project-/).filter({ hasText: longProject }).first();
   await expect(longProjectResult).toBeVisible();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page, "Search results with hostile Project");
   await longProjectResult.click();
   await expect(page.getByTestId("search-selected-record")).toContainText(longProject);
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page, "Search selected Project detail");
 
   await page.goto("/projects");
   await expect(page.getByText(longProject, { exact: true }).first()).toBeVisible();
   await expectMinTouchTarget(page.getByRole("button", { name: `Archive ${longProject}`, exact: true }));
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page, "Projects list with hostile Project");
 
   await page.goto("/areas");
   await page.getByText(longArea, { exact: true }).first().click();
@@ -356,7 +408,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   const projectRow = areaDetail.locator(".cos-entity-row").filter({ hasText: longProject }).first();
   await expect(projectRow.getByText(longProject, { exact: true })).toBeVisible();
   await expectMinTouchTarget(projectRow.getByRole("button", { name: `Archive ${longProject}`, exact: true }));
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page, "Area detail with hostile Project row");
 
   await page.goto("/settings");
   const longFileName = `contextos-${"backup".repeat(45)}.json`;
@@ -366,7 +418,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
     buffer: Buffer.from("{}")
   });
   await expect(page.getByText(`Selected: ${longFileName}`, { exact: true })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expectNoHorizontalOverflow(page, "Settings with hostile import filename");
 });
 
 test("project objective persists after reload", async ({ page }) => {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
+import { TaskEditSheet } from "@/components/workspace/TaskEditSheet";
 import { useWorkspace } from "@/lib/client-store";
 import { localDateKey } from "@/lib/dates";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
@@ -64,6 +65,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const { data, addTask, addDate, updateProject, updateTask } = useWorkspace();
   const project = data.projects.find((item) => item.id === projectId);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
   const [plannedDate, setPlannedDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
@@ -92,6 +94,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   );
   const openTasks = projectTasks.filter((task) => task.state === "open");
   const doneTasks = projectTasks.filter((task) => task.state === "done").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const editingTask = data.tasks.find((task) => task.id === editingTaskId) ?? null;
   const projectDates = data.dates
     .filter((item) => item.parent.type === "project" && item.parent.projectId === currentProject.id)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
@@ -208,6 +211,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                 done={false}
                 meta={[task.plannedDate ? `Planned ${task.plannedDate}` : "", task.scheduledTime ?? ""].filter(Boolean).join(" · ") || "Unscheduled"}
                 onToggle={() => updateTask(task.id, { state: "done" })}
+                onOpen={() => setEditingTaskId(task.id)}
               />
             ))}
             {!openTasks.length ? <p className="px-3 py-4 text-sm text-[var(--cos-text-subtle)]">No open tasks.</p> : null}
@@ -222,6 +226,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                   done
                   meta={task.plannedDate ? `Planned ${task.plannedDate}` : "Completed"}
                   onToggle={() => updateTask(task.id, { state: "open" })}
+                  onOpen={() => setEditingTaskId(task.id)}
                 />
               ))}
             </div>
@@ -311,6 +316,13 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
           description="Canon linking is not connected yet. This section is intentionally empty rather than inventing a document relationship."
         />
       </Section>
+      <TaskEditSheet
+        task={editingTask}
+        projects={data.projects}
+        areas={data.areas}
+        onClose={() => setEditingTaskId(null)}
+        onSave={(taskId, updates) => updateTask(taskId, updates)}
+      />
     </div>
   );
 }

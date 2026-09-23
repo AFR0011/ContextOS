@@ -31,7 +31,7 @@ function DailyNoteEditor({
   onSave
 }: {
   value: string;
-  onSave: (content: string) => void;
+  onSave: (content: string) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(value);
   const [saveState, setSaveState] = useState<"idle" | "dirty" | "saved">("idle");
@@ -54,13 +54,21 @@ function DailyNoteEditor({
   useEffect(() => {
     if (draft === lastSavedRef.current) return;
     setSaveState("dirty");
+    const content = draft;
     const handle = window.setTimeout(() => {
-      onSaveRef.current(draft);
-      lastSavedRef.current = draft;
-      latestDraftRef.current = draft;
-      dirtyRef.current = false;
-      setSaveState("saved");
-      window.setTimeout(() => setSaveState("idle"), 1200);
+      void onSaveRef.current(content)
+        .then(() => {
+          lastSavedRef.current = content;
+          if (latestDraftRef.current !== content) return;
+          dirtyRef.current = false;
+          setSaveState("saved");
+          window.setTimeout(() => {
+            if (latestDraftRef.current === lastSavedRef.current) setSaveState("idle");
+          }, 1200);
+        })
+        .catch(() => {
+          if (latestDraftRef.current === content) setSaveState("dirty");
+        });
     }, 700);
     return () => window.clearTimeout(handle);
   }, [draft]);
@@ -69,9 +77,7 @@ function DailyNoteEditor({
     return () => {
       const pending = latestDraftRef.current;
       if (pending === lastSavedRef.current) return;
-      onSaveRef.current(pending);
-      lastSavedRef.current = pending;
-      dirtyRef.current = false;
+      void onSaveRef.current(pending);
     };
   }, []);
 

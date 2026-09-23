@@ -305,9 +305,10 @@ if (!productionPlaywrightConfig.includes("tests/e2e/workspace-gate.spec.ts") ||
     !productionPlaywrightConfig.includes("tests/e2e/local-first-characterization.spec.ts")) {
   errors.push("Production Playwright config must own WorkspaceGate and local-first characterization coverage.");
 }
-if (!productionPlaywrightConfig.includes('channel: "chromium"') ||
-    !fs.readFileSync("playwright.config.ts", "utf8").includes('channel: "chromium"')) {
-  errors.push("C10 Playwright configs must use the regular Chromium channel rather than the separate headless-shell binary.");
+const developmentPlaywrightConfig = fs.readFileSync("playwright.config.ts", "utf8");
+if (!productionPlaywrightConfig.includes('process.env.PLAYWRIGHT_BROWSER_CHANNEL ?? "chromium"') ||
+    !developmentPlaywrightConfig.includes('process.env.PLAYWRIGHT_BROWSER_CHANNEL ?? "chromium"')) {
+  errors.push("C10 Playwright configs must default to regular Chromium while allowing an explicit local browser-channel override.");
 }
 if (!ciWorkflow.includes("playwright install --with-deps --no-shell chromium")) {
   errors.push("CI must install the regular Chromium build without the unused headless shell.");

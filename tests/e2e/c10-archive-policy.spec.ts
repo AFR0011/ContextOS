@@ -16,7 +16,6 @@ test("Project archive is blocked until its open Tasks are resolved", async ({ pa
   await login(page);
 
   await page.goto("/projects");
-  const projectRow = page.getByText("ContextOS Demo", { exact: true }).first().locator("..").locator("..");
   const listArchive = page.getByRole("button", { name: "Archive ContextOS Demo", exact: true });
   await expect(listArchive).toBeDisabled();
   await expect(listArchive).toHaveAttribute("title", /Resolve or move .* open Task/);
@@ -25,6 +24,13 @@ test("Project archive is blocked until its open Tasks are resolved", async ({ pa
   const detailArchive = page.getByRole("button", { name: "Archive", exact: true });
   await expect(detailArchive).toBeDisabled();
   await expect(page.locator("#project-archive-blocked")).toContainText(/Resolve or move .* open Task/);
+
+  const futureDateTitle = "Archived project future date";
+  const projectDates = page.getByTestId("project-dates");
+  await projectDates.getByRole("textbox", { name: "Date title", exact: true }).fill(futureDateTitle);
+  await projectDates.getByLabel("Date", { exact: true }).fill("2099-12-31");
+  await projectDates.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(projectDates.getByText(futureDateTitle, { exact: true })).toBeVisible();
 
   const openTask = page.getByTestId("project-live-tasks").getByRole("button", { name: /Complete / }).first();
   await openTask.click();
@@ -38,14 +44,16 @@ test("Project archive is blocked until its open Tasks are resolved", async ({ pa
   await expect(reopen).toHaveAttribute("title", /active context|restore/i);
 
   await page.goto("/dashboard");
+  await expect(page.getByTestId("home-upcoming")).toContainText(futureDateTitle);
   await expect(page.getByTestId("home-upcoming")).toContainText("ContextOS Demo (archived)");
 
   await page.goto("/dates");
-  await expect(page.getByText(/ContextOS Demo \(archived\)/).first()).toBeVisible();
+  const archivedDate = page.getByText(futureDateTitle, { exact: true }).first().locator("..");
+  await expect(archivedDate).toContainText("ContextOS Demo (archived)");
 
   await page.goto("/search");
-  await page.getByRole("textbox", { name: "Search workspace", exact: true }).fill("ContextOS verification pass");
-  const result = page.getByTestId(/search-result-date-/).filter({ hasText: "ContextOS verification pass" }).first();
+  await page.getByRole("textbox", { name: "Search workspace", exact: true }).fill(futureDateTitle);
+  const result = page.getByTestId(/search-result-date-/).filter({ hasText: futureDateTitle }).first();
   await result.click();
   await expect(page.getByTestId("search-selected-record")).toContainText("ContextOS Demo (archived)");
 });
@@ -58,8 +66,9 @@ test("Area archive ignores child Project work but blocks direct open Tasks", asy
   const area = page.getByTestId("area-detail");
 
   const title = `Direct archive blocker ${Date.now()}`;
-  await area.getByRole("textbox", { name: "Task title", exact: true }).fill(title);
-  await area.getByRole("button", { name: "Add", exact: true }).click();
+  const taskComposer = area.getByRole("textbox", { name: "Task title", exact: true }).locator("..");
+  await taskComposer.getByRole("textbox", { name: "Task title", exact: true }).fill(title);
+  await taskComposer.getByRole("button", { name: "Add", exact: true }).click();
 
   const archive = page.getByRole("button", { name: "Archive", exact: true });
   await expect(archive).toBeDisabled();

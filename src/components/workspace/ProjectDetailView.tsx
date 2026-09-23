@@ -149,7 +149,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       </button>
 
       <PageHeader
-        eyebrow={currentArea?.name ?? "Project"}
+        eyebrow={currentArea ? `${currentArea.name}${currentArea.state === "archived" ? " (archived)" : ""}` : "Project"}
         title={currentProject.name}
         description={currentProject.state === "archived" ? "Archived Project" : "Active Project"}
         action={

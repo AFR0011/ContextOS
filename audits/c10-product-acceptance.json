@@ -120,7 +120,10 @@
         "tests/e2e/contextos.spec.ts",
         "tests/e2e/c6-search-palette.spec.ts",
         "tests/e2e/stage9-lifecycle.spec.ts",
-        "tests/offline-production/offline-shell.spec.ts"
+        "tests/offline-production/offline-shell.spec.ts",
+        "src/components/workspace/TaskEditSheet.tsx",
+        "tests/e2e/c10-task-editing.spec.ts",
+        "tests/e2e/c10-archive-policy.spec.ts"
       ]
     },
     {
@@ -129,7 +132,13 @@
       "status": "pending",
       "artifacts": [
         "docs/c10/FULL_PRODUCT_AUDIT.md",
-        "docs/c10/SCREENSHOT_BASELINE.md"
+        "docs/c10/SCREENSHOT_BASELINE.md",
+        "tests/e2e/c10-task-editing.spec.ts",
+        "tests/e2e/c10-area-editing.spec.ts",
+        "tests/e2e/c10-archive-policy.spec.ts",
+        "src/lib/archive-policy.test.ts",
+        "src/components/workspace/TaskEditSheet.tsx",
+        "src/lib/archive-policy.ts"
       ]
     },
     {

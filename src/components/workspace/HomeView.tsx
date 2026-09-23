@@ -214,7 +214,7 @@ export function HomeView() {
         description={humanDate}
       />
 
-      <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1.05fr)_minmax(15rem,0.9fr)] xl:gap-10">
+      <div className="grid min-w-0 gap-8 md:grid-cols-2 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1.05fr)_minmax(15rem,0.9fr)] xl:gap-10">
         <Section
           title="Today"
           description="What you planned to do today. Completed work stays in place."
@@ -276,7 +276,7 @@ export function HomeView() {
           </div>
         </Section>
 
-        <div className="space-y-8">
+        <div className="min-w-0 space-y-8">
           <Section
             title="Daily Notes"
             description="One unstructured note for today. No filing required."
@@ -307,7 +307,7 @@ export function HomeView() {
           ) : null}
         </div>
 
-        <div className="space-y-8">
+        <div className="min-w-0 space-y-8">
           <Section
             title="In Context Today"
             description="Projects and Areas referenced by today’s planned work."

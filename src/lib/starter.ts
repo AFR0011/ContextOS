@@ -152,7 +152,7 @@ export async function createStarterWorkspace(tx: Tx, userId: string, reset = fal
         scheduledTime: null,
         projectId: releaseProjectId,
         areaId: null,
-        state: "open"
+        state: "done"
       }
     ],
     skipDuplicates: true

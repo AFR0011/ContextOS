@@ -10,7 +10,8 @@ const env = {
 function run(command, args) {
   const result = spawnSync(command, args, {
     stdio: "inherit",
-    env
+    env,
+    shell: process.platform === "win32"
   });
 
   if (result.error) {

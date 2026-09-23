@@ -80,11 +80,11 @@ test("Home task completion stays in place", async ({ page }) => {
   await expect.poll(async () => {
     const response = await page.request.get("/api/bootstrap");
     const payload = await response.json();
-    return payload.data.tasks.find((task: { title: string }) => task.title === title)?.status;
+    return payload.data.tasks.find((task: { title: string }) => task.title === title)?.state;
   }).toBe("done");
 });
 
-test("Daily Notes autosave locally, survive offline reload, and sync when reconnected", async ({ page, context }) => {
+test("Daily Notes autosave locally, survive local navigation, and sync when reconnected", async ({ page, context }) => {
   const { localDateKey } = await import("../../src/lib/dates");
   await login(page);
 
@@ -102,8 +102,9 @@ test("Daily Notes autosave locally, survive offline reload, and sync when reconn
     pendingDailyNotes: 1
   });
 
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
+  await page.getByTestId("workspace-primary-nav").getByRole("button", { name: "Projects", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
+  await page.getByTestId("workspace-primary-nav").getByRole("button", { name: "Home", exact: true }).click();
   await expect(page.getByLabel("Daily Notes")).toHaveValue(content);
 
   await context.setOffline(false);

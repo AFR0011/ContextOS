@@ -24,7 +24,7 @@ test("core workspace navigation changes local history without network access", a
   await page.getByText("Research", { exact: true }).first().click();
   await expect.poll(() => page.evaluate(() => window.location.pathname.startsWith("/areas/"))).toBe(true);
   await expect(page.getByTestId("area-detail")).toBeVisible();
-  await page.getByRole("button", { name: "Areas", exact: true }).click();
+  await page.getByTestId("area-detail").getByRole("button", { name: "Areas", exact: true }).click();
   await expectPath(page, "/areas");
 
   await nav.getByRole("button", { name: "Projects", exact: true }).click();
@@ -100,5 +100,10 @@ test("search result navigation resolves records locally while offline", async ({
   await page.getByTestId("search-selected-record").getByRole("button", { name: "Open project" }).click();
 
   await expect.poll(() => page.evaluate(() => window.location.pathname.startsWith("/projects/"))).toBe(true);
-  await expect(page.getByLabel(`Task title ${title}`)).toBeVisible();
+  const taskTitle = page.getByTestId("project-live-tasks").getByText(title, { exact: true });
+  await expect(taskTitle).toBeVisible();
+  await taskTitle.click();
+  const editor = page.getByRole("dialog", { name: "Edit Task", exact: true });
+  await expect(editor).toBeVisible();
+  await expect(editor.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue(title);
 });

@@ -409,7 +409,7 @@ test("project detail creates canonical Tasks and Dates", async ({ page }) => {
   const dates = page.getByTestId("project-dates");
   await dates.getByLabel("Date kind").selectOption("deadline");
   await dates.getByPlaceholder("Add a Date...").fill(dateTitle);
-  await dates.getByLabel("Date").fill(today);
+  await dates.getByLabel("Date", { exact: true }).fill(today);
   await dates.getByLabel("Date start time").fill("16:00");
   await dates.getByRole("button", { name: "Add", exact: true }).click();
   await expect(dates.getByText(dateTitle, { exact: true })).toBeVisible();
@@ -479,13 +479,13 @@ test("Area detail exposes canonical Projects, direct Tasks, and direct Dates", a
   await expect(page).toHaveURL(/\/projects\//);
   await expect(page.getByRole("heading", { name: areaProject, exact: true })).toBeVisible();
 
-  await page.getByTestId("project-command-page").getByRole("button", { name: "Areas", exact: true }).click();
+  await page.getByTestId("workspace-primary-nav").getByRole("button", { name: "Areas", exact: true }).click();
   await page.getByText("Engineering", { exact: true }).first().click();
   const areaDate = `Area event ${Date.now()}`;
   const dates = page.getByTestId("area-dates");
   await dates.getByLabel("Date kind").selectOption("event");
   await dates.getByPlaceholder("Add a direct Date...").fill(areaDate);
-  await dates.getByLabel("Date").fill(localDateKey());
+  await dates.getByLabel("Date", { exact: true }).fill(localDateKey());
   await dates.getByLabel("Date start time").fill("15:30");
   await dates.getByLabel("Date end time").fill("16:00");
   await dates.getByRole("button", { name: "Add", exact: true }).click();
@@ -505,23 +505,24 @@ test("workspace dark mode toggles and persists", async ({ page }) => {
   await expect(page.locator("html")).not.toHaveClass(/dark/);
 });
 
-test("draft-saved Area edit queues one offline mutation", async ({ page, context }) => {
+test("Area rename queues one offline mutation and converges after reconnect", async ({ page, context }) => {
   await login(page);
-  await page.goto("/settings");
-  await expect(page.getByTestId("pending-count")).toHaveText("0");
+  await page.goto("/areas");
+  await page.getByText("Research", { exact: true }).first().click();
+  await expect(page.getByTestId("area-detail")).toBeVisible();
   await context.setOffline(true);
 
-  const areaInput = page.getByPlaceholder("Area name").first();
-  const longName = `Research draft save ${Date.now()}`;
-  await areaInput.fill(longName);
-  await expect(page.getByTestId("offline-edit-warning").first()).toBeVisible();
+  const areaInput = page.getByRole("textbox", { name: "Area name", exact: true });
+  const renamed = `Research offline rename ${Date.now()}`;
+  await areaInput.fill(renamed);
   await areaInput.blur();
 
   await expect(page.getByText("1 pending").first()).toBeVisible();
-  await expect(page.getByTestId("settings-refresh-from-server")).toBeDisabled();
   await expect(page.getByTestId("global-refresh-from-server")).toBeDisabled();
+
   await context.setOffline(false);
-  await page.getByRole("button", { name: /sync now/i }).click();
+  await expect(page.getByTestId("global-sync-indicator").first()).toContainText("Online", { timeout: 20_000 });
+  await page.getByTestId("workspace-utility-nav").getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByTestId("pending-count")).toHaveText("0");
 });
 
@@ -547,7 +548,7 @@ test("global server refresh replaces stale local workspace after external reset"
     const workspace = await response.json();
     return workspace.data.areas.some((area: { name: string }) => area.name === staleDomain);
   }).toBe(true);
-  await expect(page.getByTestId("pending-count")).toHaveText("0");
+  await expect(page.getByTestId("global-refresh-from-server")).toBeEnabled();
 
   await resetDemo(page);
   await expect(page.getByText(staleDomain, { exact: true })).toBeVisible();
@@ -556,7 +557,7 @@ test("global server refresh replaces stale local workspace after external reset"
   await page.getByTestId("global-refresh-from-server").click();
   await expect(page.getByText(staleDomain, { exact: true })).toHaveCount(0);
   await expect(page.getByText("Research", { exact: true }).first()).toBeVisible();
-  await expect(page.getByTestId("pending-count")).toHaveText("0");
+  await expect(page.getByTestId("global-sync-indicator").first()).toContainText("Online");
 });
 
 test("revision conflicts reject stale mutation chains regardless of client clock", async ({ page }) => {
@@ -786,7 +787,8 @@ test("sync rejects oversized payloads and cross-user record ids", async ({ page 
   await page.request.post("/api/auth/logout");
   const secondEmail = `sync-owner-${Date.now()}@example.com`;
   const registered = await page.request.post("/api/auth/register", {
-    data: { email: secondEmail, password: "contextos-demo-v011" }
+    data: { email: secondEmail, password: "contextos-demo-v011" },
+    headers: { "x-forwarded-for": `sync-owner-${Date.now()}` }
   });
   expect(registered.ok()).toBeTruthy();
 
@@ -870,9 +872,13 @@ test("project detail exposes Tasks and honest Linked Knowledge without legacy re
   await expect(page.getByTestId("project-command-page")).toBeVisible();
   const taskList = page.getByTestId("project-live-tasks");
   await expect(taskList).toBeVisible();
-  const inertTaskTitle = taskList.getByText("Review today's open work", { exact: true });
-  await expect(inertTaskTitle).toBeVisible();
-  await expect.poll(() => inertTaskTitle.evaluate((element) => element.closest("button") === null)).toBe(true);
+  const editableTaskTitle = taskList.getByText("Review today's open work", { exact: true });
+  await expect(editableTaskTitle).toBeVisible();
+  await editableTaskTitle.click();
+  const taskEditor = page.getByRole("dialog", { name: "Edit Task", exact: true });
+  await expect(taskEditor).toBeVisible();
+  await expect(taskEditor.getByRole("textbox", { name: "Task title", exact: true })).toHaveValue("Review today's open work");
+  await taskEditor.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(page.getByTestId("project-recovery-notes")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Linked Knowledge", exact: true })).toBeVisible();
   await expect(page.getByText("No linked knowledge", { exact: true })).toBeVisible();
@@ -913,11 +919,11 @@ test("Today and This Week redirect to dashboard without priority terminology", a
   await login(page);
   await page.goto("/today");
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByText(/priorit/i)).toHaveCount(0);
   await page.goto("/this-week");
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeVisible();
   await expect(page.getByText(/priorit/i)).toHaveCount(0);
 });
 
@@ -926,7 +932,11 @@ test("project archive and restore work in place", async ({ page }) => {
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
 
-  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  const archive = page.getByRole("button", { name: "Archive", exact: true });
+  await expect(archive).toBeDisabled();
+  await page.getByRole("button", { name: "Complete Review today's open work", exact: true }).click();
+  await expect(archive).toBeEnabled();
+  await archive.click();
   await page.goto("/projects");
   await expect(page.getByRole("heading", { name: "Archived", exact: true })).toBeVisible();
   await expect(page.getByText("ContextOS Demo", { exact: true }).first()).toBeVisible();

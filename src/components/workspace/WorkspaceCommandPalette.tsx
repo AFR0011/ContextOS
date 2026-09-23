@@ -79,10 +79,12 @@ export function WorkspaceCommandPalette() {
   function closePalette() {
     setOpen(false);
     setQuery("");
+    restorePaletteOpenerFocus();
   }
 
   function navigate(href: string) {
-    closePalette();
+    setOpen(false);
+    setQuery("");
     router.push(href);
   }
 

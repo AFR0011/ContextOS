@@ -5,6 +5,7 @@ import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
 import { TaskEditSheet } from "@/components/workspace/TaskEditSheet";
 import { useWorkspace } from "@/lib/client-store";
+import { areaArchiveBlockReason, projectArchiveBlockReason } from "@/lib/archive-policy";
 import { localDateKey } from "@/lib/dates";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
 
@@ -42,6 +43,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
   const openTasks = directTasks.filter((task) => task.state === "open");
   const doneTasks = directTasks.filter((task) => task.state === "done");
   const editingTask = data.tasks.find((task) => task.id === editingTaskId) ?? null;
+  const archiveBlockedReason = areaArchiveBlockReason(data, currentArea.id);
   const directDates = data.dates
     .filter((item) => item.parent.type === "area" && item.parent.areaId === currentArea.id)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
@@ -103,12 +105,28 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
               <RotateCcw className="h-4 w-4" /> Restore
             </button>
           ) : (
-            <button type="button" onClick={() => updateArea(currentArea.id, { state: "archived" })} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
+            <button
+              type="button"
+              onClick={() => {
+                if (areaArchiveBlockReason(data, currentArea.id)) return;
+                updateArea(currentArea.id, { state: "archived" });
+              }}
+              disabled={Boolean(archiveBlockedReason)}
+              title={archiveBlockedReason ?? undefined}
+              aria-describedby={archiveBlockedReason ? "area-archive-blocked" : undefined}
+              className="cos-btn cos-btn-secondary px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-45"
+            >
               <Archive className="h-4 w-4" /> Archive
             </button>
           )
         }
       />
+
+      {currentArea.state === "active" && archiveBlockedReason ? (
+        <p id="area-archive-blocked" className="-mt-4 mb-6 text-sm text-[var(--cos-warning-text)]">
+          {archiveBlockedReason}
+        </p>
+      ) : null}
 
       <Section title="Area" description="The stable responsibility name used across Projects, Tasks, Dates, and Search.">
         <div className="cos-surface p-4">
@@ -150,7 +168,17 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
                   <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{project.name}</span>
                   <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{project.objective || "No objective yet."}</span>
                 </button>
-                <button type="button" onClick={() => updateProject(project.id, { state: "archived" })} aria-label={`Archive ${project.name}`} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (projectArchiveBlockReason(data, project.id)) return;
+                    updateProject(project.id, { state: "archived" });
+                  }}
+                  disabled={Boolean(projectArchiveBlockReason(data, project.id))}
+                  title={projectArchiveBlockReason(data, project.id) ?? undefined}
+                  aria-label={`Archive ${project.name}`}
+                  className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-45"
+                >
                   <Archive className="h-3.5 w-3.5" /> Archive
                 </button>
               </div>

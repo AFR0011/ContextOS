@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Archive, Plus, RotateCcw } from "lucide-react";
 import { EmptyState, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
 import { useWorkspace } from "@/lib/client-store";
+import { areaArchiveBlockReason } from "@/lib/archive-policy";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
 
 function AreaRow({
@@ -11,6 +12,7 @@ function AreaRow({
   projectCount,
   taskCount,
   archived,
+  archiveBlockedReason,
   onOpen,
   onArchive,
   onRestore
@@ -19,6 +21,7 @@ function AreaRow({
   projectCount: number;
   taskCount: number;
   archived?: boolean;
+  archiveBlockedReason?: string | null;
   onOpen: () => void;
   onArchive?: () => void;
   onRestore?: () => void;
@@ -30,9 +33,12 @@ function AreaRow({
         <span className="mt-1 block text-xs text-[var(--cos-text-subtle)]">
           {projectCount} active project{projectCount === 1 ? "" : "s"} · {taskCount} direct open task{taskCount === 1 ? "" : "s"}
         </span>
+        {archiveBlockedReason ? (
+          <span className="mt-1 block text-[11px] text-[var(--cos-warning-text)]">{archiveBlockedReason}</span>
+        ) : null}
       </button>
       {onArchive ? (
-        <button type="button" onClick={onArchive} aria-label={`Archive ${name}`} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
+        <button type="button" onClick={onArchive} disabled={Boolean(archiveBlockedReason)} title={archiveBlockedReason ?? undefined} aria-label={`Archive ${name}`} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-45">
           <Archive className="h-3.5 w-3.5" /> Archive
         </button>
       ) : null}
@@ -128,8 +134,12 @@ export function AreasView() {
                       name={area.name}
                       projectCount={projectCount}
                       taskCount={taskCount}
+                      archiveBlockedReason={areaArchiveBlockReason(data, area.id)}
                       onOpen={() => router.push(`/areas/${area.id}`)}
-                      onArchive={() => updateArea(area.id, { state: "archived" })}
+                      onArchive={() => {
+                        if (areaArchiveBlockReason(data, area.id)) return;
+                        updateArea(area.id, { state: "archived" });
+                      }}
                     />
                   );
                 })}

@@ -52,7 +52,7 @@ export function ProductSearchView() {
         if (!project) return [];
         const area = canonical.areas.find((item) => item.id === project.areaId);
         return [
-          detailRow("Area", area?.name),
+          detailRow("Area", area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : ""),
           detailRow("State", project.state === "archived" ? "Archived" : "Active"),
           detailRow("Objective", project.objective)
         ];

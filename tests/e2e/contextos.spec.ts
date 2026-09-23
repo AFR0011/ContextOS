@@ -355,7 +355,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await expect(areaDetail).toBeVisible();
   const projectRow = areaDetail.locator(".cos-entity-row").filter({ hasText: longProject }).first();
   await expect(projectRow.getByText(longProject, { exact: true })).toBeVisible();
-  await expectMinTouchTarget(projectRow.getByRole("button", { name: "Archive", exact: true }));
+  await expectMinTouchTarget(projectRow.getByRole("button", { name: `Archive ${longProject}`, exact: true }));
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
   await page.goto("/settings");

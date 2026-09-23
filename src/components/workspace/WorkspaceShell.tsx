@@ -281,7 +281,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </div>
           <button
             type="button"
-            className="cos-btn-ghost ml-auto grid h-10 w-10 place-items-center rounded-lg text-[var(--cos-text-muted)]"
+            className="cos-btn-ghost ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-lg text-[var(--cos-text-muted)]"
             onClick={() => setTheme(isDark ? "light" : "dark")}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
@@ -290,7 +290,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </button>
           <button
             type="button"
-            className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-lg text-[var(--cos-text-muted)] lg:hidden"
+            className="cos-btn-ghost grid h-10 w-10 shrink-0 place-items-center rounded-lg text-[var(--cos-text-muted)] lg:hidden"
             onClick={() => setOpen(false)}
             aria-label="Close navigation"
           >

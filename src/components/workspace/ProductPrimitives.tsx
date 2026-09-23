@@ -113,7 +113,7 @@ export function TaskRow({
       <button
         type="button"
         onClick={onToggle}
-        disabled={Boolean(toggleDisabledReason)}
+        disabled={!onToggle || Boolean(toggleDisabledReason)}
         title={toggleDisabledReason ?? undefined}
         aria-label={done ? `Reopen ${title}` : `Complete ${title}`}
         className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[var(--cos-text-subtle)] hover:bg-[var(--cos-primary-soft)] hover:text-[var(--cos-primary)] disabled:cursor-not-allowed disabled:opacity-45"

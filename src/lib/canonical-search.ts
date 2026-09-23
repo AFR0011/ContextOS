@@ -81,7 +81,7 @@ export function buildCanonicalSearchResults(workspace: CanonicalWorkspace, today
       id: project.id,
       typeLabel: "Project",
       title: project.name,
-      subtitle: [area?.name, project.state === "archived" ? "Archived" : "Active"].filter(Boolean).join(" · "),
+      subtitle: [area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : "", project.state === "archived" ? "Archived" : "Active"].filter(Boolean).join(" · "),
       searchText: [project.name, project.objective, area?.name, project.state].join(" "),
       contextHref: `/projects/${encodeURIComponent(project.id)}`,
       contextLabel: "Open project"

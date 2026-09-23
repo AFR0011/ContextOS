@@ -26,9 +26,56 @@ async function applyTheme(page: Page, theme: Theme) {
 }
 
 async function capture(page: Page, testInfo: TestInfo, name: string, fullPage = true) {
-  await expect.poll(() =>
-    page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)
-  ).toBe(true);
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+
+  const diagnostics = await page.evaluate(() => {
+    const root = document.documentElement;
+    const viewportWidth = root.clientWidth;
+    const offenders = Array.from(document.querySelectorAll<HTMLElement>("body *"))
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return {
+          tag: element.tagName.toLowerCase(),
+          id: element.id || null,
+          testId: element.getAttribute("data-testid"),
+          ariaLabel: element.getAttribute("aria-label"),
+          className: typeof element.className === "string" ? element.className : "",
+          text: (element.textContent ?? "").trim().replace(/\\s+/g, " ").slice(0, 120),
+          left: Math.round(rect.left * 100) / 100,
+          right: Math.round(rect.right * 100) / 100,
+          width: Math.round(rect.width * 100) / 100,
+          display: style.display,
+          visibility: style.visibility
+        };
+      })
+      .filter((item) =>
+        item.display !== "none" &&
+        item.visibility !== "hidden" &&
+        item.width > 0 &&
+        (item.left < -1 || item.right > viewportWidth + 1)
+      )
+      .sort((a, b) => Math.max(b.right - viewportWidth, -b.left) - Math.max(a.right - viewportWidth, -a.left))
+      .slice(0, 12);
+
+    return {
+      documentScrollWidth: root.scrollWidth,
+      documentClientWidth: root.clientWidth,
+      windowInnerWidth: window.innerWidth,
+      bodyScrollWidth: document.body.scrollWidth,
+      bodyClientWidth: document.body.clientWidth,
+      devicePixelRatio: window.devicePixelRatio,
+      offenders
+    };
+  });
+
+  expect(
+    diagnostics.documentScrollWidth,
+    `Horizontal overflow at "${name}".\\n${JSON.stringify(diagnostics, null, 2)}`
+  ).toBeLessThanOrEqual(diagnostics.documentClientWidth);
+
   const path = testInfo.outputPath(`${name}.png`);
   await page.screenshot({ path, fullPage, animations: "disabled" });
   await testInfo.attach(name, { path, contentType: "image/png" });

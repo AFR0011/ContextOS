@@ -28,8 +28,8 @@ Area -> Project -> Task
 The current primary surfaces are:
 
 - **Home** — Today Dayline, Daily Notes, Insights when genuinely available, In Context Today, and Upcoming;
-- **Projects** — Active/Archived flat Projects and Project Detail;
-- **Areas** — Active/Archived Areas, with direct Projects, Tasks, and Dates;
+- **Projects** — Active/Archived flat Projects and Project Detail, with post-creation Task editing;
+- **Areas** — Active/Archived Areas, with rename, direct Projects, editable Tasks, and Dates;
 - **Dates** — Today/Upcoming/Past Events and Deadlines;
 - **Search** — canonical operational/history search;
 - **LifeOS** — module entry points and real provider-backed summaries only;
@@ -54,7 +54,7 @@ Historical aliases also remain:
 /deadlines -> /dates
 ```
 
-C8 completes the persistence clean break. Canonical storage is now Area / Project / Task / Date / DailyNote only; retired Capture, standalone Note, Review, legacy Deadline, Dashboard, recovery, nesting, and tombstone storage is removed. IndexedDB v3 preserves verified local identity but discards incompatible pre-C8 workspace/outbox snapshots so they can be rebuilt from authenticated canonical bootstrap.
+C8 completes the persistence clean break. Canonical storage is now Area / Project / Task / Date / DailyNote only; retired Capture, standalone Note, Review, legacy Deadline, Dashboard, recovery, nesting, and tombstone storage is removed. C10's IndexedDB v4 revision boundary preserves verified local identity but discards incompatible revisionless workspace/outbox snapshots so they can be rebuilt from authenticated canonical bootstrap.
 
 The historical `/handoff` route can still validate and preview `lifeos-handoff/v1` proposals, but C7 deliberately stops writing new legacy Inbox captures. Until a canonical inter-module action contract exists, the preview does not save the proposal.
 
@@ -65,9 +65,9 @@ The historical `/handoff` route can still validate and preview `lifeos-handoff/v
 - **Verified offline shell:** a versioned service-worker shell reports ready only after its manifest and required static assets are available.
 - **Idempotent synchronization:** queued mutations replay through `/api/sync` with user-scoped mutation IDs, bounds, ownership validation, stale-update handling, and conflict warnings.
 - **Atomic local commits:** supported local mutations write workspace state and outbox state in one IndexedDB transaction.
-- **Lifecycle semantics:** ordinary logout retains isolated local state by default; device removal is explicit and user-scoped; multiple eligible local identities require explicit selection.
+- **Lifecycle semantics:** ordinary logout retains isolated local state by default; device removal is explicit and user-scoped; multiple eligible local identities require explicit selection; Projects cannot archive with Open child Tasks, and Areas cannot archive with direct Open Tasks.
 - **Deployment:** the repository includes a non-root standalone application image, one-shot migration service, persistent PostgreSQL service, and unexposed operator image.
-- **Canonical persistence:** Prisma, bootstrap, IndexedDB, sync, and export v2 use the same Area / Project / Task / Date / DailyNote shape; obsolete local cache/outbox state is reset at the v3 boundary instead of being half-migrated.
+- **Canonical persistence:** Prisma, bootstrap, IndexedDB, sync, and export v2 use the same Area / Project / Task / Date / DailyNote shape; obsolete revisionless local cache/outbox state is reset at the v4 boundary instead of being half-migrated.
 - **Failure-aware UX:** database, synchronization, offline-shell, pending-work, and conflict states are surfaced instead of silently discarding work.
 
 ## Local-first boundary

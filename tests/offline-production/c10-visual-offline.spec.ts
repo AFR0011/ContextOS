@@ -123,7 +123,6 @@ test.describe("C10 production offline visual states", () => {
       await capture(page, testInfo, `production-${theme}-04-reconnecting`);
 
       releaseSync();
-      await page.unroute("**/api/sync");
       await expect.poll(() => pendingOutboxCount(page), { timeout: 20_000 }).toBe(0);
       await expect(page.getByTestId("global-sync-indicator").first()).not.toContainText(/Offline|Syncing/i);
       await capture(page, testInfo, `production-${theme}-05-reconnected`);

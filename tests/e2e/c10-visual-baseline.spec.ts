@@ -157,6 +157,14 @@ async function captureTransientStates(page: Page, testInfo: TestInfo, variant: V
   await expect(page.getByText(`Selected: ${longFileName}`, { exact: true })).toBeVisible();
   await capture(page, testInfo, `${variant.name}-10-settings-long-import-name`);
 
+  await page.goto("/areas");
+  await page.getByText("Engineering", { exact: true }).first().click();
+  const areaTaskComposer = page.getByRole("textbox", { name: "Task title", exact: true }).locator("..");
+  await areaTaskComposer.getByRole("textbox", { name: "Task title", exact: true }).fill("Visual archive blocker");
+  await areaTaskComposer.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.locator("#area-archive-blocked")).toBeVisible();
+  await capture(page, testInfo, `${variant.name}-04-area-archive-blocked`);
+
   await page.goto("/dashboard");
   if (variant.mobile) {
     await page.getByRole("button", { name: "Open navigation", exact: true }).click();

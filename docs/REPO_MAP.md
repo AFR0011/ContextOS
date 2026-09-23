@@ -40,7 +40,8 @@ Compatibility redirect pages:
 - `ProjectsView.tsx`: Active/Archived flat Projects.
 - `ProjectDetailView.tsx`: objective, Tasks, Dates, Linked Knowledge boundary.
 - `AreasView.tsx`: Active/Archived Areas.
-- `AreaDetailView.tsx`: Active Projects, Direct Tasks, Direct Dates, Archived Projects.
+- `AreaDetailView.tsx`: Area rename, Active Projects, Direct editable Tasks, Direct Dates, Archived Projects.
+- `TaskEditSheet.tsx`: shared post-creation Task editor for title, context, planned day, and time.
 - `DatesView.tsx`: canonical Today/Upcoming/Past Event/Deadline surface.
 - `ProductSearchView.tsx`: exact canonical Search detail.
 - `LifeOSFoundationView.tsx`: shallow LifeOS module hub.
@@ -57,6 +58,7 @@ The former `LegacyWorkspaceViews.tsx` monolith was removed in Batch 10; the rema
 - `src/lib/canonical-domain.ts`: Area, Project, Task, ContextDate, DailyNote, Insight types.
 - `src/lib/canonical-selectors.ts`: Home/Project/Date derived selectors.
 - `src/lib/canonical-search.ts`: shared Search/command-palette canonical index.
+- `src/lib/archive-policy.ts`: Project/Area archive blockers and archived-parent Task reopen invariant.
 
 ## Persistence / synchronization
 
@@ -101,4 +103,4 @@ C8 removes the retired persistence layer. Server bootstrap, local storage, sync,
 
 Inbox, Resources, Reviews, and standalone Archive remain retired first-class UI. Their compatibility URLs redirect to canonical destinations.
 
-C8 is the persistence boundary: retired storage/models are removed, export format v2 is canonical, sync is canonical-only, and IndexedDB v3 clears incompatible pre-C8 workspace/outbox state while retaining verified local identity.
+C8 is the persistence boundary: retired storage/models are removed, export format v2 is canonical, and sync is canonical-only. C10's IndexedDB v4 revision boundary retains verified local identity while clearing incompatible revisionless workspace/outbox state.

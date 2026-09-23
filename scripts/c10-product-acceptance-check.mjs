@@ -172,6 +172,12 @@ if (!firstRunTest.includes('getByRole("heading", { name: "Home", exact: true })'
 }
 
 
+const taskEditingTest = fs.readFileSync("tests/e2e/c10-task-editing.spec.ts", "utf8");
+const areaEditingTest = fs.readFileSync("tests/e2e/c10-area-editing.spec.ts", "utf8");
+const archivePolicyE2e = fs.readFileSync("tests/e2e/c10-archive-policy.spec.ts", "utf8");
+const archivePolicyUnit = fs.readFileSync("src/lib/archive-policy.test.ts", "utf8");
+const taskEditSheet = fs.readFileSync("src/components/workspace/TaskEditSheet.tsx", "utf8");
+const starterSource = fs.readFileSync("src/lib/starter.ts", "utf8");
 const responsiveLayoutTest = fs.readFileSync("tests/e2e/c10-responsive-layout.spec.ts", "utf8");
 const productPrimitives = fs.readFileSync("src/components/workspace/ProductPrimitives.tsx", "utf8");
 const logoutDialog = fs.readFileSync("src/components/workspace/LogoutDialog.tsx", "utf8");
@@ -203,6 +209,7 @@ for (const marker of [
   "05-area-detail",
   "07-search-selected",
   "08-command-palette",
+  "08-task-edit-sheet",
   "08-new-task-sheet",
   "08-new-date-sheet",
   "10-settings",
@@ -281,6 +288,42 @@ if (!ciWorkflow.includes("Capture C10 visual audit evidence") ||
   errors.push("C10 CI must capture and upload rendered visual evidence for the audit branch.");
 }
 
+
+for (const marker of [
+  "Task editor can rename, reschedule, clear planning, and move context",
+  "Task editor is available from completed Task rows without changing state"
+]) {
+  if (!taskEditingTest.includes(marker)) {
+    errors.push(`C10 Task editing coverage is missing: ${marker}`);
+  }
+}
+if (!taskEditSheet.includes('title="Edit Task"') ||
+    !taskEditSheet.includes('aria-label="Task context"') ||
+    !taskEditSheet.includes('aria-label="Task planned day"') ||
+    !taskEditSheet.includes('aria-label="Task scheduled time"')) {
+  errors.push("Shared Task editor must retain title, context, planned-day, and scheduled-time controls.");
+}
+if (!areaEditingTest.includes("Area detail can rename the canonical Area without changing lifecycle") ||
+    !areaEditingTest.includes("Area rename rejects an empty name and Escape restores the canonical value")) {
+  errors.push("C10 Area rename regression coverage is incomplete.");
+}
+for (const marker of [
+  "Project archive is blocked until its open Tasks are resolved",
+  "Area archive ignores child Project work but blocks direct open Tasks"
+]) {
+  if (!archivePolicyE2e.includes(marker)) {
+    errors.push(`C10 archive-policy E2E coverage is missing: ${marker}`);
+  }
+}
+if (!archivePolicyUnit.includes("Area archive blocker counts only direct open Tasks, not child Project work") ||
+    !archivePolicyUnit.includes("completed Tasks under archived parents cannot be reopened until moved or restored")) {
+  errors.push("Archive-policy unit coverage must preserve the approved Project/Area lifecycle semantics.");
+}
+if (!starterSource.includes('name: "Release Planning"') ||
+    !starterSource.includes('title: "Review release milestones and identify risk points"') ||
+    !starterSource.includes('state: "done"')) {
+  errors.push("Demo seed must not ship an Open Task inside the archived Release Planning Project.");
+}
 
 if (!responsiveLayoutTest.includes("detail Date composers remain usable at the 1024px sidebar breakpoint") ||
     !responsiveLayoutTest.includes("toBeGreaterThanOrEqual(minimum)")) {

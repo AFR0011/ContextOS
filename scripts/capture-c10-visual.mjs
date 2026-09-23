@@ -38,6 +38,8 @@ run(npx, [
 run(npx, [
   "playwright",
   "test",
+  "-c",
+  "playwright.visual.config.ts",
   "tests/e2e/c10-visual-baseline.spec.ts",
   "tests/e2e/c10-visual-stress.spec.ts",
   "tests/e2e/c10-visual-empty.spec.ts",

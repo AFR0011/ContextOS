@@ -319,9 +319,8 @@ if (!archivePolicyUnit.includes("Area archive blocker counts only direct open Ta
     !archivePolicyUnit.includes("completed Tasks under archived parents cannot be reopened until moved or restored")) {
   errors.push("Archive-policy unit coverage must preserve the approved Project/Area lifecycle semantics.");
 }
-if (!starterSource.includes('name: "Release Planning"') ||
-    !starterSource.includes('title: "Review release milestones and identify risk points"') ||
-    !starterSource.includes('state: "done"')) {
+if (!/name:\s*"Release Planning"[\s\S]{0,300}state:\s*"archived"/.test(starterSource) ||
+    !/title:\s*"Review release milestones and identify risk points"[\s\S]{0,300}projectId:\s*releaseProjectId[\s\S]{0,200}state:\s*"done"/.test(starterSource)) {
   errors.push("Demo seed must not ship an Open Task inside the archived Release Planning Project.");
 }
 

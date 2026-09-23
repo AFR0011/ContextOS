@@ -5,6 +5,7 @@ import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
 import { TaskEditSheet } from "@/components/workspace/TaskEditSheet";
 import { useWorkspace } from "@/lib/client-store";
+import { taskReopenBlockReason } from "@/lib/archive-policy";
 import { areaArchiveBlockReason, projectArchiveBlockReason } from "@/lib/archive-policy";
 import { localDateKey } from "@/lib/dates";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
@@ -214,7 +215,18 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
             <details className="mt-3 border-t border-[var(--cos-border-soft)] pt-3">
               <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-[var(--cos-text-muted)]">Completed ({doneTasks.length})</summary>
               {doneTasks.map((task) => (
-                <TaskRow key={task.id} title={task.title} done meta="Completed" onToggle={() => updateTask(task.id, { state: "open" })} onOpen={() => setEditingTaskId(task.id)} />
+                <TaskRow
+                  key={task.id}
+                  title={task.title}
+                  done
+                  meta="Completed"
+                  onToggle={() => {
+                    if (taskReopenBlockReason(data, task)) return;
+                    updateTask(task.id, { state: "open" });
+                  }}
+                  onOpen={() => setEditingTaskId(task.id)}
+                  toggleDisabledReason={taskReopenBlockReason(data, task)}
+                />
               ))}
             </details>
           ) : null}

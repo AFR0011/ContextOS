@@ -167,8 +167,13 @@ test.describe("C10 narrow hostile-content visual stress", () => {
 
       await page.goto("/dashboard");
       await page.getByRole("button", { name: "Open navigation", exact: true }).click();
-      await capture(page, testInfo, `${prefix}-07-drawer`, false);
       const drawer = page.getByRole("dialog", { name: "Workspace navigation menu" });
+      const drawerIdentity = drawer.getByText("ContextOS", { exact: true });
+      await expect(drawerIdentity).toBeVisible();
+      await expect
+        .poll(() => drawerIdentity.evaluate((element) => element.scrollWidth <= element.clientWidth))
+        .toBe(true);
+      await capture(page, testInfo, `${prefix}-07-drawer`, false);
       await drawer.getByRole("button", { name: "Log out", exact: true }).click();
       await expect(page.getByTestId("logout-dialog")).toBeVisible();
       await capture(page, testInfo, `${prefix}-08-logout`, false);

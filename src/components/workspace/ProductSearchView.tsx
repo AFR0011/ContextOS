@@ -11,9 +11,9 @@ function detailRow(label: string, value: unknown) {
   const text = Array.isArray(value) ? value.filter(Boolean).join(" · ") : String(value ?? "").trim();
   if (!text) return null;
   return (
-    <div key={label} className="grid gap-1 border-t border-[var(--cos-border-soft)] py-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
+    <div key={label} className="grid min-w-0 gap-1 border-t border-[var(--cos-border-soft)] py-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
       <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--cos-text-subtle)]">{label}</dt>
-      <dd className="whitespace-pre-wrap break-words text-sm leading-6 text-[var(--cos-text)]">{text}</dd>
+      <dd className="min-w-0 whitespace-pre-wrap break-words text-sm leading-6 text-[var(--cos-text)] [overflow-wrap:anywhere]">{text}</dd>
     </div>
   );
 }
@@ -138,7 +138,7 @@ export function ProductSearchView() {
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)]">
-        <section className="cos-surface overflow-hidden" aria-label="Search results">
+        <section className="cos-surface min-w-0 overflow-hidden" aria-label="Search results">
           {!query.trim() ? (
             <p className="p-5 text-sm text-[var(--cos-text-muted)]">
               Type a word or phrase to search operational context and history.
@@ -161,9 +161,9 @@ export function ProductSearchView() {
             >
               <span className="cos-pill cos-pill-muted shrink-0">{result.typeLabel}</span>
               <span className="min-w-0 flex-1">
-                <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)]">{result.title}</span>
+                <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{result.title}</span>
                 {result.subtitle ? (
-                  <span className="mt-1 block break-words text-xs text-[var(--cos-text-muted)]">{result.subtitle}</span>
+                  <span className="mt-1 block break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{result.subtitle}</span>
                 ) : null}
               </span>
               <span className="shrink-0 pt-0.5 text-xs font-medium text-[var(--cos-text-subtle)]">View details</span>
@@ -171,7 +171,7 @@ export function ProductSearchView() {
           ))}
         </section>
 
-        <aside className="cos-surface p-4" data-testid="search-selected-record" aria-label="Selected search result details">
+        <aside className="cos-surface min-w-0 p-4" data-testid="search-selected-record" aria-label="Selected search result details">
           {!selectedResult ? (
             <p className="text-sm text-[var(--cos-text-muted)]">
               Choose a result to view the record without leaving Search.
@@ -181,9 +181,9 @@ export function ProductSearchView() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <span className="cos-pill cos-pill-primary">{selectedResult.typeLabel}</span>
-                  <h2 className="mt-2 break-words text-lg font-semibold text-[var(--cos-text-strong)]">{selectedResult.title}</h2>
+                  <h2 className="mt-2 break-words text-lg font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{selectedResult.title}</h2>
                   {selectedResult.subtitle ? (
-                    <p className="mt-1 break-words text-sm text-[var(--cos-text-muted)]">{selectedResult.subtitle}</p>
+                    <p className="mt-1 break-words text-sm text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{selectedResult.subtitle}</p>
                   ) : null}
                 </div>
                 {selectedResult.contextHref && selectedResult.contextLabel ? (

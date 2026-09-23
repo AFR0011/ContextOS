@@ -41,6 +41,7 @@ npx prisma generate
 npm run db:deploy
 npm run db:seed
 npm run test:account-operator
+npm run test:unit
 npm run typecheck
 npm run build
 npm run test:container-distribution

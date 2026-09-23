@@ -115,7 +115,7 @@ jobs:
         run: npm run test:container-distribution
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps --no-shell chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Run production offline and Stage 10 matrix
         run: npx playwright test --config=playwright.production.config.ts --workers=1

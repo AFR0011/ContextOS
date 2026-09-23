@@ -21,8 +21,8 @@
       ]
     },
     "tests/e2e/local-db-v2.spec.ts": {
-      "removedIn": "C8 IndexedDB v4 clean break",
-      "reason": "The v2 local database upgrade contract was replaced by the explicit v3 identity-preserving workspace/outbox reset boundary.",
+      "removedIn": "C8 IndexedDB v3 clean break",
+      "reason": "The v2 local database upgrade contract was replaced by the explicit C8 v3 identity-preserving workspace/outbox reset boundary; current replacement coverage has since moved to the C10 v4 revision-aware clean break.",
       "replacements": [
         "tests/e2e/local-db-v4.spec.ts",
         "src/lib/local-db.ts"

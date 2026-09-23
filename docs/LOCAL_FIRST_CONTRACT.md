@@ -117,6 +117,12 @@ The sync contract accepts canonical entity types only and ordinary client mutati
 
 Canonical Area and Project lifecycle is archival in place. Tasks use Open/Done. Dates have no completion/archive state. There is no standalone Archive/Trash page and no canonical per-record tombstone protocol.
 
+Archive invariants preserve that deliberately small state model:
+- a Project cannot archive while it owns Open Tasks;
+- an Area cannot archive while it owns direct Open Tasks, while child Project lifecycle remains independent;
+- a Done Task under an archived actual parent cannot reopen until moved to an active context or the parent is restored;
+- Task title/context/planning edits remain ordinary upserts and do not add a new lifecycle state.
+
 ContextOS does not present irreversible per-record purge as a user-facing workflow. Account deletion remains a separate authenticated lifecycle operation, and remote erasure of data already stored on another offline device is not claimed.
 
 ## Network-Required Operations

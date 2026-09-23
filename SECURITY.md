@@ -69,9 +69,9 @@ Per-user mutation IDs are unique in PostgreSQL, accepted replays are idempotent,
 
 C8 narrows the sync protocol to canonical entity types only: Areas, Projects, Tasks, Dates, and Daily Notes. Ordinary sync mutations are upsert-only; the historical compatibility `delete` wire is rejected.
 
-Canonical lifecycle state is deliberately small: Areas and Projects are active/archived, Tasks are open/done, and Dates have no completion/archive state. The canonical schema contains no Capture/Resource/Review/legacy Deadline/Dashboard/recovery or per-record tombstone fields.
+Canonical lifecycle state is deliberately small: Areas and Projects are active/archived, Tasks are open/done, and Dates have no completion/archive state. Projects cannot archive while Open child Tasks remain; Areas cannot archive while direct Open Tasks remain; a Done Task under an archived parent cannot reopen until moved to active context or the parent is restored. The canonical schema contains no Capture/Resource/Review/legacy Deadline/Dashboard/recovery or per-record tombstone fields.
 
-IndexedDB v3 is a clean persistence break. Verified local identity survives the upgrade, while incompatible pre-C8 workspace/outbox snapshots are discarded rather than transformed through an unverified rolling-client protocol.
+IndexedDB v4 is the current revision-aware clean persistence break. Verified local identity survives the upgrade, while incompatible revisionless workspace/outbox snapshots are discarded rather than assigned fabricated server revisions.
 
 ## Logout and local-device boundary
 

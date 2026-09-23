@@ -317,7 +317,10 @@ export function HomeView() {
                           key={project.id}
                           title={project.name}
                           meta={[
-                            canonical.areas.find((area) => area.id === project.areaId)?.name ?? "Project",
+                            (() => {
+                              const area = canonical.areas.find((item) => item.id === project.areaId);
+                              return area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : "Project";
+                            })(),
                             project.state === "archived" ? "Archived Project" : ""
                           ].filter(Boolean).join(" · ")}
                           onOpen={() => router.push(`/projects/${encodeURIComponent(project.id)}`)}

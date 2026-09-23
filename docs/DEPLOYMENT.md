@@ -16,7 +16,7 @@ Current repository evidence:
 8. **PWA upgrade:** Stage 8 rehearsed a same-origin shell v3→v4 service-worker upgrade while preserving local workspace state.
 9. **Database recovery:** Stage 8 used PostgreSQL-native `pg_dump`/`pg_restore` to restore into a genuinely fresh isolated non-production database and verified authenticated application bootstrap.
 10. **Release-pair rollback:** Stage 8 verified application rollback for the exact Stage 7→8 pair because their Prisma migration ledgers were unchanged. This is not a claim that arbitrary migrations are reversible.
-11. **Lifecycle/destructive state:** Stage 9 verifies logout/device data choices, account deletion ordering, multi-user local isolation, recoverable tombstones, and stale-resurrection protection.
+11. **Lifecycle/destructive state:** historical Stage 9 verified logout/device-data choices, account deletion ordering, multi-user local isolation, and the pre-C8 recoverable-tombstone model. C8 later removed canonical tombstones; current assurance preserves Stage 9 as provenance while validating the upsert-only canonical lifecycle.
 12. **Final repository acceptance:** Stage 10 verified the accumulated repository boundary at candidate commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`, including production offline Search/history, lifecycle regressions, full E2E, and database-outage behavior.
 13. **Current architecture:** Batch 10 extracted every live workspace view into focused modules, removed the former legacy monolith, and passed the full verification ladder again on merged `main` commit `2b0c03c629fd0025ee185a91bc3c7da85e9215ae` / post-merge CI `34760727752`.
 

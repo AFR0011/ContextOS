@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
+import { TaskEditSheet } from "@/components/workspace/TaskEditSheet";
 import { useWorkspace } from "@/lib/client-store";
 import { localDateKey } from "@/lib/dates";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
@@ -12,6 +13,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
   const { data, addProject, addTask, addDate, updateArea, updateProject, updateTask } = useWorkspace();
   const area = data.areas.find((item) => item.id === areaId);
   const [projectName, setProjectName] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [projectObjective, setProjectObjective] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
   const [plannedDate, setPlannedDate] = useState("");
@@ -39,6 +41,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
   const directTasks = data.tasks.filter((task) => task.parent.type === "area" && task.parent.areaId === currentArea.id);
   const openTasks = directTasks.filter((task) => task.state === "open");
   const doneTasks = directTasks.filter((task) => task.state === "done");
+  const editingTask = data.tasks.find((task) => task.id === editingTaskId) ?? null;
   const directDates = data.dates
     .filter((item) => item.parent.type === "area" && item.parent.areaId === currentArea.id)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
@@ -151,7 +154,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
             <details className="mt-3 border-t border-[var(--cos-border-soft)] pt-3">
               <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-[var(--cos-text-muted)]">Completed ({doneTasks.length})</summary>
               {doneTasks.map((task) => (
-                <TaskRow key={task.id} title={task.title} done meta="Completed" onToggle={() => updateTask(task.id, { state: "open" })} />
+                <TaskRow key={task.id} title={task.title} done meta="Completed" onToggle={() => updateTask(task.id, { state: "open" })} onOpen={() => setEditingTaskId(task.id)} />
               ))}
             </details>
           ) : null}
@@ -226,6 +229,13 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
           </div>
         ) : <p className="text-sm text-[var(--cos-text-subtle)]">No archived Projects in this Area.</p>}
       </Section>
+      <TaskEditSheet
+        task={editingTask}
+        projects={data.projects}
+        areas={data.areas}
+        onClose={() => setEditingTaskId(null)}
+        onSave={(taskId, updates) => updateTask(taskId, updates)}
+      />
     </div>
   );
 }

@@ -163,27 +163,33 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
       <Section title="Active Projects" className="mt-8">
         {activeProjects.length ? (
           <div className="space-y-2">
-            {activeProjects.map((project) => (
-              <div key={project.id} className="cos-entity-row">
-                <button type="button" onClick={() => router.push(`/projects/${project.id}`)} className="min-w-0 flex-1 text-left">
-                  <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{project.name}</span>
-                  <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{project.objective || "No objective yet."}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (projectArchiveBlockReason(data, project.id)) return;
-                    updateProject(project.id, { state: "archived" });
-                  }}
-                  disabled={Boolean(projectArchiveBlockReason(data, project.id))}
-                  title={projectArchiveBlockReason(data, project.id) ?? undefined}
-                  aria-label={`Archive ${project.name}`}
-                  className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  <Archive className="h-3.5 w-3.5" /> Archive
-                </button>
-              </div>
-            ))}
+            {activeProjects.map((project) => {
+              const projectBlockReason = projectArchiveBlockReason(data, project.id);
+              return (
+                <div key={project.id} className="cos-entity-row">
+                  <button type="button" onClick={() => router.push(`/projects/${project.id}`)} className="min-w-0 flex-1 text-left">
+                    <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{project.name}</span>
+                    <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{project.objective || "No objective yet."}</span>
+                    {projectBlockReason ? (
+                      <span className="mt-1 block text-[11px] text-[var(--cos-warning-text)]">{projectBlockReason}</span>
+                    ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (projectBlockReason) return;
+                      updateProject(project.id, { state: "archived" });
+                    }}
+                    disabled={Boolean(projectBlockReason)}
+                    title={projectBlockReason ?? undefined}
+                    aria-label={`Archive ${project.name}`}
+                    className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    <Archive className="h-3.5 w-3.5" /> Archive
+                  </button>
+                </div>
+              );
+            })}
           </div>
         ) : <p className="text-sm text-[var(--cos-text-subtle)]">No active Projects in this Area.</p>}
 

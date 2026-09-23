@@ -28,14 +28,17 @@ function taskContext(task: Task, workspace: CanonicalWorkspace) {
     const project = workspace.projects.find((item) => item.id === parent.projectId);
     const area = project ? workspace.areas.find((item) => item.id === project.areaId) : null;
     return {
-      label: [project?.name, area?.name].filter(Boolean).join(" · "),
+      label: [
+        project ? `${project.name}${project.state === "archived" ? " (archived)" : ""}` : "",
+        area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : ""
+      ].filter(Boolean).join(" · "),
       href: project ? `/projects/${encodeURIComponent(project.id)}` : null,
       action: project ? "Open project" : null
     };
   }
   const area = workspace.areas.find((item) => item.id === parent.areaId);
   return {
-    label: area?.name ?? "",
+    label: area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : "",
     href: area ? `/areas/${encodeURIComponent(area.id)}` : null,
     action: area ? "Open area" : null
   };
@@ -47,14 +50,17 @@ function dateContext(date: ContextDate, workspace: CanonicalWorkspace) {
     const project = workspace.projects.find((item) => item.id === parent.projectId);
     const area = project ? workspace.areas.find((item) => item.id === project.areaId) : null;
     return {
-      label: [project?.name, area?.name].filter(Boolean).join(" · "),
+      label: [
+        project ? `${project.name}${project.state === "archived" ? " (archived)" : ""}` : "",
+        area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : ""
+      ].filter(Boolean).join(" · "),
       href: project ? `/projects/${encodeURIComponent(project.id)}` : null,
       action: project ? "Open project" : null
     };
   }
   const area = workspace.areas.find((item) => item.id === parent.areaId);
   return {
-    label: area?.name ?? "",
+    label: area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : "",
     href: area ? `/areas/${encodeURIComponent(area.id)}` : null,
     action: area ? "Open area" : null
   };

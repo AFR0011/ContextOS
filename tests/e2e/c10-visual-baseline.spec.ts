@@ -212,6 +212,12 @@ async function captureTransientStates(page: Page, testInfo: TestInfo, variant: V
   await page.goto("/dashboard");
   if (variant.mobile) {
     await page.getByRole("button", { name: "Open navigation", exact: true }).click();
+    const drawer = page.getByRole("dialog", { name: "Workspace navigation menu" });
+    const drawerIdentity = drawer.getByText("ContextOS", { exact: true });
+    await expect(drawerIdentity).toBeVisible();
+    await expect
+      .poll(() => drawerIdentity.evaluate((element) => element.scrollWidth <= element.clientWidth))
+      .toBe(true);
     await capture(page, testInfo, `${variant.name}-11-mobile-drawer`, false);
     await page.getByRole("button", { name: "Close navigation", exact: true }).click();
   }

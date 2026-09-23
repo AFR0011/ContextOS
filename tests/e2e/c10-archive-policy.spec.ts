@@ -81,5 +81,9 @@ test("Area archive ignores child Project work but blocks direct open Tasks", asy
 
   await page.goto("/projects");
   await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
-  await expect(page.getByText("ContextOS Demo", { exact: true }).first()).toBeVisible();
+  const activeProject = page.getByText("ContextOS Demo", { exact: true }).first().locator("..");
+  await expect(activeProject).toContainText("Engineering (archived)");
+
+  await page.goto("/dashboard");
+  await expect(page.getByTestId("home-contexts")).toContainText("Engineering (archived)");
 });

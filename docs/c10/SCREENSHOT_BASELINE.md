@@ -162,7 +162,11 @@ Desktop + mobile, light + dark:
 - Active and Archived groups;
 - counts;
 - lifecycle actions;
+- Area rename field on Area Detail;
+- archive-blocked state after creating a direct Open Task;
 - long Area-name stress case.
+
+Verify archive blocking is visibly explained rather than represented only by a disabled control.
 
 ### 05 Area Detail
 
@@ -193,14 +197,17 @@ Desktop + mobile, light + dark:
 - long-result stress;
 - contextual action remains visible.
 
-### 08 Command palette
+### 08 Command palette and Task editor
 
 Desktop + mobile, light + dark:
 - palette open with navigation/search results;
 - long result label;
 - New Task sheet;
 - New Date sheet;
+- shared Edit Task sheet opened from canonical Task rows;
 - selected option visibly highlighted.
+
+Verify the Edit Task sheet exposes title, context, planned day, and scheduled time without duplicating Open/Done state.
 
 ### 09 LifeOS
 

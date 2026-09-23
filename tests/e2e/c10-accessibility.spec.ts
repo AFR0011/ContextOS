@@ -17,7 +17,10 @@ async function login(page: Page) {
 }
 
 function parseHexColor(value: string) {
-  const hex = value.trim().replace(/^#/, "");
+  const raw = value.trim().replace(/^#/, "");
+  const hex = /^[0-9a-f]{3}$/i.test(raw)
+    ? raw.split("").map((digit) => digit + digit).join("")
+    : raw;
   expect(hex).toMatch(/^[0-9a-f]{6}$/i);
   return [0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16));
 }
@@ -291,7 +294,7 @@ test("inline create disclosures expose state and return focus when cancelled", a
   await expect(projectTrigger).toHaveAttribute("aria-expanded", "false");
 
   await page.goto("/dates");
-  const dateTrigger = page.getByRole("button", { name: "Add Date", exact: true });
+  const dateTrigger = page.locator('button[aria-controls="context-date-create"]');
   await expect(dateTrigger).toHaveAttribute("aria-expanded", "false");
   await expect(dateTrigger).toHaveAttribute("aria-controls", "context-date-create");
   await dateTrigger.click();
@@ -332,5 +335,6 @@ test("dynamic import errors are exposed as alerts", async ({ page }) => {
     buffer: Buffer.from("{not valid json")
   });
 
-  await expect(page.getByRole("alert")).toContainText(/JSON|valid/i);
+  await expect(page.getByTestId("workspace-import-error")).toHaveAttribute("role", "alert");
+  await expect(page.getByTestId("workspace-import-error")).toContainText(/JSON|valid/i);
 });

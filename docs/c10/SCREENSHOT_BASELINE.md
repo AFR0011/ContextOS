@@ -70,9 +70,10 @@ Every capture first asserts that the rendered document has no horizontal page ov
 CI artifact handling:
 - production-runtime images are written under `test-results/c10-production`;
 - standard/hostile/empty-account images are written under `test-results/c10-standard`;
-- on pushes to `c10-product-acceptance`, CI runs `npm run capture:c10:visual` after the ordinary browser suites;
-- CI uploads both PNG trees as `c10-visual-audit-<commit>` with 14-day retention;
-- artifact upload still runs when the visual-capture step itself fails, preserving any images created before the failure.
+- the GitHub Actions workflow is configured to run `npm run capture:c10:visual` on pushes to `c10-product-acceptance` after the ordinary browser suites;
+- the workflow is configured to upload both PNG trees as `c10-visual-audit-<commit>` with 14-day retention;
+- artifact upload still runs when the visual-capture step itself fails, preserving any images created before the failure;
+- GitHub Actions is currently unavailable for this account, so this configuration has not yet produced a current-head artifact run.
 
 ## Current render-evidence blocker — 2026-09-22
 
@@ -97,6 +98,8 @@ Source preflight has already identified and corrected several render risks befor
 - Project Detail and Area Detail used a six-column Date composer at the 1024px sidebar breakpoint, compressing the Date title field to an impractically narrow width.
 
 Those fixes remain subject to real-browser confirmation. The 1024px breakpoint is now part of the permanent capture matrix rather than a one-off check.
+
+Clean-account capture now reuses one fresh account across all desktop/mobile and light/dark empty-state variants rather than registering four accounts. Because automated account deletion is intentionally not embedded into the capture harness, one disposable `c10-visual-clean-*` account remains after a complete capture run and may be removed later by the normal account-lifecycle/operator path.
 
 ## Baseline set
 

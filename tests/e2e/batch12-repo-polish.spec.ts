@@ -25,11 +25,10 @@ test("retired dev-loop coordination artifacts stay out of the active repo root",
   }
 });
 
-test("Project command guidance uses evergreen date and time syntax", () => {
+test("Project detail keeps canonical date entry evergreen", () => {
   const source = readFileSync(resolve(root, "src/components/workspace/ProjectDetailView.tsx"), "utf8");
 
-  expect(source).toContain(
-    'placeholder="Write project context. /task Draft next note [YYYY-MM-DD] (HH:MM) or /date Final review [YYYY-MM-DD]..."'
-  );
+  expect(source).toContain('type="date"');
+  expect(source).toContain('aria-label="Date"');
   expect(source).not.toContain("2026-07-10");
 });

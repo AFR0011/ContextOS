@@ -6,22 +6,34 @@ function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
-function runNpm(script: string, args: string[], input?: string) {
-  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-  return spawnSync(npm, ["run", script, "--", ...args], {
-    cwd: process.cwd(),
-    env: process.env,
-    input,
-    encoding: "utf8"
-  });
+function runOperator(command: "create" | "reset-password", args: string[], input?: string) {
+  return spawnSync(
+    process.execPath,
+    ["--import", "tsx", "scripts/account-operator.ts", command, ...args],
+    {
+      cwd: process.cwd(),
+      env: process.env,
+      input,
+      encoding: "utf8"
+    }
+  );
 }
 
-function assertSuccess(result: ReturnType<typeof runNpm>, context: string) {
-  assert(result.status === 0, `${context} failed:\n${result.stderr}\n${result.stdout}`);
+function assertSuccess(result: ReturnType<typeof runOperator>, context: string) {
+  const launchError = result.error ? `\nLaunch error: ${result.error.message}` : "";
+  assert(
+    result.status === 0,
+    `${context} failed (status=${String(result.status)}, signal=${String(result.signal)}):${launchError}\n${result.stderr ?? ""}\n${result.stdout ?? ""}`
+  );
 }
 
-function assertFailure(result: ReturnType<typeof runNpm>, context: string) {
-  assert(result.status !== 0, `${context} unexpectedly succeeded:\n${result.stdout}`);
+function assertFailure(result: ReturnType<typeof runOperator>, context: string) {
+  assert(
+    !result.error && result.status !== 0,
+    result.error
+      ? `${context} did not execute: ${result.error.message}`
+      : `${context} unexpectedly succeeded:\n${result.stdout ?? ""}`
+  );
 }
 
 async function countWorkspaceRows(userId: string) {
@@ -45,7 +57,7 @@ async function main() {
   const duplicatePassword = `B16-duplicate-${seed}-Cc3!`;
 
   try {
-    const create = runNpm("account:create", [email, "--password-stdin"], `${initialPassword}\n`);
+    const create = runOperator("create", [email, "--password-stdin"], `${initialPassword}\n`);
     assertSuccess(create, "operator account create");
 
     const created = await prisma.user.findUnique({ where: { email } });
@@ -67,7 +79,7 @@ async function main() {
       }
     });
 
-    const reset = runNpm("account:reset-password", [email, "--password-stdin"], resetPassword);
+    const reset = runOperator("reset-password", [email, "--password-stdin"], resetPassword);
     assertSuccess(reset, "operator password reset");
 
     const afterReset = await prisma.user.findUnique({ where: { email } });
@@ -79,12 +91,12 @@ async function main() {
     const afterResetCounts = await countWorkspaceRows(created.id);
     assert(JSON.stringify(afterResetCounts) === JSON.stringify(initialCounts), "operator reset changed workspace data");
 
-    const duplicate = runNpm("account:create", [email, "--password-stdin"], duplicatePassword);
+    const duplicate = runOperator("create", [email, "--password-stdin"], duplicatePassword);
     assertFailure(duplicate, "duplicate operator create");
     const afterDuplicate = await prisma.user.findUnique({ where: { email } });
     assert(afterDuplicate && await bcrypt.compare(resetPassword, afterDuplicate.passwordHash), "duplicate create changed the existing password");
 
-    const generated = runNpm("account:create", [generatedEmail, "--generate-password"]);
+    const generated = runOperator("create", [generatedEmail, "--generate-password"]);
     assertSuccess(generated, "generated-password account create");
     const generatedMatch = generated.stdout.match(/Temporary password: ([A-Za-z0-9_-]{32})/);
     assert(generatedMatch, "generated-password create did not print the expected temporary password");
@@ -92,7 +104,7 @@ async function main() {
     assert(generatedUser, "generated-password create did not persist the user");
     assert(await bcrypt.compare(generatedMatch[1], generatedUser.passwordHash), "generated temporary password does not match stored hash");
 
-    const invalid = runNpm("account:create", [invalidEmail, "--password-stdin"], "short");
+    const invalid = runOperator("create", [invalidEmail, "--password-stdin"], "short");
     assertFailure(invalid, "short-password account create");
     assert(await prisma.user.count({ where: { email: invalidEmail } }) === 0, "invalid password created an account");
 

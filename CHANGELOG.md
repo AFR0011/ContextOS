@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased] — C10 candidate, 2026-09-23
+
+### Changed
+
+- The definitive workspace is the simplified Area → Project → Task model with flat Projects; Inbox, Resources, Reviews, standalone Archive/Trash, nested Subcontexts, and the pre-C8 tombstone UI/persistence model remain retired.
+- C10 conflict handling uses server-owned per-record revisions and an IndexedDB v4 clean boundary for revisionless cached workspace/outbox state.
+- Tasks now support shared post-creation editing for title, Project/Area context, planned day, and scheduled time without adding new Task lifecycle states.
+- Area Detail now supports Area rename.
+- Project archive is blocked while Open Project Tasks remain; Area archive is blocked by direct Open Tasks only, preserving independent child-Project lifecycle.
+- Archived parent context is labelled across Home, Dates, Search, and Project metadata; completed Tasks under archived parents cannot reopen until moved to active context or the parent is restored.
+- Per-record Task/Date deletion remains outside the canonical C10 product because sync is intentionally upsert-only and no anti-resurrection delete protocol is claimed.
+
+### Verification
+
+- C10 adds a separate current acceptance registry and A–E full-product audit while preserving published Stage 7–10 evidence as historical provenance.
+- Rendered screenshot/human visual acceptance and final current-head runtime closure remain pending until the executable environment is available.
+
 ## [1.0.0] - 2026-09-14
 
 ### Added

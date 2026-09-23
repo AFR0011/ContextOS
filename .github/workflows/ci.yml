@@ -102,6 +102,9 @@ jobs:
       - name: Test operator account provisioning and recovery
         run: npm run test:account-operator
 
+      - name: Run unit tests
+        run: npm run test:unit
+
       - name: Typecheck
         run: npm run typecheck
 

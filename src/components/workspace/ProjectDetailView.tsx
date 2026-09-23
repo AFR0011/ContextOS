@@ -5,6 +5,7 @@ import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
 import { TaskEditSheet } from "@/components/workspace/TaskEditSheet";
 import { useWorkspace } from "@/lib/client-store";
+import { projectArchiveBlockReason } from "@/lib/archive-policy";
 import { localDateKey } from "@/lib/dates";
 import { useLocalRouter as useRouter } from "@/lib/local-router";
 
@@ -95,6 +96,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const openTasks = projectTasks.filter((task) => task.state === "open");
   const doneTasks = projectTasks.filter((task) => task.state === "done").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const editingTask = data.tasks.find((task) => task.id === editingTaskId) ?? null;
+  const archiveBlockedReason = projectArchiveBlockReason(data, currentProject.id);
   const projectDates = data.dates
     .filter((item) => item.parent.type === "project" && item.parent.projectId === currentProject.id)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
@@ -132,6 +134,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   }
 
   function archive() {
+    if (projectArchiveBlockReason(data, currentProject.id)) return;
     updateProject(currentProject.id, { state: "archived" });
   }
 
@@ -155,12 +158,25 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
               <RotateCcw className="h-4 w-4" /> Restore
             </button>
           ) : (
-            <button type="button" onClick={archive} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
+            <button
+              type="button"
+              onClick={archive}
+              disabled={Boolean(archiveBlockedReason)}
+              title={archiveBlockedReason ?? undefined}
+              aria-describedby={archiveBlockedReason ? "project-archive-blocked" : undefined}
+              className="cos-btn cos-btn-secondary px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-45"
+            >
               <Archive className="h-4 w-4" /> Archive
             </button>
           )
         }
       />
+
+      {currentProject.state === "active" && archiveBlockedReason ? (
+        <p id="project-archive-blocked" className="-mt-4 mb-6 text-sm text-[var(--cos-warning-text)]">
+          {archiveBlockedReason}
+        </p>
+      ) : null}
 
       <Section title="Project" description="The small amount of canonical information needed to resume the work.">
         <div className="cos-surface grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_14rem]">

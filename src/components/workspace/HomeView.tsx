@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { DateRow, Dayline, EmptyState, EntityRow, InsightCard, PageHeader, Section } from "@/components/workspace/ProductPrimitives";
+import { TaskEditSheet } from "@/components/workspace/TaskEditSheet";
 import { getContextsForToday, getTodayEvents, getTodayTasks, getUpcomingDates } from "@/lib/canonical-selectors";
 import { useWorkspace } from "@/lib/client-store";
 import { dateKeyToLocalDate, localDateKey } from "@/lib/dates";
@@ -121,6 +122,7 @@ export function HomeView() {
   const { data, updateTask, updateDailyNote } = useWorkspace();
   const today = useCurrentLocalDateKey();
   const canonical = data;
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   const todayTasks = useMemo(
     () => getTodayTasks(canonical, today),
@@ -161,6 +163,7 @@ export function HomeView() {
     [canonical, today]
   );
   const dailyNote = canonical.dailyNotes.find((note) => note.localDate === today);
+  const editingTask = canonical.tasks.find((task) => task.id === editingTaskId) ?? null;
   const date = dateKeyToLocalDate(today);
   const humanDate = date ? format(date, "EEEE, MMMM d") : today;
 
@@ -172,7 +175,8 @@ export function HomeView() {
       title: task.title,
       done: task.state === "done",
       meta: taskContext(task, canonical.projects, canonical.areas),
-      onToggle: () => updateTask(task.id, { state: task.state === "open" ? "done" : "open" })
+      onToggle: () => updateTask(task.id, { state: task.state === "open" ? "done" : "open" }),
+      onOpen: () => setEditingTaskId(task.id)
     })),
     ...todayEvents.map((event) => ({
       id: event.id,
@@ -232,14 +236,14 @@ export function HomeView() {
                           {task.state === "done" ? "✓" : ""}
                         </span>
                       </button>
-                      <div className="min-w-0 flex-1">
-                        <p className={`break-words text-sm font-medium text-[var(--cos-text-strong)] [overflow-wrap:anywhere] ${task.state === "done" ? "line-through" : ""}`}>
+                      <button type="button" onClick={() => setEditingTaskId(task.id)} className="min-w-0 flex-1 text-left">
+                        <span className={`block break-words text-sm font-medium text-[var(--cos-text-strong)] [overflow-wrap:anywhere] ${task.state === "done" ? "line-through" : ""}`}>
                           {task.title}
-                        </p>
-                        <p className="mt-0.5 break-words text-xs text-[var(--cos-text-subtle)] [overflow-wrap:anywhere]">
+                        </span>
+                        <span className="mt-0.5 block break-words text-xs text-[var(--cos-text-subtle)] [overflow-wrap:anywhere]">
                           {taskContext(task, canonical.projects, canonical.areas)}
-                        </p>
-                      </div>
+                        </span>
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -346,6 +350,14 @@ export function HomeView() {
 
         </div>
       </div>
+
+      <TaskEditSheet
+        task={editingTask}
+        projects={canonical.projects}
+        areas={canonical.areas}
+        onClose={() => setEditingTaskId(null)}
+        onSave={(taskId, updates) => updateTask(taskId, updates)}
+      />
     </div>
   );
 }

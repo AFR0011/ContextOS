@@ -9,7 +9,8 @@ import { useLocalRouter as useRouter } from "@/lib/local-router";
 import type { Area } from "@/lib/types";
 
 function areaName(areas: Area[], areaId: string) {
-  return areas.find((area) => area.id === areaId)?.name ?? "Unknown area";
+  const area = areas.find((item) => item.id === areaId);
+  return area ? `${area.name}${area.state === "archived" ? " (archived)" : ""}` : "Unknown area";
 }
 
 function ProjectRow({

@@ -209,6 +209,7 @@ for (const marker of [
   "05-area-detail",
   "07-search-selected",
   "08-command-palette",
+  "04-area-archive-blocked",
   "08-task-edit-sheet",
   "08-new-task-sheet",
   "08-new-date-sheet",

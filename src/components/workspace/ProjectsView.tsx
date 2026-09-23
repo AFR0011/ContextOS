@@ -37,9 +37,9 @@ function ProjectRow({
   return (
     <div className={`cos-entity-row ${archived ? "opacity-70" : ""}`}>
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{name}</span>
-          <span className="cos-pill cos-pill-muted max-w-full whitespace-normal break-words [overflow-wrap:anywhere]">{area}</span>
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+          <span className="min-w-0 max-w-full break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{name}</span>
+          <span className="cos-pill cos-pill-muted min-w-0 max-w-full whitespace-normal break-words [overflow-wrap:anywhere]">{area}</span>
         </div>
         <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">
           {objective || "No objective yet."}

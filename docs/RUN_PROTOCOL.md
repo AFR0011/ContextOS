@@ -87,6 +87,10 @@ Open -> understand day -> execute -> note -> open context -> resume Project -> s
 - Log in and verify Home: Today, Daily Notes, Context Today, Upcoming.
 - Create/edit a Project and confirm Area ownership.
 - Create a direct Area Task and direct Area Date.
+- Edit an existing Task: rename it, move Project/Area context, change/clear planned day, and verify scheduled time clears with the plan.
+- Rename an Area from Area Detail and confirm the name propagates to Project/Search context.
+- Verify Project Archive is blocked while that Project owns Open Tasks.
+- Verify Area Archive is blocked only by direct Open Tasks and remains independent from child Project lifecycle.
 - Create Event/Deadline records and verify Today/Upcoming/Past grouping.
 - Use Cmd/Ctrl+K entirely by keyboard.
 - Create Task and Date through Cmd/Ctrl+K.

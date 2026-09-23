@@ -193,6 +193,7 @@ const localFirstCharacterization = fs.readFileSync("tests/e2e/local-first-charac
 const areaDetailRoute = fs.readFileSync("src/app/(workspace)/areas/[id]/page.tsx", "utf8");
 const visualCaptureRunner = fs.readFileSync("scripts/capture-c10-visual.mjs", "utf8");
 const ciWorkflow = fs.readFileSync(".github/workflows/ci.yml", "utf8");
+const productionPlaywrightConfig = fs.readFileSync("playwright.production.config.ts", "utf8");
 const readme = fs.readFileSync("README.md", "utf8");
 const securityDoc = fs.readFileSync("SECURITY.md", "utf8");
 const repoMap = fs.readFileSync("docs/REPO_MAP.md", "utf8");
@@ -297,6 +298,13 @@ if (!ciWorkflow.includes("Capture C10 visual audit evidence") ||
 }
 if (!ciWorkflow.includes("Run unit tests") || !ciWorkflow.includes("npm run test:unit")) {
   errors.push("CI must execute repository unit tests, including archive-policy semantics.");
+}
+if (!productionPlaywrightConfig.includes("tests/e2e/workspace-gate.spec.ts") ||
+    !productionPlaywrightConfig.includes("tests/e2e/local-first-characterization.spec.ts")) {
+  errors.push("Production Playwright config must own WorkspaceGate and local-first characterization coverage.");
+}
+if (ciWorkflow.includes("tests/e2e/workspace-gate.spec.ts tests/e2e/local-db-v4.spec.ts")) {
+  errors.push("CI must not pretend the default-config lifecycle command runs the workspace-gate spec that it ignores.");
 }
 
 

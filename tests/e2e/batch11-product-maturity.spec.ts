@@ -32,7 +32,7 @@ test("portfolio-stage language is retained as historical acceptance provenance",
 
   expect(readme).toMatch(/Historical note:[\s\S]{0,400}portfolio-stage/i);
   expect(state).toMatch(/Historical note:[\s\S]{0,400}portfolio-stage/i);
-  expect(security).toMatch(/historical portfolio-stage local-first boundary/i);
+  expect(security).toMatch(/Historical Stage 10[\s\S]{0,240}portfolio-stage local-first boundary/i);
 });
 
 test("machine claims guard enforces self-hostable maturity and keeps broad claims forbidden", () => {

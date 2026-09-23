@@ -110,7 +110,38 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
         }
       />
 
-      <Section title="Active Projects">
+      <Section title="Area" description="The stable responsibility name used across Projects, Tasks, Dates, and Search.">
+        <div className="cos-surface p-4">
+          <label className="block space-y-1">
+            <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Name</span>
+            <input
+              key={currentArea.id}
+              defaultValue={currentArea.name}
+              onBlur={(event) => {
+                const name = event.currentTarget.value.trim();
+                if (!name) {
+                  event.currentTarget.value = currentArea.name;
+                  return;
+                }
+                if (name !== currentArea.name) updateArea(currentArea.id, { name });
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                  event.currentTarget.blur();
+                }
+                if (event.key === "Escape") {
+                  event.currentTarget.value = currentArea.name;
+                  event.currentTarget.blur();
+                }
+              }}
+              aria-label="Area name"
+              className="cos-input w-full px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+      </Section>
+
+      <Section title="Active Projects" className="mt-8">
         {activeProjects.length ? (
           <div className="space-y-2">
             {activeProjects.map((project) => (

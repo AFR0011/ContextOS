@@ -152,7 +152,7 @@ test.describe("local-first completion characterization", () => {
     await page.getByRole("button", { name: "Projects", exact: true }).click();
     await page.getByRole("button", { name: "New Project", exact: true }).click();
     await page.getByPlaceholder("Project name").fill(projectName);
-    await page.getByTestId("project-create-form").getByLabel("Area", { exact: true }).selectOption({ label: areaName });
+    await page.getByTestId("project-create-form").getByLabel("Area").selectOption({ label: areaName });
     await page.getByPlaceholder("What outcome is this project trying to reach?").fill("Initial offline objective");
     await page.getByRole("button", { name: "Create Project", exact: true }).click();
     await expect(page.getByTestId("project-command-page")).toBeVisible();

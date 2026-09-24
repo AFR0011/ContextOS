@@ -23,6 +23,8 @@ The demo seed is disposable neutral test data. C7 no longer seeds retired Inbox 
 
 Run sequentially. Typecheck/build and browser runtimes intentionally own different generated/runtime boundaries, because running everything in parallel mostly produces expensive interpretive dance.
 
+On Windows, repository shell scripts are forced to LF through `.gitattributes`. If a pre-existing checkout predates that rule, pull the current branch and verify `git ls-files --eol scripts/container-distribution-smoke.sh` reports `w/lf` before running the container-distribution smoke.
+
 ```bash
 npm audit --audit-level=low
 npm run audit:stage7

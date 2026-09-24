@@ -2,7 +2,7 @@
 
 Date: 2026-09-23  
 Program: C10 definitive product acceptance  
-Status: capture specification complete; final-candidate image capture pending a runnable browser against the C10 branch.
+Status: **captured and human-reviewed against C10 candidate `bfd60db891aa54b96480bbca9e2f89f0dd2f3962` on 2026-09-24.**
 
 ## Purpose
 
@@ -75,42 +75,40 @@ CI artifact handling:
 - artifact upload still runs when the visual-capture step itself fails, preserving any images created before the failure;
 - GitHub Actions is currently unavailable for this account, so this configuration has not yet produced a current-head artifact run.
 
-## Current render-evidence blocker — 2026-09-23
+## Final real-browser evidence — 2026-09-24
 
-Phase C/E requires evidence from the final C10 candidate, not merely the newest working preview.
+The canonical C10 visual matrix was executed locally from candidate commit `bfd60db891aa54b96480bbca9e2f89f0dd2f3962` using:
 
-Vercel history now includes:
-- READY preview `4cecf13bb1112cb5b4e89bb92f4db8fe0e132da8` from Phase C;
-- READY preview `dc8fa7499811f2dabd4b7206ba8a70211a3e3897` after clean-account visual-harness work;
-- READY preview `ebb2d994d225b5fa26221378e265144716c0ea28` during Phase D;
-- later deployments returning build-rate-limit failure again.
+```bash
+npm run capture:c10:visual
+```
 
-The `ebb2d994...` preview already includes meaningful Phase D runtime surface changes, including the shared Task editor, Area rename, archive-policy domain layer, and Project-list archive blocker.
+Final canonical result trees:
+- `test-results/c10-standard`: 276 PNG captures;
+- `test-results/c10-production`: 20 PNG captures;
+- both Playwright `.last-run.json` markers reported `status: passed` with no failed tests.
 
-It is **not** the final visual baseline. Later commits changed rendered behavior/presentation, including Area/Project detail archive blockers, archived-context labels, Task reopen guards under archived parents, and the Area archive-blocked state.
+The final capture includes all visual remediations discovered during the C10 audit:
+- mobile Home no longer inherits the desktop Dayline balancing height;
+- archive blockers remain quiet until user intent and then render contextually;
+- disconnected LifeOS modules use status pills rather than pseudo-actions;
+- compact mobile sync distinguishes plain `Offline` from `Offline · N pending`;
+- mobile drawer identity remains unclipped at 390x844 and 320x720.
 
-Therefore:
-- no available READY preview is visually equivalent to the final branch head;
-- the current-head Vercel check is blocked by build-rate limiting;
-- GitHub Actions is unavailable for this account;
-- the connector browser cannot navigate external preview URLs because outbound browser access is blocked.
+Human review covered:
+- 1440x1000 desktop light/dark;
+- 1024x768 compact desktop light/dark;
+- 390x844 mobile light/dark;
+- 320x720 hostile-content stress light/dark;
+- first-run and empty states;
+- command palette, Task/Date sheets, logout, archive-warning and long-import transients;
+- production online-ready, offline, offline-with-pending, reconnecting, and reconnected states.
 
-The next visual-acceptance step remains:
-1. run the final branch in an executable environment;
-2. run `npm run capture:c10:visual`;
-3. manually inspect the resulting screenshots;
-4. record the exact verified commit/run before freezing the baseline.
+No unresolved clipping, overlap, horizontal overflow, fixed-navigation collision, theme leakage, misleading action/state affordance, or other product-level visual defect was found in the final candidate.
 
-Source preflight has already corrected multiple render risks:
-- short-viewport logout content;
-- command-palette responsive height;
-- static-vh auth/workspace/handoff shells;
-- unbounded diagnostic/identity/handoff strings;
-- Project/Area Date-composer width at the 1024px sidebar breakpoint;
-- missing Task-editor visual coverage;
-- archive-blocked Area state not represented in the baseline.
+Some full-page Playwright screenshots repeat fixed headers or bottom navigation after scrolling. Viewport captures and shell padding confirm those are screenshot-compositing artifacts rather than runtime overlap.
 
-Those fixes remain subject to final real-browser confirmation.
+The Vercel/GitHub Actions limitations remain relevant only to hosted CI provenance: Vercel was build-rate-limited and GitHub Actions was unavailable for the account. They no longer block C10 visual acceptance because the final candidate was exercised by the repository's real-browser capture harness locally.
 
 Clean-account capture reuses one fresh account across desktop/mobile and light/dark empty-state variants rather than registering four accounts. Because automated account deletion is intentionally not embedded into the capture harness, one disposable `c10-visual-clean-*` account remains after a complete capture run and may be removed later through the normal account-lifecycle/operator path.
 
@@ -300,6 +298,6 @@ For every baseline image, inspect:
 
 ## Evidence rule
 
-C10 screenshot acceptance remains pending until these images are captured from a real browser on the C10 candidate and manually reviewed.
+C10 screenshot acceptance is satisfied for candidate commit `bfd60db891aa54b96480bbca9e2f89f0dd2f3962` by the passing real-browser matrix and human review recorded above.
 
-A future automated visual-regression suite may use this set as its initial golden baseline, but the first baseline must be human-reviewed before pixel-diff automation can be trusted. Otherwise the machine will faithfully preserve whatever visual mistake happened to be present on baseline day. Very efficient, in the worst possible sense.
+A future automated visual-regression suite may use this set as its initial golden baseline. Any later rendered product change must produce new evidence rather than inheriting this acceptance by implication.

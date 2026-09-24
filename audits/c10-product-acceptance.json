@@ -97,6 +97,7 @@
         "scripts/stage10-acceptance-check.mjs",
         "scripts/stage10-claims-audit.mjs",
         "scripts/c10-product-acceptance-check.mjs",
+        "scripts/run-container-distribution-smoke.mjs",
         "playwright.production.config.ts",
         "src/lib/archive-policy.test.ts"
       ]

@@ -53,6 +53,8 @@ npm run test:e2e -- --workers=1
 
 The committed CI workflow runs the corresponding ladder against disposable PostgreSQL when GitHub Actions is available. Historical Stage 9/10 validators preserve exact provenance; `audit:c10:product` owns the current post-redesign acceptance registry.
 
+Playwright owns the server flags required by each browser matrix. The production config forces public registration closed, demo reset enabled for the disposable demo identity, canonical SocialOS return origin, and SSO signing disabled. The development config starts its own server with public registration/demo reset enabled for lifecycle tests. Lingering shell variables from deployment preflight must not change browser-test semantics.
+
 Historical Stage 10 final acceptance is recorded at commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, run `31800346837`. Later product phases update current tests when intentional semantics change rather than pretending obsolete UI is still part of acceptance.
 
 ## Runtime Ownership

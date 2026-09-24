@@ -910,7 +910,7 @@ Regression coverage verifies:
 
 ### D-01.1 — Clearing planned day did not immediately disable scheduled time
 
-Status: **Fixed; final runtime re-verification pending**
+Status: **Fixed and runtime-verified on final product candidate**
 
 The final development acceptance run exposed a browser interaction mismatch in the shared Task editor. The save layer already enforced the canonical invariant that an unplanned Task cannot retain a scheduled time, but clearing the native date input did not always drive the React `onChange` path immediately. The UI could therefore continue showing an enabled scheduled-time control until save even though save would later normalize the value to null.
 

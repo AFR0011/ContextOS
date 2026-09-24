@@ -791,7 +791,7 @@ Commits:
 ### C-01.2 — Disconnected LifeOS modules duplicated state as a pseudo-action
 
 Severity: **Low-Medium visual hierarchy defect**  
-Status: **Implemented; targeted runtime/visual verification pending**
+Status: **Fixed and human-verified**
 
 The hierarchy pass found that disconnected LifeOS cards communicated the same absence twice:
 - body copy: `No summary provider connected`;
@@ -806,6 +806,13 @@ Refinement:
 - summary/provider semantics are unchanged and no placeholder module data is introduced.
 
 Regression coverage distinguishes the status element from destination links so connected cards cannot accidentally render a disconnected status and disconnected cards cannot masquerade as actionable controls.
+
+Verification:
+- repository typecheck passed;
+- definitive C10 workflow regression passed;
+- production build passed;
+- targeted desktop/mobile LifeOS capture passed;
+- human review confirmed the status reads as non-interactive state, does not crowd the module identity, and the cards remain visually balanced without a lower pseudo-action.
 
 Required evidence still pending across the remaining matrix:
 - Home beyond the closed mobile spacing defect;

@@ -17,12 +17,17 @@ test("Project archive is blocked until its open Tasks are resolved", async ({ pa
 
   await page.goto("/projects");
   const listArchive = page.getByRole("button", { name: "Archive ContextOS Demo", exact: true });
-  await expect(listArchive).toBeDisabled();
-  await expect(listArchive).toHaveAttribute("title", /Resolve or move .* open Task/);
+  const projectRow = listArchive.locator("..");
+  await expect(listArchive).toBeEnabled();
+  await expect(projectRow.getByRole("alert")).toHaveCount(0);
+  await listArchive.click();
+  await expect(projectRow.getByRole("alert")).toContainText(/Resolve or move .* open Task/);
 
   await page.getByText("ContextOS Demo", { exact: true }).first().click();
   const detailArchive = page.getByRole("button", { name: "Archive", exact: true });
-  await expect(detailArchive).toBeDisabled();
+  await expect(detailArchive).toBeEnabled();
+  await expect(page.locator("#project-archive-blocked")).toHaveCount(0);
+  await detailArchive.click();
   await expect(page.locator("#project-archive-blocked")).toContainText(/Resolve or move .* open Task/);
 
   const futureDateTitle = "Archived project future date";
@@ -34,6 +39,7 @@ test("Project archive is blocked until its open Tasks are resolved", async ({ pa
 
   const openTask = page.getByTestId("project-live-tasks").getByRole("button", { name: /Complete / }).first();
   await openTask.click();
+  await expect(page.locator("#project-archive-blocked")).toHaveCount(0);
   await expect(detailArchive).toBeEnabled();
   await detailArchive.click();
   await expect(page.getByText("Archived Project", { exact: true })).toBeVisible();
@@ -71,10 +77,13 @@ test("Area archive ignores child Project work but blocks direct open Tasks", asy
   await taskComposer.getByRole("button", { name: "Add", exact: true }).click();
 
   const archive = page.getByRole("button", { name: "Archive", exact: true });
-  await expect(archive).toBeDisabled();
+  await expect(archive).toBeEnabled();
+  await expect(page.locator("#area-archive-blocked")).toHaveCount(0);
+  await archive.click();
   await expect(page.locator("#area-archive-blocked")).toContainText("direct open Task");
 
   await area.getByRole("button", { name: `Complete ${title}`, exact: true }).click();
+  await expect(page.locator("#area-archive-blocked")).toHaveCount(0);
   await expect(archive).toBeEnabled();
   await archive.click();
   await expect(page.getByText("Archived responsibility domain", { exact: true })).toBeVisible();

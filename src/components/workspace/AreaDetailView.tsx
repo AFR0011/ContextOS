@@ -171,13 +171,15 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
               const projectBlockReason = projectArchiveBlockReason(data, project.id);
               return (
                 <div key={project.id} className="cos-entity-row">
-                  <button type="button" onClick={() => router.push(`/projects/${project.id}`)} className="min-w-0 flex-1 text-left">
-                    <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{project.name}</span>
-                    <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{project.objective || "No objective yet."}</span>
+                  <div className="min-w-0 flex-1">
+                    <button type="button" onClick={() => router.push(`/projects/${project.id}`)} className="w-full min-w-0 text-left">
+                      <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{project.name}</span>
+                      <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{project.objective || "No objective yet."}</span>
+                    </button>
                     {projectArchiveAttemptId === project.id && projectBlockReason ? (
                       <span role="alert" className="mt-1 block text-[11px] text-[var(--cos-warning-text)]">{projectBlockReason}</span>
                     ) : null}
-                  </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => {

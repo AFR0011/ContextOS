@@ -760,10 +760,36 @@ This closes only the mobile-drawer slice. It does not satisfy the remaining prim
 
 ## C-01 — Primary surface rendered inspection
 
-Status: **Partially executed; mobile drawer passed, remaining matrix pending**
+Status: **Partially executed; mobile drawer and mobile Home rhythm passed, remaining matrix pending**
 
-Required evidence:
-- Home;
+### C-01.1 — Mobile Home inherited desktop Dayline balancing height
+
+Severity: **Medium visual hierarchy / responsive rhythm defect**  
+Status: **Fixed and human-verified**
+
+The full screenshot matrix exposed a large dead vertical band between Today and Daily Notes on 390px mobile Home. Source inspection confirmed that the Dayline container applied `min-h-[18rem]` unconditionally. That minimum was useful for desktop column balancing but unnecessary on mobile, where it delayed the next primary surface by roughly 180–200px when Today contained only a small amount of content.
+
+Fix:
+- mobile now uses `min-h-0`;
+- the 18rem balancing minimum begins at the `md` breakpoint;
+- desktop/tablet composition remains unchanged.
+
+Regression coverage verifies:
+- the computed mobile minimum height remains compact at 390x844;
+- the desktop/compact-desktop minimum remains at least 18rem at 1024x768.
+
+Verification:
+- repository build passed on the fixed head;
+- responsive regression passed;
+- targeted mobile light/dark visual capture passed;
+- human review confirmed Daily Notes now follows Today with natural spacing and no new overlap or clipping.
+
+Commits:
+- `ad7283a07b4444a4edf78617db8ae84a84ad3d9f` — remove desktop Dayline height from mobile Home;
+- `d047eca22f330b7c97b2a8717ca1ba50f2f68ac0` — guard compact mobile Home rhythm.
+
+Required evidence still pending across the remaining matrix:
+- Home beyond the closed mobile spacing defect;
 - Projects;
 - Project Detail;
 - Areas;

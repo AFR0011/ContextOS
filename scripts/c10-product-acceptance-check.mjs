@@ -211,6 +211,21 @@ const changelog = fs.readFileSync("CHANGELOG.md", "utf8");
 const visualBaselineSpec = fs.readFileSync("tests/e2e/c10-visual-baseline.spec.ts", "utf8");
 const screenshotBaseline = fs.readFileSync("docs/c10/SCREENSHOT_BASELINE.md", "utf8");
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+const containerSmokeLauncher = fs.readFileSync("scripts/run-container-distribution-smoke.mjs", "utf8");
+
+if (packageJson.scripts?.["test:container-distribution"] !== "node scripts/run-container-distribution-smoke.mjs") {
+  errors.push("Container distribution smoke must run through the cross-platform Node launcher.");
+}
+for (const marker of [
+  'process.platform !== "win32"',
+  'spawnSync("git", ["--exec-path"]',
+  '"bin", "bash.exe"',
+  'spawnSync(bash, [smokeScript, ...passthroughArgs]'
+]) {
+  if (!containerSmokeLauncher.includes(marker)) {
+    errors.push(`Container distribution launcher is missing Windows/Linux shell-selection contract: ${marker}`);
+  }
+}
 
 for (const marker of [
   "desktop-light",

@@ -42,6 +42,8 @@ test("Task editor can rename, reschedule, clear planning, and move context", asy
   await areaDetail.getByText(revisedTitle, { exact: true }).click();
   dialog = page.getByRole("dialog", { name: "Edit Task", exact: true });
   await dialog.getByLabel("Task planned day", { exact: true }).fill("");
+  await expect(dialog.getByLabel("Task planned day", { exact: true })).toHaveValue("");
+  await expect(dialog.getByLabel("Task scheduled time", { exact: true })).toHaveValue("");
   await expect(dialog.getByLabel("Task scheduled time", { exact: true })).toBeDisabled();
   await dialog.getByLabel("Task context", { exact: true }).selectOption({ label: "ContextOS Demo" });
   await dialog.getByRole("button", { name: "Save Task", exact: true }).click();

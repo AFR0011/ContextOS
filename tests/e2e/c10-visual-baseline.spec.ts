@@ -143,6 +143,17 @@ async function capturePrimarySurfaces(page: Page, testInfo: TestInfo, variant: V
   await capture(page, testInfo, `${variant.name}-07-search-selected`);
 
   await page.goto("/lifeos");
+  for (const module of ["ravel", "socialos", "ledger", "canon"]) {
+    const card = page.getByTestId(`lifeos-module-${module}`);
+    const destination = card.getByRole("link");
+    const status = card.getByTestId(`lifeos-module-status-${module}`);
+    if (await destination.count()) {
+      await expect(status).toHaveCount(0);
+    } else {
+      await expect(status).toBeVisible();
+      await expect(status).toHaveText("Not connected");
+    }
+  }
   await capture(page, testInfo, `${variant.name}-09-lifeos`);
 
   await page.goto("/settings");

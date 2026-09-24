@@ -36,21 +36,23 @@ function ProjectRow({
 }) {
   return (
     <div className={`cos-entity-row ${archived ? "opacity-70" : ""}`}>
-      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
-          <span className="min-w-0 max-w-full break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{name}</span>
-          <span className="cos-pill cos-pill-muted min-w-0 max-w-full whitespace-normal break-words [overflow-wrap:anywhere]">{area}</span>
-        </div>
-        <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">
-          {objective || "No objective yet."}
-        </p>
-        <p className="mt-1 text-[11px] text-[var(--cos-text-subtle)]">
-          {taskCount} open task{taskCount === 1 ? "" : "s"}
-        </p>
+      <div className="min-w-0 flex-1">
+        <button type="button" onClick={onOpen} className="w-full min-w-0 text-left">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+            <span className="min-w-0 max-w-full break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{name}</span>
+            <span className="cos-pill cos-pill-muted min-w-0 max-w-full whitespace-normal break-words [overflow-wrap:anywhere]">{area}</span>
+          </div>
+          <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">
+            {objective || "No objective yet."}
+          </p>
+          <p className="mt-1 text-[11px] text-[var(--cos-text-subtle)]">
+            {taskCount} open task{taskCount === 1 ? "" : "s"}
+          </p>
+        </button>
         {archiveAttemptMessage ? (
           <p role="alert" className="mt-1 text-[11px] text-[var(--cos-warning-text)]">{archiveAttemptMessage}</p>
         ) : null}
-      </button>
+      </div>
       {onArchive ? (
         <button
           type="button"

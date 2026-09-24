@@ -49,8 +49,8 @@ if (close?.status === "passed") {
   if (pending.length) {
     errors.push(`C10 cannot close with pending evidence: ${pending.map((entry) => entry.id).join(", ")}`);
   }
-  if (!close.verifiedCommit || !close.ciRun) {
-    errors.push("CLOSE-001 requires exact verifiedCommit and ciRun when passed.");
+  if (!close.verifiedCommit || !close.verificationRun || !close.metadataAuditCommit) {
+    errors.push("CLOSE-001 requires exact verifiedCommit, verificationRun, and metadataAuditCommit when passed.");
   }
 }
 
@@ -75,8 +75,15 @@ if (!historicalStage10.includes("f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40") ||
 }
 
 const current = fs.readFileSync("docs/c10/C10_ACCEPTANCE.md", "utf8");
-if (!/historical \*\*Stage 10\*\*/i.test(current) || !/C10 remains open/i.test(current)) {
-  errors.push("C10 documentation must distinguish current C10 from historical Stage 10 and remain open while pending.");
+if (!/historical \*\*Stage 10\*\*/i.test(current)) {
+  errors.push("C10 documentation must distinguish current C10 from historical Stage 10.");
+}
+if (close?.status === "passed") {
+  if (!/\*\*Closed and frozen\.\*\*/i.test(current) || !/C10 is closed\./i.test(current)) {
+    errors.push("Closed C10 documentation must identify the baseline as closed and frozen.");
+  }
+} else if (!/C10 remains open/i.test(current)) {
+  errors.push("Open C10 documentation must retain an explicit open-state boundary while CLOSE-001 is pending.");
 }
 
 const syncServer = fs.readFileSync("src/lib/sync-server.ts", "utf8");
@@ -433,7 +440,11 @@ for (const [label, source] of [
 if (!/historical Stage 9 verified[\s\S]{0,240}pre-C8 recoverable-tombstone model/i.test(deploymentDoc)) {
   errors.push("Deployment documentation must scope Stage 9 tombstone evidence as historical pre-C8 provenance.");
 }
-if (!/C10 acceptance program remains open/i.test(deploymentDoc)) {
+if (close?.status === "passed") {
+  if (!/C10 baseline is now accepted and frozen/i.test(deploymentDoc)) {
+    errors.push("Deployment documentation must record the accepted and frozen C10 baseline.");
+  }
+} else if (!/C10 acceptance program remains open/i.test(deploymentDoc)) {
   errors.push("Deployment documentation must distinguish historical Stage 10 acceptance from the open C10 candidate.");
 }
 if (!localFirstContract.includes("a Project cannot archive while it owns Open Tasks") ||
@@ -444,13 +455,21 @@ if (!projectState.includes("Tasks remain editable after creation") ||
     !projectState.includes("Areas cannot archive while direct Open Tasks remain")) {
   errors.push("Project state must describe current Task editing and archive semantics.");
 }
-if (!changelog.includes("## [Unreleased] — C10 candidate") ||
+if (!(close?.status === "passed"
+      ? changelog.includes("## [Unreleased] — C10 accepted baseline")
+      : changelog.includes("## [Unreleased] — C10 candidate")) ||
     !changelog.includes("Tasks now support shared post-creation editing")) {
-  errors.push("Changelog must distinguish the current C10 candidate from the published v1.0.0 history.");
+  errors.push("Changelog must distinguish the current C10 acceptance state from the published v1.0.0 history.");
 }
-if (!fullProductAudit.includes("# Phase E — Cross-category consolidation, prioritization, and release decision") ||
-    !fullProductAudit.includes("A-E remediation and full runtime acceptance complete; metadata freeze pending")) {
-  errors.push("Full product audit must retain the Phase E consolidation and honest metadata-freeze boundary.");
+if (!fullProductAudit.includes("# Phase E — Cross-category consolidation, prioritization, and release decision")) {
+  errors.push("Full product audit must retain the Phase E consolidation.");
+} else if (close?.status === "passed") {
+  if (!fullProductAudit.includes("Status: **Complete; accepted baseline frozen**") ||
+      !fullProductAudit.includes("C10 baseline is frozen")) {
+    errors.push("Closed full product audit must record the accepted frozen baseline.");
+  }
+} else if (!fullProductAudit.includes("A-E remediation and full runtime acceptance complete; metadata freeze pending")) {
+  errors.push("Open full product audit must retain the honest metadata-freeze boundary.");
 }
 if (fullProductAudit.includes("READY preview visual-equivalence check") ||
     fullProductAudit.includes("visually equivalent to current head")) {

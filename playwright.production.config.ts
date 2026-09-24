@@ -1,5 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const inheritedEnv = Object.fromEntries(
+  Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === "string")
+);
+
 export default defineConfig({
   testDir: ".",
   testMatch: [
@@ -30,11 +34,12 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
-      ...process.env,
+      ...inheritedEnv,
       ALLOW_PUBLIC_REGISTRATION: "false",
       ALLOW_DEMO_RESET: "true",
       CONTEXTOS_SSO_SECRET: "",
-      SOCIALOS_APP_URL: "https://social-os-tau.vercel.app"
+      SOCIALOS_APP_URL: "https://social-os-tau.vercel.app",
+      NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3100"
     }
   }
 });

@@ -6,7 +6,7 @@ ContextOS is a self-hostable, local-first workspace application with an evidence
 
 Package version: `1.0.0`.
 
-The post-release canonical redesign has completed C1–C9 on `main`. C10 is the current definitive product-acceptance and baseline-freeze phase. The product is based on flat Areas, Projects, Tasks, ContextDates, Daily Notes, canonical Search, a command palette, and a shallow LifeOS hub.
+The post-release canonical redesign completed C1–C9 on `main`. C10 is the accepted and frozen definitive product-acceptance baseline as of 2026-09-24. The product is based on flat Areas, Projects, Tasks, ContextDates, Daily Notes, canonical Search, a command palette, and a shallow LifeOS hub.
 
 Historical assurance remains important provenance. Stage 9 closed against GitHub Actions run `31798664757`. Stage 10's verified acceptance candidate is commit `f4ba02699c24210ddd6f4cfaf2b626f7a33b0c40`, CI run `31800346837`. Later product changes preserve the applicable engineering boundaries while updating tests/docs when semantics intentionally change.
 
@@ -173,7 +173,7 @@ Current assurance reflects the canonical C8–C9 product while preserving older 
 - no irreversible per-record purge without an anti-resurrection protocol;
 - no rolling revisionless-v3 local workspace/outbox upgrade is promised; incompatible cached state is reset at IndexedDB v4 while verified identity survives.
 
-Historical note: Stage 10 closed in August 2026 against the earlier **portfolio-stage** local-first boundary. That wording is historical provenance, not the current product maturity label. Current C10 (September 2026) is a separate post-redesign acceptance program anchored to the accepted C9 baseline.
+Historical note: Stage 10 closed in August 2026 against the earlier **portfolio-stage** local-first boundary. That wording is historical provenance, not the current product maturity label. C10 (September 2026) is the separate post-redesign acceptance baseline anchored to C9 and frozen after the final 2026-09-24 acceptance run.
 
 ## Canonical References
 

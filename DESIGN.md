@@ -139,7 +139,7 @@ Area Detail:
 - Direct Dates;
 - Archived Projects.
 
-Archiving an Area does not archive its Projects. Area archive is blocked only by direct Open Tasks; child Project lifecycle remains independent.
+Archiving an Area does not archive its Projects. Area archive is blocked only by direct Open Tasks; child Project lifecycle remains independent. Archive controls remain actionable, and the blocking explanation appears only after a blocked attempt rather than as persistent list noise.
 
 ### Dates
 
@@ -508,6 +508,7 @@ Task lifecycle rules:
 - clearing planned day clears scheduled time;
 - a Project cannot archive while it owns Open Tasks;
 - an Area cannot archive while it owns direct Open Tasks;
+- Archive controls stay actionable; when a guard rejects the action, the relevant explanation is revealed contextually and disappears once the blocker is resolved;
 - a Done Task whose actual parent is archived cannot be reopened until moved to an active context or the parent is restored.
 
 Date:

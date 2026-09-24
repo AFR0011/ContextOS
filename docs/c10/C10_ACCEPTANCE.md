@@ -2,13 +2,14 @@
 
 Date: 2026-09-22  
 Baseline: C9 merge commit `16dffb7ad52dbcb9f2a8fd3ffbf0128c1a896d1f`  
-Branch: `c10-product-acceptance`
+Branch: `c10-product-acceptance`  
+Closed: 2026-09-24
 
 ## Status
 
-**Runtime acceptance complete; metadata freeze pending.** C10 is the definitive post-redesign acceptance and baseline-freeze program for the current candidate built on the C8-C9 product. The candidate includes the remediations approved during the C10 A-E full-product audit.
+**Closed and frozen.** C10 is the definitive post-redesign acceptance and baseline freeze for the accepted candidate built on C8-C9 plus the approved A-E audit remediations.
 
-The complete final local acceptance ladder passed on 2026-09-24 against product commit `ae58fa5c3d1199af80bb53c80b4e4a2136177bd0`. GitHub Actions was unavailable for the account during closure, so this result is recorded as local exact-commit evidence rather than misrepresented as a hosted CI run.
+The complete final local acceptance ladder passed on 2026-09-24 against product commit `ae58fa5c3d1199af80bb53c80b4e4a2136177bd0`. The metadata-only closure checkpoint at `4aeaffe45437eb5bbdafb4950528e877619c46ca` then passed `audit:c10:product` and `audit:release`. GitHub Actions was unavailable for the account during closure, so this evidence is explicitly local exact-commit verification rather than a hosted CI result.
 
 This is distinct from the historical **Stage 10** program completed in August 2026. Historical Stage 9/10 evidence remains immutable provenance for the product boundary verified at that time. C10 does not rewrite those historical claims after the later C7/C8 clean break removed Inbox/Resources/Reviews/Archive and tombstone-era persistence.
 
@@ -46,7 +47,7 @@ Completed in source:
 Completed runtime acceptance:
 7. The complete current verification ladder passed on product commit `ae58fa5c3d1199af80bb53c80b4e4a2136177bd0`.
 8. `WORKFLOW-001`, `OFFLINE-001`, `ACCESS-001`, and `AUDIT-001` are accepted from that exact-commit evidence.
-9. The final metadata-only closure head must pass `audit:c10:product` and `audit:release` before `CLOSE-001` is frozen.
+9. The metadata-only closure checkpoint `4aeaffe45437eb5bbdafb4950528e877619c46ca` passed `audit:c10:product` and `audit:release`; `CLOSE-001` is frozen as passed.
 
 Completed visual evidence:
 - the canonical real-browser screenshot matrix passed and was human-reviewed on candidate `bfd60db891aa54b96480bbca9e2f89f0dd2f3962`;
@@ -60,11 +61,11 @@ A missing historical artifact is acceptable to the repository validators only wh
 - it is explicitly listed in that retirement map; and
 - every listed current replacement artifact exists.
 
-## Closure rule
+## Closure result
 
-C10 remains open only for the metadata freeze while `CLOSE-001` is pending in `audits/c10-product-acceptance.json`.
+C10 is closed. `audits/c10-product-acceptance.json` contains no pending controls; `BOUNDARY-001` remains intentionally classified as a documented boundary rather than a passed implementation claim.
 
-C10 closes only after:
+Closure required:
 - the canonical workflow acceptance passes;
 - current production/offline, unit, lifecycle, accessibility, responsive, and development interaction matrices pass;
 - all A-E audit remediations required for the accepted product are present;

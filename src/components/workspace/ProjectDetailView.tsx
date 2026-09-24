@@ -76,6 +76,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const [dateStartTime, setDateStartTime] = useState("");
   const [dateEndTime, setDateEndTime] = useState("");
   const [dateDetails, setDateDetails] = useState("");
+  const [archiveAttempted, setArchiveAttempted] = useState(false);
 
   if (!project) {
     return (
@@ -97,6 +98,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const doneTasks = projectTasks.filter((task) => task.state === "done").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const editingTask = data.tasks.find((task) => task.id === editingTaskId) ?? null;
   const archiveBlockedReason = projectArchiveBlockReason(data, currentProject.id);
+  const archiveAttemptMessage = archiveAttempted ? archiveBlockedReason : null;
   const projectDates = data.dates
     .filter((item) => item.parent.type === "project" && item.parent.projectId === currentProject.id)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
@@ -134,7 +136,11 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   }
 
   function archive() {
-    if (projectArchiveBlockReason(data, currentProject.id)) return;
+    if (projectArchiveBlockReason(data, currentProject.id)) {
+      setArchiveAttempted(true);
+      return;
+    }
+    setArchiveAttempted(false);
     updateProject(currentProject.id, { state: "archived" });
   }
 
@@ -161,10 +167,8 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
             <button
               type="button"
               onClick={archive}
-              disabled={Boolean(archiveBlockedReason)}
-              title={archiveBlockedReason ?? undefined}
-              aria-describedby={archiveBlockedReason ? "project-archive-blocked" : undefined}
-              className="cos-btn cos-btn-secondary px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-45"
+              aria-describedby={archiveAttemptMessage ? "project-archive-blocked" : undefined}
+              className="cos-btn cos-btn-secondary px-3 py-2 text-sm"
             >
               <Archive className="h-4 w-4" /> Archive
             </button>
@@ -172,9 +176,9 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         }
       />
 
-      {currentProject.state === "active" && archiveBlockedReason ? (
-        <p id="project-archive-blocked" className="-mt-4 mb-6 text-sm text-[var(--cos-warning-text)]">
-          {archiveBlockedReason}
+      {currentProject.state === "active" && archiveAttemptMessage ? (
+        <p id="project-archive-blocked" role="alert" className="-mt-4 mb-6 text-sm text-[var(--cos-warning-text)]">
+          {archiveAttemptMessage}
         </p>
       ) : null}
 

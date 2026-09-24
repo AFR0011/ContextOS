@@ -735,9 +735,32 @@ So:
 - final current-head build/runtime verification remains pending;
 - actual current-head screenshot capture and human visual review remain pending.
 
+## C-00.10 — Local runtime recovery and mobile-drawer visual closure
+
+Status: **Passed for the mobile-drawer slice; full visual matrix still pending**
+
+A local Windows runtime became available for current C10 verification and exposed two environment/harness issues before the drawer regression itself could execute:
+
+1. the local checkout was still on C9 `main` rather than `c10-product-acceptance`; after preserving local changes, the checkout was fast-forwarded to the C10 branch and a clean `.next` rebuild passed;
+2. the local PostgreSQL Compose service was stopped, causing the login page to fail closed on its database health check; restarting the existing `contextos-postgres` service restored connectivity with all 12 migrations already current;
+3. the dedicated visual suite runs `next start`, which correctly uses production runtime semantics and therefore rejected `/api/reset-demo` while `ALLOW_DEMO_RESET=false`. The visual harness now opts into demo reset explicitly without changing the application's production-safe default.
+
+The mobile-drawer identity defect is now closed with both automated and human evidence:
+- implementation commit `07d75216a1fc547127f7766c1288a54740b02761` gives the drawer identity row enough flexible width to preserve the full `ContextOS` label;
+- `c10-visual-stress.spec.ts` asserts the 320x720 drawer identity is visible and not internally clipped;
+- `c10-visual-baseline.spec.ts` asserts the same invariant at the canonical 390x844 mobile viewport;
+- light and dark variants passed in both targeted suites;
+- human review confirmed full `ContextOS` text, clean identity/close-control alignment, no horizontal clipping, no navigation/control overlap, and no theme-specific defect.
+
+Harness follow-up commits:
+- `bf42a731906b20bf16e3d73f215c3372fbf1d46a` — dedicated visual runtime explicitly enables disposable demo reset;
+- `d9e8b615efb15fd09541134079ea11a127dd7611` — the canonical capture command carries the same explicit opt-in.
+
+This closes only the mobile-drawer slice. It does not satisfy the remaining primary-surface, empty-state, hostile-content, or production-offline screenshot matrix.
+
 ## C-01 — Primary surface rendered inspection
 
-Status: **Pending runnable current candidate**
+Status: **Partially executed; mobile drawer passed, remaining matrix pending**
 
 Required evidence:
 - Home;

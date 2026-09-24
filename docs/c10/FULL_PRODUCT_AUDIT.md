@@ -908,6 +908,18 @@ Regression coverage verifies:
 - move Project -> Area -> Project;
 - completed Task editing without changing Done state.
 
+### D-01.1 — Clearing planned day did not immediately disable scheduled time
+
+Status: **Fixed; final runtime re-verification pending**
+
+The final development acceptance run exposed a browser interaction mismatch in the shared Task editor. The save layer already enforced the canonical invariant that an unplanned Task cannot retain a scheduled time, but clearing the native date input did not always drive the React `onChange` path immediately. The UI could therefore continue showing an enabled scheduled-time control until save even though save would later normalize the value to null.
+
+Fix:
+- planned-day editing now responds to the native `input` event;
+- clearing the planned day immediately clears the scheduled-time draft;
+- the scheduled-time control disables immediately when no planned day remains;
+- the E2E regression now asserts the planned day is blank, scheduled time is blank, and the time control is disabled before save.
+
 The visual baseline now captures the Task editor in every standard viewport/theme variant.
 
 ## D-02 — Area rename

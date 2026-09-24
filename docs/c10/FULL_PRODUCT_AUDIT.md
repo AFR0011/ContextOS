@@ -879,9 +879,10 @@ The rule is enforced in:
 - Project rows nested in Area Detail.
 
 The UI:
-- disables Archive;
-- exposes a visible explanation;
-- guards the mutation handler as a second boundary.
+- leaves Archive actionable so the constraint is discoverable through intent rather than persistent warning noise;
+- reveals an accessible contextual explanation only after a blocked archive attempt;
+- removes that explanation automatically once the blocking Open Tasks are resolved or moved;
+- guards the mutation handler as the authoritative second boundary.
 
 ### Areas
 
@@ -892,6 +893,8 @@ Child Project Tasks do **not** block Area archive. Project lifecycle remains ind
 The rule is enforced in:
 - Areas list;
 - Area Detail.
+
+As with Projects, Archive remains actionable. A blocked attempt reveals the direct-Open-Task explanation in context; the warning is not shown pre-emptively.
 
 ### Archived Task reopen boundary
 
@@ -924,11 +927,11 @@ An active Project inside an archived Area remains active; only its Area metadata
 The demo seed previously contained an archived `Release Planning` Project with an Open Task. That contradicted the approved policy. The historical release Task is now seeded as Done.
 
 Regression coverage includes:
-- Project archive blocked until Open Tasks are resolved;
+- Project Archive remains actionable, reveals its blocker only after intent, and succeeds once Open Tasks are resolved;
 - completed Task reopen blocked after Project archive;
 - future Date context remains visible and labelled archived;
 - Search/Date/Home archived-context labelling;
-- Area archive blocked by direct Open Tasks;
+- Area Archive remains actionable, reveals its direct-Task blocker only after intent, and succeeds once the blocker is resolved;
 - Area archive allowed while active child Projects remain;
 - archived Area labelling on those still-active Projects;
 - unit tests proving Area policy ignores child-Project Tasks.

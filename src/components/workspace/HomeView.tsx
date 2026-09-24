@@ -220,7 +220,7 @@ export function HomeView() {
           description="What you planned to do today. Completed work stays in place."
           className="md:col-span-2 xl:col-span-1"
         >
-          <div data-testid="home-dayline" className="min-h-[18rem]">
+          <div data-testid="home-dayline" className="min-h-0 md:min-h-[18rem]">
             {daylineItems.length ? (
               <Dayline items={daylineItems} />
             ) : (

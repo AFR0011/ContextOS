@@ -114,7 +114,7 @@
     {
       "id": "VISUAL-001",
       "title": "Canonical screenshot baseline is captured from a real browser and reviewed for clipping overlap theme and responsive defects",
-      "status": "pending",
+      "status": "passed",
       "artifacts": [
         "docs/c10/SCREENSHOT_BASELINE.md",
         "tests/e2e/c10-visual-baseline.spec.ts",
@@ -132,7 +132,9 @@
         "tests/e2e/c10-archive-policy.spec.ts",
         "tests/e2e/c10-area-editing.spec.ts",
         "src/components/workspace/AreaDetailView.tsx"
-      ]
+      ],
+      "verifiedCommit": "bfd60db891aa54b96480bbca9e2f89f0dd2f3962",
+      "verification": "Local real-browser npm run capture:c10:visual on 2026-09-24; c10-standard and c10-production run markers passed; human review completed."
     },
     {
       "id": "AUDIT-001",

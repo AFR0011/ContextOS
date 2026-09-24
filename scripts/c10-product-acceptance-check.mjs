@@ -238,8 +238,9 @@ if (packageJson.scripts?.["capture:c10:visual"] !== "node scripts/capture-c10-vi
   errors.push("C10 visual capture command is missing or changed unexpectedly.");
 }
 if (!screenshotBaseline.includes("npm run capture:c10:visual") ||
-    !screenshotBaseline.includes("Current render-evidence blocker")) {
-  errors.push("C10 screenshot documentation must retain the executable capture command and current render-evidence boundary.");
+    !screenshotBaseline.includes("## Final real-browser evidence — 2026-09-24") ||
+    !screenshotBaseline.includes("bfd60db891aa54b96480bbca9e2f89f0dd2f3962")) {
+  errors.push("C10 screenshot documentation must retain the executable capture command and accepted final real-browser evidence.");
 }
 if (!visualStressSpec.includes("320x720 hostile content") ||
     !visualStressSpec.includes('for (const theme of ["light", "dark"] as const)')) {

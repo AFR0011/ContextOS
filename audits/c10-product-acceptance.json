@@ -179,7 +179,7 @@
     {
       "id": "CLOSE-001",
       "title": "C10 baseline is frozen only after the current acceptance ladder and documentation refresh are complete",
-      "status": "pending",
+      "status": "passed",
       "artifacts": [
         "docs/c10/C10_ACCEPTANCE.md",
         ".github/workflows/ci.yml",
@@ -189,7 +189,8 @@
       ],
       "verifiedCommit": "ae58fa5c3d1199af80bb53c80b4e4a2136177bd0",
       "verificationRun": "local-final-acceptance-2026-09-24",
-      "verification": "Substantive final acceptance passed locally on 2026-09-24; metadata-only closure head still requires final structural/release audit before baseline freeze."
+      "verification": "Final product/runtime acceptance passed locally on 2026-09-24 at the verified product commit; the metadata-only closure head then passed audit:c10:product and audit:release before freeze.",
+      "metadataAuditCommit": "4aeaffe45437eb5bbdafb4950528e877619c46ca"
     }
   ]
 }

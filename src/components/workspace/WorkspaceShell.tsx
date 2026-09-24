@@ -52,7 +52,11 @@ function navIsActive(currentPath: string, href: string) {
 
 function syncStatusLabel(sync: SyncSnapshot) {
   if (sync.syncing) return "Syncing";
-  if (!sync.online) return "Offline";
+  if (!sync.online) {
+    return sync.pendingCount > 0
+      ? `Offline · ${sync.pendingCount} pending`
+      : "Offline";
+  }
   if (sync.pendingCount > 0) return `${sync.pendingCount} pending`;
   return "Online";
 }

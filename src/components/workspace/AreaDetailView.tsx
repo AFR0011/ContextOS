@@ -25,6 +25,8 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
   const [dateStartTime, setDateStartTime] = useState("");
   const [dateEndTime, setDateEndTime] = useState("");
   const [dateDetails, setDateDetails] = useState("");
+  const [archiveAttempted, setArchiveAttempted] = useState(false);
+  const [projectArchiveAttemptId, setProjectArchiveAttemptId] = useState<string | null>(null);
 
   if (!area) {
     return (
@@ -44,6 +46,7 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
   const doneTasks = directTasks.filter((task) => task.state === "done");
   const editingTask = data.tasks.find((task) => task.id === editingTaskId) ?? null;
   const archiveBlockedReason = areaArchiveBlockReason(data, currentArea.id);
+  const archiveAttemptMessage = archiveAttempted ? archiveBlockedReason : null;
   const directDates = data.dates
     .filter((item) => item.parent.type === "area" && item.parent.areaId === currentArea.id)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99"));
@@ -108,13 +111,15 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
             <button
               type="button"
               onClick={() => {
-                if (areaArchiveBlockReason(data, currentArea.id)) return;
+                if (areaArchiveBlockReason(data, currentArea.id)) {
+                  setArchiveAttempted(true);
+                  return;
+                }
+                setArchiveAttempted(false);
                 updateArea(currentArea.id, { state: "archived" });
               }}
-              disabled={Boolean(archiveBlockedReason)}
-              title={archiveBlockedReason ?? undefined}
-              aria-describedby={archiveBlockedReason ? "area-archive-blocked" : undefined}
-              className="cos-btn cos-btn-secondary px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-45"
+              aria-describedby={archiveAttemptMessage ? "area-archive-blocked" : undefined}
+              className="cos-btn cos-btn-secondary px-3 py-2 text-sm"
             >
               <Archive className="h-4 w-4" /> Archive
             </button>
@@ -122,9 +127,9 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
         }
       />
 
-      {currentArea.state === "active" && archiveBlockedReason ? (
-        <p id="area-archive-blocked" className="-mt-4 mb-6 text-sm text-[var(--cos-warning-text)]">
-          {archiveBlockedReason}
+      {currentArea.state === "active" && archiveAttemptMessage ? (
+        <p id="area-archive-blocked" role="alert" className="-mt-4 mb-6 text-sm text-[var(--cos-warning-text)]">
+          {archiveAttemptMessage}
         </p>
       ) : null}
 
@@ -169,20 +174,22 @@ export function AreaDetailView({ areaId }: { areaId: string }) {
                   <button type="button" onClick={() => router.push(`/projects/${project.id}`)} className="min-w-0 flex-1 text-left">
                     <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{project.name}</span>
                     <span className="mt-1 block line-clamp-2 break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{project.objective || "No objective yet."}</span>
-                    {projectBlockReason ? (
-                      <span className="mt-1 block text-[11px] text-[var(--cos-warning-text)]">{projectBlockReason}</span>
+                    {projectArchiveAttemptId === project.id && projectBlockReason ? (
+                      <span role="alert" className="mt-1 block text-[11px] text-[var(--cos-warning-text)]">{projectBlockReason}</span>
                     ) : null}
                   </button>
                   <button
                     type="button"
                     onClick={() => {
-                      if (projectBlockReason) return;
+                      if (projectBlockReason) {
+                        setProjectArchiveAttemptId(project.id);
+                        return;
+                      }
+                      setProjectArchiveAttemptId(null);
                       updateProject(project.id, { state: "archived" });
                     }}
-                    disabled={Boolean(projectBlockReason)}
-                    title={projectBlockReason ?? undefined}
                     aria-label={`Archive ${project.name}`}
-                    className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-45"
+                    className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs"
                   >
                     <Archive className="h-3.5 w-3.5" /> Archive
                   </button>

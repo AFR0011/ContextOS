@@ -814,6 +814,21 @@ Verification:
 - targeted desktop/mobile LifeOS capture passed;
 - human review confirmed the status reads as non-interactive state, does not crowd the module identity, and the cards remain visually balanced without a lower pseudo-action.
 
+### C-01.3 — Offline pending work was hidden by the compact sync label
+
+Severity: **Medium local-first communication defect**  
+Status: **Implemented; production-browser verification pending**
+
+The production visual matrix showed that plain offline and offline-with-unsynced-work both rendered the compact mobile sync state as `Offline`. The outbox was preserved correctly, and the expanded navigation status exposed its count, but the always-visible mobile shell hid the difference.
+
+Refinement:
+- plain offline remains `Offline`;
+- offline with queued mutations renders `Offline · N pending`;
+- online pending and active synchronization retain their existing `N pending` / `Syncing` behavior;
+- warning tone/icon behavior is unchanged.
+
+The production visual regression now requires plain offline to remain distinct from offline-with-pending in both light and dark themes.
+
 Required evidence still pending across the remaining matrix:
 - Home beyond the closed mobile spacing defect;
 - Projects;
@@ -822,8 +837,8 @@ Required evidence still pending across the remaining matrix:
 - Area Detail;
 - Dates;
 - Search;
-- LifeOS targeted verification for C-01.2;
 - Settings;
+- production offline/pending targeted verification for C-01.3;
 - desktop/mobile;
 - light/dark.
 

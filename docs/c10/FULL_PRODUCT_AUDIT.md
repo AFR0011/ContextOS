@@ -936,6 +936,31 @@ Regression coverage includes:
 - archived Area labelling on those still-active Projects;
 - unit tests proving Area policy ignores child-Project Tasks.
 
+### D-03.1 — Archive blocker presentation refined after rendered hierarchy review
+
+Status: **Implemented and verified**
+
+The full C10 visual hierarchy pass showed that pre-emptive archive warnings were visually disproportionate to a normal Project/Area state. The approved interaction was refined without changing the archive invariant:
+
+- Archive controls remain enabled/actionable;
+- no blocker warning is shown before user intent;
+- a blocked archive attempt reveals a contextual `role="alert"` explanation;
+- the mutation guard remains authoritative and prevents the invalid transition;
+- once the blocking Open Tasks are completed or moved, the warning disappears because the blocker no longer exists;
+- the next Archive attempt succeeds normally.
+
+The behavior is consistent across Projects, Project Detail, Areas, Area Detail, and Project rows nested inside Area Detail.
+
+Accessibility review additionally moved row-level alerts outside their navigation buttons so the alert is not part of another interactive control.
+
+Verification on the final interaction head:
+- repository typecheck passed;
+- targeted archive-policy E2E passed;
+- the broader project archive/restore lifecycle regression passed;
+- production build passed;
+- targeted mobile visual capture passed;
+- human review confirmed the warning is absent before intent, appears cleanly after a blocked attempt, and does not create awkward row/control shifts.
+
 ## D-04 — Per-record Task/Date deletion
 
 Severity: **Low-Medium product gap**  

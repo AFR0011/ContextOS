@@ -37,6 +37,7 @@ Area -> Project -> Task
 - Tasks remain editable after creation for title, Project/Area context, planned day, and scheduled time.
 - Projects cannot archive while Open child Tasks remain.
 - Areas cannot archive while direct Open Tasks remain; child Project lifecycle stays independent.
+- Archive controls remain actionable; blocked attempts reveal a contextual explanation only after intent, while the mutation guard still enforces the invariant.
 - ContextDates are Event / Deadline and belong to exactly one Project or Area.
 - Dates have no completion/archive lifecycle.
 

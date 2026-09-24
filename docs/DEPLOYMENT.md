@@ -2,7 +2,7 @@
 
 ## Current Release Gate
 
-ContextOS is a **self-hostable local-first application** with a verified repository-owned deployment path. The repository is not an operated hosted production SaaS offering. Historical Stage 10 acceptance is complete for the product boundary verified in August 2026; the separate post-redesign C10 acceptance program remains open until the current candidate completes its final runtime and visual evidence. Stage 8 produced real non-production deployment/recovery evidence; those rehearsals must not be confused with target-specific production operations.
+ContextOS is a **self-hostable local-first application** with a verified repository-owned deployment path. The repository is not an operated hosted production SaaS offering. Historical Stage 10 acceptance remains provenance for the product boundary verified in August 2026; the separate post-redesign C10 baseline is now accepted and frozen after final local runtime, visual, and metadata closure evidence on 2026-09-24. Stage 8 produced real non-production deployment/recovery evidence; those rehearsals must not be confused with target-specific production operations.
 
 Current repository evidence:
 

@@ -6,7 +6,9 @@ Branch: `c10-product-acceptance`
 
 ## Status
 
-**Open.** C10 is the definitive post-redesign acceptance and baseline-freeze program for the current candidate built on the C8-C9 product. The candidate now also includes the remediations approved during the C10 A-E full-product audit.
+**Runtime acceptance complete; metadata freeze pending.** C10 is the definitive post-redesign acceptance and baseline-freeze program for the current candidate built on the C8-C9 product. The candidate includes the remediations approved during the C10 A-E full-product audit.
+
+The complete final local acceptance ladder passed on 2026-09-24 against product commit `ae58fa5c3d1199af80bb53c80b4e4a2136177bd0`. GitHub Actions was unavailable for the account during closure, so this result is recorded as local exact-commit evidence rather than misrepresented as a hosted CI run.
 
 This is distinct from the historical **Stage 10** program completed in August 2026. Historical Stage 9/10 evidence remains immutable provenance for the product boundary verified at that time. C10 does not rewrite those historical claims after the later C7/C8 clean break removed Inbox/Resources/Reviews/Archive and tombstone-era persistence.
 
@@ -41,10 +43,10 @@ Completed in source:
    - Phase E — consolidation / remediation.
 6. Apply approved Phase D product changes: shared Task editing, Area rename, archive/open-work invariants, and the explicit no-per-record-delete boundary.
 
-Still required for closure:
-7. Run the complete current verification ladder on the final repository candidate.
-8. Record exact full-ladder verification evidence and update the remaining pending controls.
-9. Freeze the baseline only after the registry has no pending non-boundary evidence.
+Completed runtime acceptance:
+7. The complete current verification ladder passed on product commit `ae58fa5c3d1199af80bb53c80b4e4a2136177bd0`.
+8. `WORKFLOW-001`, `OFFLINE-001`, `ACCESS-001`, and `AUDIT-001` are accepted from that exact-commit evidence.
+9. The final metadata-only closure head must pass `audit:c10:product` and `audit:release` before `CLOSE-001` is frozen.
 
 Completed visual evidence:
 - the canonical real-browser screenshot matrix passed and was human-reviewed on candidate `bfd60db891aa54b96480bbca9e2f89f0dd2f3962`;
@@ -60,7 +62,7 @@ A missing historical artifact is acceptable to the repository validators only wh
 
 ## Closure rule
 
-C10 remains open while any `pending` entry exists in `audits/c10-product-acceptance.json`.
+C10 remains open only for the metadata freeze while `CLOSE-001` is pending in `audits/c10-product-acceptance.json`.
 
 C10 closes only after:
 - the canonical workflow acceptance passes;

@@ -12,7 +12,7 @@ function AreaRow({
   projectCount,
   taskCount,
   archived,
-  archiveBlockedReason,
+  archiveAttemptMessage,
   onOpen,
   onArchive,
   onRestore
@@ -21,7 +21,7 @@ function AreaRow({
   projectCount: number;
   taskCount: number;
   archived?: boolean;
-  archiveBlockedReason?: string | null;
+  archiveAttemptMessage?: string | null;
   onOpen: () => void;
   onArchive?: () => void;
   onRestore?: () => void;
@@ -33,12 +33,12 @@ function AreaRow({
         <span className="mt-1 block text-xs text-[var(--cos-text-subtle)]">
           {projectCount} active project{projectCount === 1 ? "" : "s"} · {taskCount} direct open task{taskCount === 1 ? "" : "s"}
         </span>
-        {archiveBlockedReason ? (
-          <span className="mt-1 block text-[11px] text-[var(--cos-warning-text)]">{archiveBlockedReason}</span>
+        {archiveAttemptMessage ? (
+          <span role="alert" className="mt-1 block text-[11px] text-[var(--cos-warning-text)]">{archiveAttemptMessage}</span>
         ) : null}
       </button>
       {onArchive ? (
-        <button type="button" onClick={onArchive} disabled={Boolean(archiveBlockedReason)} title={archiveBlockedReason ?? undefined} aria-label={`Archive ${name}`} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-45">
+        <button type="button" onClick={onArchive} aria-label={`Archive ${name}`} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
           <Archive className="h-3.5 w-3.5" /> Archive
         </button>
       ) : null}
@@ -56,6 +56,7 @@ export function AreasView() {
   const { data, loading, addArea, updateArea } = useWorkspace();
   const [showNew, setShowNew] = useState(false);
   const [name, setName] = useState("");
+  const [archiveAttemptAreaId, setArchiveAttemptAreaId] = useState<string | null>(null);
   const newAreaTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const activeAreas = data.areas.filter((area) => area.state === "active");
@@ -134,10 +135,14 @@ export function AreasView() {
                       name={area.name}
                       projectCount={projectCount}
                       taskCount={taskCount}
-                      archiveBlockedReason={areaArchiveBlockReason(data, area.id)}
+                      archiveAttemptMessage={archiveAttemptAreaId === area.id ? areaArchiveBlockReason(data, area.id) : null}
                       onOpen={() => router.push(`/areas/${area.id}`)}
                       onArchive={() => {
-                        if (areaArchiveBlockReason(data, area.id)) return;
+                        if (areaArchiveBlockReason(data, area.id)) {
+                          setArchiveAttemptAreaId(area.id);
+                          return;
+                        }
+                        setArchiveAttemptAreaId(null);
                         updateArea(area.id, { state: "archived" });
                       }}
                     />

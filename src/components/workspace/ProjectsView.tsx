@@ -19,7 +19,7 @@ function ProjectRow({
   objective,
   taskCount,
   archived,
-  archiveBlockedReason,
+  archiveAttemptMessage,
   onOpen,
   onArchive,
   onRestore
@@ -29,7 +29,7 @@ function ProjectRow({
   objective: string;
   taskCount: number;
   archived?: boolean;
-  archiveBlockedReason?: string | null;
+  archiveAttemptMessage?: string | null;
   onOpen: () => void;
   onArchive?: () => void;
   onRestore?: () => void;
@@ -47,18 +47,16 @@ function ProjectRow({
         <p className="mt-1 text-[11px] text-[var(--cos-text-subtle)]">
           {taskCount} open task{taskCount === 1 ? "" : "s"}
         </p>
-        {archiveBlockedReason ? (
-          <p className="mt-1 text-[11px] text-[var(--cos-warning-text)]">{archiveBlockedReason}</p>
+        {archiveAttemptMessage ? (
+          <p role="alert" className="mt-1 text-[11px] text-[var(--cos-warning-text)]">{archiveAttemptMessage}</p>
         ) : null}
       </button>
       {onArchive ? (
         <button
           type="button"
           onClick={onArchive}
-          disabled={Boolean(archiveBlockedReason)}
-          title={archiveBlockedReason ?? undefined}
           aria-label={`Archive ${name}`}
-          className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-45"
+          className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs"
         >
           <Archive className="h-3.5 w-3.5" /> Archive
         </button>
@@ -84,6 +82,7 @@ export function ProjectsView() {
   const [name, setName] = useState("");
   const [areaId, setAreaId] = useState("");
   const [objective, setObjective] = useState("");
+  const [archiveAttemptProjectId, setArchiveAttemptProjectId] = useState<string | null>(null);
   const newProjectTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const activeAreas = data.areas.filter((area) => area.state === "active");
@@ -118,7 +117,11 @@ export function ProjectsView() {
   }
 
   function archiveProject(projectId: string) {
-    if (projectArchiveBlockReason(data, projectId)) return;
+    if (projectArchiveBlockReason(data, projectId)) {
+      setArchiveAttemptProjectId(projectId);
+      return;
+    }
+    setArchiveAttemptProjectId(null);
     updateProject(projectId, { state: "archived" });
   }
 
@@ -212,7 +215,7 @@ export function ProjectsView() {
                 area={areaName(data.areas, project.areaId)}
                 objective={project.objective}
                 taskCount={openTaskCount(project.id)}
-                archiveBlockedReason={projectArchiveBlockReason(data, project.id)}
+                archiveAttemptMessage={archiveAttemptProjectId === project.id ? projectArchiveBlockReason(data, project.id) : null}
                 onOpen={() => router.push(`/projects/${project.id}`)}
                 onArchive={() => archiveProject(project.id)}
               />

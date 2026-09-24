@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased] — C10 candidate, 2026-09-23
+## [Unreleased] — C10 accepted baseline, 2026-09-24
 
 ### Changed
 
@@ -15,7 +15,7 @@
 ### Verification
 
 - C10 adds a separate current acceptance registry and A–E full-product audit while preserving published Stage 7–10 evidence as historical provenance.
-- Rendered screenshot/human visual acceptance and final current-head runtime closure remain pending until the executable environment is available.
+- Rendered screenshot/human visual acceptance and the complete local final runtime ladder passed; the C10 acceptance baseline was frozen on 2026-09-24 against product commit `ae58fa5c3d1199af80bb53c80b4e4a2136177bd0`, with metadata closure audited at `4aeaffe45437eb5bbdafb4950528e877619c46ca`.
 
 ## [1.0.0] - 2026-09-14
 

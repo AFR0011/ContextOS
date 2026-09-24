@@ -1105,7 +1105,7 @@ Therefore Phase D is **implemented but not runtime-accepted**.
 
 # Phase E — Cross-category consolidation, prioritization, and release decision
 
-Status: **source and visual consolidation complete; full runtime acceptance ladder pending**
+Status: **A-E remediation and full runtime acceptance complete; metadata freeze pending**
 
 Phase E reconciles the complete A-D audit against the final candidate rather than introducing another product feature batch.
 
@@ -1230,21 +1230,23 @@ Confirmed:
 
 ## Final release decision
 
-**Do not freeze or merge the C10 baseline yet.**
+**Runtime acceptance passed; freeze after metadata-only closure audit.**
 
-Source-level A-E audit work is consolidated. No additional product decision is currently blocking closure.
+The complete final local verification ladder passed on 2026-09-24 against product commit `ae58fa5c3d1199af80bb53c80b4e4a2136177bd0`.
 
-Remaining blockers are evidence execution, not known product-design ambiguity:
-1. run the complete final-candidate CI ladder, including unit, typecheck/build, production/offline, lifecycle, accessibility/responsive, and development E2E;
-2. run the new Task-editing / Area-editing / archive-policy regressions;
-3. record the full acceptance-ladder result against the final repository candidate;
-4. update the remaining pending registry controls only from that evidence;
-5. freeze the baseline only after no non-boundary control remains pending.
+Accepted runtime evidence includes:
+1. repository/static assurance and release audits;
+2. Prisma validation/generation, migration deploy, seed, account-operator checks, unit tests, typecheck, and optimized production build;
+3. production container distribution and restart-persistence smoke;
+4. complete production/offline Playwright matrix;
+5. Stage 9 lifecycle + IndexedDB v4 matrix;
+6. complete development E2E matrix, including C10 workflow, accessibility, responsive, Task editing, Area editing, archive-policy, and visual-state coverage.
 
-Current environment boundary:
-- newest useful READY preview: `ebb2d994d225b5fa26221378e265144716c0ea28`, partial Phase D evidence only;
-- final branch head: current-head Vercel status is build-rate-limit failure;
-- GitHub Actions unavailable for the account;
-- connector browser outbound navigation blocked.
+GitHub Actions was unavailable for the account during closure, so the accepted run is explicitly local exact-commit evidence rather than hosted-CI evidence.
 
-Therefore Phase E is **source/visual-complete but C10 remains open pending the full acceptance ladder**.
+The only remaining closure step is metadata-only:
+- update acceptance records and status language;
+- run `npm run audit:c10:product` and `npm run audit:release` on that metadata head;
+- freeze `CLOSE-001` only if those checks remain green.
+
+Therefore Phase E is **complete at the product/runtime level; C10 remains open only for the metadata freeze**.

@@ -39,3 +39,23 @@ test("detail Date composers remain usable at the 1024px sidebar breakpoint", asy
   await expectUsableFieldWidth(areaDates.getByRole("textbox", { name: "Date title", exact: true }));
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
+
+test("Home dayline drops the desktop balancing height on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+
+  const dayline = page.getByTestId("home-dayline");
+  await expect(dayline).toBeVisible();
+
+  const mobileMinHeight = await dayline.evaluate((element) =>
+    Number.parseFloat(window.getComputedStyle(element).minHeight)
+  );
+  expect(mobileMinHeight).toBeLessThan(100);
+
+  await page.setViewportSize({ width: 1024, height: 768 });
+  const desktopMinHeight = await dayline.evaluate((element) =>
+    Number.parseFloat(window.getComputedStyle(element).minHeight)
+  );
+  expect(desktopMinHeight).toBeGreaterThanOrEqual(288);
+});
+

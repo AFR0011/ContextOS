@@ -788,6 +788,25 @@ Commits:
 - `ad7283a07b4444a4edf78617db8ae84a84ad3d9f` — remove desktop Dayline height from mobile Home;
 - `d047eca22f330b7c97b2a8717ca1ba50f2f68ac0` — guard compact mobile Home rhythm.
 
+### C-01.2 — Disconnected LifeOS modules duplicated state as a pseudo-action
+
+Severity: **Low-Medium visual hierarchy defect**  
+Status: **Implemented; targeted runtime/visual verification pending**
+
+The hierarchy pass found that disconnected LifeOS cards communicated the same absence twice:
+- body copy: `No summary provider connected`;
+- a full-width `Not connected` bar styled similarly to an unavailable action.
+
+This blurred the distinction between module state and module action.
+
+Refinement:
+- disconnected modules now show a compact muted `Not connected` status pill beside the module name;
+- the lower action area is absent when no destination exists;
+- connected modules retain the full-width `Open <module>` action;
+- summary/provider semantics are unchanged and no placeholder module data is introduced.
+
+Regression coverage distinguishes the status element from destination links so connected cards cannot accidentally render a disconnected status and disconnected cards cannot masquerade as actionable controls.
+
 Required evidence still pending across the remaining matrix:
 - Home beyond the closed mobile spacing defect;
 - Projects;
@@ -796,7 +815,7 @@ Required evidence still pending across the remaining matrix:
 - Area Detail;
 - Dates;
 - Search;
-- LifeOS;
+- LifeOS targeted verification for C-01.2;
 - Settings;
 - desktop/mobile;
 - light/dark.

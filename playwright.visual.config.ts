@@ -28,6 +28,9 @@ export default defineConfig({
     command: "npm run start -- --hostname 127.0.0.1 --port 3100",
     url: "http://127.0.0.1:3100/login",
     reuseExistingServer: false,
-    timeout: 120_000
+    timeout: 120_000,
+    env: {
+      ALLOW_DEMO_RESET: "true"
+    }
   }
 });

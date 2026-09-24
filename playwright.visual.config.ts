@@ -30,7 +30,8 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
-      ALLOW_DEMO_RESET: "true"
+      ALLOW_DEMO_RESET: "true",
+      ALLOW_PUBLIC_REGISTRATION: "true"
     }
   }
 });

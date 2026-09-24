@@ -90,8 +90,8 @@ Open -> understand day -> execute -> note -> open context -> resume Project -> s
 - Create a direct Area Task and direct Area Date.
 - Edit an existing Task: rename it, move Project/Area context, change/clear planned day, and verify scheduled time clears with the plan.
 - Rename an Area from Area Detail and confirm the name propagates to Project/Search context.
-- Verify Project Archive is blocked while that Project owns Open Tasks.
-- Verify Area Archive is blocked only by direct Open Tasks and remains independent from child Project lifecycle.
+- Verify Project Archive remains clickable with Open Tasks, reveals the blocker only after the attempted archive, clears that warning after the blocker is resolved, and then archives successfully.
+- Verify Area Archive behaves the same for direct Open Tasks while remaining independent from child Project lifecycle.
 - Create Event/Deadline records and verify Today/Upcoming/Past grouping.
 - Use Cmd/Ctrl+K entirely by keyboard.
 - Create Task and Date through Cmd/Ctrl+K.

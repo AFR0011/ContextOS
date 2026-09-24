@@ -1105,7 +1105,7 @@ Therefore Phase D is **implemented but not runtime-accepted**.
 
 # Phase E — Cross-category consolidation, prioritization, and release decision
 
-Status: **A-E remediation and full runtime acceptance complete; metadata freeze pending**
+Status: **Complete; accepted baseline frozen**
 
 Phase E reconciles the complete A-D audit against the final candidate rather than introducing another product feature batch.
 
@@ -1204,18 +1204,18 @@ Phase C had correctly established visual equivalence between an earlier READY pr
 
 The audit now records:
 - `ebb2d994...` as useful partial runtime evidence for an intermediate Phase D candidate;
-- no available READY preview as equivalent to the final current head;
-- final screenshot/runtime evidence as still pending.
+- no available READY preview as equivalent to the later final product candidate;
+- final screenshot evidence was captured and reviewed separately, and the later complete runtime ladder passed on `ae58fa5c3d1199af80bb53c80b4e4a2136177bd0`.
 
 ## E-08 — C10 acceptance language still described an untouched C8-C9 candidate
 
 Severity: **Medium acceptance-contract defect**  
 Status: **Fixed**
 
-C10 acceptance now identifies the candidate as:
+C10 acceptance identifies the accepted candidate as:
 - built on C8-C9;
 - modified by approved A-E audit remediations;
-- still open until final current-head verification and human visual review.
+- accepted only after the final runtime ladder, human visual review, and metadata closure audit completed.
 
 ## E-09 — Evidence registry and file/path integrity
 
@@ -1230,7 +1230,7 @@ Confirmed:
 
 ## Final release decision
 
-**Runtime acceptance passed; freeze after metadata-only closure audit.**
+**Accept and freeze the C10 baseline.**
 
 The complete final local verification ladder passed on 2026-09-24 against product commit `ae58fa5c3d1199af80bb53c80b4e4a2136177bd0`.
 
@@ -1244,9 +1244,6 @@ Accepted runtime evidence includes:
 
 GitHub Actions was unavailable for the account during closure, so the accepted run is explicitly local exact-commit evidence rather than hosted-CI evidence.
 
-The only remaining closure step is metadata-only:
-- update acceptance records and status language;
-- run `npm run audit:c10:product` and `npm run audit:release` on that metadata head;
-- freeze `CLOSE-001` only if those checks remain green.
+The metadata-only closure checkpoint `4aeaffe45437eb5bbdafb4950528e877619c46ca` subsequently passed `npm run audit:c10:product` and `npm run audit:release`.
 
-Therefore Phase E is **complete at the product/runtime level; C10 remains open only for the metadata freeze**.
+Therefore Phase E is **complete and the C10 baseline is frozen**.

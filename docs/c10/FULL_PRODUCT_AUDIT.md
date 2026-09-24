@@ -760,7 +760,7 @@ This closes only the mobile-drawer slice. It does not satisfy the remaining prim
 
 ## C-01 — Primary surface rendered inspection
 
-Status: **Rendered hierarchy/spacing/state review complete; final exact-head canonical recapture pending**
+Status: **Complete; final real-browser matrix captured and human-reviewed**
 
 ### C-01.1 — Mobile Home inherited desktop Dayline balancing height
 
@@ -860,8 +860,11 @@ Some full-page Playwright captures repeat fixed headers or bottom navigation aft
 
 No further visual/product hierarchy changes are warranted from the reviewed matrix.
 
-Remaining visual acceptance requirement:
-- run one final `npm run capture:c10:visual` from the post-fix candidate head so VISUAL-001 can point to one canonical exact-candidate capture rather than a full pre-fix matrix plus targeted post-fix slices.
+Final visual acceptance evidence:
+- `npm run capture:c10:visual` passed on candidate `bfd60db891aa54b96480bbca9e2f89f0dd2f3962`;
+- canonical `c10-standard` and `c10-production` result trees both reported passing run markers with no failed tests;
+- the final post-fix images were sanity-reviewed with no additional regression found;
+- VISUAL-001 may therefore close against that captured candidate.
 
 
 
@@ -1090,7 +1093,7 @@ Therefore Phase D is **implemented but not runtime-accepted**.
 
 # Phase E — Cross-category consolidation, prioritization, and release decision
 
-Status: **source consolidation complete; runtime/visual closure pending**
+Status: **source and visual consolidation complete; full runtime acceptance ladder pending**
 
 Phase E reconciles the complete A-D audit against the final candidate rather than introducing another product feature batch.
 
@@ -1222,9 +1225,9 @@ Source-level A-E audit work is consolidated. No additional product decision is c
 Remaining blockers are evidence execution, not known product-design ambiguity:
 1. run the complete final-candidate CI ladder, including unit, typecheck/build, production/offline, lifecycle, accessibility/responsive, and development E2E;
 2. run the new Task-editing / Area-editing / archive-policy regressions;
-3. execute `npm run capture:c10:visual` on the final candidate;
-4. manually inspect the resulting screenshots;
-5. record the exact verified commit/run and only then mark pending C10 registry controls passed/freeze the baseline.
+3. record the full acceptance-ladder result against the final repository candidate;
+4. update the remaining pending registry controls only from that evidence;
+5. freeze the baseline only after no non-boundary control remains pending.
 
 Current environment boundary:
 - newest useful READY preview: `ebb2d994d225b5fa26221378e265144716c0ea28`, partial Phase D evidence only;
@@ -1232,4 +1235,4 @@ Current environment boundary:
 - GitHub Actions unavailable for the account;
 - connector browser outbound navigation blocked.
 
-Therefore Phase E is **source-complete but C10 remains open**.
+Therefore Phase E is **source/visual-complete but C10 remains open pending the full acceptance ladder**.

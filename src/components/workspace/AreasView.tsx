@@ -28,15 +28,17 @@ function AreaRow({
 }) {
   return (
     <div className={`cos-entity-row ${archived ? "opacity-70" : ""}`}>
-      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{name}</span>
-        <span className="mt-1 block text-xs text-[var(--cos-text-subtle)]">
-          {projectCount} active project{projectCount === 1 ? "" : "s"} · {taskCount} direct open task{taskCount === 1 ? "" : "s"}
-        </span>
+      <div className="min-w-0 flex-1">
+        <button type="button" onClick={onOpen} className="w-full min-w-0 text-left">
+          <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{name}</span>
+          <span className="mt-1 block text-xs text-[var(--cos-text-subtle)]">
+            {projectCount} active project{projectCount === 1 ? "" : "s"} · {taskCount} direct open task{taskCount === 1 ? "" : "s"}
+          </span>
+        </button>
         {archiveAttemptMessage ? (
           <span role="alert" className="mt-1 block text-[11px] text-[var(--cos-warning-text)]">{archiveAttemptMessage}</span>
         ) : null}
-      </button>
+      </div>
       {onArchive ? (
         <button type="button" onClick={onArchive} aria-label={`Archive ${name}`} className="cos-btn cos-btn-ghost min-h-10 shrink-0 px-3 py-2 text-xs">
           <Archive className="h-3.5 w-3.5" /> Archive

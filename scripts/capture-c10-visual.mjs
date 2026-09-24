@@ -4,7 +4,8 @@ const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
 const env = {
   ...process.env,
-  CAPTURE_C10_VISUAL: "1"
+  CAPTURE_C10_VISUAL: "1",
+  ALLOW_DEMO_RESET: "true"
 };
 
 function run(command, args) {

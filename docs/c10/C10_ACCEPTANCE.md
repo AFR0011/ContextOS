@@ -42,9 +42,13 @@ Completed in source:
 6. Apply approved Phase D product changes: shared Task editing, Area rename, archive/open-work invariants, and the explicit no-per-record-delete boundary.
 
 Still required for closure:
-7. Run the complete current verification ladder on the final candidate.
-8. Capture and manually review the canonical real-browser screenshot baseline defined in `docs/c10/SCREENSHOT_BASELINE.md`.
-9. Record exact verified commit/run evidence and freeze the baseline.
+7. Run the complete current verification ladder on the final repository candidate.
+8. Record exact full-ladder verification evidence and update the remaining pending controls.
+9. Freeze the baseline only after the registry has no pending non-boundary evidence.
+
+Completed visual evidence:
+- the canonical real-browser screenshot matrix passed and was human-reviewed on candidate `bfd60db891aa54b96480bbca9e2f89f0dd2f3962`;
+- `VISUAL-001` is accepted independently of the still-pending full runtime ladder.
 
 ## Historical assurance rule
 

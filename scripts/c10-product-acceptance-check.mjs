@@ -201,6 +201,7 @@ const areaDetailRoute = fs.readFileSync("src/app/(workspace)/areas/[id]/page.tsx
 const visualCaptureRunner = fs.readFileSync("scripts/capture-c10-visual.mjs", "utf8");
 const ciWorkflow = fs.readFileSync(".github/workflows/ci.yml", "utf8");
 const productionPlaywrightConfig = fs.readFileSync("playwright.production.config.ts", "utf8");
+const developmentPlaywrightConfig = fs.readFileSync("playwright.config.ts", "utf8");
 const readme = fs.readFileSync("README.md", "utf8");
 const securityDoc = fs.readFileSync("SECURITY.md", "utf8");
 const repoMap = fs.readFileSync("docs/REPO_MAP.md", "utf8");
@@ -325,6 +326,29 @@ if (!ciWorkflow.includes("Run unit tests") || !ciWorkflow.includes("npm run test
 if (!productionPlaywrightConfig.includes("tests/e2e/workspace-gate.spec.ts") ||
     !productionPlaywrightConfig.includes("tests/e2e/local-first-characterization.spec.ts")) {
   errors.push("Production Playwright config must own WorkspaceGate and local-first characterization coverage.");
+}
+for (const marker of [
+  'ALLOW_PUBLIC_REGISTRATION: "false"',
+  'ALLOW_DEMO_RESET: "true"',
+  'CONTEXTOS_SSO_SECRET: ""',
+  'SOCIALOS_APP_URL: "https://social-os-tau.vercel.app"',
+  'NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3100"'
+]) {
+  if (!productionPlaywrightConfig.includes(marker)) {
+    errors.push(`Production Playwright config must own test environment marker: ${marker}`);
+  }
+}
+for (const marker of [
+  'reuseExistingServer: false',
+  'ALLOW_PUBLIC_REGISTRATION: "true"',
+  'ALLOW_DEMO_RESET: "true"',
+  'CONTEXTOS_SSO_SECRET: ""',
+  'SOCIALOS_APP_URL: "https://social-os-tau.vercel.app"',
+  'NEXT_PUBLIC_APP_URL: baseURL'
+]) {
+  if (!developmentPlaywrightConfig.includes(marker)) {
+    errors.push(`Development Playwright config must own deterministic test environment marker: ${marker}`);
+  }
 }
 if (ciWorkflow.includes("tests/e2e/workspace-gate.spec.ts tests/e2e/local-db-v4.spec.ts")) {
   errors.push("CI must not pretend the default-config lifecycle command runs the workspace-gate spec that it ignores.");

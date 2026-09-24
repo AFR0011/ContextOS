@@ -23,7 +23,7 @@ The demo seed is disposable neutral test data. C7 no longer seeds retired Inbox 
 
 Run sequentially. Typecheck/build and browser runtimes intentionally own different generated/runtime boundaries, because running everything in parallel mostly produces expensive interpretive dance.
 
-On Windows, repository shell scripts are forced to LF through `.gitattributes`. If a pre-existing checkout predates that rule, pull the current branch and verify `git ls-files --eol scripts/container-distribution-smoke.sh` reports `w/lf` before running the container-distribution smoke.
+On Windows, repository shell scripts are forced to LF through `.gitattributes`. `npm run test:container-distribution` uses a cross-platform Node launcher: Linux/CI executes native `bash`, while Windows resolves Git for Windows Bash instead of the WSL `bash.exe` shim so Docker Desktop does not depend on WSL integration. If needed, `CONTEXTOS_BASH` may explicitly point to a Git Bash executable.
 
 ```bash
 npm audit --audit-level=low

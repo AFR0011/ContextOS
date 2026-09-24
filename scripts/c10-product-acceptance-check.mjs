@@ -404,15 +404,16 @@ if (!changelog.includes("## [Unreleased] — C10 candidate") ||
   errors.push("Changelog must distinguish the current C10 candidate from the published v1.0.0 history.");
 }
 if (!fullProductAudit.includes("# Phase E — Cross-category consolidation, prioritization, and release decision") ||
-    !fullProductAudit.includes("source consolidation complete; runtime/visual closure pending")) {
-  errors.push("Full product audit must retain the Phase E consolidation and honest runtime boundary.");
+    !fullProductAudit.includes("source and visual consolidation complete; full runtime acceptance ladder pending")) {
+  errors.push("Full product audit must retain the Phase E consolidation and honest remaining runtime boundary.");
 }
 if (fullProductAudit.includes("READY preview visual-equivalence check") ||
     fullProductAudit.includes("visually equivalent to current head")) {
   errors.push("Full product audit must not retain the obsolete pre-Phase-D preview-equivalence claim.");
 }
-if (!screenshotBaseline.includes("no available READY preview is visually equivalent to the final branch head")) {
-  errors.push("Screenshot baseline must retain the final-candidate visual evidence boundary.");
+if (!screenshotBaseline.includes("bfd60db891aa54b96480bbca9e2f89f0dd2f3962") ||
+    !screenshotBaseline.includes("C10 screenshot acceptance is satisfied")) {
+  errors.push("Screenshot baseline must record the accepted final real-browser candidate and human review.");
 }
 
 const buildTsconfig = fs.readFileSync("tsconfig.build.json", "utf8");

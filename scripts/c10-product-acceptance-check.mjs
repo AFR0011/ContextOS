@@ -449,8 +449,8 @@ if (!changelog.includes("## [Unreleased] — C10 candidate") ||
   errors.push("Changelog must distinguish the current C10 candidate from the published v1.0.0 history.");
 }
 if (!fullProductAudit.includes("# Phase E — Cross-category consolidation, prioritization, and release decision") ||
-    !fullProductAudit.includes("source and visual consolidation complete; full runtime acceptance ladder pending")) {
-  errors.push("Full product audit must retain the Phase E consolidation and honest remaining runtime boundary.");
+    !fullProductAudit.includes("A-E remediation and full runtime acceptance complete; metadata freeze pending")) {
+  errors.push("Full product audit must retain the Phase E consolidation and honest metadata-freeze boundary.");
 }
 if (fullProductAudit.includes("READY preview visual-equivalence check") ||
     fullProductAudit.includes("visually equivalent to current head")) {

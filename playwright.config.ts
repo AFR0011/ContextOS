@@ -18,7 +18,12 @@ export default defineConfig({
     command: `npm run dev -- --port ${port}`,
     url: baseURL,
     reuseExistingServer: true,
-    timeout: 120_000
+    timeout: 120_000,
+    env: {
+      ...process.env,
+      ALLOW_PUBLIC_REGISTRATION: "true",
+      ALLOW_DEMO_RESET: "true"
+    }
   },
   projects: [
     {

@@ -146,9 +146,10 @@ export function TaskEditSheet({
             <input
               type="date"
               value={plannedDate}
-              onChange={(event) => {
-                setPlannedDate(event.target.value);
-                if (!event.target.value) setScheduledTime("");
+              onInput={(event) => {
+                const nextPlannedDate = event.currentTarget.value;
+                setPlannedDate(nextPlannedDate);
+                if (!nextPlannedDate) setScheduledTime("");
               }}
               aria-label="Task planned day"
               className="cos-input w-full px-3 py-2 text-sm"

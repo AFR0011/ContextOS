@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Keep this script LF-only; Bash on Windows treats CRLF in shell syntax as data.
 set -euo pipefail
 
 compose_file="${1:-compose.production.yml}"

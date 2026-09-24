@@ -28,6 +28,13 @@ export default defineConfig({
     command: "npm run start -- --hostname 127.0.0.1 --port 3100",
     url: "http://127.0.0.1:3100/login",
     reuseExistingServer: false,
-    timeout: 120_000
+    timeout: 120_000,
+    env: {
+      ...process.env,
+      ALLOW_PUBLIC_REGISTRATION: "false",
+      ALLOW_DEMO_RESET: "true",
+      CONTEXTOS_SSO_SECRET: "",
+      SOCIALOS_APP_URL: "https://social-os-tau.vercel.app"
+    }
   }
 });

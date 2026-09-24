@@ -97,7 +97,10 @@ test.describe("C10 production offline visual states", () => {
       await capture(page, testInfo, `production-${theme}-01-online-ready`);
 
       await setOffline(context, true);
-      const compactSync = page.getByTestId("global-sync-indicator").first();
+      const mobileHeader = page.locator("header").filter({
+        has: page.getByRole("button", { name: "Open navigation", exact: true })
+      });
+      const compactSync = mobileHeader.getByTestId("global-sync-indicator");
       await expect(compactSync).toHaveText("Offline");
       await capture(page, testInfo, `production-${theme}-02-offline`);
 
@@ -121,12 +124,12 @@ test.describe("C10 production offline visual states", () => {
       });
 
       await setOffline(context, false);
-      await expect(page.getByTestId("global-sync-indicator").first()).toContainText(/Syncing/i);
+      await expect(compactSync).toContainText(/Syncing/i);
       await capture(page, testInfo, `production-${theme}-04-reconnecting`);
 
       releaseSync();
       await expect.poll(() => pendingOutboxCount(page), { timeout: 20_000 }).toBe(0);
-      await expect(page.getByTestId("global-sync-indicator").first()).not.toContainText(/Offline|Syncing/i);
+      await expect(compactSync).not.toContainText(/Offline|Syncing/i);
       await capture(page, testInfo, `production-${theme}-05-reconnected`);
     });
   }

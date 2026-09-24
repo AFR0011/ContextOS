@@ -760,7 +760,7 @@ This closes only the mobile-drawer slice. It does not satisfy the remaining prim
 
 ## C-01 — Primary surface rendered inspection
 
-Status: **Partially executed; mobile drawer and mobile Home rhythm passed, remaining matrix pending**
+Status: **Rendered hierarchy/spacing/state review complete; final exact-head canonical recapture pending**
 
 ### C-01.1 — Mobile Home inherited desktop Dayline balancing height
 
@@ -817,7 +817,7 @@ Verification:
 ### C-01.3 — Offline pending work was hidden by the compact sync label
 
 Severity: **Medium local-first communication defect**  
-Status: **Implemented; production-browser verification pending**
+Status: **Fixed and human-verified**
 
 The production visual matrix showed that plain offline and offline-with-unsynced-work both rendered the compact mobile sync state as `Offline`. The outbox was preserved correctly, and the expanded navigation status exposed its count, but the always-visible mobile shell hid the difference.
 
@@ -827,20 +827,41 @@ Refinement:
 - online pending and active synchronization retain their existing `N pending` / `Syncing` behavior;
 - warning tone/icon behavior is unchanged.
 
-The production visual regression now requires plain offline to remain distinct from offline-with-pending in both light and dark themes.
+The production visual regression requires plain offline to remain distinct from offline-with-pending in both light and dark themes.
 
-Required evidence still pending across the remaining matrix:
-- Home beyond the closed mobile spacing defect;
-- Projects;
-- Project Detail;
-- Areas;
-- Area Detail;
-- Dates;
-- Search;
-- Settings;
-- production offline/pending targeted verification for C-01.3;
-- desktop/mobile;
-- light/dark.
+Verification:
+- production light/dark offline visual suite passed after the compact indicator locator was correctly scoped to the mobile header;
+- plain offline rendered exactly `Offline`;
+- offline with queued work rendered `Offline · N pending`;
+- reconnecting/reconnected states continued to render `Syncing` / online state correctly;
+- human review confirmed the longer compact label fits cleanly at 390px without crowding the ContextOS identity or header controls.
+
+### C-01.4 — Remaining hierarchy, spacing, empty-state, transient, stress, and theme review
+
+Status: **Reviewed; no additional product-level visual defect found**
+
+The uploaded canonical matrix was reviewed across:
+- desktop 1440x1000;
+- compact desktop 1024x768;
+- mobile 390x844;
+- narrow hostile-content 320x720;
+- light and dark themes;
+- primary canonical surfaces;
+- first-run and empty states;
+- task/date sheets, command palette, logout and archive-warning transients;
+- long-content stress cases;
+- production online/offline/pending/reconnect states.
+
+The review specifically checked clipping, overlap, horizontal overflow, awkward dead zones, inconsistent density, weak grouping, accidental emphasis, fixed-navigation collisions, dark-mode mismatches, and misleading action/state affordances.
+
+The only product-level issues found in this pass were C-01.1 through C-01.3 and the intent-driven archive warning refinement recorded under D-03.1. Those were corrected and individually re-rendered/reviewed.
+
+Some full-page Playwright captures repeat fixed headers or bottom navigation after scroll. Viewport captures and shell padding confirmed those are screenshot-compositing artifacts rather than in-app overlap.
+
+No further visual/product hierarchy changes are warranted from the reviewed matrix.
+
+Remaining visual acceptance requirement:
+- run one final `npm run capture:c10:visual` from the post-fix candidate head so VISUAL-001 can point to one canonical exact-candidate capture rather than a full pre-fix matrix plus targeted post-fix slices.
 
 
 

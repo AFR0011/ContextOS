@@ -97,12 +97,14 @@ test.describe("C10 production offline visual states", () => {
       await capture(page, testInfo, `production-${theme}-01-online-ready`);
 
       await setOffline(context, true);
-      await expect(page.getByTestId("global-sync-indicator").first()).toContainText(/Offline/i);
+      const compactSync = page.getByTestId("global-sync-indicator").first();
+      await expect(compactSync).toHaveText("Offline");
       await capture(page, testInfo, `production-${theme}-02-offline`);
 
       const noteText = `C10 visual pending note ${theme} ${Date.now()}`;
       await page.getByLabel("Daily Notes").fill(noteText);
       await expect.poll(() => pendingOutboxCount(page)).toBeGreaterThan(0);
+      await expect(compactSync).toContainText(/Offline · \d+ pending/);
       await capture(page, testInfo, `production-${theme}-03-offline-pending`);
 
       let releaseSync!: () => void;

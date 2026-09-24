@@ -985,8 +985,12 @@ test("project archive and restore work in place", async ({ page }) => {
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
 
   const archive = page.getByRole("button", { name: "Archive", exact: true });
-  await expect(archive).toBeDisabled();
+  await expect(archive).toBeEnabled();
+  await expect(page.locator("#project-archive-blocked")).toHaveCount(0);
+  await archive.click();
+  await expect(page.locator("#project-archive-blocked")).toContainText(/Resolve or move .* open Task/);
   await page.getByRole("button", { name: "Complete Review today's open work", exact: true }).click();
+  await expect(page.locator("#project-archive-blocked")).toHaveCount(0);
   await expect(archive).toBeEnabled();
   await archive.click();
   await page.goto("/projects");

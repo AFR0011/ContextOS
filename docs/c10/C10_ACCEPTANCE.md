@@ -50,7 +50,7 @@ Completed runtime acceptance:
 
 Completed visual evidence:
 - the canonical real-browser screenshot matrix passed and was human-reviewed on candidate `bfd60db891aa54b96480bbca9e2f89f0dd2f3962`;
-- `VISUAL-001` is accepted independently of the still-pending full runtime ladder.
+- `VISUAL-001` remains accepted as the dedicated rendered baseline, while the later final runtime ladder passed on product commit `ae58fa5c3d1199af80bb53c80b4e4a2136177bd0`.
 
 ## Historical assurance rule
 

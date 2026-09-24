@@ -206,6 +206,7 @@ async function captureTransientStates(page: Page, testInfo: TestInfo, variant: V
   const areaTaskComposer = page.getByRole("textbox", { name: "Task title", exact: true }).locator("..");
   await areaTaskComposer.getByRole("textbox", { name: "Task title", exact: true }).fill("Visual archive blocker");
   await areaTaskComposer.getByRole("button", { name: "Add", exact: true }).click();
+  await page.getByRole("button", { name: "Archive", exact: true }).click();
   await expect(page.locator("#area-archive-blocked")).toBeVisible();
   await capture(page, testInfo, `${variant.name}-04-area-archive-blocked`);
 

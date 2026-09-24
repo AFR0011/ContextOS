@@ -54,6 +54,11 @@ if (close?.status === "passed") {
   }
 }
 
+const gitAttributes = fs.readFileSync(".gitattributes", "utf8");
+if (!gitAttributes.split(/\r?\n/).some((line) => line.trim() === "*.sh text eol=lf")) {
+  errors.push("Shell scripts must be checked out with LF via .gitattributes so Bash works on Windows.");
+}
+
 const ci = fs.readFileSync(".github/workflows/ci.yml", "utf8");
 for (const retired of [
   "tests/e2e/stage9-tombstones.spec.ts",

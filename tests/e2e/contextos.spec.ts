@@ -426,11 +426,13 @@ test("project objective persists after reload", async ({ page }) => {
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   const objective = `Canonical objective ${Date.now()}`;
+  await page.getByRole("button", { name: "Edit details", exact: true }).click();
   const field = page.getByPlaceholder("What outcome is this Project trying to reach?");
   await field.fill(objective);
   await field.blur();
+  await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.reload();
-  await expect(page.getByPlaceholder("What outcome is this Project trying to reach?")).toHaveValue(objective);
+  await expect(page.getByTestId("project-summary")).toContainText(objective);
 });
 
 test("project detail removes nested-project and recovery-field UX", async ({ page }) => {

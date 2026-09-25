@@ -252,12 +252,24 @@ export function InsightCard({
 export function EmptyState({
   title,
   description,
-  action
+  action,
+  variant = "full"
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
+  variant?: "full" | "compact";
 }) {
+  if (variant === "compact") {
+    return (
+      <div className="cos-empty-compact py-2">
+        <p className="text-sm font-medium text-[var(--cos-text-strong)]">{title}</p>
+        {description ? <p className="mt-0.5 max-w-xl text-xs leading-5 text-[var(--cos-text-muted)]">{description}</p> : null}
+        {action ? <div className="mt-2">{action}</div> : null}
+      </div>
+    );
+  }
+
   return (
     <div className="cos-empty px-5 py-8 text-center">
       <p className="text-sm font-medium text-[var(--cos-text-strong)]">{title}</p>

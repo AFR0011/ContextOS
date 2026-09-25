@@ -336,12 +336,13 @@ export function HomeView() {
                     <div className={contexts.projects.length ? "mt-6" : ""}>
                       <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">Areas</p>
                       {contexts.areas.map((area) => (
-                        <EntityRow
-                          key={area.id}
-                          title={area.name}
-                          meta={area.state === "archived" ? "Archived Area" : "Area"}
-                          onOpen={() => router.push(`/areas/${encodeURIComponent(area.id)}`)}
-                        />
+                        <div key={area.id} data-testid={`home-area-context-${area.id}`}>
+                          <EntityRow
+                            title={area.name}
+                            meta={area.state === "archived" ? "Archived Area" : "Area"}
+                            onOpen={() => router.push(`/areas/${encodeURIComponent(area.id)}`)}
+                          />
+                        </div>
                       ))}
                     </div>
                   ) : null}

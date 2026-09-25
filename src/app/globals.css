@@ -290,6 +290,11 @@ button:disabled {
   line-height: var(--cos-caption-line-height);
 }
 
+/* Surface hierarchy:
+   Level 0: canvas / uncontained content (no surface class)
+   Level 1: grouped operational content (.cos-surface)
+   Inset: secondary content inside a Level 1 surface (.cos-surface-muted)
+   Level 2: transient or focus-owning elevation (.cos-surface-raised) */
 .cos-surface {
   border: 1px solid var(--cos-border);
   border-radius: var(--cos-radius-lg);
@@ -301,6 +306,13 @@ button:disabled {
   border: 1px solid var(--cos-border-soft);
   border-radius: var(--cos-radius-md);
   background: var(--cos-bg-inset);
+  box-shadow: none;
+}
+
+.cos-surface-raised {
+  border: 1px solid var(--cos-border);
+  background: var(--cos-bg-elevated);
+  box-shadow: var(--cos-shadow-lg);
 }
 
 .cos-row {

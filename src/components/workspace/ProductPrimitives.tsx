@@ -252,12 +252,24 @@ export function InsightCard({
 export function EmptyState({
   title,
   description,
-  action
+  action,
+  variant = "full"
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
+  variant?: "full" | "compact";
 }) {
+  if (variant === "compact") {
+    return (
+      <div className="cos-empty-compact py-2">
+        <p className="text-sm font-medium text-[var(--cos-text-strong)]">{title}</p>
+        {description ? <p className="mt-0.5 max-w-xl text-xs leading-5 text-[var(--cos-text-muted)]">{description}</p> : null}
+        {action ? <div className="mt-2">{action}</div> : null}
+      </div>
+    );
+  }
+
   return (
     <div className="cos-empty px-5 py-8 text-center">
       <p className="text-sm font-medium text-[var(--cos-text-strong)]">{title}</p>
@@ -288,7 +300,7 @@ export function DetailSheet({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/45 backdrop-blur-[2px] sm:items-center sm:p-4" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] shadow-[var(--cos-shadow-lg)] sm:max-h-[calc(100dvh-2rem)] sm:max-w-xl sm:rounded-2xl">
+      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="cos-surface-raised max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl sm:max-h-[calc(100dvh-2rem)] sm:max-w-xl sm:rounded-2xl">
         <header className="sticky top-0 z-10 flex items-start gap-3 border-b border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/95 px-5 py-4 backdrop-blur">
           <div className="min-w-0 flex-1">
             <h2 className="break-words text-lg font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{title}</h2>
@@ -377,7 +389,7 @@ export function CommandPalette({
         aria-modal="true"
         aria-label="Command palette"
         data-testid="command-palette"
-        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[var(--cos-border)] bg-[var(--cos-bg-elevated)] shadow-[var(--cos-shadow-lg)] sm:max-h-[calc(88dvh-1rem)]"
+        className="cos-surface-raised flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl sm:max-h-[calc(88dvh-1rem)]"
       >
         <div className="flex items-center gap-3 border-b border-[var(--cos-border-soft)] px-4">
           <Search className="h-4 w-4 text-[var(--cos-text-subtle)]" />

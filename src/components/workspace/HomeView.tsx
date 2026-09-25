@@ -225,6 +225,7 @@ export function HomeView() {
               <Dayline items={daylineItems} />
             ) : (
               <EmptyState
+                variant="compact"
                 title="No timed work or events today"
                 description="Planned tasks without a time will appear under Anytime."
               />
@@ -351,6 +352,7 @@ export function HomeView() {
                 </div>
               ) : (
                 <EmptyState
+                  variant="compact"
                   title="No context yet"
                   description="Projects and Areas will appear here when today’s planned Tasks reference them."
                 />

@@ -168,6 +168,7 @@ test.describe("local-first completion characterization", () => {
     await page.getByRole("button", { name: "Done", exact: true }).click();
 
     const tasks = page.getByTestId("project-live-tasks");
+    await page.getByRole("button", { name: "New task", exact: true }).click();
     await tasks.getByPlaceholder("Add a task...").fill(taskTitle);
     await tasks.getByLabel("Planned day").fill(today);
     await tasks.getByLabel("Scheduled time").fill("11:15");
@@ -175,6 +176,7 @@ test.describe("local-first completion characterization", () => {
     await expect(tasks.getByText(taskTitle, { exact: true })).toBeVisible();
 
     const dates = page.getByTestId("project-dates");
+    await page.getByRole("button", { name: "New date", exact: true }).click();
     await dates.getByLabel("Date kind").selectOption("event");
     await dates.getByPlaceholder("Add a Date...").fill(dateTitle);
     await dates.getByLabel("Date", { exact: true }).fill(today);

@@ -453,6 +453,10 @@ button:disabled {
   color: var(--cos-text-muted);
 }
 
+.cos-empty-compact {
+  color: var(--cos-text-muted);
+}
+
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   opacity: 0.55;

@@ -72,7 +72,9 @@ test("Home projects only planned-today tasks and derives today context", async (
 test("Home Area context opens the specific Area", async ({ page }) => {
   await login(page);
 
-  await page.getByTestId("home-contexts").getByText("Engineering", { exact: true }).click();
+  const areaContext = page.getByTestId("home-contexts").locator('[data-testid^="home-area-context-"]').filter({ hasText: "Engineering" });
+  await expect(areaContext).toHaveCount(1);
+  await areaContext.getByRole("button").click();
 
   await expect(page).toHaveURL(/\/areas\/[^/]+$/);
   await expect(page.getByRole("heading", { name: "Engineering", exact: true })).toBeVisible();

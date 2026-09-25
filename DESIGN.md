@@ -341,6 +341,11 @@ Surface hierarchy:
 
 Use borders before shadows. Default app surfaces are not floating cards. Do not promote ordinary sections to Level 1 merely to make them look designed; containment must communicate a real grouping relationship.
 
+Empty states:
+- compact empty states are the default for absence inside an otherwise useful section;
+- full empty states are reserved for an empty page, blocked prerequisite, or genuinely primary empty condition;
+- absence should consume less space than the content that would replace it.
+
 ### Content width
 
 `--cos-content-wide` is currently 1480px. Individual components constrain themselves further when reading density requires it.

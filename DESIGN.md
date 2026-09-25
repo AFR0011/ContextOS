@@ -333,7 +333,13 @@ Current geometry:
 - buttons: 8px radius;
 - pills: fully rounded.
 
-Use borders before shadows. Default app surfaces are not floating cards.
+Surface hierarchy:
+- Level 0 — canvas/uncontained content: use spacing, alignment, and dividers with no enclosing rectangle;
+- Level 1 — grouped operational surface: use `.cos-surface` for content that genuinely belongs together;
+- Inset — secondary content within a Level 1 surface: use `.cos-surface-muted` sparingly;
+- Level 2 — focus-owning/transient elevation: use `.cos-surface-raised` for overlays, palettes, sheets, and similarly dominant temporary surfaces.
+
+Use borders before shadows. Default app surfaces are not floating cards. Do not promote ordinary sections to Level 1 merely to make them look designed; containment must communicate a real grouping relationship.
 
 ### Content width
 

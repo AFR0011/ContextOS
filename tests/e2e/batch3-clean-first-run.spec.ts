@@ -76,7 +76,8 @@ test("new accounts start with an empty canonical workspace and reach useful work
   await page.getByPlaceholder("Project name").fill(projectName);
   await page.getByRole("button", { name: "Create Project", exact: true }).click();
   await expect(page).toHaveURL(/\/projects\//);
-  await expect(page.getByPlaceholder("Project name")).toHaveValue(projectName);
+  await expect(page.getByRole("heading", { name: projectName, exact: true })).toBeVisible();
+  await expect(page.getByTestId("project-summary")).toBeVisible();
 
   await page.reload();
   await expect(page.getByTestId("first-run-setup")).toHaveCount(0);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
+import { Archive, ArrowLeft, Check, Pencil, Plus, RotateCcw } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
 import { TaskEditSheet } from "@/components/workspace/TaskEditSheet";
 import { useWorkspace } from "@/lib/client-store";
@@ -77,6 +77,9 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const [dateEndTime, setDateEndTime] = useState("");
   const [dateDetails, setDateDetails] = useState("");
   const [archiveAttempted, setArchiveAttempted] = useState(false);
+  const [editingProject, setEditingProject] = useState(false);
+  const [showTaskComposer, setShowTaskComposer] = useState(false);
+  const [showDateComposer, setShowDateComposer] = useState(false);
 
   if (!project) {
     return (
@@ -159,20 +162,32 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         title={currentProject.name}
         description={currentProject.state === "archived" ? "Archived Project" : "Active Project"}
         action={
-          currentProject.state === "archived" ? (
-            <button type="button" onClick={restore} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
-              <RotateCcw className="h-4 w-4" /> Restore
-            </button>
-          ) : (
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={archive}
-              aria-describedby={archiveAttemptMessage ? "project-archive-blocked" : undefined}
+              onClick={() => setEditingProject((value) => !value)}
+              aria-expanded={editingProject}
+              aria-controls="project-details-editor"
               className="cos-btn cos-btn-secondary px-3 py-2 text-sm"
             >
-              <Archive className="h-4 w-4" /> Archive
+              {editingProject ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+              {editingProject ? "Done" : "Edit details"}
             </button>
-          )
+            {currentProject.state === "archived" ? (
+              <button type="button" onClick={restore} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
+                <RotateCcw className="h-4 w-4" /> Restore
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={archive}
+                aria-describedby={archiveAttemptMessage ? "project-archive-blocked" : undefined}
+                className="cos-btn cos-btn-secondary px-3 py-2 text-sm"
+              >
+                <Archive className="h-4 w-4" /> Archive
+              </button>
+            )}
+          </div>
         }
       />
 
@@ -182,83 +197,113 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         </p>
       ) : null}
 
-      <Section title="Project" description="The small amount of canonical information needed to resume the work.">
-        <div className="cos-surface grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
-          <label className="space-y-1">
-            <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Name</span>
-            <EditableText value={currentProject.name} placeholder="Project name" onSave={(name) => name && updateProject(currentProject.id, { name })} />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Area</span>
-            <select
-              value={currentProject.areaId}
-              onChange={(event) => updateProject(currentProject.id, { areaId: event.target.value })}
-              className="cos-input w-full px-3 py-2 text-sm"
-            >
-              {areaChoices.map((area) => (
-                <option key={area.id} value={area.id}>{area.name}{area.state === "archived" ? " (archived)" : ""}</option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-1 lg:col-span-2">
-            <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Objective</span>
-            <EditableText
-              value={currentProject.objective}
-              multiline
-              placeholder="What outcome is this Project trying to reach?"
-              onSave={(objective) => updateProject(currentProject.id, { objective })}
-            />
-          </label>
+      {editingProject ? (
+        <Section title="Project details">
+          <div id="project-details-editor" className="cos-surface grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
+            <label className="space-y-1">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Name</span>
+              <EditableText value={currentProject.name} placeholder="Project name" onSave={(name) => name && updateProject(currentProject.id, { name })} />
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Area</span>
+              <select
+                value={currentProject.areaId}
+                onChange={(event) => updateProject(currentProject.id, { areaId: event.target.value })}
+                aria-label="Area"
+                className="cos-input w-full px-3 py-2 text-sm"
+              >
+                {areaChoices.map((area) => (
+                  <option key={area.id} value={area.id}>{area.name}{area.state === "archived" ? " (archived)" : ""}</option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1 lg:col-span-2">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Objective</span>
+              <EditableText
+                value={currentProject.objective}
+                multiline
+                placeholder="What outcome is this Project trying to reach?"
+                onSave={(objective) => updateProject(currentProject.id, { objective })}
+              />
+            </label>
+          </div>
+        </Section>
+      ) : (
+        <div data-testid="project-summary" className="mb-8 max-w-3xl">
+          <p className="text-xs font-semibold text-[var(--cos-text-muted)]">Objective</p>
+          <p className={`mt-1 break-words text-base leading-7 [overflow-wrap:anywhere] ${currentProject.objective ? "text-[var(--cos-text-strong)]" : "text-[var(--cos-text-subtle)]"}`}>
+            {currentProject.objective || "No objective yet."}
+          </p>
         </div>
-      </Section>
+      )}
 
       <Section
         title="Tasks"
-        description="Concrete actions belonging to this Project."
         className="mt-8"
-        action={doneTasks.length ? (
-          <button type="button" onClick={() => setShowCompleted((value) => !value)} aria-expanded={showCompleted} aria-controls="project-completed-tasks" className="cos-btn cos-btn-ghost px-3 py-1.5 text-xs">
-            {showCompleted ? "Hide completed" : `Show completed (${doneTasks.length})`}
-          </button>
-        ) : null}
-      >
-        <div className="cos-surface p-3" data-testid="project-live-tasks">
-          <div className="space-y-1">
-            {openTasks.map((task) => (
-              <TaskRow
-                key={task.id}
-                title={task.title}
-                done={false}
-                meta={[task.plannedDate ? `Planned ${task.plannedDate}` : "", task.scheduledTime ?? ""].filter(Boolean).join(" · ") || "Unscheduled"}
-                onToggle={() => updateTask(task.id, { state: "done" })}
-                onOpen={() => setEditingTaskId(task.id)}
-              />
-            ))}
-            {!openTasks.length ? <p className="px-3 py-4 text-sm text-[var(--cos-text-subtle)]">No open tasks.</p> : null}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            {doneTasks.length ? (
+              <button type="button" onClick={() => setShowCompleted((value) => !value)} aria-expanded={showCompleted} aria-controls="project-completed-tasks" className="cos-btn cos-btn-ghost px-3 py-1.5 text-xs">
+                {showCompleted ? "Hide completed" : `Show completed (${doneTasks.length})`}
+              </button>
+            ) : null}
+            {currentProject.state === "active" ? (
+              <button
+                type="button"
+                onClick={() => setShowTaskComposer((value) => !value)}
+                aria-expanded={showTaskComposer}
+                aria-controls="project-task-composer"
+                className="cos-btn cos-btn-secondary px-3 py-1.5 text-xs"
+              >
+                <Plus className="h-3.5 w-3.5" /> {showTaskComposer ? "Cancel" : "New task"}
+              </button>
+            ) : null}
           </div>
+        }
+      >
+        <div data-testid="project-live-tasks">
+          {openTasks.length || (showCompleted && doneTasks.length) ? (
+            <div className="cos-surface p-3">
+              <div className="space-y-1">
+                {openTasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    title={task.title}
+                    done={false}
+                    meta={[task.plannedDate ? `Planned ${task.plannedDate}` : "", task.scheduledTime ?? ""].filter(Boolean).join(" · ") || "Unscheduled"}
+                    onToggle={() => updateTask(task.id, { state: "done" })}
+                    onOpen={() => setEditingTaskId(task.id)}
+                  />
+                ))}
+              </div>
 
-          {showCompleted && doneTasks.length ? (
-            <div id="project-completed-tasks" className="mt-3 border-t border-[var(--cos-border-soft)] pt-3">
-              {doneTasks.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  title={task.title}
-                  done
-                  meta={task.plannedDate ? `Planned ${task.plannedDate}` : "Completed"}
-                  onToggle={() => {
-                    if (taskReopenBlockReason(data, task)) return;
-                    updateTask(task.id, { state: "open" });
-                  }}
-                  onOpen={() => setEditingTaskId(task.id)}
-                  toggleDisabledReason={taskReopenBlockReason(data, task)}
-                />
-              ))}
+              {showCompleted && doneTasks.length ? (
+                <div id="project-completed-tasks" className="mt-3 border-t border-[var(--cos-border-soft)] pt-3">
+                  {doneTasks.map((task) => (
+                    <TaskRow
+                      key={task.id}
+                      title={task.title}
+                      done
+                      meta={task.plannedDate ? `Planned ${task.plannedDate}` : "Completed"}
+                      onToggle={() => {
+                        if (taskReopenBlockReason(data, task)) return;
+                        updateTask(task.id, { state: "open" });
+                      }}
+                      onOpen={() => setEditingTaskId(task.id)}
+                      toggleDisabledReason={taskReopenBlockReason(data, task)}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          ) : (
+            <EmptyState variant="compact" title="No open tasks" />
+          )}
 
-          {currentProject.state === "active" ? (
-            <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 lg:grid-cols-[minmax(0,1fr)_10rem_8rem_auto]">
+          {currentProject.state === "active" && showTaskComposer ? (
+            <div id="project-task-composer" className="cos-surface mt-3 grid gap-2 p-3 lg:grid-cols-[minmax(0,1fr)_10rem_8rem_auto]">
               <input
+                autoFocus
                 value={taskTitle}
                 onChange={(event) => setTaskTitle(event.target.value)}
                 onKeyDown={(event) => event.key === "Enter" && !event.nativeEvent.isComposing && addProjectTask()}
@@ -292,24 +337,45 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         </div>
       </Section>
 
-      <Section title="Dates" description="Events and external deadlines tied to this Project." className="mt-8">
-        <div className="cos-surface p-3" data-testid="project-dates">
-          <div className="space-y-1">
-            {projectDates.map((item) => (
-              <DateRow
-                key={item.id}
-                title={item.title}
-                kind={item.kind}
-                time={item.startTime}
-                meta={item.date}
-                onOpen={() => router.push("/dates")}
-              />
-            ))}
-            {!projectDates.length ? <p className="px-3 py-4 text-sm text-[var(--cos-text-subtle)]">No Dates for this Project.</p> : null}
-          </div>
+      <Section
+        title="Dates"
+        className="mt-8"
+        action={
+          currentProject.state === "active" ? (
+            <button
+              type="button"
+              onClick={() => setShowDateComposer((value) => !value)}
+              aria-expanded={showDateComposer}
+              aria-controls="project-date-composer"
+              className="cos-btn cos-btn-secondary px-3 py-1.5 text-xs"
+            >
+              <Plus className="h-3.5 w-3.5" /> {showDateComposer ? "Cancel" : "New date"}
+            </button>
+          ) : null
+        }
+      >
+        <div data-testid="project-dates">
+          {projectDates.length ? (
+            <div className="cos-surface p-3">
+              <div className="space-y-1">
+                {projectDates.map((item) => (
+                  <DateRow
+                    key={item.id}
+                    title={item.title}
+                    kind={item.kind}
+                    time={item.startTime}
+                    meta={item.date}
+                    onOpen={() => router.push("/dates")}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <EmptyState variant="compact" title="No dates yet" />
+          )}
 
-          {currentProject.state === "active" ? (
-            <div className="mt-4 grid gap-2 border-t border-[var(--cos-border-soft)] pt-4 md:grid-cols-2 xl:grid-cols-[7rem_minmax(0,1fr)_10rem_8rem_8rem_auto]">
+          {currentProject.state === "active" && showDateComposer ? (
+            <div id="project-date-composer" className="cos-surface mt-3 grid gap-2 p-3 md:grid-cols-2 xl:grid-cols-[7rem_minmax(0,1fr)_10rem_8rem_8rem_auto]">
               <select
                 value={dateKind}
                 onChange={(event) => {
@@ -323,7 +389,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
                 <option value="event">Event</option>
                 <option value="deadline">Deadline</option>
               </select>
-              <input value={dateTitle} onChange={(event) => setDateTitle(event.target.value)} placeholder="Add a Date..." aria-label="Date title" className="cos-input px-3 py-2 text-sm" />
+              <input autoFocus value={dateTitle} onChange={(event) => setDateTitle(event.target.value)} placeholder="Add a Date..." aria-label="Date title" className="cos-input px-3 py-2 text-sm" />
               <input type="date" value={dateValue} onChange={(event) => setDateValue(event.target.value)} aria-label="Date" className="cos-input px-3 py-2 text-sm" />
               <input type="time" value={dateStartTime} onChange={(event) => setDateStartTime(event.target.value)} aria-label="Date start time" className="cos-input px-3 py-2 text-sm" />
               <input type="time" value={dateEndTime} onChange={(event) => setDateEndTime(event.target.value)} aria-label="Date end time" disabled={dateKind === "deadline"} className="cos-input px-3 py-2 text-sm disabled:opacity-45" />
@@ -334,10 +400,11 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         </div>
       </Section>
 
-      <Section title="Linked Knowledge" description="Durable project knowledge belongs in Canon; ContextOS only exposes the link." className="mt-8">
+      <Section title="Linked Knowledge" className="mt-8">
         <EmptyState
+          variant="compact"
           title="No linked knowledge"
-          description="Canon linking is not connected yet. This section is intentionally empty rather than inventing a document relationship."
+          description="Canon is not connected yet."
         />
       </Section>
       <TaskEditSheet

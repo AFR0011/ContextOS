@@ -32,6 +32,7 @@ test("Project archive is blocked until its open Tasks are resolved", async ({ pa
 
   const futureDateTitle = "Archived project future date";
   const projectDates = page.getByTestId("project-dates");
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await projectDates.getByRole("textbox", { name: "Date title", exact: true }).fill(futureDateTitle);
   await projectDates.getByLabel("Date", { exact: true }).fill("2099-12-31");
   await projectDates.getByRole("button", { name: "Add", exact: true }).click();

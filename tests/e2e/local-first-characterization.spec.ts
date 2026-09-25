@@ -161,11 +161,14 @@ test.describe("local-first completion characterization", () => {
     const projectId = decodeURIComponent(projectPath.split("/").pop() ?? "");
     expect(projectId).toBeTruthy();
 
+    await page.getByRole("button", { name: "Edit details", exact: true }).click();
     const objectiveField = page.getByPlaceholder("What outcome is this Project trying to reach?");
     await objectiveField.fill(objective);
     await objectiveField.blur();
+    await page.getByRole("button", { name: "Done", exact: true }).click();
 
     const tasks = page.getByTestId("project-live-tasks");
+    await page.getByRole("button", { name: "New task", exact: true }).click();
     await tasks.getByPlaceholder("Add a task...").fill(taskTitle);
     await tasks.getByLabel("Planned day").fill(today);
     await tasks.getByLabel("Scheduled time").fill("11:15");
@@ -173,6 +176,7 @@ test.describe("local-first completion characterization", () => {
     await expect(tasks.getByText(taskTitle, { exact: true })).toBeVisible();
 
     const dates = page.getByTestId("project-dates");
+    await page.getByRole("button", { name: "New date", exact: true }).click();
     await dates.getByLabel("Date kind").selectOption("event");
     await dates.getByPlaceholder("Add a Date...").fill(dateTitle);
     await dates.getByLabel("Date", { exact: true }).fill(today);
@@ -234,7 +238,7 @@ test.describe("local-first completion characterization", () => {
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("project-command-page")).toBeVisible();
     await expect(page.getByText("Archived Project", { exact: true })).toBeVisible();
-    await expect(page.getByPlaceholder("What outcome is this Project trying to reach?")).toHaveValue(objective);
+    await expect(page.getByTestId("project-summary")).toContainText(objective);
     await page.getByRole("button", { name: "Show completed (1)", exact: true }).click();
     await expect(page.getByText(taskTitle, { exact: true })).toBeVisible();
     await expect(page.getByTestId("project-dates").getByText(dateTitle, { exact: true })).toBeVisible();

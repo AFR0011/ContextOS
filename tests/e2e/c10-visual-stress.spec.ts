@@ -108,6 +108,7 @@ async function createHostileWorkspace(page: Page) {
   await page.getByRole("button", { name: "Create Project", exact: true }).click();
 
   const projectDates = page.getByTestId("project-dates");
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await projectDates.getByLabel("Date kind").selectOption("event");
   await projectDates.getByPlaceholder("Add a Date...").fill(longDate);
   await projectDates.getByRole("button", { name: "Add", exact: true }).click();

@@ -30,6 +30,7 @@ test("detail Date composers remain usable at the 1024px sidebar breakpoint", asy
   await page.goto("/projects");
   await page.getByText("ContextOS Demo", { exact: true }).first().click();
   const projectDates = page.getByTestId("project-dates");
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await expectUsableFieldWidth(projectDates.getByRole("textbox", { name: "Date title", exact: true }));
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 

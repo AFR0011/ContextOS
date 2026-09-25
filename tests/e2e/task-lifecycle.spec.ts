@@ -88,6 +88,7 @@ test("project-scoped task creation persists canonical parent and can be complete
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
 
   const tasks = page.getByTestId("project-live-tasks");
+  await page.getByRole("button", { name: "New task", exact: true }).click();
   await tasks.getByPlaceholder("Add a task...").fill(title);
   await tasks.getByLabel("Planned day").fill(plannedDate);
   await tasks.getByLabel("Scheduled time").fill("13:45");
@@ -120,6 +121,7 @@ test("canonical project task creation stays usable on mobile", async ({ page }) 
 
   const tasks = page.getByTestId("project-live-tasks");
   const title = `Mobile canonical task ${Date.now()}`;
+  await page.getByRole("button", { name: "New task", exact: true }).click();
   await tasks.getByPlaceholder("Add a task...").fill(title);
   await tasks.getByLabel("Planned day").fill("2030-04-02");
   await tasks.getByLabel("Scheduled time").fill("16:20");

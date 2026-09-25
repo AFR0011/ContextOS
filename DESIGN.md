@@ -114,7 +114,8 @@ List surfaces:
 - long names and Area labels must wrap safely.
 
 Project Detail:
-- editable Name, Area, Objective;
+- read-first summary with Name, Area, state, and Objective visible without form chrome;
+- explicit Edit details mode exposes editable Name, Area, and Objective;
 - open Tasks with shared post-creation Task editing;
 - optional completed Task history, also editable without changing Done state;
 - Dates;

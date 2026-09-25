@@ -69,6 +69,17 @@ test("Home projects only planned-today tasks and derives today context", async (
   await expect(page.getByTestId("dashboard-scratchpad")).toHaveCount(0);
 });
 
+test("Home Area context opens the specific Area", async ({ page }) => {
+  await login(page);
+
+  const areaContext = page.getByTestId("home-contexts").locator('[data-testid^="home-area-context-"]').filter({ hasText: "Engineering" });
+  await expect(areaContext).toHaveCount(1);
+  await areaContext.getByRole("button").click();
+
+  await expect(page).toHaveURL(/\/areas\/[^/]+$/);
+  await expect(page.getByRole("heading", { name: "Engineering", exact: true })).toBeVisible();
+});
+
 test("Home task completion stays in place", async ({ page }) => {
   await login(page);
   const title = "Review today's open work";

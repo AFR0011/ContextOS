@@ -359,10 +359,26 @@ Rules:
 - rows generally target at least 44px visual rhythm;
 - interactive touch targets must be at least 40px in both dimensions;
 - larger whitespace separates sections, not every row;
+- responsive layouts recompose relationships before merely stacking desktop containers;
+- metadata and secondary controls compress before primary content does;
+- compact or empty states shrink on narrow screens instead of preserving desktop-sized vacant surfaces;
+- authored content may retain more room when its content warrants it, but an empty editor must not reserve the same visual mass as a substantive one;
 - avoid horizontal scrolling for ordinary application content at 320px and above;
 - long names/objectives/details must wrap without pushing lifecycle controls off-screen.
 
-## 8. Component rules
+## 8. Product copy
+
+Persistent interface copy must earn its space.
+
+Rules:
+- explain the next action or a non-obvious consequence, not the product's internal data model;
+- do not repeat concepts already made clear by headings, labels, placement, or controls;
+- keep recurring helper text short enough to scan rather than reread;
+- implementation terms such as provider contracts, persistence mechanics, or internal architecture belong in documentation unless the user must act on them;
+- progressive disclosure is preferred for detail that matters only during a specific action;
+- an optional section description should be omitted when the heading and content already explain the region.
+
+## 9. Component rules
 
 ### Buttons
 
@@ -435,7 +451,7 @@ States:
 
 Refresh from server must be unavailable when doing so could conflict with pending local work.
 
-## 9. Responsive behavior
+## 10. Responsive behavior
 
 ### Mobile
 

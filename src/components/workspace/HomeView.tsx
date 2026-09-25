@@ -84,7 +84,7 @@ function DailyNoteEditor({
   return (
     <div
       data-testid="home-daily-note"
-      className="min-h-[22rem] rounded-2xl border border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/65 p-1"
+      className="min-h-[14rem] rounded-2xl border border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/65 p-1 md:min-h-[16rem] xl:min-h-[18rem]"
     >
       <textarea
         aria-label="Daily Notes"
@@ -96,7 +96,7 @@ function DailyNoteEditor({
           setDraft(next);
         }}
         placeholder="Write what you need to hold onto today…"
-        className="min-h-[19rem] w-full resize-none bg-transparent px-4 py-4 text-[15px] leading-7 text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
+        className="min-h-[11rem] w-full resize-none bg-transparent px-4 py-4 text-[15px] leading-7 text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)] md:min-h-[13rem] xl:min-h-[15rem]"
       />
       <div role="status" aria-live="polite" aria-atomic="true" className="flex min-h-8 items-center justify-end px-4 pb-2 text-[11px] text-[var(--cos-text-subtle)]">
         {saveState === "dirty" ? "Saving…" : saveState === "saved" ? "Saved" : "Local-first"}
@@ -217,22 +217,21 @@ export function HomeView() {
       <div className="grid min-w-0 gap-8 md:grid-cols-2 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1.05fr)_minmax(15rem,0.9fr)] xl:gap-10">
         <Section
           title="Today"
-          description="What you planned to do today. Completed work stays in place."
           className="md:col-span-2 xl:col-span-1"
         >
-          <div data-testid="home-dayline" className="min-h-0 md:min-h-[18rem]">
+          <div data-testid="home-dayline" className="min-h-0">
             {daylineItems.length ? (
               <Dayline items={daylineItems} />
             ) : (
               <EmptyState
                 variant="compact"
-                title="No timed work or events today"
-                description="Planned tasks without a time will appear under Anytime."
+                title="No timed items today"
+                description="Untimed tasks stay under Anytime."
               />
             )}
 
             {anytimeTasks.length ? (
-              <div data-testid="home-anytime" className="mt-7 border-t border-[var(--cos-border-soft)] pt-5">
+              <div data-testid="home-anytime" className="mt-5 border-t border-[var(--cos-border-soft)] pt-4">
                 <p className="cos-section-heading mb-2">Anytime</p>
                 <div className="space-y-1">
                   {anytimeTasks.map((task) => (
@@ -278,10 +277,7 @@ export function HomeView() {
         </Section>
 
         <div className="min-w-0 space-y-8">
-          <Section
-            title="Daily Notes"
-            description="One unstructured note for today. No filing required."
-          >
+          <Section title="Daily Notes">
             <DailyNoteEditor
               key={today}
               value={dailyNote?.content ?? ""}
@@ -292,7 +288,7 @@ export function HomeView() {
           {insights.length ? (
             <Section
               title="Insights"
-              description="Relevant, explainable suggestions from ContextOS intelligence."
+              description="Relevant, explainable suggestions."
             >
               <div data-testid="home-insights" className="space-y-3">
                 {insights.map((insight) => (
@@ -311,7 +307,7 @@ export function HomeView() {
         <div className="min-w-0 space-y-8">
           <Section
             title="In Context Today"
-            description="Projects and Areas referenced by today’s planned work."
+            description="Projects and Areas referenced by today’s work."
           >
             <div data-testid="home-contexts">
               {contexts.projects.length || contexts.areas.length ? (
@@ -344,7 +340,7 @@ export function HomeView() {
                           key={area.id}
                           title={area.name}
                           meta={area.state === "archived" ? "Archived Area" : "Area"}
-                          onOpen={() => router.push("/areas")}
+                          onOpen={() => router.push(`/areas/${encodeURIComponent(area.id)}`)}
                         />
                       ))}
                     </div>
@@ -361,10 +357,7 @@ export function HomeView() {
           </Section>
 
           {upcomingDates.length ? (
-            <Section
-              title="Upcoming"
-              description="Future Events and Deadlines that may affect what you do next."
-            >
+            <Section title="Upcoming">
               <div data-testid="home-upcoming" className="space-y-1">
                 {upcomingDates.map((item) => (
                   <DateRow

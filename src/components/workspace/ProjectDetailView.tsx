@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Archive, ArrowLeft, Plus, RotateCcw } from "lucide-react";
+import { Archive, ArrowLeft, Check, Pencil, Plus, RotateCcw } from "lucide-react";
 import { DateRow, EmptyState, PageHeader, Section, TaskRow } from "@/components/workspace/ProductPrimitives";
 import { TaskEditSheet } from "@/components/workspace/TaskEditSheet";
 import { useWorkspace } from "@/lib/client-store";
@@ -77,6 +77,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
   const [dateEndTime, setDateEndTime] = useState("");
   const [dateDetails, setDateDetails] = useState("");
   const [archiveAttempted, setArchiveAttempted] = useState(false);
+  const [editingProject, setEditingProject] = useState(false);
 
   if (!project) {
     return (
@@ -159,20 +160,32 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         title={currentProject.name}
         description={currentProject.state === "archived" ? "Archived Project" : "Active Project"}
         action={
-          currentProject.state === "archived" ? (
-            <button type="button" onClick={restore} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
-              <RotateCcw className="h-4 w-4" /> Restore
-            </button>
-          ) : (
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={archive}
-              aria-describedby={archiveAttemptMessage ? "project-archive-blocked" : undefined}
+              onClick={() => setEditingProject((value) => !value)}
+              aria-expanded={editingProject}
+              aria-controls="project-details-editor"
               className="cos-btn cos-btn-secondary px-3 py-2 text-sm"
             >
-              <Archive className="h-4 w-4" /> Archive
+              {editingProject ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+              {editingProject ? "Done" : "Edit details"}
             </button>
-          )
+            {currentProject.state === "archived" ? (
+              <button type="button" onClick={restore} className="cos-btn cos-btn-secondary px-3 py-2 text-sm">
+                <RotateCcw className="h-4 w-4" /> Restore
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={archive}
+                aria-describedby={archiveAttemptMessage ? "project-archive-blocked" : undefined}
+                className="cos-btn cos-btn-secondary px-3 py-2 text-sm"
+              >
+                <Archive className="h-4 w-4" /> Archive
+              </button>
+            )}
+          </div>
         }
       />
 
@@ -182,35 +195,45 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
         </p>
       ) : null}
 
-      <Section title="Project" description="The small amount of canonical information needed to resume the work.">
-        <div className="cos-surface grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
-          <label className="space-y-1">
-            <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Name</span>
-            <EditableText value={currentProject.name} placeholder="Project name" onSave={(name) => name && updateProject(currentProject.id, { name })} />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Area</span>
-            <select
-              value={currentProject.areaId}
-              onChange={(event) => updateProject(currentProject.id, { areaId: event.target.value })}
-              className="cos-input w-full px-3 py-2 text-sm"
-            >
-              {areaChoices.map((area) => (
-                <option key={area.id} value={area.id}>{area.name}{area.state === "archived" ? " (archived)" : ""}</option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-1 lg:col-span-2">
-            <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Objective</span>
-            <EditableText
-              value={currentProject.objective}
-              multiline
-              placeholder="What outcome is this Project trying to reach?"
-              onSave={(objective) => updateProject(currentProject.id, { objective })}
-            />
-          </label>
+      {editingProject ? (
+        <Section title="Project details">
+          <div id="project-details-editor" className="cos-surface grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
+            <label className="space-y-1">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Name</span>
+              <EditableText value={currentProject.name} placeholder="Project name" onSave={(name) => name && updateProject(currentProject.id, { name })} />
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Area</span>
+              <select
+                value={currentProject.areaId}
+                onChange={(event) => updateProject(currentProject.id, { areaId: event.target.value })}
+                aria-label="Area"
+                className="cos-input w-full px-3 py-2 text-sm"
+              >
+                {areaChoices.map((area) => (
+                  <option key={area.id} value={area.id}>{area.name}{area.state === "archived" ? " (archived)" : ""}</option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1 lg:col-span-2">
+              <span className="text-xs font-semibold text-[var(--cos-text-muted)]">Objective</span>
+              <EditableText
+                value={currentProject.objective}
+                multiline
+                placeholder="What outcome is this Project trying to reach?"
+                onSave={(objective) => updateProject(currentProject.id, { objective })}
+              />
+            </label>
+          </div>
+        </Section>
+      ) : (
+        <div data-testid="project-summary" className="mb-8 max-w-3xl">
+          <p className="text-xs font-semibold text-[var(--cos-text-muted)]">Objective</p>
+          <p className={`mt-1 break-words text-base leading-7 [overflow-wrap:anywhere] ${currentProject.objective ? "text-[var(--cos-text-strong)]" : "text-[var(--cos-text-subtle)]"}`}>
+            {currentProject.objective || "No objective yet."}
+          </p>
         </div>
-      </Section>
+      )}
 
       <Section
         title="Tasks"

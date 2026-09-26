@@ -134,11 +134,11 @@ List surfaces:
 - Archive/Restore is local to the Area lifecycle.
 
 Area Detail:
-- editable Area name;
-- Active Projects;
-- Direct Tasks with shared post-creation Task editing;
-- Direct Dates;
-- Archived Projects.
+- read-first Area header with explicit Edit details mode for the Area name;
+- Active Projects as the primary operational region, with Project creation disclosed on demand;
+- Direct Tasks with shared post-creation Task editing and creation disclosed on demand;
+- Direct Dates with creation disclosed on demand;
+- Archived Projects shown only when present.
 
 Archiving an Area does not archive its Projects. Area archive is blocked only by direct Open Tasks; child Project lifecycle remains independent. Archive controls remain actionable, and the blocking explanation appears only after a blocked attempt rather than as persistent list noise.
 

@@ -27,9 +27,9 @@ function formatSyncTimestamp(value: string | null) {
 
 function SyncMetric({ label, value, testId }: { label: string; value: string; testId?: string }) {
   return (
-    <div className="rounded-lg bg-[var(--cos-bg-soft)] p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">{label}</p>
-      <p data-testid={testId ?? (label === "Pending" ? "pending-count" : undefined)} className="mt-1 text-sm font-semibold text-[var(--cos-text)]">{value}</p>
+    <div className="min-w-0">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-subtle)]">{label}</p>
+      <p data-testid={testId ?? (label === "Pending" ? "pending-count" : undefined)} className="mt-1 break-words text-sm font-semibold text-[var(--cos-text)] [overflow-wrap:anywhere]">{value}</p>
     </div>
   );
 }
@@ -43,6 +43,15 @@ type ImportPreview = {
   counts: Record<string, number>;
   semantics: string;
 };
+
+const settingsSections = [
+  ["settings-account", "Account"],
+  ["settings-appearance", "Appearance"],
+  ["settings-sync", "Offline & Sync"],
+  ["settings-data", "Data"],
+  ["settings-security", "Security"],
+  ["settings-advanced", "Advanced"]
+] as const;
 
 export function ProductSettingsView() {
   const { sync, syncNow, forceRefreshFromServer } = useWorkspace();
@@ -175,72 +184,84 @@ export function ProductSettingsView() {
 
   return (
     <div className="cos-page" data-testid="product-settings-view">
-      <PageHeader
-        eyebrow="ContextOS"
-        title="Settings"
-        description="Account, appearance, synchronization, data, security, and advanced product behavior."
-      />
+      <PageHeader eyebrow="ContextOS" title="Settings" />
 
-      <div className="space-y-10">
-        <Section title="Account" description="Account-level actions stay separate from workspace structure.">
-          <div className="cos-surface p-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 flex-1 items-start gap-3">
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--cos-bg-soft)] text-[var(--cos-text-muted)]">
-                  <UserRound className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-[var(--cos-text-strong)]">Account lifecycle</p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--cos-text-muted)]">
-                    Permanent account deletion remains a separate confirmation flow so it cannot be triggered accidentally from ordinary settings.
-                  </p>
-                </div>
-              </div>
-              <a href="/account/delete" className="cos-btn cos-btn-danger min-h-10 shrink-0 px-3 py-2 text-sm">
-                <Trash2 className="h-4 w-4" /> Delete account
+      <div className="grid gap-8 lg:grid-cols-[10.5rem_minmax(0,1fr)] xl:gap-10">
+        <nav aria-label="Settings sections" className="hidden lg:block">
+          <div className="sticky top-6 space-y-1">
+            {settingsSections.map(([id, label]) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                className="block rounded-lg px-3 py-2 text-sm text-[var(--cos-text-muted)] transition-colors hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cos-focus-ring)]"
+              >
+                {label}
               </a>
-            </div>
+            ))}
           </div>
-        </Section>
+        </nav>
 
-        <Section title="Appearance" description="Choose the first-class light or dark ContextOS theme.">
-          <div className="cos-surface p-4" data-testid="appearance-settings">
-            <div className="grid max-w-md grid-cols-2 gap-2">
-              <button
-                type="button"
-                aria-pressed={theme === "light"}
-                onClick={() => setTheme("light")}
-                className={`cos-btn min-h-11 justify-center px-4 py-2 text-sm ${theme === "light" ? "cos-btn-primary" : "cos-btn-secondary"}`}
-              >
-                <Sun className="h-4 w-4" /> Light
-              </button>
-              <button
-                type="button"
-                aria-pressed={theme === "dark"}
-                onClick={() => setTheme("dark")}
-                className={`cos-btn min-h-11 justify-center px-4 py-2 text-sm ${theme === "dark" ? "cos-btn-primary" : "cos-btn-secondary"}`}
-              >
-                <Moon className="h-4 w-4" /> Dark
-              </button>
-            </div>
-          </div>
-        </Section>
-
-        <Section title="Offline & Sync" description="Local-first state, pending changes, and explicit server refresh.">
-          <div className="cos-surface p-4" data-testid="offline-sync-settings">
-            <div className="flex items-start gap-3">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--cos-bg-soft)] text-[var(--cos-text-muted)]">
-                <Wifi className="h-4 w-4" />
+        <div className="min-w-0 space-y-10">
+          <div id="settings-account" className="scroll-mt-6">
+            <Section title="Account">
+              <div className="cos-surface p-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--cos-bg-soft)] text-[var(--cos-text-muted)]">
+                      <UserRound className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[var(--cos-text-strong)]">Delete account</p>
+                      <p className="mt-1 text-sm leading-6 text-[var(--cos-text-muted)]">
+                        Permanently delete this account and workspace after a separate confirmation.
+                      </p>
+                    </div>
+                  </div>
+                  <a data-testid="open-account-deletion" href="/account/delete" className="cos-btn cos-btn-danger min-h-10 shrink-0 px-3 py-2 text-sm">
+                    <Trash2 className="h-4 w-4" /> Delete account
+                  </a>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            </Section>
+          </div>
+
+          <div id="settings-appearance" className="scroll-mt-6">
+            <Section title="Appearance">
+              <div className="cos-surface p-4" data-testid="appearance-settings">
+                <div className="grid max-w-sm grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    aria-pressed={theme === "light"}
+                    onClick={() => setTheme("light")}
+                    className={`cos-btn min-h-11 justify-center px-4 py-2 text-sm ${theme === "light" ? "cos-btn-primary" : "cos-btn-secondary"}`}
+                  >
+                    <Sun className="h-4 w-4" /> Light
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={theme === "dark"}
+                    onClick={() => setTheme("dark")}
+                    className={`cos-btn min-h-11 justify-center px-4 py-2 text-sm ${theme === "dark" ? "cos-btn-primary" : "cos-btn-secondary"}`}
+                  >
+                    <Moon className="h-4 w-4" /> Dark
+                  </button>
+                </div>
+              </div>
+            </Section>
+          </div>
+
+          <div id="settings-sync" className="scroll-mt-6">
+            <Section title="Offline & Sync">
+              <div className="cos-surface p-4" data-testid="offline-sync-settings">
+                <div className="grid grid-cols-2 gap-x-5 gap-y-5 md:grid-cols-5">
                   <SyncMetric label="Status" value={sync.syncing ? "Syncing" : sync.online ? "Online" : "Offline"} testId="sync-status" />
                   <SyncMetric label="Pending" value={String(sync.pendingCount)} />
                   <SyncMetric label="Last synced" value={formatSyncTimestamp(sync.lastSyncedAt)} />
                   <SyncMetric label="Last refresh" value={formatSyncTimestamp(sync.lastRefreshAt)} />
                   <SyncMetric label="Stale warnings" value={String(sync.staleMutationCount)} />
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--cos-border-soft)] pt-4">
                   <button onClick={() => void syncNow()} disabled={!sync.online || sync.syncing} className="cos-btn cos-btn-primary px-4 py-2 text-sm disabled:opacity-50">
                     <RefreshCw className={`h-4 w-4 ${sync.syncing ? "animate-spin" : ""}`} />
                     {sync.syncing ? "Syncing..." : "Sync now"}
@@ -257,9 +278,10 @@ export function ProductSettingsView() {
                     {sync.refreshing ? "Refreshing..." : "Refresh from server"}
                   </button>
                 </div>
+
                 {!sync.online ? (
                   <p role="status" className="mt-3 rounded-lg border border-[var(--cos-warning-border)] bg-[var(--cos-warning-soft)] px-3 py-2 text-sm text-[var(--cos-warning-text)]">
-                    Offline. Edits are saved locally and will sync when the connection returns.
+                    Offline. Edits stay local and sync when the connection returns.
                   </p>
                 ) : null}
                 {sync.error ? (
@@ -275,20 +297,16 @@ export function ProductSettingsView() {
                   </p>
                 ) : null}
               </div>
-            </div>
+            </Section>
           </div>
-        </Section>
 
-        <Section title="Data" description="Export, inspect, restore, or merge complete workspace data.">
-          <div className="cos-surface p-4" data-testid="data-portability-settings">
-            <div className="flex items-start gap-3">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--cos-bg-soft)] text-[var(--cos-text-muted)]">
-                <Database className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="max-w-3xl text-sm text-[var(--cos-text-muted)]">
-                  Export the complete workspace as versioned JSON for restore, or as Markdown for a human-readable copy. JSON restore validates the whole file before changing anything.
+          <div id="settings-data" className="scroll-mt-6">
+            <Section title="Data">
+              <div className="cos-surface p-4" data-testid="data-portability-settings">
+                <p className="max-w-3xl text-sm leading-6 text-[var(--cos-text-muted)]">
+                  Export a restorable JSON backup or a human-readable Markdown copy. JSON imports are validated before any workspace data changes.
                 </p>
+
                 <div className="mt-4 flex flex-wrap gap-2">
                   {canExport ? (
                     <>
@@ -368,31 +386,26 @@ export function ProductSettingsView() {
                 {importError ? <p data-testid="workspace-import-error" role="alert" className="mt-3 rounded-lg border border-[var(--cos-danger-border)] bg-[var(--cos-danger-soft)] px-3 py-2 text-sm text-[var(--cos-danger-text)]">{importError}</p> : null}
                 {importSuccess ? <p data-testid="workspace-import-success" role="status" className="mt-3 rounded-lg border border-[var(--cos-success-border)] bg-[var(--cos-success-soft)] px-3 py-2 text-sm text-[var(--cos-success-text)]">{importSuccess}</p> : null}
               </div>
-            </div>
+            </Section>
           </div>
-        </Section>
 
-        <Section title="Security" description="Password and active-session controls remain server-verified.">
-          <div data-testid="security-settings" className="space-y-6">
-            <PasswordChangePanel online={sync.online} />
+          <div id="settings-security" className="scroll-mt-6">
+            <Section title="Security">
+              <div data-testid="security-settings">
+                <PasswordChangePanel online={sync.online} />
+              </div>
+            </Section>
           </div>
-        </Section>
 
-        <Section title="Advanced" description="Reserved for product-level behavior that does not belong in the core workflow.">
-          <div className="cos-surface p-4" data-testid="advanced-settings">
-            <div className="flex items-start gap-3">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--cos-bg-soft)] text-[var(--cos-text-muted)]">
-                <SlidersHorizontal className="h-4 w-4" />
+          <div id="settings-advanced" className="scroll-mt-6">
+            <Section title="Advanced">
+              <div data-testid="advanced-settings" className="flex items-center gap-3 py-1 text-sm text-[var(--cos-text-muted)]">
+                <SlidersHorizontal className="h-4 w-4 shrink-0 text-[var(--cos-text-subtle)]" />
+                <span>No advanced overrides.</span>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-[var(--cos-text-strong)]">No advanced overrides</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--cos-text-muted)]">
-                  ContextOS currently has no legitimate advanced preference to expose. This section stays intentionally empty rather than manufacturing switches nobody asked for.
-                </p>
-              </div>
-            </div>
+            </Section>
           </div>
-        </Section>
+        </div>
       </div>
     </div>
   );

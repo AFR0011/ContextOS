@@ -166,6 +166,8 @@ Rules:
 - Events may have start/end time.
 - Deadlines may have a time but no end time.
 - Task planning remains visually and semantically separate.
+- The desktop Dates surface uses a constrained reading column; mobile remains full-width.
+- Date editing expands in place so temporal context is preserved.
 
 ### Search
 

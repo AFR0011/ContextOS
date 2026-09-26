@@ -230,8 +230,11 @@ Canonical sections:
 Settings is for account/application controls, not Area management.
 
 Rules:
-- desktop uses a slim section rail plus one primary settings column;
-- mobile remains a linear settings flow without a second navigation layer;
+- desktop uses a slim section rail plus one primary settings panel;
+- only the active Settings section is rendered at a time;
+- section state is URL-backed with `?section=` so refresh, direct links, and browser history preserve context;
+- Account is the default section when no valid section is specified;
+- mobile uses one compact section selector rather than a second persistent navigation rail;
 - equivalent settings sections share the standard operational page frame;
 - nested cards are avoided unless a real interaction boundary exists;
 - sync metrics remain compact and scannable rather than becoming independent dashboard tiles;

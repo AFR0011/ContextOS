@@ -32,7 +32,7 @@ function AreaRow({
         <button type="button" onClick={onOpen} className="w-full min-w-0 text-left">
           <span className="block break-words text-sm font-semibold text-[var(--cos-text-strong)] [overflow-wrap:anywhere]">{name}</span>
           <span className="mt-1 block text-xs text-[var(--cos-text-subtle)]">
-            {projectCount} active project{projectCount === 1 ? "" : "s"} · {taskCount} direct open task{taskCount === 1 ? "" : "s"}
+            {projectCount} project{projectCount === 1 ? "" : "s"} · {taskCount} direct task{taskCount === 1 ? "" : "s"}
           </span>
         </button>
         {archiveAttemptMessage ? (
@@ -91,7 +91,6 @@ export function AreasView() {
       <PageHeader
         eyebrow="Work"
         title="Areas"
-        description="Long-lived domains of responsibility. Areas organize Projects and direct Tasks; they are not analytics dashboards."
         action={
           <button
             ref={newAreaTriggerRef}
@@ -122,7 +121,7 @@ export function AreasView() {
         </section>
       ) : null}
 
-      {loading ? <EmptyState title="Loading Areas" description="Workspace data is hydrating from local storage or the server." /> : null}
+      {loading ? <EmptyState variant="compact" title="Loading Areas…" /> : null}
 
       {!loading ? (
         <>
@@ -152,12 +151,12 @@ export function AreasView() {
                 })}
               </div>
             ) : (
-              <EmptyState title="No active Areas" description="Create an Area for a stable responsibility you actually maintain." />
+              <EmptyState variant={archivedAreas.length ? "compact" : "full"} title="No active Areas" description={archivedAreas.length ? undefined : "Create an Area for a responsibility you actively maintain."} />
             )}
           </Section>
 
-          <Section title="Archived" description="Archiving an Area does not archive its Projects. Their lifecycle remains independent." className="mt-8">
-            {archivedAreas.length ? (
+          {archivedAreas.length ? (
+            <Section title="Archived" className="mt-8">
               <div className="space-y-2">
                 {archivedAreas.map((area) => {
                   const { projectCount, taskCount } = counts(area.id);
@@ -174,10 +173,8 @@ export function AreasView() {
                   );
                 })}
               </div>
-            ) : (
-              <p className="text-sm text-[var(--cos-text-subtle)]">No archived Areas.</p>
-            )}
-          </Section>
+            </Section>
+          ) : null}
         </>
       ) : null}
     </div>

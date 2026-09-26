@@ -207,7 +207,7 @@ export function HomeView() {
   ].sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99") || a.title.localeCompare(b.title));
 
   return (
-    <div data-testid="home-view" className="cos-page">
+    <div data-testid="home-view" className="cos-page cos-page-wide">
       <PageHeader
         eyebrow="ContextOS"
         title="Home"

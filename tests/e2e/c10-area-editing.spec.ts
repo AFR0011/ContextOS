@@ -16,6 +16,7 @@ test("Area detail can rename the canonical Area without changing lifecycle", asy
   await page.goto("/areas");
   await page.getByText("Engineering", { exact: true }).first().click();
 
+  await page.getByRole("button", { name: "Edit details", exact: true }).click();
   const name = page.getByRole("textbox", { name: "Area name", exact: true });
   await expect(name).toHaveValue("Engineering");
   await name.fill("Product Engineering");
@@ -33,6 +34,7 @@ test("Area rename rejects an empty name and Escape restores the canonical value"
   await page.goto("/areas");
   await page.getByText("Engineering", { exact: true }).first().click();
 
+  await page.getByRole("button", { name: "Edit details", exact: true }).click();
   const name = page.getByRole("textbox", { name: "Area name", exact: true });
   await name.fill("");
   await name.blur();

@@ -107,7 +107,7 @@
 
   /* Layout */
   --cos-content-narrow: 720px;
-  --cos-content-default: 960px;
+  --cos-content-default: 1152px;
   --cos-content-wide: 1480px;
 
   /* Motion */
@@ -244,9 +244,13 @@ button:disabled {
 
 .cos-page {
   margin-inline: auto;
-  max-width: var(--cos-content-wide);
+  max-width: calc(var(--cos-content-default) + 4rem);
   padding: var(--cos-space-4);
   padding-bottom: calc(var(--cos-space-8) + env(safe-area-inset-bottom));
+}
+
+.cos-page-wide {
+  max-width: var(--cos-content-wide);
 }
 
 @media (min-width: 640px) {

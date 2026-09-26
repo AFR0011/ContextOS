@@ -16,19 +16,19 @@ export function LifeOSFoundationView() {
 
   return (
     <div className="cos-page" data-testid="lifeos-hub">
-      <div className="w-full max-w-5xl">
+      <div className="w-full max-w-6xl">
         <PageHeader
           eyebrow="LifeOS"
           title="Module hub"
         />
 
         <Section title="Modules">
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {modules.map((module) => (
             <article
               key={module.id}
               data-testid={`lifeos-module-${module.id}`}
-              className="rounded-xl border border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)] px-4 py-4"
+              className="min-h-[7.5rem] rounded-xl border border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)] px-5 py-5"
             >
               <div className="flex items-start gap-3">
                 <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--cos-bg-inset)] text-[var(--cos-text-subtle)]">

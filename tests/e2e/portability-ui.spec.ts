@@ -74,6 +74,7 @@ test("fresh first run exposes restore and completes a workspace replacement", as
 
   await expect(page.getByTestId("workspace-import-success")).toContainText("Workspace restored from export.");
   await expect(page.getByTestId("workspace-import-preview")).toHaveCount(0);
+  await page.goto("/settings?section=sync");
   await expect(page.getByTestId("pending-count")).toHaveText("0");
   await page.goto("/areas");
   await expect(page.getByText("Restored Personal", { exact: true })).toBeVisible();
@@ -137,6 +138,7 @@ test("replace import does not report success when the restored server workspace 
   await expect(page.getByTestId("workspace-import-preview")).toHaveCount(0);
 
   await page.unroute("**/api/bootstrap");
+  await page.goto("/settings?section=sync");
   await page.getByTestId("settings-refresh-from-server").click();
   await expect(page.getByTestId("sync-error")).toHaveCount(0);
 

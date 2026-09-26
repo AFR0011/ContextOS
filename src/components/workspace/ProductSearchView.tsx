@@ -115,7 +115,7 @@ export function ProductSearchView() {
 
   return (
     <div className="cos-page" data-testid="product-search-view">
-      <div className="w-full max-w-6xl">
+      <div className="w-full">
         <PageHeader eyebrow="ContextOS" title="Search" />
 
         <label className="cos-input flex items-center gap-2 px-3 py-2">

@@ -263,7 +263,7 @@ test("Daily Note autosave and password validation expose non-visual state", asyn
   await expect(saveStatus).toContainText(/Saving|Saved/);
   await expect(saveStatus).toContainText("Saved");
 
-  await page.goto("/settings");
+  await page.goto("/settings?section=security");
   const newPassword = page.getByLabel("New password", { exact: true });
   const confirmation = page.getByLabel("Confirm new password", { exact: true });
 
@@ -337,7 +337,7 @@ test("light-theme subtle text token keeps AA contrast on canonical surfaces", as
 
 test("dynamic import errors are exposed as alerts", async ({ page }) => {
   await login(page);
-  await page.goto("/settings");
+  await page.goto("/settings?section=data");
 
   await page.getByTestId("workspace-import-file").setInputFiles({
     name: "invalid.json",

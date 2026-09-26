@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   Download,
@@ -43,17 +44,28 @@ type ImportPreview = {
 };
 
 const settingsSections = [
-  ["settings-account", "Account"],
-  ["settings-appearance", "Appearance"],
-  ["settings-sync", "Offline & Sync"],
-  ["settings-data", "Data"],
-  ["settings-security", "Security"],
-  ["settings-advanced", "Advanced"]
+  ["account", "Account"],
+  ["appearance", "Appearance"],
+  ["sync", "Offline & Sync"],
+  ["data", "Data"],
+  ["security", "Security"],
+  ["advanced", "Advanced"]
 ] as const;
+
+type SettingsSectionId = (typeof settingsSections)[number][0];
+
+function isSettingsSectionId(value: string | null): value is SettingsSectionId {
+  return settingsSections.some(([id]) => id === value);
+}
 
 export function ProductSettingsView() {
   const { sync, syncNow, forceRefreshFromServer } = useWorkspace();
   const { theme, setTheme } = useContextOsTheme();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedSection = searchParams.get("section");
+  const activeSection: SettingsSectionId = isSettingsSectionId(requestedSection) ? requestedSection : "account";
   const [importBundle, setImportBundle] = useState<unknown | null>(null);
   const [importFileName, setImportFileName] = useState("");
   const [importMode, setImportMode] = useState<ImportMode>("replace");
@@ -180,26 +192,53 @@ export function ProductSettingsView() {
     }
   }
 
+  function selectSettingsSection(section: SettingsSectionId) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (section === "account") params.delete("section");
+    else params.set("section", section);
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
   return (
     <div className="cos-page" data-testid="product-settings-view">
       <PageHeader eyebrow="ContextOS" title="Settings" />
 
+      <div className="mb-6 lg:hidden">
+        <label htmlFor="settings-section-select" className="sr-only">Settings section</label>
+        <select
+          id="settings-section-select"
+          aria-label="Settings section"
+          value={activeSection}
+          onChange={(event) => selectSettingsSection(event.target.value as SettingsSectionId)}
+          className="cos-input w-full px-3 py-2.5 text-sm font-semibold"
+        >
+          {settingsSections.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+        </select>
+      </div>
+
       <div className="grid gap-8 lg:grid-cols-[10.5rem_minmax(0,1fr)] xl:gap-10">
         <nav aria-label="Settings sections" className="hidden lg:block">
           <div className="sticky top-6 space-y-1">
-            {settingsSections.map(([id, label]) => (
-              <a
-                key={id}
-                href={`#${id}`}
-                className="block rounded-lg px-3 py-2 text-sm text-[var(--cos-text-muted)] transition-colors hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cos-focus-ring)]"
-              >
-                {label}
-              </a>
-            ))}
+            {settingsSections.map(([id, label]) => {
+              const selected = activeSection === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => selectSettingsSection(id)}
+                  aria-current={selected ? "page" : undefined}
+                  className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cos-focus-ring)] ${selected ? "bg-[var(--cos-primary-soft)] font-semibold text-[var(--cos-primary)]" : "text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text-strong)]"}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </nav>
 
-        <div className="min-w-0 space-y-10">
+        <div className="min-w-0">
+          {activeSection === "account" ? (
           <div id="settings-account" className="scroll-mt-6">
             <Section title="Account">
               <div className="cos-surface p-4">
@@ -223,6 +262,9 @@ export function ProductSettingsView() {
             </Section>
           </div>
 
+          ) : null}
+
+          {activeSection === "appearance" ? (
           <div id="settings-appearance" className="scroll-mt-6">
             <Section title="Appearance">
               <div className="cos-surface p-4" data-testid="appearance-settings">
@@ -248,6 +290,9 @@ export function ProductSettingsView() {
             </Section>
           </div>
 
+          ) : null}
+
+          {activeSection === "sync" ? (
           <div id="settings-sync" className="scroll-mt-6">
             <Section title="Offline & Sync">
               <div className="cos-surface p-4" data-testid="offline-sync-settings">
@@ -298,6 +343,9 @@ export function ProductSettingsView() {
             </Section>
           </div>
 
+          ) : null}
+
+          {activeSection === "data" ? (
           <div id="settings-data" className="scroll-mt-6">
             <Section title="Data">
               <div className="cos-surface p-4" data-testid="data-portability-settings">
@@ -387,6 +435,9 @@ export function ProductSettingsView() {
             </Section>
           </div>
 
+          ) : null}
+
+          {activeSection === "security" ? (
           <div id="settings-security" className="scroll-mt-6">
             <Section title="Security">
               <div data-testid="security-settings">
@@ -395,6 +446,9 @@ export function ProductSettingsView() {
             </Section>
           </div>
 
+          ) : null}
+
+          {activeSection === "advanced" ? (
           <div id="settings-advanced" className="scroll-mt-6">
             <Section title="Advanced">
               <div data-testid="advanced-settings" className="flex items-center gap-3 py-1 text-sm text-[var(--cos-text-muted)]">
@@ -403,6 +457,8 @@ export function ProductSettingsView() {
               </div>
             </Section>
           </div>
+          ) : null}
+
         </div>
       </div>
     </div>

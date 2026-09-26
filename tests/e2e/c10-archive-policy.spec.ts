@@ -73,6 +73,7 @@ test("Area archive ignores child Project work but blocks direct open Tasks", asy
   const area = page.getByTestId("area-detail");
 
   const title = `Direct archive blocker ${Date.now()}`;
+  await area.getByRole("button", { name: "New task", exact: true }).click();
   const taskComposer = area.getByRole("textbox", { name: "Task title", exact: true }).locator("..");
   await taskComposer.getByRole("textbox", { name: "Task title", exact: true }).fill(title);
   await taskComposer.getByRole("button", { name: "Add", exact: true }).click();

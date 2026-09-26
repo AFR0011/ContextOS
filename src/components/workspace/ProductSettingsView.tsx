@@ -12,7 +12,6 @@ import {
   Sun,
   Trash2,
   Upload,
-  UserRound,
   UserRound
 } from "lucide-react";
 import { PasswordChangePanel } from "@/components/workspace/PasswordChangePanel";

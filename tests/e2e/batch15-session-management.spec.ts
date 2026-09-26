@@ -35,7 +35,7 @@ test("active-session controls revoke other sessions without bypassing the curren
   try {
     await login(secondPage, email, credential);
 
-    await page.goto("/settings");
+    await page.goto("/settings?section=security");
     await expect(page.getByTestId("session-management-settings")).toBeVisible();
     await expect(page.getByTestId("active-session-row")).toHaveCount(2);
     await expect(page.getByTestId("current-session-badge")).toHaveCount(1);

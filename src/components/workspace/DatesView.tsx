@@ -196,7 +196,7 @@ export function DatesView() {
 
   return (
     <div className="cos-page" data-testid="dates-view">
-      <div className="w-full max-w-5xl">
+      <div className="w-full">
         <PageHeader
           eyebrow="Time"
           title="Dates"

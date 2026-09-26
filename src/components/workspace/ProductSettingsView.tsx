@@ -3,7 +3,6 @@
 import { useState } from "react";
 import {
   AlertTriangle,
-  Database,
   Download,
   FileJson,
   FileText,
@@ -14,7 +13,7 @@ import {
   Trash2,
   Upload,
   UserRound,
-  Wifi
+  UserRound
 } from "lucide-react";
 import { PasswordChangePanel } from "@/components/workspace/PasswordChangePanel";
 import { PageHeader, Section } from "@/components/workspace/ProductPrimitives";

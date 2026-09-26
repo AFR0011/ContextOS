@@ -156,7 +156,7 @@ test.describe("C10 narrow hostile-content visual stress", () => {
       await expect(page.getByTestId("search-selected-record")).toContainText(longProject);
       await capture(page, testInfo, `${prefix}-05-search-long`);
 
-      await page.goto("/settings");
+      await page.goto("/settings?section=data");
       const longFileName = `contextos-${"backup".repeat(45)}.json`;
       await page.getByTestId("workspace-import-file").setInputFiles({
         name: longFileName,

@@ -530,6 +530,7 @@ test("Area detail exposes canonical Projects, direct Tasks, and direct Dates", a
   await expect(page.getByRole("heading", { name: "Archived Projects", exact: true })).toBeVisible();
 
   const areaProject = `Area project ${Date.now()}`;
+  await page.getByRole("button", { name: "New project", exact: true }).click();
   await page.getByPlaceholder("New Project name").fill(areaProject);
   await page.getByPlaceholder("Objective (optional)").fill("Verify flat Area ownership");
   await page.getByRole("button", { name: "Add Project", exact: true }).click();
@@ -540,6 +541,7 @@ test("Area detail exposes canonical Projects, direct Tasks, and direct Dates", a
   await page.getByText("Engineering", { exact: true }).first().click();
   const areaDate = `Area event ${Date.now()}`;
   const dates = page.getByTestId("area-dates");
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await dates.getByLabel("Date kind").selectOption("event");
   await dates.getByPlaceholder("Add a direct Date...").fill(areaDate);
   await dates.getByLabel("Date", { exact: true }).fill(localDateKey());
@@ -569,6 +571,7 @@ test("Area rename queues one offline mutation and converges after reconnect", as
   await expect(page.getByTestId("area-detail")).toBeVisible();
   await context.setOffline(true);
 
+  await page.getByRole("button", { name: "Edit details", exact: true }).click();
   const areaInput = page.getByRole("textbox", { name: "Area name", exact: true });
   const renamed = `Research offline rename ${Date.now()}`;
   await areaInput.fill(renamed);

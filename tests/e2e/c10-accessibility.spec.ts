@@ -195,9 +195,15 @@ test("canonical quick-entry fields expose accessible names instead of placeholde
 
   await page.getByText("Engineering", { exact: true }).first().click();
   await expect(page.getByTestId("area-detail")).toBeVisible();
+
+  await page.getByRole("button", { name: "New project", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Project name", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Project objective", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "New task", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Task title", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Date title", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Date details", exact: true })).toBeVisible();
 

@@ -37,6 +37,7 @@ test("detail Date composers remain usable at the 1024px sidebar breakpoint", asy
   await page.goto("/areas");
   await page.getByText("Engineering", { exact: true }).first().click();
   const areaDates = page.getByTestId("area-dates");
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await expectUsableFieldWidth(areaDates.getByRole("textbox", { name: "Date title", exact: true }));
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });

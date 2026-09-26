@@ -16,7 +16,7 @@ export function LifeOSFoundationView() {
 
   return (
     <div className="cos-page" data-testid="lifeos-hub">
-      <div className="w-full max-w-6xl">
+      <div className="w-full">
         <PageHeader
           eyebrow="LifeOS"
           title="Module hub"

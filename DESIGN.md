@@ -359,6 +359,9 @@ ContextOS should feel compact without becoming cramped.
 
 Rules:
 - primary page padding scales from mobile to desktop;
+- standard operational pages share one horizontal content frame and therefore one right edge at desktop;
+- Home may use the wide frame because its multi-region dashboard composition requires the additional canvas;
+- page-local width overrides require an explicit compositional reason; equivalent pages must not drift between arbitrary width utilities;
 - rows generally target at least 44px visual rhythm;
 - interactive touch targets must be at least 40px in both dimensions;
 - larger whitespace separates sections, not every row;

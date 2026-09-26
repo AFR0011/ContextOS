@@ -42,21 +42,31 @@ test("detail Date composers remain usable at the 1024px sidebar breakpoint", asy
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
-test("Settings uses a single mobile section selector and renders only the active panel", async ({ page }) => {
+test("Settings recomposes section navigation across mobile, compact desktop, and wide desktop", async ({ page }) => {
   await login(page);
-  await page.setViewportSize({ width: 390, height: 844 });
+
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 1024, height: 768 }
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/settings");
+
+    const selector = page.getByRole("combobox", { name: "Settings section", exact: true });
+    await expect(selector).toBeVisible();
+    await expect(selector).toHaveValue("account");
+    await expect(page.getByRole("navigation", { name: "Settings sections" })).toBeHidden();
+
+    await selector.selectOption("security");
+    await expect(page).toHaveURL(/\/settings\?section=security$/);
+    await expect(page.getByRole("heading", { name: "Security", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Account", exact: true })).toHaveCount(0);
+  }
+
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/settings");
-
-  const selector = page.getByRole("combobox", { name: "Settings section", exact: true });
-  await expect(selector).toBeVisible();
-  await expect(selector).toHaveValue("account");
-  await expect(page.getByRole("heading", { name: "Account", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Security", exact: true })).toHaveCount(0);
-
-  await selector.selectOption("security");
-  await expect(page).toHaveURL(/\/settings\?section=security$/);
-  await expect(page.getByRole("heading", { name: "Security", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Account", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: "Settings section", exact: true })).toBeHidden();
+  await expect(page.getByRole("navigation", { name: "Settings sections" })).toBeVisible();
 });
 
 test("Home dayline does not reserve vacant balancing height", async ({ page }) => {

@@ -204,7 +204,11 @@ test("canonical quick-entry fields expose accessible names instead of placeholde
   await page.goto("/projects");
   await page.getByText("ContextOS Demo", { exact: true }).click();
   await expect(page.getByTestId("project-command-page")).toBeVisible();
+
+  await page.getByRole("button", { name: "New task", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Task title", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Date title", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Date details", exact: true })).toBeVisible();
 });

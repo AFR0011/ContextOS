@@ -229,6 +229,15 @@ Canonical sections:
 
 Settings is for account/application controls, not Area management.
 
+Rules:
+- desktop uses a slim section rail plus one primary settings column;
+- mobile remains a linear settings flow without a second navigation layer;
+- equivalent settings sections share the standard operational page frame;
+- nested cards are avoided unless a real interaction boundary exists;
+- sync metrics remain compact and scannable rather than becoming independent dashboard tiles;
+- dangerous actions remain visually distinct and require their existing confirmation flows;
+- empty Advanced state stays compact instead of occupying a full placeholder surface.
+
 ## 4. Navigation
 
 Desktop primary navigation:

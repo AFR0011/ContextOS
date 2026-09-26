@@ -69,7 +69,7 @@ export function FirstRunSetup() {
           <span className="text-sm text-[var(--cos-text-muted)]">Already have a ContextOS workspace export?</span>
           <button
             type="button"
-            onClick={() => router.push("/settings")}
+            onClick={() => router.push("/settings?section=data")}
             className="cos-btn cos-btn-secondary min-h-10 px-4 py-2 text-sm"
           >
             <Upload className="h-4 w-4" />

@@ -61,7 +61,7 @@ export function PasswordChangePanel({ online }: { online: boolean }) {
 
   return (
     <>
-      <section className="cos-surface mt-6 p-4" data-testid="password-change-settings">
+      <section className="cos-surface p-4" data-testid="password-change-settings">
         <div className="flex items-start gap-3">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]">
             <KeyRound className="h-4 w-4" />
@@ -69,7 +69,7 @@ export function PasswordChangePanel({ online }: { online: boolean }) {
           <div className="min-w-0">
             <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-muted)]">Account security</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--cos-text-muted)]">
-              Change your password after confirming the current one. Other signed-in sessions are revoked automatically; this browser stays signed in.
+              Change your password. Other signed-in sessions are revoked automatically; this browser stays signed in.
             </p>
           </div>
         </div>

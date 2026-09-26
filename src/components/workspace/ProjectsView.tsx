@@ -45,9 +45,11 @@ function ProjectRow({
           <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">
             {objective || "No objective yet."}
           </p>
-          <p className="mt-1 text-[11px] text-[var(--cos-text-subtle)]">
-            {taskCount} open task{taskCount === 1 ? "" : "s"}
-          </p>
+          {!archived ? (
+            <p className="mt-1 text-[11px] text-[var(--cos-text-subtle)]">
+              {taskCount ? `${taskCount} open task${taskCount === 1 ? "" : "s"}` : "No open tasks"}
+            </p>
+          ) : null}
         </button>
         {archiveAttemptMessage ? (
           <p role="alert" className="mt-1 text-[11px] text-[var(--cos-warning-text)]">{archiveAttemptMessage}</p>
@@ -136,7 +138,6 @@ export function ProjectsView() {
       <PageHeader
         eyebrow="Work"
         title="Projects"
-        description="Bounded work with one objective, one Area, and the tasks needed to move it forward."
         action={
           <button
             ref={newProjectTriggerRef}
@@ -207,7 +208,7 @@ export function ProjectsView() {
         </div>
       ) : null}
 
-      <Section title="Active" description="Current bounded work. Projects are intentionally flat; there are no nested subprojects.">
+      <Section title="Active">
         {activeProjects.length ? (
           <div className="space-y-2">
             {activeProjects.map((project) => (
@@ -224,12 +225,12 @@ export function ProjectsView() {
             ))}
           </div>
         ) : (
-          <EmptyState title="No active projects" description="Create one when a piece of work has a bounded outcome worth tracking." />
+          <EmptyState variant={archivedProjects.length ? "compact" : "full"} title="No active projects" description={archivedProjects.length ? undefined : "Create a Project when a piece of work has a clear outcome."} />
         )}
       </Section>
 
-      <Section title="Archived" description="Finished or inactive Projects stay discoverable here without a separate Archive page." className="mt-8">
-        {archivedProjects.length ? (
+      {archivedProjects.length ? (
+        <Section title="Archived" className="mt-8">
           <div className="space-y-2">
             {archivedProjects.map((project) => (
               <ProjectRow
@@ -244,10 +245,8 @@ export function ProjectsView() {
               />
             ))}
           </div>
-        ) : (
-          <p className="text-sm text-[var(--cos-text-subtle)]">No archived projects.</p>
-        )}
-      </Section>
+        </Section>
+      ) : null}
     </div>
   );
 }

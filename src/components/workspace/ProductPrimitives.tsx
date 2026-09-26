@@ -402,7 +402,10 @@ export function CommandPalette({
             aria-controls="command-palette-results"
             aria-activedescendant={items[activeIndex] ? `command-palette-option-${items[activeIndex].id}` : undefined}
             value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
+            onChange={(event) => {
+              setActiveIndex(0);
+              onQueryChange(event.target.value);
+            }}
             placeholder="Search or run a command…"
             className="h-12 min-w-0 flex-1 bg-transparent text-sm text-[var(--cos-text-strong)] outline-none placeholder:text-[var(--cos-text-subtle)]"
           />

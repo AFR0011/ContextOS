@@ -192,16 +192,20 @@ test("Cmd Ctrl K creates canonical Dates with mandatory context", async ({ page 
 });
 
 
-test("Settings follows the definitive six-section structure and shares theme state with the shell", async ({ page }) => {
+test("Settings renders one URL-backed active section and shares theme state with the shell", async ({ page }) => {
   await login(page);
   await page.goto("/settings");
 
-  for (const heading of ["Account", "Appearance", "Offline & Sync", "Data", "Security", "Advanced"]) {
-    await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Account", exact: true })).toBeVisible();
+  for (const heading of ["Appearance", "Offline & Sync", "Data", "Security", "Advanced"]) {
+    await expect(page.getByRole("heading", { name: heading, exact: true })).toHaveCount(0);
   }
 
-  await expect(page.getByPlaceholder("Add Area...")).toHaveCount(0);
-  await expect(page.getByText("Areas are stable responsibilities", { exact: false })).toHaveCount(0);
+  const nav = page.getByRole("navigation", { name: "Settings sections" });
+  await nav.getByRole("button", { name: "Appearance", exact: true }).click();
+  await expect(page).toHaveURL(/\/settings\?section=appearance$/);
+  await expect(page.getByRole("heading", { name: "Appearance", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Account", exact: true })).toHaveCount(0);
 
   const appearance = page.getByTestId("appearance-settings");
   await appearance.getByRole("button", { name: "Dark", exact: true }).click();
@@ -211,4 +215,8 @@ test("Settings follows the definitive six-section structure and shares theme sta
   await appearance.getByRole("button", { name: "Light", exact: true }).click();
   await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(false);
   await expect.poll(() => page.evaluate(() => localStorage.getItem("contextos-theme"))).toBe("light");
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.getByRole("heading", { name: "Account", exact: true })).toBeVisible();
 });

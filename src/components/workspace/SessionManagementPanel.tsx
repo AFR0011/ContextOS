@@ -119,7 +119,7 @@ export function SessionManagementPanel({ online, refreshToken = 0 }: { online: b
   const otherSessions = sessions.filter((session) => !session.current);
 
   return (
-    <section className="cos-surface mt-6 p-4" data-testid="session-management-settings">
+    <section className="cos-surface mt-4 p-4" data-testid="session-management-settings">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]">
@@ -128,7 +128,7 @@ export function SessionManagementPanel({ online, refreshToken = 0 }: { online: b
           <div className="min-w-0">
             <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--cos-text-muted)]">Active sessions</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--cos-text-muted)]">
-              Review active server sign-ins and revoke sessions you no longer trust. ContextOS does not store device names, IP addresses, or browser fingerprints, so sessions are identified only by their start and expiry times.
+              Review active sign-ins and revoke sessions you no longer trust. Sessions are identified by their start and expiry times.
             </p>
           </div>
         </div>

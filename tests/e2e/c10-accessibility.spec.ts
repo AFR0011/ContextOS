@@ -195,9 +195,15 @@ test("canonical quick-entry fields expose accessible names instead of placeholde
 
   await page.getByText("Engineering", { exact: true }).first().click();
   await expect(page.getByTestId("area-detail")).toBeVisible();
+
+  await page.getByRole("button", { name: "New project", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Project name", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Project objective", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "New task", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Task title", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Date title", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Date details", exact: true })).toBeVisible();
 
@@ -257,7 +263,7 @@ test("Daily Note autosave and password validation expose non-visual state", asyn
   await expect(saveStatus).toContainText(/Saving|Saved/);
   await expect(saveStatus).toContainText("Saved");
 
-  await page.goto("/settings");
+  await page.goto("/settings?section=security");
   const newPassword = page.getByLabel("New password", { exact: true });
   const confirmation = page.getByLabel("Confirm new password", { exact: true });
 
@@ -331,7 +337,7 @@ test("light-theme subtle text token keeps AA contrast on canonical surfaces", as
 
 test("dynamic import errors are exposed as alerts", async ({ page }) => {
   await login(page);
-  await page.goto("/settings");
+  await page.goto("/settings?section=data");
 
   await page.getByTestId("workspace-import-file").setInputFiles({
     name: "invalid.json",

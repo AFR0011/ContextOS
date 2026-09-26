@@ -411,7 +411,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
   await expectMinTouchTarget(projectRow.getByRole("button", { name: `Archive ${longProject}`, exact: true }));
   await expectNoHorizontalOverflow(page, "Area detail with hostile Project row");
 
-  await page.goto("/settings");
+  await page.goto("/settings?section=data");
   const longFileName = `contextos-${"backup".repeat(45)}.json`;
   await page.getByTestId("workspace-import-file").setInputFiles({
     name: longFileName,
@@ -527,9 +527,10 @@ test("Area detail exposes canonical Projects, direct Tasks, and direct Dates", a
   await expect(page.getByRole("heading", { name: "Active Projects", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Direct Tasks", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Direct Dates", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Archived Projects", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Archived Projects", exact: true })).toHaveCount(0);
 
   const areaProject = `Area project ${Date.now()}`;
+  await page.getByRole("button", { name: "New project", exact: true }).click();
   await page.getByPlaceholder("New Project name").fill(areaProject);
   await page.getByPlaceholder("Objective (optional)").fill("Verify flat Area ownership");
   await page.getByRole("button", { name: "Add Project", exact: true }).click();
@@ -540,6 +541,7 @@ test("Area detail exposes canonical Projects, direct Tasks, and direct Dates", a
   await page.getByText("Engineering", { exact: true }).first().click();
   const areaDate = `Area event ${Date.now()}`;
   const dates = page.getByTestId("area-dates");
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await dates.getByLabel("Date kind").selectOption("event");
   await dates.getByPlaceholder("Add a direct Date...").fill(areaDate);
   await dates.getByLabel("Date", { exact: true }).fill(localDateKey());
@@ -569,6 +571,7 @@ test("Area rename queues one offline mutation and converges after reconnect", as
   await expect(page.getByTestId("area-detail")).toBeVisible();
   await context.setOffline(true);
 
+  await page.getByRole("button", { name: "Edit details", exact: true }).click();
   const areaInput = page.getByRole("textbox", { name: "Area name", exact: true });
   const renamed = `Research offline rename ${Date.now()}`;
   await areaInput.fill(renamed);
@@ -580,12 +583,13 @@ test("Area rename queues one offline mutation and converges after reconnect", as
   await context.setOffline(false);
   await expect(page.getByTestId("global-sync-indicator").first()).toContainText("Online", { timeout: 20_000 });
   await page.getByTestId("workspace-utility-nav").getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("navigation", { name: "Settings sections" }).getByRole("button", { name: "Offline & Sync", exact: true }).click();
   await expect(page.getByTestId("pending-count")).toHaveText("0");
 });
 
 test("settings exposes sync visibility and server refresh controls", async ({ page }) => {
   await login(page);
-  await page.goto("/settings");
+  await page.goto("/settings?section=sync");
   await expect(page.getByTestId("sync-status")).toHaveText("Online");
   await expect(page.getByTestId("pending-count")).toHaveText("0");
   await expect(page.getByRole("button", { name: /sync now/i })).toBeVisible();

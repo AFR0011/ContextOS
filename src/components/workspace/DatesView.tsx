@@ -196,11 +196,11 @@ export function DatesView() {
 
   return (
     <div className="cos-page" data-testid="dates-view">
-      <PageHeader
-        eyebrow="Time"
-        title="Dates"
-        description="Events and external deadlines. Task planning remains separate."
-        action={
+      <div className="w-full">
+        <PageHeader
+          eyebrow="Time"
+          title="Dates"
+          action={
           <button
             ref={addDateTriggerRef}
             type="button"
@@ -212,17 +212,17 @@ export function DatesView() {
             <Plus className="h-4 w-4" /> Add Date
           </button>
         }
-      />
+        />
 
-      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Date filters">
+        <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Date filters">
         {(["all", "event", "deadline"] as const).map((value) => (
           <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)} className={`cos-btn px-3 py-1.5 text-xs ${filter === value ? "cos-btn-primary" : "cos-btn-secondary"}`}>
             {value === "all" ? "All" : value === "event" ? "Events" : "Deadlines"}
           </button>
         ))}
-      </div>
+        </div>
 
-      {showAdd ? (
+        {showAdd ? (
         <section id="context-date-create" className="cos-surface mb-8 p-4" data-testid="context-date-create">
           <div className="grid gap-3 lg:grid-cols-2">
             <label className="space-y-1 lg:col-span-2">
@@ -268,17 +268,18 @@ export function DatesView() {
             <button type="button" onClick={cancelDateCreation} className="cos-btn cos-btn-ghost px-4 py-2 text-sm">Cancel</button>
           </div>
         </section>
-      ) : null}
+        ) : null}
 
-      {!projects.length && !areas.length ? (
+        {!projects.length && !areas.length ? (
         <EmptyState title="Create an Area first" description="Every Date must belong to a Project or Area." action={<button type="button" onClick={() => router.push("/areas")} className="cos-btn cos-btn-secondary px-4 py-2 text-sm">Open Areas</button>} />
       ) : (
         <>
-          <Section title="Today">{renderGroup(todayDates, "No Dates today.")}</Section>
-          <Section title="Upcoming" className="mt-8">{renderGroup(upcoming, "No upcoming Dates.")}</Section>
-          <Section title="Past" className="mt-8">{renderGroup(past, "No past Dates.")}</Section>
+          <Section title="Today">{renderGroup(todayDates, "No dates today.")}</Section>
+          <Section title="Upcoming" className="mt-7">{renderGroup(upcoming, "No upcoming dates.")}</Section>
+          <Section title="Past" className="mt-7">{renderGroup(past, "No past dates.")}</Section>
         </>
-      )}
+        )}
+      </div>
     </div>
   );
 }

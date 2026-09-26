@@ -47,7 +47,7 @@ test("fresh first run exposes restore and completes a workspace replacement", as
   await page.goto("/dashboard");
   await expect(page.getByTestId("first-run-setup")).toBeVisible();
   await page.getByRole("button", { name: "Restore a workspace" }).click();
-  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page).toHaveURL(/\/settings\?section=data$/);
 
   const portability = page.getByTestId("data-portability-settings");
   await expect(portability).toBeVisible();
@@ -74,6 +74,7 @@ test("fresh first run exposes restore and completes a workspace replacement", as
 
   await expect(page.getByTestId("workspace-import-success")).toContainText("Workspace restored from export.");
   await expect(page.getByTestId("workspace-import-preview")).toHaveCount(0);
+  await page.goto("/settings?section=sync");
   await expect(page.getByTestId("pending-count")).toHaveText("0");
   await page.goto("/areas");
   await expect(page.getByText("Restored Personal", { exact: true })).toBeVisible();
@@ -111,7 +112,7 @@ test("replace import does not report success when the restored server workspace 
   await page.request.post("/api/auth/logout");
   await registerFresh(page, "portability-refresh-destination");
 
-  await page.goto("/settings");
+  await page.goto("/settings?section=data");
   await page.getByTestId("workspace-import-file").setInputFiles({
     name: "contextos-workspace.json",
     mimeType: "application/json",
@@ -137,6 +138,7 @@ test("replace import does not report success when the restored server workspace 
   await expect(page.getByTestId("workspace-import-preview")).toHaveCount(0);
 
   await page.unroute("**/api/bootstrap");
+  await page.goto("/settings?section=sync");
   await page.getByTestId("settings-refresh-from-server").click();
   await expect(page.getByTestId("sync-error")).toHaveCount(0);
 

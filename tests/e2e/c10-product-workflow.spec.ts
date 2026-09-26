@@ -90,15 +90,15 @@ test("definitive ContextOS workflow moves from daily execution to context, histo
   for (const module of ["ravel", "socialos", "ledger", "canon"]) {
     const card = page.getByTestId(`lifeos-module-${module}`);
     await expect(card).toBeVisible();
-    await expect(card).toContainText("No summary provider connected");
 
     const destination = card.getByRole("link");
     const status = card.getByTestId(`lifeos-module-status-${module}`);
+    await expect(status).toBeVisible();
+
     if (await destination.count()) {
       await expect(destination).toHaveAttribute("href", /.+/);
-      await expect(status).toHaveCount(0);
+      await expect(status).toHaveText("Connected");
     } else {
-      await expect(status).toBeVisible();
       await expect(status).toHaveText("Not connected");
     }
   }

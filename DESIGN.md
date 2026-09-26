@@ -134,11 +134,11 @@ List surfaces:
 - Archive/Restore is local to the Area lifecycle.
 
 Area Detail:
-- editable Area name;
-- Active Projects;
-- Direct Tasks with shared post-creation Task editing;
-- Direct Dates;
-- Archived Projects.
+- read-first Area header with explicit Edit details mode for the Area name;
+- Active Projects as the primary operational region, with Project creation disclosed on demand;
+- Direct Tasks with shared post-creation Task editing and creation disclosed on demand;
+- Direct Dates with creation disclosed on demand;
+- Archived Projects shown only when present.
 
 Archiving an Area does not archive its Projects. Area archive is blocked only by direct Open Tasks; child Project lifecycle remains independent. Archive controls remain actionable, and the blocking explanation appears only after a blocked attempt rather than as persistent list noise.
 
@@ -166,6 +166,8 @@ Rules:
 - Events may have start/end time.
 - Deadlines may have a time but no end time.
 - Task planning remains visually and semantically separate.
+- The desktop Dates surface uses a constrained reading column; mobile remains full-width.
+- Date editing expands in place so temporal context is preserved.
 
 ### Search
 
@@ -226,6 +228,18 @@ Canonical sections:
 - Advanced.
 
 Settings is for account/application controls, not Area management.
+
+Rules:
+- desktop uses a slim section rail plus one primary settings panel;
+- only the active Settings section is rendered at a time;
+- section state is URL-backed with `?section=` so refresh, direct links, and browser history preserve context;
+- Account is the default section when no valid section is specified;
+- mobile and compact desktop widths use one compact section selector; the persistent section rail begins only when the content column remains comfortably wide;
+- equivalent settings sections share the standard operational page frame;
+- nested cards are avoided unless a real interaction boundary exists;
+- sync metrics remain compact and scannable rather than becoming independent dashboard tiles;
+- dangerous actions remain visually distinct and require their existing confirmation flows;
+- empty Advanced state stays compact instead of occupying a full placeholder surface.
 
 ## 4. Navigation
 
@@ -357,6 +371,9 @@ ContextOS should feel compact without becoming cramped.
 
 Rules:
 - primary page padding scales from mobile to desktop;
+- standard operational pages share one horizontal content frame and therefore one right edge at desktop;
+- Home may use the wide frame because its multi-region dashboard composition requires the additional canvas;
+- page-local width overrides require an explicit compositional reason; equivalent pages must not drift between arbitrary width utilities;
 - rows generally target at least 44px visual rhythm;
 - interactive touch targets must be at least 40px in both dimensions;
 - larger whitespace separates sections, not every row;

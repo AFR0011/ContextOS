@@ -202,7 +202,7 @@ async function captureTransientStates(page: Page, testInfo: TestInfo, variant: V
   await capture(page, testInfo, `${variant.name}-08-new-date-sheet`, false);
   await page.keyboard.press("Escape");
 
-  await page.goto("/settings");
+  await page.goto("/settings?section=data");
   const longFileName = `contextos-${"backup".repeat(45)}.json`;
   await page.getByTestId("workspace-import-file").setInputFiles({
     name: longFileName,

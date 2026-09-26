@@ -204,7 +204,7 @@ export function ProductSettingsView() {
     <div className="cos-page" data-testid="product-settings-view">
       <PageHeader eyebrow="ContextOS" title="Settings" />
 
-      <div className="mb-6 lg:hidden">
+      <div className="mb-6 xl:hidden">
         <label htmlFor="settings-section-select" className="sr-only">Settings section</label>
         <select
           id="settings-section-select"
@@ -217,8 +217,8 @@ export function ProductSettingsView() {
         </select>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[10.5rem_minmax(0,1fr)] xl:gap-10">
-        <nav aria-label="Settings sections" className="hidden lg:block">
+      <div className="grid gap-8 xl:grid-cols-[10.5rem_minmax(0,1fr)] xl:gap-10">
+        <nav aria-label="Settings sections" className="hidden xl:block">
           <div className="sticky top-6 space-y-1">
             {settingsSections.map(([id, label]) => {
               const selected = activeSection === id;

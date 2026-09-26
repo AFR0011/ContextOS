@@ -128,7 +128,7 @@ function SyncIndicator({
           disabled={!canRefreshFromServer}
           aria-label="Refresh workspace from server"
           title={refreshTitle}
-          className="mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-current/15 px-2 py-1.5 text-xs font-semibold hover:bg-[var(--cos-bg-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-current/15 px-2 py-1.5 text-xs font-semibold hover:bg-[var(--cos-bg-soft)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Download className={`h-3.5 w-3.5 ${sync.refreshing ? "animate-pulse" : ""}`} />
           <span>{sync.refreshing ? "Refreshing" : "Refresh"}</span>
@@ -158,7 +158,7 @@ function NavButton({
       onClick={() => onNavigate(href)}
       aria-label={label}
       aria-current={active ? "page" : undefined}
-      className={`group flex min-h-10 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm font-medium transition-colors ${
+      className={`group flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm font-medium transition-colors ${
         active
           ? "border-[var(--cos-primary-border)] bg-[var(--cos-primary-soft)] text-[var(--cos-primary-text)]"
           : "border-transparent text-[var(--cos-text-muted)] hover:bg-[var(--cos-bg-soft)] hover:text-[var(--cos-text-strong)]"
@@ -285,7 +285,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </div>
           <button
             type="button"
-            className="cos-btn-ghost ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-lg text-[var(--cos-text-muted)]"
+            className="cos-btn-ghost ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-lg text-[var(--cos-text-muted)]"
             onClick={() => setTheme(isDark ? "light" : "dark")}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             title={isDark ? "Switch to light mode" : "Switch to dark mode"}
@@ -294,7 +294,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
           </button>
           <button
             type="button"
-            className="cos-btn-ghost grid h-10 w-10 shrink-0 place-items-center rounded-lg text-[var(--cos-text-muted)] lg:hidden"
+            className="cos-btn-ghost grid h-11 w-11 shrink-0 place-items-center rounded-lg text-[var(--cos-text-muted)] lg:hidden"
             onClick={() => setOpen(false)}
             aria-label="Close navigation"
           >
@@ -346,7 +346,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
             <button
               type="button"
               onClick={openLogout}
-              className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-lg text-[var(--cos-text-muted)]"
+              className="cos-btn-ghost grid h-11 w-11 place-items-center rounded-lg text-[var(--cos-text-muted)]"
               title="Log out"
               aria-label="Log out"
             >
@@ -360,7 +360,7 @@ export default function WorkspaceShell({ user, children }: { user: PublicUser; c
         <header className="sticky top-0 z-20 flex h-[60px] items-center gap-3 border-b border-[var(--cos-border-soft)] bg-[var(--cos-bg-elevated)]/88 px-4 backdrop-blur-xl lg:hidden">
           <button
             type="button"
-            className="cos-btn-ghost grid h-10 w-10 place-items-center rounded-lg text-[var(--cos-text)]"
+            className="cos-btn-ghost grid h-11 w-11 place-items-center rounded-lg text-[var(--cos-text)]"
             onClick={() => setOpen(true)}
             aria-label="Open navigation"
             aria-expanded={open}

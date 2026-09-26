@@ -527,7 +527,7 @@ test("Area detail exposes canonical Projects, direct Tasks, and direct Dates", a
   await expect(page.getByRole("heading", { name: "Active Projects", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Direct Tasks", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Direct Dates", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Archived Projects", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Archived Projects", exact: true })).toHaveCount(0);
 
   const areaProject = `Area project ${Date.now()}`;
   await page.getByRole("button", { name: "New project", exact: true }).click();

@@ -42,6 +42,23 @@ test("detail Date composers remain usable at the 1024px sidebar breakpoint", asy
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
+test("Settings uses a single mobile section selector and renders only the active panel", async ({ page }) => {
+  await login(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/settings");
+
+  const selector = page.getByRole("combobox", { name: "Settings section", exact: true });
+  await expect(selector).toBeVisible();
+  await expect(selector).toHaveValue("account");
+  await expect(page.getByRole("heading", { name: "Account", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Security", exact: true })).toHaveCount(0);
+
+  await selector.selectOption("security");
+  await expect(page).toHaveURL(/\/settings\?section=security$/);
+  await expect(page.getByRole("heading", { name: "Security", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Account", exact: true })).toHaveCount(0);
+});
+
 test("Home dayline does not reserve vacant balancing height", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);

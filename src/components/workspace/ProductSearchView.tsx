@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, ChevronRight, Search } from "lucide-react";
+import { PageHeader } from "@/components/workspace/ProductPrimitives";
 import { buildCanonicalSearchResults, searchCanonicalResults, type CanonicalSearchResult } from "@/lib/canonical-search";
 import { useWorkspace } from "@/lib/client-store";
 import { localDateKey } from "@/lib/dates";
@@ -114,12 +115,7 @@ export function ProductSearchView() {
 
   return (
     <div className="cos-page" data-testid="product-search-view">
-      <div className="mb-5">
-        <h1 tabIndex={-1} className="text-2xl font-bold tracking-tight text-[var(--cos-text-strong)] outline-none">Search</h1>
-        <p className="mt-1 max-w-2xl text-sm text-[var(--cos-text-muted)]">
-          Find Projects, Areas, Tasks, Dates, and Daily Notes across current and historical ContextOS state.
-        </p>
-      </div>
+      <PageHeader eyebrow="ContextOS" title="Search" />
 
       <label className="cos-input flex items-center gap-2 px-3 py-2">
         <Search className="h-4 w-4 shrink-0 text-[var(--cos-text-subtle)]" />
@@ -166,16 +162,14 @@ export function ProductSearchView() {
                   <span className="mt-1 block break-words text-xs text-[var(--cos-text-muted)] [overflow-wrap:anywhere]">{result.subtitle}</span>
                 ) : null}
               </span>
-              <span className="shrink-0 pt-0.5 text-xs font-medium text-[var(--cos-text-subtle)]">View details</span>
+              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-[var(--cos-text-subtle)]" aria-hidden="true" />
             </button>
           ))}
         </section>
 
         <aside className="cos-surface min-w-0 p-4" data-testid="search-selected-record" aria-label="Selected search result details">
           {!selectedResult ? (
-            <p className="text-sm text-[var(--cos-text-muted)]">
-              Choose a result to view the record without leaving Search.
-            </p>
+            <p className="text-sm text-[var(--cos-text-muted)]">Select a result.</p>
           ) : (
             <>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

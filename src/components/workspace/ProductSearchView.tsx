@@ -115,9 +115,10 @@ export function ProductSearchView() {
 
   return (
     <div className="cos-page" data-testid="product-search-view">
-      <PageHeader eyebrow="ContextOS" title="Search" />
+      <div className="w-full max-w-6xl">
+        <PageHeader eyebrow="ContextOS" title="Search" />
 
-      <label className="cos-input flex items-center gap-2 px-3 py-2">
+        <label className="cos-input flex items-center gap-2 px-3 py-2">
         <Search className="h-4 w-4 shrink-0 text-[var(--cos-text-subtle)]" />
         <span className="sr-only">Search workspace</span>
         <input
@@ -133,7 +134,7 @@ export function ProductSearchView() {
         {query.trim() ? `${results.length} search result${results.length === 1 ? "" : "s"}.` : "Enter a search query."}
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)]">
+        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_23rem] xl:grid-cols-[minmax(0,1fr)_25rem]">
         <section className="cos-surface min-w-0 overflow-hidden" aria-label="Search results">
           {!query.trim() ? (
             <p className="p-5 text-sm text-[var(--cos-text-muted)]">
@@ -167,7 +168,7 @@ export function ProductSearchView() {
           ))}
         </section>
 
-        <aside className="cos-surface min-w-0 p-4" data-testid="search-selected-record" aria-label="Selected search result details">
+        <aside className="cos-surface min-w-0 self-start p-4" data-testid="search-selected-record" aria-label="Selected search result details">
           {!selectedResult ? (
             <p className="text-sm text-[var(--cos-text-muted)]">Select a result.</p>
           ) : (
@@ -194,6 +195,7 @@ export function ProductSearchView() {
             </>
           )}
         </aside>
+        </div>
       </div>
     </div>
   );

@@ -41,7 +41,7 @@ test("definitive ContextOS workflow moves from daily execution to context, histo
   await homeContexts.getByText("ContextOS Demo", { exact: true }).click();
   await expect(page.getByTestId("project-command-page")).toBeVisible();
   await expect(page.getByRole("heading", { name: "ContextOS Demo", exact: true })).toBeVisible();
-  await expect(page.getByPlaceholder("What outcome is this Project trying to reach?")).toHaveValue(
+  await expect(page.getByTestId("project-summary")).toContainText(
     "Keep daily execution, temporal context, and project recovery coherent."
   );
 

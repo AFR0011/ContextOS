@@ -377,6 +377,7 @@ test("mobile rows survive hostile long labels and task controls keep touch-sized
 
   const longDate = `Date-${"D".repeat(150)}`;
   const projectDates = page.getByTestId("project-dates");
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await projectDates.getByLabel("Date kind").selectOption("event");
   await projectDates.getByPlaceholder("Add a Date...").fill(longDate);
   await projectDates.getByRole("button", { name: "Add", exact: true }).click();
@@ -426,11 +427,13 @@ test("project objective persists after reload", async ({ page }) => {
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   const objective = `Canonical objective ${Date.now()}`;
+  await page.getByRole("button", { name: "Edit details", exact: true }).click();
   const field = page.getByPlaceholder("What outcome is this Project trying to reach?");
   await field.fill(objective);
   await field.blur();
+  await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.reload();
-  await expect(page.getByPlaceholder("What outcome is this Project trying to reach?")).toHaveValue(objective);
+  await expect(page.getByTestId("project-summary")).toContainText(objective);
 });
 
 test("project detail removes nested-project and recovery-field UX", async ({ page }) => {
@@ -451,6 +454,7 @@ test("project detail creates canonical Tasks and Dates", async ({ page }) => {
   const today = localDateKey();
   const taskTitle = `C4 project task ${Date.now()}`;
   const tasks = page.getByTestId("project-live-tasks");
+  await page.getByRole("button", { name: "New task", exact: true }).click();
   await tasks.getByPlaceholder("Add a task...").fill(taskTitle);
   await tasks.getByLabel("Planned day").fill(today);
   await tasks.getByLabel("Scheduled time").fill("10:45");
@@ -459,6 +463,7 @@ test("project detail creates canonical Tasks and Dates", async ({ page }) => {
 
   const dateTitle = `C5 project deadline ${Date.now()}`;
   const dates = page.getByTestId("project-dates");
+  await page.getByRole("button", { name: "New date", exact: true }).click();
   await dates.getByLabel("Date kind").selectOption("deadline");
   await dates.getByPlaceholder("Add a Date...").fill(dateTitle);
   await dates.getByLabel("Date", { exact: true }).fill(today);
@@ -963,7 +968,7 @@ test("project sections follow the definitive C5 order", async ({ page }) => {
   await page.getByRole("button", { name: "Projects" }).click();
   await page.locator("main").getByRole("button", { name: /^ContextOS Demo/ }).click();
   const headings = await page.locator("main section h2").allTextContents();
-  expect(headings.slice(0, 4)).toEqual(["Project", "Tasks", "Dates", "Linked Knowledge"]);
+  expect(headings.slice(0, 3)).toEqual(["Tasks", "Dates", "Linked Knowledge"]);
   await expect(page.getByTestId("project-live-tasks")).toBeVisible();
 });
 

@@ -34,7 +34,7 @@ test("password rotation verifies the current password, keeps this session, and r
     await expect(secondPage).toHaveURL(/\/dashboard$/);
     await expect(secondPage.getByTestId("first-run-setup")).toBeVisible();
 
-    await page.goto("/settings");
+    await page.goto("/settings?section=security");
     await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
     await expect(page.getByTestId("password-change-settings")).toBeVisible();
 
@@ -48,7 +48,7 @@ test("password rotation verifies the current password, keeps this session, and r
     await page.getByRole("button", { name: "Change password" }).click();
     await expect(page.getByTestId("password-change-success")).toContainText("1 other signed-in session was signed out.");
 
-    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page).toHaveURL(/\/settings\?section=security$/);
     const bootstrap = await page.request.get("/api/bootstrap");
     expect(bootstrap.status()).toBe(200);
 
